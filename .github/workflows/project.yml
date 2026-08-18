@@ -200,7 +200,7 @@ jobs:
       matrix:
         include:
           - runtime: minimum Node 22
-            node-version: '22.12.0'
+            node-version: '22.22.2'
           - runtime: latest Node 22
             node-version: '22.x'
           - runtime: latest Node 24
@@ -234,7 +234,7 @@ jobs:
       matrix:
         include:
           - runtime: minimum Node 22
-            node-version: '22.12.0'
+            node-version: '22.22.2'
           - runtime: latest Node 22
             node-version: '22.x'
           - runtime: latest Node 24
@@ -275,7 +275,7 @@ jobs:
       matrix:
         include:
           - runtime: minimum Node 22
-            node-version: '22.12.0'
+            node-version: '22.22.2'
           - runtime: latest Node 22
             node-version: '22.x'
           - runtime: latest Node 24
