@@ -2,9 +2,12 @@
 
 > An opinionated foundation for modern, content-driven websites.
 
-Forge is an open-source starter maintained by **RM Industries** that combines a modern static-site architecture with production-ready tooling, security, and automation.
+Forge is an open-source starter maintained by **RM Industries** that combines a
+modern static-site architecture with production-ready tooling, security, and
+automation.
 
-Instead of spending hours configuring a new repository, Forge provides sensible defaults so you can focus on building your website.
+Instead of spending hours configuring a new repository, Forge provides sensible
+defaults so you can focus on building your website.
 
 ## Development
 
@@ -22,15 +25,12 @@ npm ci
 ```
 
 Root scripts expose `format`, `lint`, `typecheck`, `test`, `build`, `pack`, and
-`quality`. Until repository tooling is added, these commands provide the
-workspace orchestration smoke test and skip package scripts that do not exist.
-
-Once static tooling is configured, repository-wide formatting, Markdown
-linting, spelling, and similar checks run once from the root across both root
-files and workspace files. Package-specific type checking, tests, builds,
-packing, and specialized checks fan out through npm workspaces. We avoid running
-the same formatter once at the root and again per workspace over overlapping
-files.
+`quality`. Repository-wide Oxfmt, Oxlint, Markdown, spelling, and TypeScript
+checks run once from the root across both root files and workspace files.
+Package-specific type checking, tests, and builds fan out through npm
+workspaces. This keeps root-owned documentation and configuration covered
+without scanning workspace files twice. Use `npm run format:fix` to apply Oxfmt
+changes.
 
 ```sh
 npm run quality
@@ -40,6 +40,11 @@ The publishable package locations are:
 
 - `packages/create-forge/` for the project generator; and
 - `packages/content-model/` for the content-model core and bundled adapters.
+
+Each package uses the `files` field in its manifest as a publication allowlist.
+Generated artifacts, dependencies, coverage, local environment files, and editor
+state are excluded from Git, while source and documentation remain tracked. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for the complete contributor workflow.
 
 ## License
 

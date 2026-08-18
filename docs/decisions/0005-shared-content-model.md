@@ -2,14 +2,16 @@
 
 - Status: Accepted
 - Date: 2026-08-18
-- Roadmap: [FGE-001](https://github.com/rm-industries/forge/issues/1), [FGE-030](https://github.com/rm-industries/forge/issues/12)
-- Reference: [example implementation at `6b12712`](https://github.com/rahul0705/rahul0705.github.io/commit/6b127128029568dba6175e97191dcaf8356f1e9b)
+- Roadmap: [FGE-001](https://github.com/rm-industries/forge/issues/1),
+  [FGE-030](https://github.com/rm-industries/forge/issues/12)
+- Reference:
+  [example implementation at `6b12712`](https://github.com/rahul0705/rahul0705.github.io/commit/6b127128029568dba6175e97191dcaf8356f1e9b)
 
 ## Context
 
 Astro validates content while Sveltia CMS presents editing fields. Defining the
-same collections independently would allow their required fields, defaults,
-and supported types to drift.
+same collections independently would allow their required fields, defaults, and
+supported types to drift.
 
 ## Decision
 
@@ -24,19 +26,17 @@ collection declarations:
 
 Core package modules must not import Astro or Sveltia. Framework-specific code
 is exposed from explicit package subpaths such as
-`@rm-industries/content-model/astro` and
-`@rm-industries/content-model/sveltia`; the adapters are bundled and versioned
-with the core rather than published as independent packages. The package
-declares Astro and `@sveltia/cms` as peer dependencies, with adapter entry points
-requiring their corresponding peer at runtime. Peer ranges must be narrow
-enough to represent versions proven by the compatibility test matrix. This is
-especially important while Sveltia is pre-1.0 and may make breaking changes in
-minor releases.
+`@rm-industries/content-model/astro` and `@rm-industries/content-model/sveltia`;
+the adapters are bundled and versioned with the core rather than published as
+independent packages. The package declares Astro and `@sveltia/cms` as peer
+dependencies, with adapter entry points requiring their corresponding peer at
+runtime. Peer ranges must be narrow enough to represent versions proven by the
+compatibility test matrix. This is especially important while Sveltia is pre-1.0
+and may make breaking changes in minor releases.
 
 The model language covers only the v1 field capabilities named by the roadmap.
 Project declarations may contain editor-neutral presentation metadata required
-to produce a usable CMS, but they may not contain Sveltia configuration
-objects.
+to produce a usable CMS, but they may not contain Sveltia configuration objects.
 
 Place consumers at these locations:
 
@@ -54,12 +54,12 @@ add integration mechanics, but must not redefine collection fields.
 Required fields, defaults, dates, images, nested values, and draft semantics
 have one source of truth without forcing every collection into one large file.
 The model language becomes a public API that needs runtime validation,
-compile-time tests, adapter conformance tests, semantic versioning, and migration
-notes. Adding a collection requires a declaration and registry entry, not edits
-to either adapter. Existing generated projects can receive compatible engine
-and adapter fixes through dependency updates without re-running the generator.
-Integration-only capabilities remain unavailable until the neutral model can
-represent them deliberately.
+compile-time tests, adapter conformance tests, semantic versioning, and
+migration notes. Adding a collection requires a declaration and registry entry,
+not edits to either adapter. Existing generated projects can receive compatible
+engine and adapter fixes through dependency updates without re-running the
+generator. Integration-only capabilities remain unavailable until the neutral
+model can represent them deliberately.
 
 ## Rejected alternatives
 

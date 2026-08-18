@@ -17,30 +17,30 @@ Use the following top-level layout:
 
 - `packages/create-forge/` owns the publishable `@rm-industries/create-forge`
   package, including its CLI, materialization code, and generator tests.
-- `packages/content-model/` owns the publishable
-  `@rm-industries/content-model` package, including its integration-neutral
-  model language, runtime validation, Astro and Sveltia adapters, and tests.
+- `packages/content-model/` owns the publishable `@rm-industries/content-model`
+  package, including its integration-neutral model language, runtime validation,
+  Astro and Sveltia adapters, and tests.
 - `templates/default/` owns the complete default Astro project, including its
   application source, project-specific content declarations, adapter
   composition, and integrations such as Sveltia CMS.
 - `docs/` owns project and maintainer documentation; `docs/decisions/` owns
   ADRs.
-- root configuration and scripts own workspace-wide development, validation,
-  and release orchestration.
+- root configuration and scripts own workspace-wide development, validation, and
+  release orchestration.
 
 Reusable content-model code that can evolve through normal dependency updates
-belongs in `packages/content-model/`. Site-specific declarations and
-integration configuration belong in `templates/default/`. Code used only while
-creating a project belongs in `packages/create-forge/`.
+belongs in `packages/content-model/`. Site-specific declarations and integration
+configuration belong in `templates/default/`. Code used only while creating a
+project belongs in `packages/create-forge/`.
 
 ## Consequences
 
 The template can be copied and tested outside the monorepo using only published
-dependencies. The generator package must include the template as a package
-asset or copy it during packaging without introducing a runtime dependency on
-the repository. Existing projects can update the content-model engine without
-being regenerated. Some development tooling may be duplicated between the root
-and template to preserve that independence.
+dependencies. The generator package must include the template as a package asset
+or copy it during packaging without introducing a runtime dependency on the
+repository. Existing projects can update the content-model engine without being
+regenerated. Some development tooling may be duplicated between the root and
+template to preserve that independence.
 
 ## Rejected alternatives
 

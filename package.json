@@ -2,22 +2,40 @@
   "name": "@rm-industries/forge-root",
   "version": "0.0.0",
   "private": true,
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
   "type": "module",
-  "packageManager": "npm@11.18.0",
+  "scripts": {
+    "format": "oxfmt --check",
+    "format:fix": "oxfmt",
+    "lint": "npm run lint:repo",
+    "lint:code": "oxlint",
+    "lint:code:fix": "oxlint --fix",
+    "lint:markdown": "markdownlint \"**/*.md\" --ignore-path .gitignore",
+    "lint:markdown:fix": "markdownlint --fix \"**/*.md\" --ignore-path .gitignore",
+    "lint:repo": "npm run lint:code && npm run lint:markdown && npm run spellcheck",
+    "spellcheck": "cspell \"**\"",
+    "typecheck": "npm run typecheck:root && npm run typecheck:workspaces",
+    "typecheck:root": "tsc --noEmit",
+    "typecheck:workspaces": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "pack": "npm pack --dry-run --workspaces",
+    "quality": "npm run format && npm run lint && npm run typecheck && npm test && npm run build && npm run pack"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "cspell": "^10.0.1",
+    "markdownlint-cli": "^0.49.0",
+    "oxfmt": "^0.63.0",
+    "oxlint": "^1.72.0",
+    "typescript": "^6.0.3"
+  },
   "engines": {
     "node": "^22.12.0 || ^24.0.0 || ^26.0.0",
     "npm": "^10.9.0 || ^11.0.0"
   },
-  "workspaces": [
-    "packages/*"
-  ],
-  "scripts": {
-    "format": "npm run format --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
-    "build": "npm run build --workspaces --if-present",
-    "pack": "npm run pack --workspaces --if-present",
-    "quality": "npm run format && npm run lint && npm run typecheck && npm test && npm run build && npm run pack"
-  }
+  "packageManager": "npm@11.18.0"
 }
