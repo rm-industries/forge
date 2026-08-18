@@ -28,7 +28,7 @@ for lifecycle status.
 
 | Runtime                                                                         | Support                                                                | Required declaration and evidence                                                                                                       |
 | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Node.js `22.12.0` through the latest 22.x release                               | Minimum supported LTS line                                             | Package engines use `^22.12.0`; CI tests `22.12.0` and the latest 22.x patch. Node 22.12.0 includes npm 10.9.0.                         |
+| Node.js `22.22.2` through the latest 22.x release                               | Minimum supported LTS line                                             | Package engines use `^22.22.2`; CI tests `22.22.2` and the latest 22.x patch. Node 22.22.2 includes a supported npm 10.9.x release.     |
 | Node.js 24.x                                                                    | Preferred LTS line                                                     | Package engines use `^24.0.0`; CI tests the latest 24.x patch.                                                                          |
 | Node.js 26.x                                                                    | Supported Current line                                                 | Package engines use `^26.0.0`; CI tests the latest 26.x patch. Support continues when the line becomes LTS.                             |
 | Node.js 20 and earlier, odd-numbered EOL lines, and experimental/nightly builds | Unsupported                                                            | Engines and documentation must not imply support.                                                                                       |
@@ -36,7 +36,7 @@ for lifecycle status.
 | Other package managers                                                          | Unsupported for repository, generator, and generated-project workflows | Users may experiment, but defects must reproduce with npm and the committed npm lockfile.                                               |
 
 The Node engine expression for published packages and generated projects is
-`^22.12.0 || ^24.0.0 || ^26.0.0`. The npm engine expression is
+`^22.22.2 || ^24.0.0 || ^26.0.0`. The npm engine expression is
 `^10.9.0 || ^11.0.0`. Root and template documentation must state the same
 minimums.
 
