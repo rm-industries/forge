@@ -1,0 +1,8 @@
+# Default ownership for repository changes.
+* @rahul0705
+
+# Keep policy and automation changes under explicit maintainer review.
+/.github/ @rahul0705
+/CODE_OF_CONDUCT.md @rahul0705
+/CONTRIBUTING.md @rahul0705
+/SECURITY.md @rahul0705

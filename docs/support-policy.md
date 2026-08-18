@@ -6,8 +6,8 @@ decision in [ADR 0006](decisions/0006-versioning.md).
 
 - Status: Initial policy for the `0.x` release line
 - Effective: 2026-08-18
-- Applies to: `@rm-industries/create-forge`,
-  `@rm-industries/content-model`, and `templates/default`
+- Applies to: `@rm-industries/create-forge`, `@rm-industries/content-model`, and
+  `templates/default`
 
 ## Support principles
 
@@ -26,14 +26,14 @@ for lifecycle status.
 
 ### Supported versions
 
-| Runtime | Support | Required declaration and evidence |
-| --- | --- | --- |
-| Node.js `22.12.0` through the latest 22.x release | Minimum supported LTS line | Package engines use `^22.12.0`; CI tests `22.12.0` and the latest 22.x patch. Node 22.12.0 includes npm 10.9.0. |
-| Node.js 24.x | Preferred LTS line | Package engines use `^24.0.0`; CI tests the latest 24.x patch. |
-| Node.js 26.x | Supported Current line | Package engines use `^26.0.0`; CI tests the latest 26.x patch. Support continues when the line becomes LTS. |
-| Node.js 20 and earlier, odd-numbered EOL lines, and experimental/nightly builds | Unsupported | Engines and documentation must not imply support. |
-| npm 10.9.x and 11.x | Supported | Package engines use `^10.9.0 || ^11.0.0`; CI covers the npm version bundled with each tested Node line and the minimum Node/npm pair. |
-| Other package managers | Unsupported for repository, generator, and generated-project workflows | Users may experiment, but defects must reproduce with npm and the committed npm lockfile. |
+| Runtime                                                                         | Support                                                                | Required declaration and evidence                                                                                                       |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Node.js `22.12.0` through the latest 22.x release                               | Minimum supported LTS line                                             | Package engines use `^22.12.0`; CI tests `22.12.0` and the latest 22.x patch. Node 22.12.0 includes npm 10.9.0.                         |
+| Node.js 24.x                                                                    | Preferred LTS line                                                     | Package engines use `^24.0.0`; CI tests the latest 24.x patch.                                                                          |
+| Node.js 26.x                                                                    | Supported Current line                                                 | Package engines use `^26.0.0`; CI tests the latest 26.x patch. Support continues when the line becomes LTS.                             |
+| Node.js 20 and earlier, odd-numbered EOL lines, and experimental/nightly builds | Unsupported                                                            | Engines and documentation must not imply support.                                                                                       |
+| npm 10.9.x and 11.x                                                             | Supported                                                              | Package engines use `^10.9.0 \|\| ^11.0.0`; CI covers the npm version bundled with each tested Node line and the minimum Node/npm pair. |
+| Other package managers                                                          | Unsupported for repository, generator, and generated-project workflows | Users may experiment, but defects must reproduce with npm and the committed npm lockfile.                                               |
 
 The Node engine expression for published packages and generated projects is
 `^22.12.0 || ^24.0.0 || ^26.0.0`. The npm engine expression is
@@ -52,8 +52,8 @@ from an unpatched runtime when a security update is available.
   accept it.
 - Remove a Node major no later than its upstream end-of-life date. Announce the
   planned removal in advance when the schedule permits.
-- Raising the minimum Node or npm version is breaking for published packages
-  and for the generated-project contract.
+- Raising the minimum Node or npm version is breaking for published packages and
+  for the generated-project contract.
 - During `0.x`, a minimum-version increase requires a minor release and
   migration notes. After `1.0.0`, it requires a major release.
 
@@ -61,12 +61,12 @@ from an unpatched runtime when a security update is available.
 
 ### Generator and repository development
 
-| Platform | Support level | Required verification |
-| --- | --- | --- |
-| Ubuntu current LTS, x64 | Supported and primary CI platform | Full repository, package, generator, and generated-project quality pipelines. |
-| macOS versions receiving Apple security updates, Apple silicon and Intel where runners are available | Supported | Release-checkpoint generator smoke test covering creation, install, build, and Git initialization. |
-| Windows and WSL | Best effort for v1 | No support guarantee until a Windows matrix is added and path, process, executable-bin, and line-ending behavior pass. WSL defects must also reproduce on a supported Linux environment unless WSL support is explicitly promoted. |
-| Other Linux distributions, BSD, and other Unix-like systems | Best effort | Defects should reproduce on Ubuntu LTS before they block a release. |
+| Platform                                                                                             | Support level                     | Required verification                                                                                                                                                                                                              |
+| ---------------------------------------------------------------------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ubuntu current LTS, x64                                                                              | Supported and primary CI platform | Full repository, package, generator, and generated-project quality pipelines.                                                                                                                                                      |
+| macOS versions receiving Apple security updates, Apple silicon and Intel where runners are available | Supported                         | Release-checkpoint generator smoke test covering creation, install, build, and Git initialization.                                                                                                                                 |
+| Windows and WSL                                                                                      | Best effort for v1                | No support guarantee until a Windows matrix is added and path, process, executable-bin, and line-ending behavior pass. WSL defects must also reproduce on a supported Linux environment unless WSL support is explicitly promoted. |
+| Other Linux distributions, BSD, and other Unix-like systems                                          | Best effort                       | Defects should reproduce on Ubuntu LTS before they block a release.                                                                                                                                                                |
 
 The CLI must use Node path and process APIs rather than assuming POSIX path
 separators or shell utilities. Generated npm scripts must be cross-platform
@@ -74,9 +74,9 @@ JavaScript or package commands unless they execute exclusively inside a
 documented Bash-based GitHub Actions step. File names must work on supported
 case-sensitive and case-insensitive file systems.
 
-Generated static output may be hosted on any service that can publish the
-build directory. GitHub Pages is the documented and tested deployment target,
-not a runtime requirement.
+Generated static output may be hosted on any service that can publish the build
+directory. GitHub Pages is the documented and tested deployment target, not a
+runtime requirement.
 
 ## Browser baseline
 
@@ -112,12 +112,12 @@ narrower editor baseline without narrowing the public site's baseline.
 - Commit npm lockfiles for the root workspace and standalone default template.
 - Use normal semver ranges for stable direct dependencies when compatible
   updates are covered by tests. Lockfiles provide reproducible installations.
-- Treat pre-1.0 dependencies as potentially breaking at every minor release.
-  Use a range bounded below the next minor when their project does not promise
-  minor compatibility.
+- Treat pre-1.0 dependencies as potentially breaking at every minor release. Use
+  a range bounded below the next minor when their project does not promise minor
+  compatibility.
 - `@rm-industries/content-model` declares Astro and `@sveltia/cms` as peer
-  dependencies. Each peer range contains only versions exercised by the
-  package compatibility matrix.
+  dependencies. Each peer range contains only versions exercised by the package
+  compatibility matrix.
 - Sveltia is pre-1.0. Its supported peer range must not cross an untested minor
   boundary. Widening that range requires all Sveltia adapter, configuration,
   preview, build, and browser smoke tests.
@@ -140,17 +140,16 @@ narrower editor baseline without narrowing the public site's baseline.
 - Remove unused dependencies. Do not preserve an outdated dependency merely to
   avoid a documented breaking release.
 
-Dependency updates that force a documented runtime increase, remove a
-supported peer, or change public behavior follow the breaking-change rules
-below.
+Dependency updates that force a documented runtime increase, remove a supported
+peer, or change public behavior follow the breaking-change rules below.
 
 ## Versioning contracts
 
-Forge uses semantic versioning independently for
-`@rm-industries/create-forge` and `@rm-industries/content-model`. Git tags and
-GitHub releases identify generator releases. The sole default template is a
-tested source snapshot bundled with a generator release; it is not published or
-versioned as an independent package.
+Forge uses semantic versioning independently for `@rm-industries/create-forge`
+and `@rm-industries/content-model`. Git tags and GitHub releases identify
+generator releases. The sole default template is a tested source snapshot
+bundled with a generator release; it is not published or versioned as an
+independent package.
 
 For both published packages:
 
@@ -160,10 +159,9 @@ For both published packages:
 - backward-compatible capabilities increment the minor version; and
 - backward-compatible fixes increment the patch version.
 
-A deprecation must identify the replacement and earliest removal release.
-After `1.0.0`, a public contract should remain deprecated for at least one minor
-release before removal unless retaining it creates a security or data-loss
-risk.
+A deprecation must identify the replacement and earliest removal release. After
+`1.0.0`, a public contract should remain deprecated for at least one minor
+release before removal unless retaining it creates a security or data-loss risk.
 
 ### Generator contract
 
@@ -219,8 +217,8 @@ versioned adapter combinations are unsupported.
 
 A generated project is owned source, not a managed Forge installation.
 Generating with a newer `@rm-industries/create-forge` version creates a new
-project from that release's template; it does not describe a safe upgrade for
-an existing project.
+project from that release's template; it does not describe a safe upgrade for an
+existing project.
 
 - Never re-run the generator over an existing project as an upgrade mechanism.
 - Generator releases do not mutate or automatically update existing generated
@@ -236,15 +234,15 @@ an existing project.
 - Upgrade guides must state prerequisites, ordered edits, validation commands,
   rollback guidance, and whether the change is required or optional.
 
-The generated project's own application version belongs to its owner. Forge
-does not synchronize that version with the generator or content-model package.
+The generated project's own application version belongs to its owner. Forge does
+not synchronize that version with the generator or content-model package.
 
 ## Support boundaries
 
-Forge accepts defects for supported combinations when they reproduce in a
-clean generated project without unrelated customization. Maintainers may still
-help diagnose unsupported environments, but such defects do not block a
-release unless the support matrix is intentionally expanded.
+Forge accepts defects for supported combinations when they reproduce in a clean
+generated project without unrelated customization. Maintainers may still help
+diagnose unsupported environments, but such defects do not block a release
+unless the support matrix is intentionally expanded.
 
 The following are outside the support contract:
 
@@ -266,20 +264,20 @@ Every release checkpoint must record evidence for the following checklist:
 - [ ] Package and template Node/npm engines exactly match this policy.
 - [ ] CI has blocking minimum and latest supported Node/npm jobs.
 - [ ] The generator matrix covers interactive and non-interactive creation on
-  Ubuntu and the required macOS smoke test.
+      Ubuntu and the required macOS smoke test.
 - [ ] The content-model matrix covers every declared Astro and Sveltia peer
-  range.
+      range.
 - [ ] A copied template installs, checks, builds, and tests outside the
-  workspace from its committed lockfile.
+      workspace from its committed lockfile.
 - [ ] Playwright runs the committed Chromium, Firefox, and WebKit versions, and
-  any required Safari smoke test is recorded.
+      any required Safari smoke test is recorded.
 - [ ] Documentation states the same runtime, operating-system, browser, and
-  upgrade expectations.
+      upgrade expectations.
 - [ ] Dependency and action updates have license, security, lifecycle-script,
-  and generated-output review evidence.
+      and generated-output review evidence.
 - [ ] Breaking-change assessment and migration notes agree with the released
-  package versions.
+      package versions.
 
-Any mismatch blocks the checkpoint. A deliberate support change must update
-this policy, affected ADRs when architectural intent changes, package metadata,
-CI, and user documentation in the same release-bound change.
+Any mismatch blocks the checkpoint. A deliberate support change must update this
+policy, affected ADRs when architectural intent changes, package metadata, CI,
+and user documentation in the same release-bound change.

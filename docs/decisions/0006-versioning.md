@@ -2,7 +2,8 @@
 
 - Status: Accepted
 - Date: 2026-08-18
-- Roadmap: [FGE-001](https://github.com/rm-industries/forge/issues/1), [FGE-003](https://github.com/rm-industries/forge/issues/3)
+- Roadmap: [FGE-001](https://github.com/rm-industries/forge/issues/1),
+  [FGE-003](https://github.com/rm-industries/forge/issues/3)
 
 ## Context
 
@@ -19,9 +20,9 @@ release evidence records that source version where practical.
 
 Apply semantic versioning independently to the published
 `@rm-industries/content-model` package. Generated projects record a compatible
-package range and an exact resolved version in their lockfile. The package
-ships core types, validation, and Astro and Sveltia adapters as one release so a
-model capability cannot be installed without matching adapters.
+package range and an exact resolved version in their lockfile. The package ships
+core types, validation, and Astro and Sveltia adapters as one release so a model
+capability cannot be installed without matching adapters.
 
 Before 1.0, minor releases may change the emerging generator or template
 contract, with those changes called out in release notes. From 1.0 onward,
@@ -40,8 +41,8 @@ Astro and `@sveltia/cms` are peer dependencies, not bundled copies. Every peer
 range must correspond to tested versions. Widening a range requires passing the
 full core and adapter compatibility suite. Adapting to an upstream breaking
 change, or dropping support for a previously supported peer version, is a
-breaking content-model release. Pre-1.0 peer packages, particularly Sveltia,
-use conservative ranges that do not assume minor releases are compatible.
+breaking content-model release. Pre-1.0 peer packages, particularly Sveltia, use
+conservative ranges that do not assume minor releases are compatible.
 
 Generated source remains a snapshot, not a managed installation. Publishing a
 new Forge version does not mutate existing projects. Content-model updates are
@@ -56,9 +57,9 @@ Generator and bundled template changes ship under one traceable generator
 version while project owners keep control of generated code. The content-model
 engine can release on its own cadence, but Forge releases must test and record
 the exact compatible content-model and peer versions. Release review must assess
-CLI, generated-output, model, adapter, and peer compatibility. Security fixes
-to snapshot source require clear advisories because existing projects do not
-update automatically.
+CLI, generated-output, model, adapter, and peer compatibility. Security fixes to
+snapshot source require clear advisories because existing projects do not update
+automatically.
 
 ## Rejected alternatives
 

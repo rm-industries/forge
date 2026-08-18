@@ -3,6 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "description": "Integration-neutral content models and framework adapters",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "engines": {
     "node": "^22.12.0 || ^24.0.0 || ^26.0.0",

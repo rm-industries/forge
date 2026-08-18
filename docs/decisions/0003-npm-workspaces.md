@@ -25,8 +25,8 @@ because it automatically participates in installation and workspace commands.
 
 The template consumes `@rm-industries/content-model` as a normal versioned npm
 dependency. Repository tests may arrange a packed local package for integration
-testing, but the template must also be tested from a clean directory against
-the exact dependency versions recorded in its lockfile.
+testing, but the template must also be tested from a clean directory against the
+exact dependency versions recorded in its lockfile.
 
 Root scripts orchestrate formatting, linting, type checking, testing, building,
 and packing. Repository-wide static tools such as formatting, Markdown linting,
@@ -52,8 +52,8 @@ outside the immediate `packages/*` boundary.
 
 - pnpm, Yarn, and third-party monorepo orchestrators add tooling not required by
   the roadmap.
-- Making the template a workspace can hide missing dependencies through
-  hoisting and weaken isolation tests.
+- Making the template a workspace can hide missing dependencies through hoisting
+  and weaken isolation tests.
 - Enumerating package paths makes membership explicit, but the list can drift
   when a package is added or renamed. The directory boundary plus manifest
   review provides one source of truth instead.
