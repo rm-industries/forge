@@ -36,6 +36,21 @@ changes.
 npm run quality
 ```
 
+## Default template
+
+`templates/default/` is a standalone Astro project rather than an npm
+workspace. It owns its dependencies and lockfile so the same directory can be
+copied outside this repository without relying on workspace hoisting. Run its
+commands from the template directory:
+
+```sh
+cd templates/default
+npm ci
+npm run typecheck
+npm run build
+npm run preview
+```
+
 The publishable package locations are:
 
 - `packages/create-forge/` for the project generator; and
