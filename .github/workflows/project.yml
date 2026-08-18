@@ -345,6 +345,69 @@ jobs:
           npm ci
           npm run build
 
+  template-style:
+    name: Template styles
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '26.x'
+          cache: npm
+          cache-dependency-path: templates/default/package-lock.json
+
+      - name: Lint copied template styles
+        run: |
+          template_directory="${RUNNER_TEMP}/forge-default-template"
+          cp -R templates/default "$template_directory"
+          cd "$template_directory"
+          npm ci
+          npm run lint:css
+
+  template-browser:
+    name: Template browser tests
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '26.x'
+          cache: npm
+          cache-dependency-path: templates/default/package-lock.json
+
+      - name: Install copied template
+        run: |
+          template_directory="${RUNNER_TEMP}/forge-default-template"
+          cp -R templates/default "$template_directory"
+          cd "$template_directory"
+          npm ci
+
+      - name: Install Chromium
+        working-directory: ${{ runner.temp }}/forge-default-template
+        run: npx playwright install --with-deps chromium
+
+      - name: Test copied template in Chromium
+        working-directory: ${{ runner.temp }}/forge-default-template
+        run: npm run test:e2e
+
   project:
     name: Project
     needs:
@@ -360,6 +423,8 @@ jobs:
       - template-typecheck
       - template-test
       - template-build
+      - template-style
+      - template-browser
     runs-on: ubuntu-latest
 
     permissions:
