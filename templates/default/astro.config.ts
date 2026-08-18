@@ -1,9 +1,11 @@
 import sitemap from '@astrojs/sitemap';
 import { defineConfig } from 'astro/config';
 
+import { site } from './src/config/site';
+
 export default defineConfig({
   integrations: [sitemap()],
   output: 'static',
-  site: 'https://example.com',
+  site: site.url,
   trailingSlash: 'always',
 });

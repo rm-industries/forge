@@ -1,0 +1,33 @@
+---
+import { site } from '../../config/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+  canonicalPath?: string;
+}
+
+const {
+  title,
+  description = site.description,
+  canonicalPath = Astro.url.pathname,
+} = Astro.props;
+
+const normalizedPath = (() => {
+  const path = `/${canonicalPath}`.replace(/\/{2,}/g, '/');
+  return path === '/' ? path : `${path.replace(/\/$/, '')}/`;
+})();
+const canonicalUrl = new URL(normalizedPath, site.url);
+const pageTitle = title ? `${title} | ${site.name}` : site.name;
+---
+
+<title>{pageTitle}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonicalUrl} />
+<link rel="sitemap" href="/sitemap-index.xml" />
+
+<meta property="og:site_name" content={site.name} />
+<meta property="og:title" content={pageTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonicalUrl} />
+<meta property="og:type" content="website" />
