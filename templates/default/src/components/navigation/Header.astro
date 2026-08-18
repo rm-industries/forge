@@ -1,0 +1,14 @@
+---
+import { site } from '../../config/site';
+---
+
+<header>
+  <nav aria-label="Primary navigation">
+    <a href="/">{site.name}</a>
+    {
+      site.navigation.map((item) => (
+        <a href={item.href}>{item.label}</a>
+      ))
+    }
+  </nav>
+</header>

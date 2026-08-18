@@ -1,0 +1,12 @@
+---
+import { site } from '../../config/site';
+---
+
+<footer>
+  <p>© {new Date().getFullYear()} {site.name}</p>
+  {
+    site.socialLinks.map((item) => (
+      <a href={item.href}>{item.label}</a>
+    ))
+  }
+</footer>

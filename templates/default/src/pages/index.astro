@@ -1,21 +1,11 @@
 ---
-const description = 'A content-driven website created with Forge.';
-const title = 'Forge';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { site } from '../config/site';
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="description" content={description} />
-    <meta name="viewport" content="width=device-width" />
-    <link rel="sitemap" href="/sitemap-index.xml" />
-    <title>{title}</title>
-  </head>
-  <body>
-    <main>
-      <h1>{title}</h1>
-      <p>{description}</p>
-    </main>
-  </body>
-</html>
+<BaseLayout>
+  <main>
+    <h1>{site.name}</h1>
+    <p>{site.description}</p>
+  </main>
+</BaseLayout>

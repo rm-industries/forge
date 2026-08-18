@@ -8,7 +8,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "typecheck": "astro sync && astro check"
+    "typecheck": "astro sync && astro check",
+    "test": "node --test src/config/site.test.ts"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",

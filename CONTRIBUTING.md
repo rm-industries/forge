@@ -39,6 +39,7 @@ an independent project before requesting review:
 ```sh
 cd templates/default
 npm ci
+npm test
 npm run typecheck
 npm run build
 ```
