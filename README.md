@@ -38,8 +38,9 @@ npm run quality
 
 GitHub Actions runs this gate on the minimum supported Node.js release and the
 latest release of every supported Node.js line. It separately copies and builds
-the default template outside the workspace, running its tests and type checks to
-ensure root dependency hoisting cannot hide template defects.
+the default template outside the workspace, running its tests, type checks, CSS
+lint, and browser assertions to ensure root dependency hoisting cannot hide
+template defects.
 
 ## Default template
 
@@ -51,8 +52,11 @@ commands from the template directory:
 ```sh
 cd templates/default
 npm ci
+npm run lint:css
+npm test
 npm run typecheck
 npm run build
+npm run test:e2e
 npm run preview
 ```
 

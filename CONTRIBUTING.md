@@ -39,9 +39,11 @@ an independent project before requesting review:
 ```sh
 cd templates/default
 npm ci
+npm run lint:css
 npm test
 npm run typecheck
 npm run build
+npm run test:e2e
 ```
 
 ## Continuous integration

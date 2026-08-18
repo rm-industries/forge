@@ -5,9 +5,11 @@ the parent npm workspace. Install and run all commands from this directory.
 
 ```sh
 npm ci
+npm run lint:css
 npm run typecheck
 npm test
 npm run build
+npm run test:e2e
 npm run preview
 ```
 
@@ -19,3 +21,58 @@ the document shell and canonical metadata.
 
 The initial template uses `https://example.com` as a valid, non-production site
 origin. Generator-driven customization is introduced by later Forge milestones.
+
+## Styling and themes
+
+The template uses Tailwind CSS v4 through its Vite plugin, DaisyUI, and the
+Tailwind typography plugin. Catppuccin Latte is the default light theme and
+Mocha is selected automatically for dark color-scheme preferences. All four
+Catppuccin flavors are available by setting `data-theme` on the document:
+
+- `data-theme="latte"`
+- `data-theme="frappe"`
+- `data-theme="macchiato"`
+- `data-theme="mocha"`
+
+Global styles live in `src/styles/global.css`; print-safe rules live in
+`src/styles/print.css`; and theme configuration lives in `src/themes/`. The
+default automatic theme behavior requires no client-side JavaScript.
+
+### Fonts
+
+The template pairs Fira Sans for interface and article text with Fira Code for
+code. Both families remain legible at small sizes, have complementary forms,
+and are bundled through Fontsource so rendering does not depend on a remote font
+service. Only the weights imported by `src/styles/global.css` are included in
+the build.
+
+To replace them with other Fontsource families, uninstall both defaults and
+install the packages for the new sans-serif and monospace families. For example:
+
+```sh
+npm uninstall @fontsource/fira-sans @fontsource/fira-code
+npm install @fontsource/inter @fontsource/source-code-pro
+```
+
+Then replace the Fontsource imports near the top of `src/styles/global.css` with
+the families and weights the site uses:
+
+```css
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/source-code-pro/400.css';
+```
+
+Finally, update the Tailwind font tokens in the same file:
+
+```css
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Source Code Pro', ui-monospace, monospace;
+}
+```
+
+For a system-font-only site, uninstall the two default Fontsource packages,
+remove their CSS imports, and remove the custom family name at the start of each
+font token. After either change, run `npm run build` to confirm every imported
+weight is installed and bundled.
