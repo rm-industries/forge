@@ -1,0 +1,305 @@
+---
+name: Project Continuous Integration
+
+on: # yamllint disable-line rule:truthy
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup project
+        uses: ./.github/actions/setup-project
+        with:
+          node-version: '26.x'
+
+      - name: Check formatting
+        run: npm run format
+
+  lint-code:
+    name: Lint code
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup project
+        uses: ./.github/actions/setup-project
+        with:
+          node-version: '26.x'
+
+      - name: Lint code
+        run: npm run lint:code
+
+  lint-markdown:
+    name: Lint Markdown
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup project
+        uses: ./.github/actions/setup-project
+        with:
+          node-version: '26.x'
+
+      - name: Lint Markdown
+        run: npm run lint:markdown
+
+  spellcheck:
+    name: Spellcheck
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup project
+        uses: ./.github/actions/setup-project
+        with:
+          node-version: '26.x'
+
+      - name: Spellcheck
+        run: npm run spellcheck
+
+  typecheck:
+    name: Type-check
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup project
+        uses: ./.github/actions/setup-project
+        with:
+          node-version: '26.x'
+
+      - name: Type-check TypeScript
+        run: npm run typecheck
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup project
+        uses: ./.github/actions/setup-project
+        with:
+          node-version: '26.x'
+
+      - name: Run tests
+        run: npm test
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup project
+        uses: ./.github/actions/setup-project
+        with:
+          node-version: '26.x'
+
+      - name: Build packages
+        run: npm run build
+
+  pack:
+    name: Pack
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup project
+        uses: ./.github/actions/setup-project
+        with:
+          node-version: '26.x'
+
+      - name: Inspect package contents
+        run: npm run pack
+
+  compatibility:
+    name: Compatibility (${{ matrix.runtime }})
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runtime: minimum Node 22
+            node-version: '22.12.0'
+          - runtime: latest Node 22
+            node-version: '22.x'
+          - runtime: latest Node 24
+            node-version: '24.x'
+          - runtime: latest Node 26
+            node-version: '26.x'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup project
+        uses: ./.github/actions/setup-project
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Run repository quality checks
+        run: npm run quality
+
+  template-typecheck:
+    name: Template type-check (${{ matrix.runtime }})
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runtime: minimum Node 22
+            node-version: '22.12.0'
+          - runtime: latest Node 22
+            node-version: '22.x'
+          - runtime: latest Node 24
+            node-version: '24.x'
+          - runtime: latest Node 26
+            node-version: '26.x'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: templates/default/package-lock.json
+
+      - name: Type-check copied template
+        run: |
+          template_directory="${RUNNER_TEMP}/forge-default-template"
+          cp -R templates/default "$template_directory"
+          cd "$template_directory"
+          npm ci
+          npm run typecheck
+
+  template-build:
+    name: Template build (${{ matrix.runtime }})
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runtime: minimum Node 22
+            node-version: '22.12.0'
+          - runtime: latest Node 22
+            node-version: '22.x'
+          - runtime: latest Node 24
+            node-version: '24.x'
+          - runtime: latest Node 26
+            node-version: '26.x'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: templates/default/package-lock.json
+
+      - name: Build copied template
+        run: |
+          template_directory="${RUNNER_TEMP}/forge-default-template"
+          cp -R templates/default "$template_directory"
+          cd "$template_directory"
+          npm ci
+          npm run build

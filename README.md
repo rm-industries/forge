@@ -36,6 +36,11 @@ changes.
 npm run quality
 ```
 
+GitHub Actions runs this gate on the minimum supported Node.js release and the
+latest release of every supported Node.js line. It separately copies and builds
+the default template outside the workspace, ensuring root dependency hoisting
+cannot hide template defects.
+
 ## Default template
 
 `templates/default/` is a standalone Astro project rather than an npm

@@ -33,6 +33,29 @@ Markdown linting, spelling, and TypeScript checks cover the entire repository.
 Package-specific type checking, tests, and builds are orchestrated through npm
 workspaces.
 
+The default template is deliberately outside the npm workspace. Validate it as
+an independent project before requesting review:
+
+```sh
+cd templates/default
+npm ci
+npm run typecheck
+npm run build
+```
+
+## Continuous integration
+
+Pull requests and pushes to `main` run the repository quality gate and validate
+a copy of the default template outside the workspace on every supported Node.js
+line. Changes under `.github/` also run workflow syntax and security checks.
+These jobs use committed lockfiles and do not require globally installed project
+tools.
+
+Actions are pinned to immutable commits, workflow permissions are denied by
+default, and superseded runs are cancelled. Keep these properties intact when
+editing automation. Runtime coverage must remain aligned with the
+[support policy](docs/support-policy.md).
+
 ## Pull requests
 
 - Keep each pull request scoped to one coherent change.
