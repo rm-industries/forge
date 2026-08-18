@@ -1,0 +1,23 @@
+{
+  "name": "@rm-industries/forge-root",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@11.18.0",
+  "engines": {
+    "node": "^22.12.0 || ^24.0.0 || ^26.0.0",
+    "npm": "^10.9.0 || ^11.0.0"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "format": "npm run format --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "pack": "npm run pack --workspaces --if-present",
+    "quality": "npm run format && npm run lint && npm run typecheck && npm test && npm run build && npm run pack"
+  }
+}

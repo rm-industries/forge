@@ -1,0 +1,11 @@
+{
+  "name": "@rm-industries/create-forge",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Create a content-driven Forge website",
+  "type": "module",
+  "engines": {
+    "node": "^22.12.0 || ^24.0.0 || ^26.0.0",
+    "npm": "^10.9.0 || ^11.0.0"
+  }
+}
