@@ -303,3 +303,26 @@ jobs:
           cd "$template_directory"
           npm ci
           npm run build
+
+  project:
+    name: Project
+    needs:
+      - format
+      - lint-code
+      - lint-markdown
+      - spellcheck
+      - typecheck
+      - test
+      - build
+      - pack
+      - compatibility
+      - template-typecheck
+      - template-build
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Confirm project checks
+        run: echo "All project checks passed."
