@@ -4,6 +4,7 @@ export default defineConfig({
   ignorePaths: ['node_modules', 'dist', 'coverage', 'playwright-report', 'test-results', '.lighthouseci'],
   words: [
     'Catppuccin',
+    'contentinfo',
     'daisyui',
     'Fira',
     'fontsource',

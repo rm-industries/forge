@@ -1,0 +1,60 @@
+---
+import type { SiteLink } from '../../config/site';
+import { isCurrentPath } from '../../lib/navigation';
+
+interface Props {
+  brand: string;
+  brandHref?: string;
+  links: readonly SiteLink[];
+  currentPath: string;
+}
+
+const { brand, brandHref = '/', links, currentPath } = Astro.props;
+---
+
+<div class="navbar rounded-box bg-base-200 shadow-sm">
+  <div class="navbar-start">
+    <a href={brandHref} class="btn btn-ghost text-xl">{brand}</a>
+  </div>
+
+  <nav class="navbar-end hidden sm:flex" aria-label="Primary navigation">
+    <ul class="menu menu-horizontal" role="list">
+      {
+        links.map((item) => {
+          const isCurrent = isCurrentPath(currentPath, item.href);
+
+          return (
+            <li>
+              <a href={item.href} aria-current={isCurrent ? 'page' : undefined} class:list={[isCurrent && 'menu-active']}>
+                {item.label}
+              </a>
+            </li>
+          );
+        })
+      }
+    </ul>
+  </nav>
+
+  <div class="navbar-end sm:hidden">
+    <details class="dropdown dropdown-end">
+      <summary class="btn btn-ghost">Menu</summary>
+      <nav class="dropdown-content z-10 mt-3 w-52 rounded-box bg-base-200 p-2 shadow" aria-label="Mobile navigation">
+        <ul class="menu" role="list">
+          {
+            links.map((item) => {
+              const isCurrent = isCurrentPath(currentPath, item.href);
+
+              return (
+                <li>
+                  <a href={item.href} aria-current={isCurrent ? 'page' : undefined} class:list={[isCurrent && 'menu-active']}>
+                    {item.label}
+                  </a>
+                </li>
+              );
+            })
+          }
+        </ul>
+      </nav>
+    </details>
+  </div>
+</div>
