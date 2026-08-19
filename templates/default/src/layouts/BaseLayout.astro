@@ -24,8 +24,16 @@ const { title, description, canonicalPath } = Astro.props;
     <ThemeHead />
   </head>
   <body>
+    <a
+      href="#main-content"
+      class="btn btn-primary btn-sm sr-only opacity-0 focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:opacity-100"
+    >
+      Skip to content
+    </a>
     <Header />
-    <slot />
+    <main id="main-content" tabindex="-1">
+      <slot />
+    </main>
     <Footer />
   </body>
 </html>

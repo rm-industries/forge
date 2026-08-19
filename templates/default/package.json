@@ -22,6 +22,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@axe-core/playwright": "^4.13.0",
     "@catppuccin/daisyui": "^2.1.1",
     "@catppuccin/palette": "^1.8.0",
     "@playwright/test": "^1.62.1",

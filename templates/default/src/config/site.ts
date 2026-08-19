@@ -67,7 +67,11 @@ export const site = defineSiteConfig({
   description: 'A content-driven website created with Forge.',
   url: 'https://example.com',
   language: 'en',
-  navigation: [{ label: 'Home', href: '/' }],
+  navigation: [
+    { label: 'Home', href: '/' },
+    { label: 'Features', href: '#features' },
+    { label: 'Get started', href: '#start' },
+  ],
   socialLinks: [],
 });
 

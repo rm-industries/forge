@@ -76,3 +76,29 @@ For a system-font-only site, uninstall the two default Fontsource packages,
 remove their CSS imports, and remove the custom family name at the start of each
 font token. After either change, run `npm run build` to confirm every imported
 weight is installed and bundled.
+
+## Layout primitives
+
+`src/layouts/BaseLayout.astro` supplies the document shell, a keyboard-accessible
+skip link, semantic header, main, and footer landmarks, and the shared metadata
+components. Page content belongs inside `BaseLayout`; pages must not add another
+`main` landmark.
+
+Reusable components are organized by responsibility:
+
+- `navigation/Header.astro` owns the semantic header and outer content boundary;
+- `navigation/Navbar.astro` composes branding, responsive menus, configured links, and current-page state;
+- `navigation/Footer.astro` renders site identity and optional social links;
+- `navigation/Pagination.astro` provides typed previous and next navigation;
+- `ui/Container.astro` provides consistent responsive content widths; and
+- `ui/Card.astro` provides linked and non-linked DaisyUI card surfaces with typed sizing.
+
+The template follows the operating-system light or dark preference and does not
+include a theme control. This keeps the default experience functional without
+client-side JavaScript; a future control can select any documented `data-theme`
+value if a project chooses to persist a visitor preference.
+
+`Pagination.astro` is intentionally not rendered on the starter homepage: the
+template does not yet have a paginated collection, and fragment links would be
+a misleading demonstration. The content-listing work will compose it with real
+previous and next destinations.
