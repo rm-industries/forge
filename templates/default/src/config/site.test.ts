@@ -8,6 +8,7 @@ const validConfig = {
   description: 'An example site description.',
   url: 'https://example.test',
   language: 'en',
+  socialImage: '/social-card.svg',
   navigation: [{ label: 'Home', href: '/' }],
   socialLinks: [],
 } satisfies SiteConfig;

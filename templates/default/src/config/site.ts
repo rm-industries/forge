@@ -8,6 +8,7 @@ export interface SiteConfig {
   description: string;
   url: string;
   language: string;
+  socialImage: string;
   navigation: readonly SiteLink[];
   socialLinks: readonly SiteLink[];
 }
@@ -58,6 +59,7 @@ export const defineSiteConfig = (config: SiteConfig): Readonly<SiteConfig> =>
     description: requireText(config.description, 'description'),
     url: requireSiteUrl(config.url),
     language: requireText(config.language, 'language'),
+    socialImage: requireText(config.socialImage, 'socialImage'),
     navigation: requireLinks(config.navigation, 'navigation'),
     socialLinks: requireLinks(config.socialLinks, 'socialLinks'),
   });
@@ -67,10 +69,11 @@ export const site = defineSiteConfig({
   description: 'A content-driven website created with Forge.',
   url: 'https://example.com',
   language: 'en',
+  socialImage: '/social-card.svg',
   navigation: [
     { label: 'Home', href: '/' },
-    { label: 'Features', href: '#features' },
-    { label: 'Get started', href: '#start' },
+    { label: 'Articles', href: '/articles/' },
+    { label: 'About', href: '/about/' },
   ],
   socialLinks: [],
 });
