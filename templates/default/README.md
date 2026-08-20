@@ -102,3 +102,16 @@ value if a project chooses to persist a visitor preference.
 template does not yet have a paginated collection, and fragment links would be
 a misleading demonstration. The content-listing work will compose it with real
 previous and next destinations.
+
+## Routes and metadata
+
+The starter includes home, about, article index, article detail, and custom 404
+pages. Generic article fixtures live in `src/data/articles.ts`; replace them
+when adopting the shared content model. Draft entries are available during
+local development but are excluded from production routes and the RSS feed.
+
+Site configuration drives page titles, descriptions, canonical URLs, Open
+Graph and Twitter metadata, the RSS feed, the web manifest, and the sitemap
+reference in `robots.txt`. Replace `public/favicon.svg` and
+`public/social-card.svg` when establishing a project identity, and update
+`socialImage` in `src/config/site.ts` if the sharing image path changes.
