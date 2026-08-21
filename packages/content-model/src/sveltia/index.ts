@@ -1,0 +1,1 @@
+export { createSveltiaCollection } from './adapter';

@@ -1,23 +1,57 @@
 {
   "name": "@rm-industries/content-model",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0-alpha.0",
   "description": "Integration-neutral content models and framework adapters",
+  "homepage": "https://github.com/rm-industries/forge/tree/main/packages/content-model#readme",
+  "bugs": {
+    "url": "https://github.com/rm-industries/forge/issues"
+  },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rm-industries/forge.git",
+    "directory": "packages/content-model"
+  },
   "files": [
     "dist"
   ],
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./astro": {
+      "types": "./dist/astro.d.ts",
+      "default": "./dist/astro.js"
+    },
+    "./sveltia": {
+      "types": "./dist/sveltia.d.ts",
+      "default": "./dist/sveltia.js"
     }
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "next"
   },
   "scripts": {
     "build": "tsdown",
+    "prepack": "npm run typecheck && npm test && npm run build",
     "test": "vitest run",
     "typecheck": "tsc --project tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "@sveltia/cms": ">=0.193.2 <0.194.0",
+    "astro": "^7.2.3"
+  },
+  "peerDependenciesMeta": {
+    "@sveltia/cms": {
+      "optional": true
+    },
+    "astro": {
+      "optional": true
+    }
   },
   "engines": {
     "node": "^22.22.2 || ^24.0.0 || ^26.0.0",
