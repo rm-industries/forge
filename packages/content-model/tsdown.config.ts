@@ -1,7 +1,11 @@
 import { defineConfig } from 'tsdown';
 
 export default defineConfig({
-  entry: 'src/index.ts',
+  entry: {
+    astro: 'src/astro/index.ts',
+    index: 'src/index.ts',
+    sveltia: 'src/sveltia/index.ts',
+  },
   format: 'esm',
   platform: 'neutral',
   sourcemap: true,

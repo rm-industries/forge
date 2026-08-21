@@ -4,6 +4,25 @@ Integration-neutral content collection definitions and validation for Forge.
 Astro and Sveltia adapters are separate package entry points introduced by the
 adapter milestones; the core module imports neither integration.
 
+The package is currently published as a prerelease. Install the version from
+the `next` tag when evaluating it:
+
+```sh
+npm install @rm-industries/content-model@next
+```
+
+The package exports integration-specific adapters from
+`@rm-industries/content-model/astro` and
+`@rm-industries/content-model/sveltia`. The core entry point imports neither
+peer. Install only the Astro and Sveltia peer versions declared by the package;
+those narrow ranges identify the compatibility matrix Forge has verified.
+
+```ts
+import { defineModel } from '@rm-industries/content-model';
+import { createAstroCollections } from '@rm-industries/content-model/astro';
+import { createSveltiaCollection } from '@rm-industries/content-model/sveltia';
+```
+
 The package is bundled as native ESM for publication. Source files therefore
 use relative imports without file extensions, which keeps editor-generated
 imports conventional while the build resolves internal modules into the

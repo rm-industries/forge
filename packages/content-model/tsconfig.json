@@ -1,9 +1,12 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "lib": ["DOM", "DOM.Iterable", "ES2022", "ESNext.Disposable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "rootDir": "src"
+    "rootDir": "src",
+    "skipLibCheck": true,
+    "types": ["astro/client", "node"]
   },
   "include": ["src/**/*.ts"]
 }
