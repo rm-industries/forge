@@ -1,17 +1,17 @@
 import rss from '@astrojs/rss';
 
 import { site } from '../config/site';
-import { getArticles } from '../data/articles';
+import { getArticles } from '../lib/articles';
 
-export const GET = () =>
+export const GET = async () =>
   rss({
     title: site.name,
     description: site.description,
     site: site.url,
-    items: getArticles().map((article) => ({
-      title: article.title,
-      description: article.description,
-      link: `/articles/${article.slug}/`,
-      pubDate: new Date(`${article.publishedAt}T00:00:00Z`),
+    items: (await getArticles()).map((article) => ({
+      title: article.data.title,
+      description: article.data.description,
+      link: `/articles/${article.id}/`,
+      pubDate: article.data.publishedAt,
     })),
   });
