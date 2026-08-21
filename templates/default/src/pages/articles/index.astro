@@ -1,10 +1,10 @@
 ---
 import Card from '../../components/ui/Card.astro';
 import Container from '../../components/ui/Container.astro';
-import { getArticles } from '../../data/articles';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getArticles } from '../../lib/articles';
 
-const articles = getArticles({ includeDrafts: import.meta.env.DEV });
+const articles = await getArticles({ includeDrafts: import.meta.env.DEV });
 ---
 
 <BaseLayout title="Articles" description="Generic example articles that demonstrate Forge content routes and metadata.">
@@ -18,11 +18,11 @@ const articles = getArticles({ includeDrafts: import.meta.env.DEV });
     <div class="grid gap-6 md:grid-cols-2">
       {
         articles.map((article) => (
-          <Card href={`/articles/${article.slug}/`} size="lg">
-            <time datetime={article.publishedAt}>{new Date(`${article.publishedAt}T00:00:00Z`).toLocaleDateString('en', { dateStyle: 'long', timeZone: 'UTC' })}</time>
-            <h2 class="card-title">{article.title}</h2>
-            <p>{article.description}</p>
-            {article.draft && <div class="badge badge-warning">Draft preview</div>}
+          <Card href={`/articles/${article.id}/`} size="lg">
+            <time datetime={article.data.publishedAt.toISOString()}>{article.data.publishedAt.toLocaleDateString('en', { dateStyle: 'long', timeZone: 'UTC' })}</time>
+            <h2 class="card-title">{article.data.title}</h2>
+            <p>{article.data.description}</p>
+            {article.data.draft && <div class="badge badge-warning">Draft preview</div>}
           </Card>
         ))
       }

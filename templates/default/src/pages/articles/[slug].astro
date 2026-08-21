@@ -1,16 +1,17 @@
 ---
 import type { GetStaticPaths } from 'astro';
+import { render } from 'astro:content';
 
 import Pagination from '../../components/navigation/Pagination.astro';
 import Container from '../../components/ui/Container.astro';
-import { getArticleNeighbors, getArticles, type Article } from '../../data/articles';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getArticleNeighbors, getArticles, type Article } from '../../lib/articles';
 
-export const getStaticPaths = (() => {
-  const articles = getArticles({ includeDrafts: import.meta.env.DEV });
+export const getStaticPaths = (async () => {
+  const articles = await getArticles({ includeDrafts: import.meta.env.DEV });
 
   return articles.map((article) => ({
-    params: { slug: article.slug },
+    params: { slug: article.id },
     props: { article, articles },
   }));
 }) satisfies GetStaticPaths;
@@ -21,32 +22,34 @@ interface Props {
 }
 
 const { article, articles } = Astro.props;
-const { previous, next } = getArticleNeighbors(article.slug, articles);
-const formattedDate = new Date(`${article.publishedAt}T00:00:00Z`).toLocaleDateString('en', {
+const { Content } = await render(article);
+const { previous, next } = getArticleNeighbors(article.id, articles);
+const publishedAt = article.data.publishedAt.toISOString();
+const formattedDate = article.data.publishedAt.toLocaleDateString('en', {
   dateStyle: 'long',
   timeZone: 'UTC',
 });
 ---
 
 <BaseLayout
-  title={article.title}
-  description={article.description}
+  title={article.data.title}
+  description={article.data.description}
   type="article"
-  publishedTime={`${article.publishedAt}T00:00:00Z`}
+  publishedTime={publishedAt}
 >
   <Container size="md" class="space-y-10 pb-16">
     <article class="prose mx-auto">
-      {article.draft && <div class="badge badge-warning">Draft preview</div>}
-      <h1>{article.title}</h1>
-      <p><time datetime={article.publishedAt}>{formattedDate}</time></p>
-      <p class="lead">{article.description}</p>
-      {article.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+      {article.data.draft && <div class="badge badge-warning">Draft preview</div>}
+      <h1>{article.data.title}</h1>
+      <p><time datetime={publishedAt}>{formattedDate}</time></p>
+      <p class="lead">{article.data.description}</p>
+      <Content />
     </article>
 
     <Pagination
       label="Article navigation"
-      previous={previous && { href: `/articles/${previous.slug}/`, label: previous.title }}
-      next={next && { href: `/articles/${next.slug}/`, label: next.title }}
+      previous={previous && { href: `/articles/${previous.id}/`, label: previous.data.title }}
+      next={next && { href: `/articles/${next.id}/`, label: next.data.title }}
     />
   </Container>
 </BaseLayout>

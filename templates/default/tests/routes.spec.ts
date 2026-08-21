@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const routes = ['/', '/about/', '/articles/', '/articles/designing-a-calm-starting-point/', '/404/'];
+const routes = ['/', '/about/', '/articles/', '/articles/designing-a-calm-starting-point/', '/admin/', '/404/'];
 
 test('serves every baseline page with configured canonical and social metadata', async ({ page }) => {
   for (const route of routes) {
@@ -17,6 +17,13 @@ test('serves every baseline page with configured canonical and social metadata',
     );
     await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image');
   }
+});
+
+test('serves the content manager without allowing search indexing', async ({ page }) => {
+  await page.goto('/admin/');
+
+  await expect(page.locator('meta[name="robots"][content="noindex, nofollow"]')).toHaveCount(1);
+  await expect(page).toHaveTitle(/Content Manager/u);
 });
 
 test('resolves every internal page link', async ({ page, request }) => {

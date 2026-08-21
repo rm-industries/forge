@@ -105,13 +105,35 @@ previous and next destinations.
 
 ## Routes and metadata
 
-The starter includes home, about, article index, article detail, and custom 404
-pages. Generic article fixtures live in `src/data/articles.ts`; replace them
-when adopting the shared content model. Draft entries are available during
-local development but are excluded from production routes and the RSS feed.
+The starter includes home, about, article index, article detail, content
+manager, and custom 404 pages. The shared article model lives in
+`src/config/content-models/articles.ts`; `src/content.config.ts` converts the
+model into Astro validation, while the Sveltia configuration converts the same
+model into CMS fields. Generic Markdown fixtures live in
+`src/content/articles/`. Draft entries are available during local development
+but are excluded from production routes and the RSS feed.
 
 Site configuration drives page titles, descriptions, canonical URLs, Open
 Graph and Twitter metadata, the RSS feed, the web manifest, and the sitemap
 reference in `robots.txt`. Replace `public/favicon.svg` and
 `public/social-card.svg` when establishing a project identity, and update
 `socialImage` in `src/config/site.ts` if the sharing image path changes.
+
+## Content manager
+
+Run the development server and open `/admin/` to use Sveltia CMS. Sveltia
+automatically offers its local repository workflow in a supported browser;
+select the project root to write content directly to `src/content/articles/`.
+Review and commit those file changes normally.
+
+Before deploying the content manager, replace
+`your-github-user/your-repository` in
+`src/integrations/sveltia/config.ts` with the generated site's GitHub
+repository. The default configuration offers Sveltia's token authentication
+method but never stores a token in source: each editor supplies a token through
+the CMS interface, and Sveltia stores it in that browser. A production project
+can replace this with its own supported OAuth configuration.
+
+The generated CMS configuration lives in code rather than a duplicated YAML
+file. Change content fields in the shared model, then run `npm run typecheck`
+and `npm test` to verify that Astro and Sveltia still derive the same contract.
