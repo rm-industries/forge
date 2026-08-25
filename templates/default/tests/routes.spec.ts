@@ -26,6 +26,16 @@ test('serves the content manager without allowing search indexing', async ({ pag
   await expect(page).toHaveTitle(/Content Manager/u);
 });
 
+test('renders generic article tags on listings and detail pages', async ({ page }) => {
+  await page.goto('/articles/');
+  await expect(
+    page.locator('a[href="/articles/designing-a-calm-starting-point/"]').getByLabel('Article tags'),
+  ).toContainText('Design');
+
+  await page.goto('/articles/designing-a-calm-starting-point/');
+  await expect(page.getByLabel('Article tags')).toContainText('Defaults');
+});
+
 test('resolves every internal page link', async ({ page, request }) => {
   await page.goto('/');
 

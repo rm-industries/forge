@@ -113,6 +113,12 @@ model into CMS fields. Generic Markdown fixtures live in
 `src/content/articles/`. Draft entries are available during local development
 but are excluded from production routes and the RSS feed.
 
+The seed articles intentionally include no article images or other binary
+media. This keeps generated projects and repository checkouts small and avoids
+shipping decorative assets that most projects would immediately replace. Add
+purposeful media only when the site needs it, and pair each meaningful image
+with context-appropriate alternative text where it is rendered.
+
 Site configuration drives page titles, descriptions, canonical URLs, Open
 Graph and Twitter metadata, the RSS feed, the web manifest, and the sitemap
 reference in `robots.txt`. Replace `public/favicon.svg` and

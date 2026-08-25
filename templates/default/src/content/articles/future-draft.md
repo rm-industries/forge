@@ -2,6 +2,8 @@
 title: A future draft
 description: An unpublished entry used to prove production filtering.
 publishedAt: 2027-01-01
+tags:
+  - Drafts
 draft: true
 ---
 
