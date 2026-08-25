@@ -52,13 +52,16 @@ commands from the template directory:
 ```sh
 cd templates/default
 npm ci
-npm run lint:css
-npm test
-npm run typecheck
-npm run build
+npm run quality
 npm run test:e2e
+npm run audit
 npm run preview
 ```
+
+The template's local README documents its individual development, build,
+preview, type-checking, Astro diagnostics, formatting, linting, spelling,
+testing, and audit commands. `quality` combines deterministic checks; the
+network-dependent dependency audit and browser suite remain explicit commands.
 
 The publishable package locations are:
 

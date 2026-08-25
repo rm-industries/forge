@@ -8,11 +8,22 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
+    "astro:check": "astro check",
+    "audit": "npm audit --audit-level=high",
+    "format": "oxfmt --check",
+    "format:fix": "oxfmt",
+    "lint": "npm run lint:code && npm run lint:css && npm run lint:markdown && npm run spellcheck",
+    "lint:code": "oxlint",
+    "lint:code:fix": "oxlint --fix",
     "lint:css": "stylelint \"**/*.css\" --ignore-path .gitignore",
     "lint:css:fix": "stylelint --fix \"**/*.css\" --ignore-path .gitignore",
-    "typecheck": "astro sync && astro check",
-    "test": "node --test",
-    "test:e2e": "playwright test"
+    "lint:markdown": "markdownlint \"**/*.md\" --ignore-path .gitignore",
+    "lint:markdown:fix": "markdownlint --fix \"**/*.md\" --ignore-path .gitignore",
+    "spellcheck": "cspell \"**\"",
+    "typecheck": "astro sync && tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "quality": "npm run format && npm run lint && npm run typecheck && npm run astro:check && npm test && npm run build"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
@@ -31,11 +42,16 @@
     "@playwright/test": "^1.62.1",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.3",
+    "cspell": "^10.0.1",
     "daisyui": "^5.7.18",
+    "markdownlint-cli": "^0.49.0",
+    "oxfmt": "^0.63.0",
+    "oxlint": "^1.72.0",
     "stylelint": "^17.14.1",
     "stylelint-config-standard": "^40.0.0",
     "tailwindcss": "^4.3.3",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.11"
   },
   "engines": {
     "node": "^22.22.2 || ^24.0.0 || ^26.0.0",

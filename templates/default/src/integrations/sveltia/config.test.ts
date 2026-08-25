@@ -1,30 +1,26 @@
-import assert from 'node:assert/strict';
-import test from 'node:test';
+import { expect, test } from 'vitest';
 
 import { articleContentModel } from '../../config/content-models/articles.ts';
 import { sveltiaConfig } from './config.ts';
 
 test('derives the article collection from the shared model', () => {
-  assert.deepEqual(
-    sveltiaConfig.collections.map(({ name }) => name),
-    [articleContentModel.name],
-  );
-  assert.deepEqual(
-    sveltiaConfig.collections[0]?.fields.map(({ name }) => name),
-    [...Object.keys(articleContentModel.fields), 'body'],
-  );
+  expect(sveltiaConfig.collections.map(({ name }) => name)).toEqual([articleContentModel.name]);
+  expect(sveltiaConfig.collections[0]?.fields.map(({ name }) => name)).toEqual([
+    ...Object.keys(articleContentModel.fields),
+    'body',
+  ]);
 });
 
 test('keeps authentication credentials outside the configuration', () => {
-  assert.equal(sveltiaConfig.backend.name, 'github');
-  assert.equal('token' in sveltiaConfig.backend, false);
-  assert.equal(JSON.stringify(sveltiaConfig).includes('your-token'), false);
+  expect(sveltiaConfig.backend.name).toBe('github');
+  expect('token' in sveltiaConfig.backend).toBe(false);
+  expect(JSON.stringify(sveltiaConfig)).not.toContain('your-token');
 });
 
 test('exposes tags as a default-empty list derived from the article model', () => {
   const tags = sveltiaConfig.collections[0]?.fields.find(({ name }) => name === 'tags');
 
-  assert.deepEqual(tags, {
+  expect(tags).toEqual({
     name: 'tags',
     label: 'Tags',
     after_input: 'Use a few concise topics that help readers understand the article.',
@@ -35,5 +31,5 @@ test('exposes tags as a default-empty list derived from the article model', () =
 });
 
 test('serializes the generated configuration', () => {
-  assert.doesNotThrow(() => JSON.stringify(sveltiaConfig));
+  expect(() => JSON.stringify(sveltiaConfig)).not.toThrow();
 });

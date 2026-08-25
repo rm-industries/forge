@@ -1,21 +1,20 @@
-import assert from 'node:assert/strict';
-import test from 'node:test';
+import { expect, test } from 'vitest';
 
 import { isCurrentPath, isExternalHref } from './navigation.ts';
 
 test('matches exact and nested navigation paths at segment boundaries', () => {
-  assert.equal(isCurrentPath('/articles/', '/articles'), true);
-  assert.equal(isCurrentPath('/articles/example/', '/articles/'), true);
-  assert.equal(isCurrentPath('/articles-summary/', '/articles'), false);
+  expect(isCurrentPath('/articles/', '/articles')).toBe(true);
+  expect(isCurrentPath('/articles/example/', '/articles/')).toBe(true);
+  expect(isCurrentPath('/articles-summary/', '/articles')).toBe(false);
 });
 
 test('matches the home route only at the site root', () => {
-  assert.equal(isCurrentPath('/', '/'), true);
-  assert.equal(isCurrentPath('/articles/', '/'), false);
+  expect(isCurrentPath('/', '/')).toBe(true);
+  expect(isCurrentPath('/articles/', '/')).toBe(false);
 });
 
 test('does not treat external URLs as current paths', () => {
-  assert.equal(isCurrentPath('/', 'https://example.com'), false);
-  assert.equal(isExternalHref('https://example.com'), true);
-  assert.equal(isExternalHref('/about/'), false);
+  expect(isCurrentPath('/', 'https://example.com')).toBe(false);
+  expect(isExternalHref('https://example.com')).toBe(true);
+  expect(isExternalHref('/about/')).toBe(false);
 });
