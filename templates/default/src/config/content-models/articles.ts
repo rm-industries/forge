@@ -21,6 +21,13 @@ export const articleContentModel = defineModel({
       help: 'A short summary used on listing pages and in social metadata.',
     },
     publishedAt: { kind: 'date', mode: 'date', required: true, label: 'Published at' },
+    tags: {
+      kind: 'list',
+      default: [],
+      items: { kind: 'string', required: true, label: 'Tag' },
+      label: 'Tags',
+      help: 'Use a few concise topics that help readers understand the article.',
+    },
     draft: {
       kind: 'boolean',
       default: false,

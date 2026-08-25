@@ -43,6 +43,9 @@ const formattedDate = article.data.publishedAt.toLocaleDateString('en', {
       <h1>{article.data.title}</h1>
       <p><time datetime={publishedAt}>{formattedDate}</time></p>
       <p class="lead">{article.data.description}</p>
+      <div class="card-actions" aria-label="Article tags">
+        {article.data.tags.map((tag) => <span class="badge badge-outline">{tag}</span>)}
+      </div>
       <Content />
     </article>
 

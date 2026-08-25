@@ -21,6 +21,19 @@ test('keeps authentication credentials outside the configuration', () => {
   assert.equal(JSON.stringify(sveltiaConfig).includes('your-token'), false);
 });
 
+test('exposes tags as a default-empty list derived from the article model', () => {
+  const tags = sveltiaConfig.collections[0]?.fields.find(({ name }) => name === 'tags');
+
+  assert.deepEqual(tags, {
+    name: 'tags',
+    label: 'Tags',
+    after_input: 'Use a few concise topics that help readers understand the article.',
+    required: false,
+    widget: 'list',
+    default: [],
+  });
+});
+
 test('serializes the generated configuration', () => {
   assert.doesNotThrow(() => JSON.stringify(sveltiaConfig));
 });

@@ -22,6 +22,9 @@ const articles = await getArticles({ includeDrafts: import.meta.env.DEV });
             <time datetime={article.data.publishedAt.toISOString()}>{article.data.publishedAt.toLocaleDateString('en', { dateStyle: 'long', timeZone: 'UTC' })}</time>
             <h2 class="card-title">{article.data.title}</h2>
             <p>{article.data.description}</p>
+            <div class="card-actions" aria-label="Article tags">
+              {article.data.tags.map((tag) => <span class="badge badge-outline">{tag}</span>)}
+            </div>
             {article.data.draft && <div class="badge badge-warning">Draft preview</div>}
           </Card>
         ))
