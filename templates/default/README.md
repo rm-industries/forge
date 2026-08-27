@@ -3,15 +3,38 @@
 This directory is a standalone Astro project and is intentionally excluded from
 the parent npm workspace. Install and run all commands from this directory.
 
-```sh
-npm ci
-npm run lint:css
-npm run typecheck
-npm test
-npm run build
-npm run test:e2e
-npm run preview
-```
+Install dependencies with `npm ci`, then use the local scripts below. Every
+command resolves tools from this project's dependencies; no global installation
+is required.
+
+The template's `.editorconfig` shares UTF-8, LF, final-newline, two-space, and
+120-column settings with supported editors and Oxfmt. `oxfmt.config.ts` contains
+only formatter-specific behavior such as quote and import ordering.
+
+| Command                 | Purpose                                                                     |
+| ----------------------- | --------------------------------------------------------------------------- |
+| `npm run dev`           | Start Astro's local development server.                                     |
+| `npm run build`         | Create the production site in `dist/`.                                      |
+| `npm run preview`       | Serve the production build locally. Run `build` first.                      |
+| `npm run typecheck`     | Generate Astro types and run TypeScript without emitting files.             |
+| `npm run astro:check`   | Validate Astro components, content, and diagnostics.                        |
+| `npm run format`        | Check formatting with Oxfmt.                                                |
+| `npm run format:fix`    | Apply Oxfmt formatting.                                                     |
+| `npm run lint`          | Run code, CSS, Markdown, and spelling checks.                               |
+| `npm run lint:code`     | Check JavaScript and TypeScript with Oxlint.                                |
+| `npm run lint:css`      | Check CSS with Stylelint.                                                   |
+| `npm run lint:markdown` | Check Markdown with Markdownlint.                                           |
+| `npm run spellcheck`    | Check repository text with cspell.                                          |
+| `npm test`              | Run TypeScript unit tests with Vitest.                                      |
+| `npm run test:e2e`      | Run browser and accessibility tests with Playwright.                        |
+| `npm run audit`         | Report high-severity dependency vulnerabilities with npm.                   |
+| `npm run quality`       | Run the deterministic formatting, linting, type, unit-test, and build gate. |
+
+During development, run `npm run dev`. Before committing, run
+`npm run quality` and `npm run test:e2e`. Run `npm run audit` separately because
+it queries the npm registry and its result can change without a source change.
+The quality command remains deterministic and suitable for offline work after
+dependencies are installed.
 
 Edit `src/config/site.ts` to change the site name, description, canonical URL,
 language, navigation, social links, and derived CMS branding. The Astro
