@@ -42,6 +42,18 @@ the default template outside the workspace, running its tests, type checks, CSS
 lint, and browser assertions to ensure root dependency hoisting cannot hide
 template defects.
 
+Run the release-level isolation check from the repository root:
+
+```sh
+npm run verify:template
+```
+
+This copies the default template into the operating system's temporary
+directory, rejects unresolved generator tokens, personal reference identifiers,
+and local or workspace dependency protocols, confirms the documented starter
+defaults, performs a clean install, and runs the standalone template quality
+gate. The temporary copy is removed whether verification passes or fails.
+
 ## Default template
 
 `templates/default/` is a standalone Astro project rather than an npm
