@@ -7,6 +7,10 @@ Install dependencies with `npm ci`, then use the local scripts below. Every
 command resolves tools from this project's dependencies; no global installation
 is required.
 
+The template's `.editorconfig` shares UTF-8, LF, final-newline, two-space, and
+120-column settings with supported editors and Oxfmt. `oxfmt.config.ts` contains
+only formatter-specific behavior such as quote and import ordering.
+
 | Command                 | Purpose                                                                     |
 | ----------------------- | --------------------------------------------------------------------------- |
 | `npm run dev`           | Start Astro's local development server.                                     |
