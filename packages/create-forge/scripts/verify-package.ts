@@ -43,7 +43,7 @@ try {
   const executable = join(fixtureDirectory, 'node_modules', '.bin', 'create-forge');
   const { stdout: help } = await execute(executable, ['--help'], { cwd: invocationDirectory });
   const { stdout: version } = await execute(executable, ['--version'], { cwd: invocationDirectory });
-  await execute(executable, ['generated-site', '--yes', '--no-install', '--no-git'], {
+  await execute(executable, ['generated-site', '--yes', '--no-install', '--git'], {
     cwd: invocationDirectory,
   });
 
@@ -63,6 +63,13 @@ try {
     throw new Error('Installed executable did not produce normalized, fully resolved project metadata.');
   }
   await access(join(generatedDirectory, '.editorconfig'));
+  await access(join(generatedDirectory, '.git', 'HEAD'));
+  try {
+    await access(join(generatedDirectory, '.git', 'index'));
+    throw new Error('Installed executable unexpectedly staged or committed generated files.');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
 
   await access(
     join(fixtureDirectory, 'node_modules', '@rm-industries', 'create-forge', 'dist', 'template', '.editorconfig'),

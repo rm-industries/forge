@@ -9,8 +9,10 @@ npm create @rm-industries/forge@next
 
 The initializer accepts interactive answers, documented defaults through
 `--yes`, or a fully specified set of flags. Run `create-forge --help` for the
-complete input contract. Dependency installation, Git initialization, and
-completion output are implemented in separate roadmap tasks before publication.
+complete input contract. Unless disabled with `--no-install` or `--no-git`, it
+runs `npm install` and initializes a `main`-branch Git repository after files are
+created. It never stages files, reads Git identity, or creates a commit.
+Completion output is implemented in a separate roadmap task before publication.
 
 The selected template is copied with dotfiles and file modes intact. Forge
 customizes only reviewed metadata files and refuses parent-traversal paths,
@@ -19,6 +21,10 @@ destinations. If copying or customization fails, files created by that
 invocation are removed and overwritten files are restored from temporary
 backups. The error includes recovery guidance if automatic rollback is
 incomplete.
+
+Installation and Git commands inherit the terminal so their progress and errors
+remain visible. A failed or interrupted command exits non-zero and leaves the
+generated project in place with instructions to inspect and retry it.
 
 ## Package verification
 
