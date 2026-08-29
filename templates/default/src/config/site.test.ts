@@ -5,7 +5,9 @@ import { cmsBranding, defineSiteConfig, site, type SiteConfig } from './site.ts'
 const validConfig = {
   name: 'Example site',
   description: 'An example site description.',
+  author: 'Example Author',
   url: 'https://example.test',
+  repository: 'example/site',
   language: 'en',
   socialImage: '/social-card.svg',
   navigation: [{ label: 'Home', href: '/' }],

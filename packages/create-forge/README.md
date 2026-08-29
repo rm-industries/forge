@@ -9,9 +9,16 @@ npm create @rm-industries/forge@next
 
 The initializer accepts interactive answers, documented defaults through
 `--yes`, or a fully specified set of flags. Run `create-forge --help` for the
-complete input contract. Project materialization, dependency installation, Git
-initialization, and completion output are implemented in separate roadmap tasks
-before publication.
+complete input contract. Dependency installation, Git initialization, and
+completion output are implemented in separate roadmap tasks before publication.
+
+The selected template is copied with dotfiles and file modes intact. Forge
+customizes only reviewed metadata files and refuses parent-traversal paths,
+symbolic-link collisions, filesystem roots, and unconfirmed non-empty
+destinations. If copying or customization fails, files created by that
+invocation are removed and overwritten files are restored from temporary
+backups. The error includes recovery guidance if automatic rollback is
+incomplete.
 
 ## Package verification
 
