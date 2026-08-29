@@ -6,7 +6,9 @@ export interface SiteLink {
 export interface SiteConfig {
   name: string;
   description: string;
+  author: string;
   url: string;
+  repository: string;
   language: string;
   socialImage: string;
   navigation: readonly SiteLink[];
@@ -20,6 +22,12 @@ const requireText = (value: string, field: string): string => {
     throw new TypeError(`${field} must not be empty.`);
   }
 
+  return normalizedValue;
+};
+
+const validateOptionalText = (value: string, field: string): string => {
+  const normalizedValue = value.trim();
+  if (/\p{Cc}/u.test(normalizedValue)) throw new TypeError(`${field} must not contain control characters.`);
   return normalizedValue;
 };
 
@@ -57,7 +65,9 @@ export const defineSiteConfig = (config: SiteConfig): Readonly<SiteConfig> =>
   Object.freeze({
     name: requireText(config.name, 'name'),
     description: requireText(config.description, 'description'),
+    author: validateOptionalText(config.author, 'author'),
     url: requireSiteUrl(config.url),
+    repository: validateOptionalText(config.repository, 'repository'),
     language: requireText(config.language, 'language'),
     socialImage: requireText(config.socialImage, 'socialImage'),
     navigation: requireLinks(config.navigation, 'navigation'),
@@ -67,7 +77,9 @@ export const defineSiteConfig = (config: SiteConfig): Readonly<SiteConfig> =>
 export const site = defineSiteConfig({
   name: 'Forge',
   description: 'A content-driven website created with Forge.',
+  author: 'Site Author',
   url: 'https://example.com',
+  repository: '',
   language: 'en',
   socialImage: '/social-card.svg',
   navigation: [

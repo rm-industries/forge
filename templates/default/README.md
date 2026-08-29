@@ -36,14 +36,15 @@ it queries the npm registry and its result can change without a source change.
 The quality command remains deterministic and suitable for offline work after
 dependencies are installed.
 
-Edit `src/config/site.ts` to change the site name, description, canonical URL,
-language, navigation, social links, and derived CMS branding. The Astro
+Edit `src/config/site.ts` to change the site name, description, author,
+canonical URL, repository, language, navigation, social links, and derived CMS branding. The Astro
 configuration, shared layout, and reusable SEO head consume this single
 validated source. New pages should use `src/layouts/BaseLayout.astro` to inherit
 the document shell and canonical metadata.
 
-The initial template uses `https://example.com` as a valid, non-production site
-origin. Generator-driven customization is introduced by later Forge milestones.
+The standalone source template uses `https://example.com` as a valid,
+non-production site origin. Projects created by Forge receive the values
+selected through the generator input contract.
 
 ## Styling and themes
 

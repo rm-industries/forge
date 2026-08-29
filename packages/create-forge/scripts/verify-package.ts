@@ -5,6 +5,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
+import { templateTokenPrefix } from '../src/template-tokens.ts';
+
 type PackResult = {
   filename: string;
 };
@@ -51,6 +53,16 @@ try {
   if (version.trim() !== metadata.version) {
     throw new Error(`Installed executable reported ${version.trim()} instead of ${metadata.version}.`);
   }
+
+  const generatedDirectory = join(invocationDirectory, 'generated-site');
+  const generatedMetadata = JSON.parse(await readFile(join(generatedDirectory, 'package.json'), 'utf8')) as {
+    name?: string;
+  };
+  const generatedSiteConfig = await readFile(join(generatedDirectory, 'src', 'config', 'site.ts'), 'utf8');
+  if (generatedMetadata.name !== 'generated-site' || generatedSiteConfig.includes(templateTokenPrefix)) {
+    throw new Error('Installed executable did not produce normalized, fully resolved project metadata.');
+  }
+  await access(join(generatedDirectory, '.editorconfig'));
 
   await access(
     join(fixtureDirectory, 'node_modules', '@rm-industries', 'create-forge', 'dist', 'template', '.editorconfig'),
