@@ -41,8 +41,11 @@ try {
   const executable = join(fixtureDirectory, 'node_modules', '.bin', 'create-forge');
   const { stdout: help } = await execute(executable, ['--help'], { cwd: invocationDirectory });
   const { stdout: version } = await execute(executable, ['--version'], { cwd: invocationDirectory });
+  await execute(executable, ['generated-site', '--yes', '--no-install', '--no-git'], {
+    cwd: invocationDirectory,
+  });
 
-  if (!help.includes('Usage:\n  create-forge [options]')) {
+  if (!help.includes('Usage: create-forge [options] [destination]')) {
     throw new Error('Installed executable did not return the expected help output.');
   }
   if (version.trim() !== metadata.version) {

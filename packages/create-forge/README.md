@@ -7,10 +7,11 @@ complete, npm will resolve the primary command to this scoped package:
 npm create @rm-industries/forge@next
 ```
 
-The current alpha scaffold exposes package help and version information and
-ships the tested default template. Prompts, safe materialization, dependency
-installation, Git initialization, and completion output are implemented in
-separate roadmap tasks before publication.
+The initializer accepts interactive answers, documented defaults through
+`--yes`, or a fully specified set of flags. Run `create-forge --help` for the
+complete input contract. Project materialization, dependency installation, Git
+initialization, and completion output are implemented in separate roadmap tasks
+before publication.
 
 ## Package verification
 
