@@ -7,6 +7,7 @@ import { confirm, isCancel } from '@clack/prompts';
 import { runCli } from './cli';
 import { materializeProject } from './materialize';
 import { ProcessStepError, runProjectSetup } from './process';
+import { formatCompletion } from './reporter';
 
 type PackageMetadata = {
   version: string;
@@ -50,6 +51,7 @@ if (result.options) {
       destination: materialized.destination,
       signal: controller.signal,
     });
+    result.output = formatCompletion(result.options, { destination: materialized.destination });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     result.output = `error: ${message}\n`;

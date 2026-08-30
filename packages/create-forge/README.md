@@ -12,7 +12,6 @@ The initializer accepts interactive answers, documented defaults through
 complete input contract. Unless disabled with `--no-install` or `--no-git`, it
 runs `npm install` and initializes a `main`-branch Git repository after files are
 created. It never stages files, reads Git identity, or creates a commit.
-Completion output is implemented in a separate roadmap task before publication.
 
 The selected template is copied with dotfiles and file modes intact. Forge
 customizes only reviewed metadata files and refuses parent-traversal paths,
@@ -25,6 +24,11 @@ incomplete.
 Installation and Git commands inherit the terminal so their progress and errors
 remain visible. A failed or interrupted command exits non-zero and leaves the
 generated project in place with instructions to inspect and retry it.
+
+After successful creation, Forge reports the created path, whether dependency
+and Git setup ran or was skipped, and only the commands still needed to start
+development. Output remains readable when color is disabled and contains no
+telemetry or promotional messages.
 
 ## Package verification
 
