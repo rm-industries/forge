@@ -11,6 +11,7 @@ const fixtureDirectory = join(temporaryDirectory, 'template');
 const excludedDirectories = new Set([
   '.astro',
   '.git',
+  '.lighthouseci',
   'coverage',
   'dist',
   'node_modules',

@@ -530,6 +530,10 @@ jobs:
         with:
           node-version: '26.x'
 
+      - name: Install generated-project browser
+        working-directory: templates/default
+        run: npx playwright install --with-deps chromium
+
       - name: Test packed generator
         run: npm run test:generator:e2e
 

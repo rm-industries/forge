@@ -11,35 +11,49 @@ The template's `.editorconfig` shares UTF-8, LF, final-newline, two-space, and
 120-column settings with supported editors and Oxfmt. `oxfmt.config.ts` contains
 only formatter-specific behavior such as quote and import ordering.
 
-| Command                  | Purpose                                                         |
-| ------------------------ | --------------------------------------------------------------- |
-| `npm run dev`            | Start Astro's local development server.                         |
-| `npm run build`          | Create the production site in `dist/`.                          |
-| `npm run preview`        | Serve the production build locally. Run `build` first.          |
-| `npm run typecheck`      | Generate Astro types and run TypeScript without emitting files. |
-| `npm run astro:check`    | Validate Astro components, content, and diagnostics.            |
-| `npm run format`         | Check formatting with Oxfmt.                                    |
-| `npm run format:fix`     | Apply Oxfmt formatting.                                         |
-| `npm run lint`           | Run code, CSS, Markdown, and spelling checks.                   |
-| `npm run lint:code`      | Check JavaScript and TypeScript with Oxlint.                    |
-| `npm run lint:css`       | Check CSS with Stylelint.                                       |
-| `npm run lint:markdown`  | Check Markdown with Markdownlint.                               |
-| `npm run spellcheck`     | Check repository text with cspell.                              |
-| `npm run audit:unused`   | Detect unused files, exports, and dependencies with Knip.       |
-| `npm run lighthouse:ci`  | Build and enforce Lighthouse scores and transfer budgets.       |
-| `npm test`               | Run the `test:unit` command.                                    |
-| `npm run test:unit`      | Run deterministic TypeScript unit tests with Vitest.            |
-| `npm run test:a11y`      | Run focused Playwright and axe accessibility checks.            |
-| `npm run test:coverage`  | Run unit tests and enforce V8 coverage thresholds.              |
-| `npm run test:e2e`       | Run browser and accessibility tests with Playwright.            |
-| `npm run audit`          | Reject unapproved high-severity dependency vulnerabilities.     |
-| `npm run quality:static` | Run every static-quality and dependency audit.                  |
-| `npm run quality`        | Run static quality, unit tests, and the production build.       |
+| Command                  | Purpose                                                          |
+| ------------------------ | ---------------------------------------------------------------- |
+| `npm run dev`            | Start Astro's local development server.                          |
+| `npm run build`          | Create the production site in `dist/`.                           |
+| `npm run validate:build` | Validate required output and scan generated text.                |
+| `npm run preview`        | Serve the production build locally. Run `build` first.           |
+| `npm run typecheck`      | Generate Astro types and run TypeScript without emitting files.  |
+| `npm run astro:check`    | Validate Astro components, content, and diagnostics.             |
+| `npm run format`         | Check formatting with Oxfmt.                                     |
+| `npm run format:fix`     | Apply Oxfmt formatting.                                          |
+| `npm run lint`           | Run code, CSS, Markdown, and spelling checks.                    |
+| `npm run lint:code`      | Check JavaScript and TypeScript with Oxlint.                     |
+| `npm run lint:css`       | Check CSS with Stylelint.                                        |
+| `npm run lint:markdown`  | Check Markdown with Markdownlint.                                |
+| `npm run spellcheck`     | Check repository text with cspell.                               |
+| `npm run audit:unused`   | Detect unused files, exports, and dependencies with Knip.        |
+| `npm run lighthouse:ci`  | Build and enforce Lighthouse scores and transfer budgets.        |
+| `npm test`               | Run the `test:unit` command.                                     |
+| `npm run test:unit`      | Run deterministic TypeScript unit tests with Vitest.             |
+| `npm run test:a11y`      | Run focused Playwright and axe accessibility checks.             |
+| `npm run test:coverage`  | Run unit tests and enforce V8 coverage thresholds.               |
+| `npm run test:e2e`       | Run browser and accessibility tests with Playwright.             |
+| `npm run audit`          | Reject unapproved high-severity dependency vulnerabilities.      |
+| `npm run quality:static` | Run every static-quality and dependency audit.                   |
+| `npm run quality:core`   | Run static checks, coverage tests, build, and output validation. |
+| `npm run quality`        | Run the complete generated-project quality pipeline.             |
 
 During development, run `npm run dev`. Before committing, run
-`npm run quality` and `npm run test:e2e`. Both `quality:static` and `quality`
-include `npm audit`, so they query the npm registry and can change when new
-advisories are published. Run the individual scripts when working offline.
+`npm run quality`. It runs static validation and dependency auditing, unit tests
+with coverage thresholds, a production build and generated-output validation,
+the complete Playwright and axe suite, and Lighthouse budgets in that order.
+Each stage is joined with `&&`, so the command stops immediately and returns a
+non-zero status when any stage fails. Browser tests and Lighthouse start from
+their own production build so they remain independently runnable and cannot
+accidentally inspect stale output.
+
+The complete command is intentionally high cost. Use `npm run quality:static`
+for the quickest source-only feedback or `npm run quality:core` for every check
+that does not launch a browser. Both commands include `npm run audit`, so they
+query the npm registry and can change when new advisories are published. Run
+the individual scripts when working offline. CI may execute independent stages
+in parallel, but a project generated by the packed Forge initializer must pass
+the documented `npm run quality` command as a single ordered pipeline.
 
 Playwright builds the site and runs Chromium against Astro's production preview,
 not the development server. Its browser coverage exercises desktop and mobile
