@@ -26,7 +26,9 @@ only formatter-specific behavior such as quote and import ordering.
 | `npm run lint:markdown`  | Check Markdown with Markdownlint.                               |
 | `npm run spellcheck`     | Check repository text with cspell.                              |
 | `npm run audit:unused`   | Detect unused files, exports, and dependencies with Knip.       |
-| `npm test`               | Run TypeScript unit tests with Vitest.                          |
+| `npm test`               | Run the `test:unit` command.                                    |
+| `npm run test:unit`      | Run deterministic TypeScript unit tests with Vitest.            |
+| `npm run test:coverage`  | Run unit tests and enforce V8 coverage thresholds.              |
 | `npm run test:e2e`       | Run browser and accessibility tests with Playwright.            |
 | `npm run audit`          | Report high-severity dependency vulnerabilities with npm.       |
 | `npm run quality:static` | Run every static-quality and dependency audit.                  |
@@ -42,6 +44,15 @@ and tool artifacts. Stylelint's exceptions recognize Tailwind and DaisyUI
 directives used by `src/styles/global.css`; they do not suppress ordinary CSS
 rules. Knip uses its Astro integration without an ignore list, and Oxlint uses
 its recommended defaults without project-specific rule suppression.
+
+Vitest coverage includes configuration, shared content-model registration,
+Astro and Sveltia integration code, content utilities, URL helpers, theme
+configuration, and preview registration. Statements, branches, functions, and
+lines must remain at 100%. Add direct positive and negative tests when this
+source grows; do not lower thresholds or exclude source merely to make a change
+pass. HTML details are written to `coverage/`, which is generated and ignored.
+CI enforces the same thresholds and retains the HTML report for seven days,
+including when the coverage job fails.
 
 Edit `src/config/site.ts` to change the site name, description, author,
 canonical URL, repository, language, navigation, social links, and derived CMS branding. The Astro
