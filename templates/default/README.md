@@ -26,12 +26,13 @@ only formatter-specific behavior such as quote and import ordering.
 | `npm run lint:markdown`  | Check Markdown with Markdownlint.                               |
 | `npm run spellcheck`     | Check repository text with cspell.                              |
 | `npm run audit:unused`   | Detect unused files, exports, and dependencies with Knip.       |
+| `npm run lighthouse:ci`  | Build and enforce Lighthouse scores and transfer budgets.       |
 | `npm test`               | Run the `test:unit` command.                                    |
 | `npm run test:unit`      | Run deterministic TypeScript unit tests with Vitest.            |
 | `npm run test:a11y`      | Run focused Playwright and axe accessibility checks.            |
 | `npm run test:coverage`  | Run unit tests and enforce V8 coverage thresholds.              |
 | `npm run test:e2e`       | Run browser and accessibility tests with Playwright.            |
-| `npm run audit`          | Report high-severity dependency vulnerabilities with npm.       |
+| `npm run audit`          | Reject unapproved high-severity dependency vulnerabilities.     |
 | `npm run quality:static` | Run every static-quality and dependency audit.                  |
 | `npm run quality`        | Run static quality, unit tests, and the production build.       |
 
@@ -55,6 +56,13 @@ Accessibility verification combines automation with the dated manual review in
 navigation, themes, components, or interactive behavior; automated axe checks
 cannot judge every aspect of reading order, language, focus order, contrast, or
 alternative-text quality.
+
+Lighthouse CI runs three times each against the production home, article
+listing, and article detail pages, then enforces median category scores and
+transfer budgets. The measured baseline, headroom, exclusions, and update rules
+are documented in `docs/performance-budget.md`. Reports are written to the
+generated `.lighthouseci/` directory; CI retains them for seven days even when
+an assertion fails.
 
 The configured exclusions cover only generated output, dependency directories,
 and tool artifacts. Stylelint's exceptions recognize Tailwind and DaisyUI

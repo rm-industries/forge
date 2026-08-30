@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -8,8 +8,9 @@ const packageDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repositoryRoot = resolve(packageDirectory, '..', '..');
 const sourceDirectory = join(repositoryRoot, 'templates', 'default');
 const destinationDirectory = join(packageDirectory, 'dist', 'template');
-const excludedNames = new Set(['.astro', 'dist', 'node_modules', 'playwright-report', 'test-results']);
+const excludedNames = new Set(['.astro', '.lighthouseci', 'dist', 'node_modules', 'playwright-report', 'test-results']);
 
+await rm(destinationDirectory, { recursive: true, force: true });
 await mkdir(dirname(destinationDirectory), { recursive: true });
 await cp(sourceDirectory, destinationDirectory, {
   recursive: true,
