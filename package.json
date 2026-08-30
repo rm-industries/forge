@@ -27,7 +27,8 @@
     "build": "npm run build --workspaces --if-present",
     "pack": "npm pack --dry-run --workspaces",
     "quality": "npm run format && npm run lint && npm run typecheck && npm test && npm run build && npm run pack",
-    "verify:template": "node scripts/verify-template.ts"
+    "verify:template": "node scripts/verify-template.ts",
+    "verify:template:static": "node scripts/verify-template-static-quality.ts"
   },
   "devDependencies": {
     "@sveltia/cms": "^0.193.2",

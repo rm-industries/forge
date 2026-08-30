@@ -2,7 +2,7 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 
 export type Article = CollectionEntry<'articles'>;
 
-export const sortArticles = (entries: readonly Article[]): Article[] =>
+const sortArticles = (entries: readonly Article[]): Article[] =>
   [...entries].sort((left, right) => right.data.publishedAt.getTime() - left.data.publishedAt.getTime());
 
 export const getArticles = async ({ includeDrafts = false }: { includeDrafts?: boolean } = {}): Promise<Article[]> =>

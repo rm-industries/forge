@@ -345,8 +345,8 @@ jobs:
           npm ci
           npm run build
 
-  template-style:
-    name: Template styles
+  template-static-quality:
+    name: Template static quality
     runs-on: ubuntu-latest
 
     permissions:
@@ -365,13 +365,8 @@ jobs:
           cache: npm
           cache-dependency-path: templates/default/package-lock.json
 
-      - name: Lint copied template styles
-        run: |
-          template_directory="${RUNNER_TEMP}/forge-default-template"
-          cp -R templates/default "$template_directory"
-          cd "$template_directory"
-          npm ci
-          npm run lint:css
+      - name: Verify static quality tools
+        run: npm run verify:template:static
 
   template-browser:
     name: Template browser tests
@@ -465,7 +460,7 @@ jobs:
       - template-typecheck
       - template-test
       - template-build
-      - template-style
+      - template-static-quality
       - template-browser
       - template-isolation
       - generator-e2e
