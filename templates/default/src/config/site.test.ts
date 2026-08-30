@@ -32,6 +32,19 @@ test('rejects a non-HTTP canonical URL', () => {
   );
 });
 
+test('rejects malformed canonical URLs and URL metadata', () => {
+  expect(() => defineSiteConfig({ ...validConfig, url: 'relative' })).toThrow(/absolute URL/);
+  expect(() => defineSiteConfig({ ...validConfig, url: 'https://user@example.test' })).toThrow(/credentials/);
+  expect(() => defineSiteConfig({ ...validConfig, url: 'https://example.test?query=true' })).toThrow(/query/);
+});
+
+test('rejects control characters in optional text and invalid links', () => {
+  expect(() => defineSiteConfig({ ...validConfig, author: 'Example\u0000Author' })).toThrow(/control characters/);
+  expect(() => defineSiteConfig({ ...validConfig, navigation: [{ label: ' ', href: '/' }] })).toThrow(
+    /navigation\[0\]\.label must not be empty/,
+  );
+});
+
 test('derives CMS branding from the site name', () => {
   expect(cmsBranding.appTitle).toBe(`${site.name} Content Manager`);
 });

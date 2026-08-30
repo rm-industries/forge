@@ -304,6 +304,43 @@ jobs:
           npm ci
           npm test
 
+  template-coverage:
+    name: Template unit coverage
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '26.x'
+          cache: npm
+          cache-dependency-path: templates/default/package-lock.json
+
+      - name: Test copied template with coverage
+        run: |
+          template_directory="${RUNNER_TEMP}/forge-default-template"
+          cp -R templates/default "$template_directory"
+          cd "$template_directory"
+          npm ci
+          npm run test:coverage
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: template-unit-coverage
+          path: ${{ runner.temp }}/forge-default-template/coverage
+          if-no-files-found: warn
+          retention-days: 7
+
   template-build:
     name: Template build (${{ matrix.runtime }})
     runs-on: ubuntu-latest
@@ -459,6 +496,7 @@ jobs:
       - compatibility
       - template-typecheck
       - template-test
+      - template-coverage
       - template-build
       - template-static-quality
       - template-browser
