@@ -10,6 +10,7 @@
     "astro": "astro",
     "astro:check": "astro check",
     "audit": "npm audit --audit-level=high",
+    "audit:unused": "knip",
     "format": "oxfmt --check",
     "format:fix": "oxfmt",
     "lint": "npm run lint:code && npm run lint:css && npm run lint:markdown && npm run spellcheck",
@@ -23,7 +24,8 @@
     "typecheck": "astro sync && tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "quality": "npm run format && npm run lint && npm run typecheck && npm run astro:check && npm test && npm run build"
+    "quality": "npm run quality:static && npm test && npm run build",
+    "quality:static": "npm run format && npm run lint && npm run audit:unused && npm run typecheck && npm run astro:check && npm run audit"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
@@ -44,6 +46,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "cspell": "^10.0.1",
     "daisyui": "^5.7.18",
+    "knip": "^6.33.0",
     "markdownlint-cli": "^0.49.0",
     "oxfmt": "^0.63.0",
     "oxlint": "^1.72.0",

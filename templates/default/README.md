@@ -11,30 +11,37 @@ The template's `.editorconfig` shares UTF-8, LF, final-newline, two-space, and
 120-column settings with supported editors and Oxfmt. `oxfmt.config.ts` contains
 only formatter-specific behavior such as quote and import ordering.
 
-| Command                 | Purpose                                                                     |
-| ----------------------- | --------------------------------------------------------------------------- |
-| `npm run dev`           | Start Astro's local development server.                                     |
-| `npm run build`         | Create the production site in `dist/`.                                      |
-| `npm run preview`       | Serve the production build locally. Run `build` first.                      |
-| `npm run typecheck`     | Generate Astro types and run TypeScript without emitting files.             |
-| `npm run astro:check`   | Validate Astro components, content, and diagnostics.                        |
-| `npm run format`        | Check formatting with Oxfmt.                                                |
-| `npm run format:fix`    | Apply Oxfmt formatting.                                                     |
-| `npm run lint`          | Run code, CSS, Markdown, and spelling checks.                               |
-| `npm run lint:code`     | Check JavaScript and TypeScript with Oxlint.                                |
-| `npm run lint:css`      | Check CSS with Stylelint.                                                   |
-| `npm run lint:markdown` | Check Markdown with Markdownlint.                                           |
-| `npm run spellcheck`    | Check repository text with cspell.                                          |
-| `npm test`              | Run TypeScript unit tests with Vitest.                                      |
-| `npm run test:e2e`      | Run browser and accessibility tests with Playwright.                        |
-| `npm run audit`         | Report high-severity dependency vulnerabilities with npm.                   |
-| `npm run quality`       | Run the deterministic formatting, linting, type, unit-test, and build gate. |
+| Command                  | Purpose                                                         |
+| ------------------------ | --------------------------------------------------------------- |
+| `npm run dev`            | Start Astro's local development server.                         |
+| `npm run build`          | Create the production site in `dist/`.                          |
+| `npm run preview`        | Serve the production build locally. Run `build` first.          |
+| `npm run typecheck`      | Generate Astro types and run TypeScript without emitting files. |
+| `npm run astro:check`    | Validate Astro components, content, and diagnostics.            |
+| `npm run format`         | Check formatting with Oxfmt.                                    |
+| `npm run format:fix`     | Apply Oxfmt formatting.                                         |
+| `npm run lint`           | Run code, CSS, Markdown, and spelling checks.                   |
+| `npm run lint:code`      | Check JavaScript and TypeScript with Oxlint.                    |
+| `npm run lint:css`       | Check CSS with Stylelint.                                       |
+| `npm run lint:markdown`  | Check Markdown with Markdownlint.                               |
+| `npm run spellcheck`     | Check repository text with cspell.                              |
+| `npm run audit:unused`   | Detect unused files, exports, and dependencies with Knip.       |
+| `npm test`               | Run TypeScript unit tests with Vitest.                          |
+| `npm run test:e2e`       | Run browser and accessibility tests with Playwright.            |
+| `npm run audit`          | Report high-severity dependency vulnerabilities with npm.       |
+| `npm run quality:static` | Run every static-quality and dependency audit.                  |
+| `npm run quality`        | Run static quality, unit tests, and the production build.       |
 
 During development, run `npm run dev`. Before committing, run
-`npm run quality` and `npm run test:e2e`. Run `npm run audit` separately because
-it queries the npm registry and its result can change without a source change.
-The quality command remains deterministic and suitable for offline work after
-dependencies are installed.
+`npm run quality` and `npm run test:e2e`. Both `quality:static` and `quality`
+include `npm audit`, so they query the npm registry and can change when new
+advisories are published. Run the individual scripts when working offline.
+
+The configured exclusions cover only generated output, dependency directories,
+and tool artifacts. Stylelint's exceptions recognize Tailwind and DaisyUI
+directives used by `src/styles/global.css`; they do not suppress ordinary CSS
+rules. Knip uses its Astro integration without an ignore list, and Oxlint uses
+its recommended defaults without project-specific rule suppression.
 
 Edit `src/config/site.ts` to change the site name, description, author,
 canonical URL, repository, language, navigation, social links, and derived CMS branding. The Astro
