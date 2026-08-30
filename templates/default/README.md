@@ -28,6 +28,7 @@ only formatter-specific behavior such as quote and import ordering.
 | `npm run audit:unused`   | Detect unused files, exports, and dependencies with Knip.       |
 | `npm test`               | Run the `test:unit` command.                                    |
 | `npm run test:unit`      | Run deterministic TypeScript unit tests with Vitest.            |
+| `npm run test:a11y`      | Run focused Playwright and axe accessibility checks.            |
 | `npm run test:coverage`  | Run unit tests and enforce V8 coverage thresholds.              |
 | `npm run test:e2e`       | Run browser and accessibility tests with Playwright.            |
 | `npm run audit`          | Report high-severity dependency vulnerabilities with npm.       |
@@ -48,6 +49,12 @@ tests use accessible roles and names where the rendered interface provides
 them. On failure, Playwright retains screenshots and traces in `test-results/`;
 the HTML report is written to `playwright-report/`. CI retains both directories
 for seven days, including failed runs.
+
+Accessibility verification combines automation with the dated manual review in
+`docs/accessibility-checklist.md`. Repeat that checklist after changing content,
+navigation, themes, components, or interactive behavior; automated axe checks
+cannot judge every aspect of reading order, language, focus order, contrast, or
+alternative-text quality.
 
 The configured exclusions cover only generated output, dependency directories,
 and tool artifacts. Stylelint's exceptions recognize Tailwind and DaisyUI

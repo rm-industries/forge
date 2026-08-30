@@ -23,6 +23,7 @@
     "spellcheck": "cspell \"**\"",
     "typecheck": "astro sync && tsc --noEmit",
     "test": "npm run test:unit",
+    "test:a11y": "playwright test tests/accessibility.spec.ts",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:unit": "vitest run",

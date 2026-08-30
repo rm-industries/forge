@@ -21,5 +21,6 @@ export default defineConfig({
     'Sveltia',
     'unreviewed',
     'viewports',
+    'WCAG',
   ],
 });
