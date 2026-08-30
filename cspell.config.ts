@@ -9,6 +9,7 @@ export default defineConfig({
     'daisyui',
     'Fira',
     'fontsource',
+    'GHSA',
     'inspectable',
     'lhci',
     'lighthouseci',

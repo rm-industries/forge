@@ -39,7 +39,7 @@ variance while still failing a meaningful regression.
 | Script   |             0 | The public template ships no client JavaScript.                     |
 | Total    |       125,000 | Approximately 24% headroom above the measured 100,675-byte maximum. |
 
-The 2026-08-30 baseline used Lighthouse 13.4.1 and three local Chromium runs per
+The 2026-08-30 baseline used Lighthouse 12.6.1 and three local Chromium runs per
 route. Every run scored 99 performance and 100 for accessibility, best
 practices, and SEO. Script transfer was zero bytes. Total transfer was stable at
 100,675 bytes for home, 100,447 bytes for the listing, and 100,498 bytes for the
@@ -53,9 +53,16 @@ benefit and cost, and review the change in its pull request.
 
 ## Dependency note
 
-`@lhci/cli` 0.15.1 currently declares an older Lighthouse runtime. The template
-uses npm overrides for Lighthouse 13.4.1, `tmp` 0.2.7, and `uuid` 11.1.1 so the
-installed graph passes the high-severity dependency audit. Keep the overrides
-until Lighthouse CI publishes an equivalent patched dependency graph; remove
-them only after `npm audit`, three-run collection, and assertion compatibility
-all pass without them.
+`@lhci/cli` 0.15.1 pins Lighthouse 12.6.1. Forge keeps that upstream-tested
+dependency graph instead of overriding Lighthouse or its transitive
+dependencies independently. Upgrade the top-level Lighthouse CI package when a
+release supports a newer Lighthouse runtime, then repeat the three-run
+collection and assertion compatibility checks.
+
+The pinned graph currently includes high-severity `extract-zip` and `tmp`
+advisories. Both are confined to development-only Lighthouse tooling:
+Lighthouse uses the installed browser rather than extracting an
+attacker-provided browser archive, and its temporary paths are tool-controlled.
+`audit-ci.jsonc` records narrow, expiring exceptions for those two advisory IDs.
+All other high or critical advisories still fail `npm run audit`. Review or
+remove the exceptions by 2026-11-30 rather than extending them automatically.

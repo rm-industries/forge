@@ -10,6 +10,7 @@ export default defineConfig({
     'daisyui',
     'Fira',
     'fontsource',
+    'GHSA',
     'lhci',
     'lighthouseci',
     'Macchiato',

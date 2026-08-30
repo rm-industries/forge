@@ -9,7 +9,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "astro:check": "astro check",
-    "audit": "npm audit --audit-level=high",
+    "audit": "audit-ci --config audit-ci.jsonc",
     "audit:unused": "knip",
     "format": "oxfmt --check",
     "format:fix": "oxfmt",
@@ -50,6 +50,7 @@
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.3",
     "@vitest/coverage-v8": "^4.1.11",
+    "audit-ci": "7.1.0",
     "cspell": "^10.0.1",
     "daisyui": "^5.7.18",
     "knip": "^6.33.0",
@@ -61,11 +62,6 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.11"
-  },
-  "overrides": {
-    "lighthouse": "13.4.1",
-    "tmp": "0.2.7",
-    "uuid": "11.1.1"
   },
   "engines": {
     "node": "^22.22.2 || ^24.0.0 || ^26.0.0",
