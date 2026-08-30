@@ -1,23 +1,50 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
-test('has no serious or critical accessibility violations', async ({ page }) => {
+const publicRoutes = [
+  { name: 'home', path: '/' },
+  { name: 'about', path: '/about/' },
+  { name: 'article listing', path: '/articles/' },
+  { name: 'article detail', path: '/articles/designing-a-calm-starting-point/' },
+  { name: 'not found', path: '/does-not-exist/' },
+] as const;
+
+const analyzePage = async (page: Page) => {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+
+  return results.violations.filter(({ impact }) => impact === 'serious' || impact === 'critical');
+};
+
+for (const colorScheme of ['light', 'dark'] as const) {
+  for (const route of publicRoutes) {
+    test(`${route.name} has no serious or critical violations in ${colorScheme} mode`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme });
+      await page.goto(route.path);
+
+      expect(await analyzePage(page)).toEqual([]);
+    });
+  }
+}
+
+for (const route of publicRoutes) {
+  test(`${route.name} exposes one main landmark and one level-one heading`, async ({ page }) => {
+    await page.goto(route.path);
+
+    await expect(page.getByRole('banner')).toHaveCount(1);
+    await expect(page.getByRole('main')).toHaveCount(1);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+    await expect(page.getByRole('contentinfo')).toHaveCount(1);
+  });
+}
+
+test('identifies the current primary navigation item', async ({ page }) => {
   await page.goto('/');
 
-  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
-  const violations = results.violations.filter(({ impact }) => impact === 'serious' || impact === 'critical');
-
-  expect(violations).toEqual([]);
-});
-
-test('exposes landmarks and identifies the current navigation item', async ({ page }) => {
-  await page.goto('/');
-
-  await expect(page.getByRole('banner')).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Primary navigation' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
-  await expect(page.getByRole('main')).toBeVisible();
-  await expect(page.getByRole('contentinfo')).toBeVisible();
 });
 
 test('moves keyboard users directly to the main content', async ({ page }) => {
@@ -44,4 +71,23 @@ test('keeps navigation available without horizontal overflow on small screens', 
   );
 
   expect(hasHorizontalOverflow).toBe(false);
+});
+
+test('honors reduced-motion preferences', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+
+  const motionStyles = await page.getByRole('link', { name: 'Browse the articles' }).evaluate((element) => {
+    const styles = getComputedStyle(element);
+
+    return {
+      animationDuration: styles.animationDuration,
+      scrollBehavior: getComputedStyle(document.documentElement).scrollBehavior,
+      transitionDuration: styles.transitionDuration,
+    };
+  });
+
+  expect(motionStyles.scrollBehavior).toBe('auto');
+  expect(Number.parseFloat(motionStyles.animationDuration)).toBeLessThanOrEqual(0.001);
+  expect(Number.parseFloat(motionStyles.transitionDuration)).toBeLessThanOrEqual(0.001);
 });
