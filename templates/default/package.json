@@ -20,6 +20,7 @@
     "lint:css:fix": "stylelint --fix \"**/*.css\" --ignore-path .gitignore",
     "lint:markdown": "markdownlint \"**/*.md\" --ignore-path .gitignore",
     "lint:markdown:fix": "markdownlint --fix \"**/*.md\" --ignore-path .gitignore",
+    "lighthouse:ci": "npm run build && lhci autorun",
     "spellcheck": "cspell \"**\"",
     "typecheck": "astro sync && tsc --noEmit",
     "test": "npm run test:unit",
@@ -44,6 +45,7 @@
     "@axe-core/playwright": "^4.13.0",
     "@catppuccin/daisyui": "^2.1.1",
     "@catppuccin/palette": "^1.8.0",
+    "@lhci/cli": "0.15.1",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.3",
@@ -59,6 +61,11 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.11"
+  },
+  "overrides": {
+    "lighthouse": "13.4.1",
+    "tmp": "0.2.7",
+    "uuid": "11.1.1"
   },
   "engines": {
     "node": "^22.22.2 || ^24.0.0 || ^26.0.0",
