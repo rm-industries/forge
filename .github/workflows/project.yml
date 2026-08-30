@@ -440,6 +440,17 @@ jobs:
         working-directory: ${{ runner.temp }}/forge-default-template
         run: npm run test:e2e
 
+      - name: Upload browser test evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: template-browser-tests
+          path: |
+            ${{ runner.temp }}/forge-default-template/playwright-report
+            ${{ runner.temp }}/forge-default-template/test-results
+          if-no-files-found: warn
+          retention-days: 7
+
   template-isolation:
     name: Template isolation
     runs-on: ubuntu-latest

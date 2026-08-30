@@ -24,6 +24,7 @@ test('serves the content manager without allowing search indexing', async ({ pag
 
   await expect(page.locator('meta[name="robots"][content="noindex, nofollow"]')).toHaveCount(1);
   await expect(page).toHaveTitle(/Content Manager/u);
+  await expect(page.locator('body')).not.toBeEmpty();
 });
 
 test('renders generic article tags on listings and detail pages', async ({ page }) => {
@@ -84,4 +85,14 @@ test('serves feed, crawler, manifest, and not-found metadata', async ({ request 
   const missing = await request.get('/does-not-exist/');
   expect(missing.status()).toBe(404);
   expect(await missing.text()).toContain('That page is not here.');
+});
+
+test('helps visitors recover from a missing page', async ({ page }) => {
+  const response = await page.goto('/does-not-exist/');
+
+  expect(response?.status()).toBe(404);
+  await expect(page.getByRole('heading', { level: 1, name: 'That page is not here.' })).toBeVisible();
+  await page.getByRole('link', { name: 'Return home' }).click();
+  await expect(page).toHaveURL('/');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
