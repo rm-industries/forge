@@ -39,6 +39,16 @@ During development, run `npm run dev`. Before committing, run
 include `npm audit`, so they query the npm registry and can change when new
 advisories are published. Run the individual scripts when working offline.
 
+Playwright builds the site and runs Chromium against Astro's production preview,
+not the development server. Its browser coverage exercises desktop and mobile
+navigation, article listing/detail flows, article pagination, light and dark
+themes, keyboard use, missing-page recovery, metadata, supporting site files,
+and content-manager startup. Each test receives a fresh browser context, and
+tests use accessible roles and names where the rendered interface provides
+them. On failure, Playwright retains screenshots and traces in `test-results/`;
+the HTML report is written to `playwright-report/`. CI retains both directories
+for seven days, including failed runs.
+
 The configured exclusions cover only generated output, dependency directories,
 and tool artifacts. Stylelint's exceptions recognize Tailwind and DaisyUI
 directives used by `src/styles/global.css`; they do not suppress ordinary CSS
