@@ -43,7 +43,7 @@ try {
   const executable = join(fixtureDirectory, 'node_modules', '.bin', 'create-forge');
   const { stdout: help } = await execute(executable, ['--help'], { cwd: invocationDirectory });
   const { stdout: version } = await execute(executable, ['--version'], { cwd: invocationDirectory });
-  await execute(executable, ['generated-site', '--yes', '--no-install', '--git'], {
+  const { stdout: generationOutput } = await execute(executable, ['generated-site', '--yes', '--no-install', '--git'], {
     cwd: invocationDirectory,
   });
 
@@ -52,6 +52,21 @@ try {
   }
   if (version.trim() !== metadata.version) {
     throw new Error(`Installed executable reported ${version.trim()} instead of ${metadata.version}.`);
+  }
+  for (const expected of [
+    'Created Generated Site in generated-site',
+    'Dependencies: skipped',
+    'Git repository: initialized',
+    'cd generated-site',
+    'npm install',
+    'npm run dev',
+  ]) {
+    if (!generationOutput.includes(expected)) {
+      throw new Error(`Installed executable completion output is missing ${JSON.stringify(expected)}.`);
+    }
+  }
+  if (generationOutput.includes('\u001B[') || generationOutput.includes(packageDirectory)) {
+    throw new Error('Installed executable emitted color or an absolute maintainer path without a terminal.');
   }
 
   const generatedDirectory = join(invocationDirectory, 'generated-site');
