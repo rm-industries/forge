@@ -429,6 +429,27 @@ jobs:
       - name: Verify standalone template
         run: npm run verify:template
 
+  generator-e2e:
+    name: Generator end-to-end
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup project
+        uses: ./.github/actions/setup-project
+        with:
+          node-version: '26.x'
+
+      - name: Test packed generator
+        run: npm run test:generator:e2e
+
   project:
     name: Project
     needs:
@@ -447,6 +468,7 @@ jobs:
       - template-style
       - template-browser
       - template-isolation
+      - generator-e2e
     runs-on: ubuntu-latest
 
     permissions:

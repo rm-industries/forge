@@ -47,3 +47,15 @@ npm run verify:package --workspace @rm-industries/create-forge
 
 The verification confirms `--help`, `--version`, and packaged template assets,
 then removes the temporary fixture.
+
+To exercise the packed CLI across the complete generator fixture matrix:
+
+```sh
+npm run test:generator:e2e
+```
+
+This generates default, fully specified, scoped-package-name, no-install, and
+conflict fixtures in an OS temporary directory. The default fixture installs,
+type-checks, and builds outside the Forge workspace. The conflict fixture also
+proves that a failed invocation leaves existing files unchanged. Every fixture
+is removed after the run.

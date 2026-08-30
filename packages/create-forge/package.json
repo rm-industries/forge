@@ -33,6 +33,7 @@
     "build": "tsdown && node scripts/copy-template.ts",
     "prepack": "npm run typecheck && npm test && npm run build",
     "test": "vitest run",
+    "test:e2e": "npm run build && node scripts/test-generator-e2e.ts",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "verify:package": "npm run build && node scripts/verify-package.ts"
   },
