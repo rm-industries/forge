@@ -20,7 +20,15 @@ const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(scriptDirectory, '..');
 const sourceDirectory = join(repositoryRoot, 'templates', 'default');
 const copiedDirectoryName = 'default';
-const excludedNames = new Set(['.astro', 'dist', 'node_modules', 'playwright-report', 'test-results']);
+const excludedNames = new Set([
+  '.astro',
+  '.lighthouseci',
+  'coverage',
+  'dist',
+  'node_modules',
+  'playwright-report',
+  'test-results',
+]);
 const dependencySections = ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies'] as const;
 const localDependencyProtocols = /^(?:file|link|workspace):/u;
 const unresolvedTokenPatterns = [
@@ -148,7 +156,7 @@ const verifyTemplate = async () => {
 
     await assertTemplateState(copiedDirectory);
     await run('npm', ['ci'], copiedDirectory);
-    await run('npm', ['run', 'quality'], copiedDirectory);
+    await run('npm', ['run', 'quality:core'], copiedDirectory);
     console.log('Standalone template verification passed.');
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });

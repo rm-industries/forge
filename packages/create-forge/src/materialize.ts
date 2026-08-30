@@ -82,7 +82,12 @@ const listTemplateFiles = async (root: string, directory = root): Promise<Templa
       continue;
     }
     if (!entry.isFile()) throw new MaterializationError(`Template entry ${source} is not a regular file.`);
-    files.push({ source, relativePath: relative(root, source), mode: (await stat(source)).mode });
+    const relativePath = relative(root, source);
+    files.push({
+      source,
+      relativePath: relativePath === '.gitignore.template' ? '.gitignore' : relativePath,
+      mode: (await stat(source)).mode,
+    });
   }
   return files.sort((left, right) => left.relativePath.localeCompare(right.relativePath));
 };
@@ -103,10 +108,17 @@ const ensureDirectory = async (directory: string, created: Set<string>) => {
   created.add(directory);
 };
 
+const quoteTypeScriptString = (value: string) =>
+  `'${value
+    .replaceAll('\\', '\\\\')
+    .replaceAll("'", "\\'")
+    .replaceAll('\u2028', '\\u2028')
+    .replaceAll('\u2029', '\\u2029')}'`;
+
 const replaceToken = (source: string, token: string, value: string, field: string) => {
   const quotedToken = `'${token}'`;
   if (!source.includes(quotedToken)) throw new Error(`Packaged template is missing the ${field} token.`);
-  return source.replaceAll(quotedToken, JSON.stringify(value));
+  return source.replaceAll(quotedToken, quoteTypeScriptString(value));
 };
 
 const customizeTemplate = async (destination: string, options: GeneratorOptions) => {

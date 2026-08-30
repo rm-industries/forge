@@ -28,6 +28,16 @@ const runGenerator = async (executable: string, cwd: string, args: string[]) => 
   return execute(executable, args, { cwd, maxBuffer: 10 * 1024 * 1024 });
 };
 
+const runGeneratedQuality = async (cwd: string) => {
+  try {
+    await execute('npm', ['run', 'quality'], { cwd, maxBuffer: 20 * 1024 * 1024 });
+  } catch (error) {
+    const failure = error as Error & { stdout?: string; stderr?: string };
+    const output = `${failure.stdout ?? ''}\n${failure.stderr ?? ''}`.trim();
+    throw new Error(`Generated-project quality failed:\n${output.slice(-12_000)}`, { cause: error });
+  }
+};
+
 const assertGeneratedProject = async (directory: string, packageName: string) => {
   const metadata = JSON.parse(await readFile(join(directory, 'package.json'), 'utf8')) as PackageMetadata;
   const lockfile = await readFile(join(directory, 'package-lock.json'), 'utf8');
@@ -73,8 +83,7 @@ try {
   await assertGeneratedProject(defaultDirectory, 'default-site');
   await access(join(defaultDirectory, 'node_modules'));
   await access(join(defaultDirectory, '.git', 'HEAD'));
-  await execute('npm', ['run', 'typecheck'], { cwd: defaultDirectory });
-  await execute('npm', ['run', 'build'], { cwd: defaultDirectory });
+  await runGeneratedQuality(defaultDirectory);
 
   const explicitDirectory = join(projectsDirectory, 'explicit-site');
   await runGenerator(executable, projectsDirectory, [

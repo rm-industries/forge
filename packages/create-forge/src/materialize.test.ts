@@ -27,6 +27,7 @@ const createTemplate = async (fixture: string) => {
   await mkdir(join(template, 'src', 'config'), { recursive: true });
   await mkdir(join(template, 'public'));
   await writeFile(join(template, '.editorconfig'), 'root = true\n');
+  await writeFile(join(template, '.gitignore.template'), 'node_modules\n');
   await writeFile(join(template, 'public', 'asset.bin'), binaryFixture);
   await writeFile(
     join(template, 'package.json'),
@@ -68,12 +69,25 @@ describe('template materialization', () => {
 
       expect(result.destination).toBe(generated);
       expect(metadata).toMatchObject({ name: options.packageName, version: '0.0.0', private: true });
-      expect(site).toContain('name: "Generated Site"');
-      expect(site).toContain('repository: "example/generated-site"');
+      expect(site).toContain("name: 'Generated Site'");
+      expect(site).toContain("repository: 'example/generated-site'");
       await expect(access(join(generated, '.editorconfig'))).resolves.toBeUndefined();
+      await expect(readFile(join(generated, '.gitignore'), 'utf8')).resolves.toBe('node_modules\n');
+      await expect(access(join(generated, '.gitignore.template'))).rejects.toMatchObject({ code: 'ENOENT' });
       expect(await readFile(join(generated, 'public', 'asset.bin'))).toEqual(Buffer.from(binaryFixture));
     },
   );
+
+  test('escapes generated TypeScript strings while preserving template formatting', async () => {
+    const { fixture, template } = await createFixture();
+    await materializeProject(
+      { ...options, author: "O'Reilly \\ Studio" },
+      { templateDirectory: template, cwd: fixture },
+    );
+
+    const site = await readFile(join(fixture, options.destination, 'src', 'config', 'site.ts'), 'utf8');
+    expect(site).toContain("author: 'O\\'Reilly \\\\ Studio'");
+  });
 
   test('uses an existing empty destination', async () => {
     const { fixture, template } = await createFixture();

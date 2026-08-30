@@ -7,6 +7,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "validate:build": "node scripts/validate-build.ts",
     "astro": "astro",
     "astro:check": "astro check",
     "audit": "audit-ci --config audit-ci.jsonc",
@@ -28,7 +29,8 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:unit": "vitest run",
-    "quality": "npm run quality:static && npm test && npm run build",
+    "quality": "npm run quality:core && npm run test:e2e && npm run lighthouse:ci",
+    "quality:core": "npm run quality:static && npm run test:coverage && npm run build && npm run validate:build",
     "quality:static": "npm run format && npm run lint && npm run audit:unused && npm run typecheck && npm run astro:check && npm run audit"
   },
   "dependencies": {
