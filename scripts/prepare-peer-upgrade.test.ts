@@ -9,7 +9,6 @@ import {
   createPeerUpgradePlan,
   peerRangeFor,
   preparePeerUpgrade,
-  resolveRegistryVersion,
 } from './prepare-peer-upgrade.ts';
 
 const rootManifest = { devDependencies: { '@sveltia/cms': '^0.193.2', astro: '^7.2.4' } };
@@ -51,17 +50,6 @@ describe('peer upgrade preparation', () => {
     expect(() => createPeerUpgradePlan(rootManifest, contentModelManifest, 'unknown', '1.0.0')).toThrow(
       /does not declare unknown/,
     );
-  });
-
-  test('resolves scoped package versions from standard registry metadata', async () => {
-    const fetchMock = vi
-      .spyOn(globalThis, 'fetch')
-      .mockResolvedValue(new Response(JSON.stringify({ version: '0.203.2' })));
-
-    await expect(resolveRegistryVersion('@sveltia/cms')).resolves.toBe('0.203.2');
-    expect(fetchMock).toHaveBeenCalledWith('https://registry.npmjs.org/%40sveltia%2Fcms/latest', {
-      headers: { accept: 'application/json' },
-    });
   });
 
   test('adds idempotent compatibility release notes', () => {

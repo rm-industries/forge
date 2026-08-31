@@ -77,15 +77,6 @@ export const addPeerReleaseNotes = (changelog: string, plan: PeerUpgradePlan) =>
   return `${changelog.slice(0, firstRelease + 1)}${notes}\n${changelog.slice(firstRelease + 1)}`;
 };
 
-export const resolveRegistryVersion = async (dependency: string) => {
-  const response = await fetch(`https://registry.npmjs.org/${encodeURIComponent(dependency)}/latest`, {
-    headers: { accept: 'application/json' },
-  });
-  if (!response.ok) throw new Error(`Registry lookup for ${dependency} failed with HTTP ${response.status}.`);
-  const metadata = (await response.json()) as { version?: string };
-  return requireVersion(metadata.version, `Latest ${dependency} version`);
-};
-
 export const preparePeerUpgrade = async ({
   cwd,
   dependency,
@@ -94,7 +85,7 @@ export const preparePeerUpgrade = async ({
 }: {
   cwd: string;
   dependency: string;
-  targetVersion?: string;
+  targetVersion: string;
   write: boolean;
 }) => {
   const rootPath = resolve(cwd, 'package.json');
@@ -102,8 +93,7 @@ export const preparePeerUpgrade = async ({
   const contentModelChangelogPath = resolve(cwd, 'packages/content-model/CHANGELOG.md');
   const rootManifest = await readManifest(rootPath);
   const contentModelManifest = await readManifest(contentModelPath);
-  const target = targetVersion ?? (await resolveRegistryVersion(dependency));
-  const plan = createPeerUpgradePlan(rootManifest, contentModelManifest, dependency, target);
+  const plan = createPeerUpgradePlan(rootManifest, contentModelManifest, dependency, targetVersion);
 
   if (write && plan.changed) {
     rootManifest.devDependencies = { ...rootManifest.devDependencies, [dependency]: plan.nextDevelopmentRange };
@@ -125,12 +115,12 @@ const run = async () => {
   const args = process.argv.slice(2);
   const versionIndex = args.indexOf('--version');
   const targetVersion = versionIndex >= 0 ? args[versionIndex + 1] : undefined;
-  if (versionIndex >= 0 && !targetVersion) throw new Error('--version requires a semantic version.');
+  if (!targetVersion) throw new Error('--version requires a semantic version.');
   const dependency = args[0]?.startsWith('--') === false ? args[0] : '@sveltia/cms';
   const plan = await preparePeerUpgrade({
     cwd: process.cwd(),
     dependency,
-    ...(targetVersion ? { targetVersion } : {}),
+    targetVersion,
     write: args.includes('--write'),
   });
   process.stdout.write(`${JSON.stringify(plan)}\n`);
