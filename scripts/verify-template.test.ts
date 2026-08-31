@@ -21,6 +21,14 @@ describe('template isolation guardrails', () => {
     ).toEqual(['site.ts: {{ project_name }}', 'config.ts: __FORGE_SITE_ID__']);
   });
 
+  test('permits GitHub Actions expressions', () => {
+    expect(
+      findUnresolvedTokens([
+        { path: '.github/workflows/project.yml', content: 'group: ${{ github.workflow }}-${{ github.ref }}' },
+      ]),
+    ).toEqual([]);
+  });
+
   test('permits only the documented Sveltia runtime tokens in their owning files', () => {
     expect(
       findUnresolvedTokens([

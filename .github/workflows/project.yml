@@ -148,6 +148,12 @@ jobs:
 
   build:
     name: Build
+    needs:
+      - format
+      - lint-code
+      - lint-markdown
+      - spellcheck
+      - typecheck
     runs-on: ubuntu-latest
 
     permissions:

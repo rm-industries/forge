@@ -83,6 +83,8 @@ try {
   await assertGeneratedProject(defaultDirectory, 'default-site');
   await access(join(defaultDirectory, 'node_modules'));
   await access(join(defaultDirectory, '.git', 'HEAD'));
+  await access(join(defaultDirectory, '.github', 'actions', 'setup-project', 'action.yml'));
+  await access(join(defaultDirectory, '.github', 'workflows', 'project.yml'));
   await runGeneratedQuality(defaultDirectory);
 
   const explicitDirectory = join(projectsDirectory, 'explicit-site');

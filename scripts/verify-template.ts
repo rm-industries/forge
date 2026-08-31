@@ -32,7 +32,7 @@ const excludedNames = new Set([
 const dependencySections = ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies'] as const;
 const localDependencyProtocols = /^(?:file|link|workspace):/u;
 const unresolvedTokenPatterns = [
-  /\{\{[^{}]+\}\}/gu,
+  /(?<!\$)\{\{[^{}]+\}\}/gu,
   /__FORGE_[A-Z0-9_]+__/gu,
   /%FORGE_[A-Z0-9_]+%/gu,
   /FORGE_[A-Z0-9_]+_PLACEHOLDER/gu,
