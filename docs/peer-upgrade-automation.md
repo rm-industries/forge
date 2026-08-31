@@ -27,10 +27,11 @@ workflow requests only Contents and Pull requests access when it creates its
 short-lived installation token. The token is revoked when the job ends. Do not
 substitute a personal access token or expose either value to pull-request code.
 
-The workflow installs the npm version declared by the root `packageManager`
-field before installing dependencies or regenerating the lockfile. This avoids
-unrelated lockfile normalization when the Node.js distribution bundles a
-different npm release.
+The workflow uses an exact Node.js release whose bundled npm version matches the
+root `packageManager` field, and verifies that match before regenerating the
+lockfile. This avoids both ad-hoc package-manager installation and unrelated
+lockfile normalization. Compatibility CI still tests every supported Node.js
+line without writing to the lockfile.
 
 Pull requests created with the App token trigger the repository's normal checks.
 Branch protection and human review remain responsible for deciding whether the

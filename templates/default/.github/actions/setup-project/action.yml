@@ -19,13 +19,6 @@ runs:
         cache: npm
         cache-dependency-path: package-lock.json
 
-    - name: Setup project npm version
-      shell: bash
-      run: |
-        npm_version=$(node --print "require('./package.json').packageManager.split('@').at(-1)")
-        npm install --global "npm@${npm_version}"
-        npm --version
-
     - name: Install dependencies
       shell: bash
       run: npm ci
