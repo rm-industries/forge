@@ -16,6 +16,7 @@ import { dirname, isAbsolute, join, parse, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { GeneratorOptions } from './options';
+import { deriveScheduleMinutes } from './schedule';
 import { templateTokenPrefix, templateTokens } from './template-tokens';
 
 export class MaterializationError extends Error {}
@@ -121,6 +122,11 @@ const replaceToken = (source: string, token: string, value: string, field: strin
   return source.replaceAll(quotedToken, quoteTypeScriptString(value));
 };
 
+const replaceRawToken = (source: string, token: string, value: string, field: string) => {
+  if (!source.includes(token)) throw new Error(`Packaged template is missing the ${field} token.`);
+  return source.replaceAll(token, value);
+};
+
 const customizeTemplate = async (destination: string, options: GeneratorOptions) => {
   const packagePath = join(destination, 'package.json');
   const packageLockPath = join(destination, 'package-lock.json');
@@ -155,6 +161,26 @@ const customizeTemplate = async (destination: string, options: GeneratorOptions)
   siteConfig = replaceToken(siteConfig, templateTokens.repository, options.repository, 'repository');
   if (siteConfig.includes(templateTokenPrefix)) throw new Error('Packaged template contains unresolved tokens.');
   await writeFile(siteConfigPath, siteConfig);
+
+  const scheduleMinutes = deriveScheduleMinutes(options.packageName);
+  const securityWorkflowPath = join(destination, '.github', 'workflows', 'security.yml');
+  const automationWorkflowPath = join(destination, '.github', 'workflows', 'automation.yml');
+  let securityWorkflow = await readFile(securityWorkflowPath, 'utf8');
+  let automationWorkflow = await readFile(automationWorkflowPath, 'utf8');
+  securityWorkflow = replaceRawToken(
+    securityWorkflow,
+    templateTokens.securityScheduleMinute,
+    String(scheduleMinutes.security),
+    'security schedule minute',
+  );
+  automationWorkflow = replaceRawToken(
+    automationWorkflow,
+    templateTokens.automationScheduleMinute,
+    String(scheduleMinutes.automation),
+    'automation schedule minute',
+  );
+  await writeFile(securityWorkflowPath, securityWorkflow);
+  await writeFile(automationWorkflowPath, automationWorkflow);
 };
 
 export const materializeProject = async (options: GeneratorOptions, context: MaterializationContext) => {

@@ -84,6 +84,11 @@ released versions immediately. No dependency is ignored; pinned dependencies,
 including pre-1.0 packages, still require their Dependabot pull requests to pass
 the complete project and security workflows before merging.
 
+GitHub chooses the Dependabot run times, distributing update checks across its
+available schedule. Forge derives distinct weekly CodeQL and workflow-validation
+minutes from the generated package name. This keeps generation reproducible
+while preventing every Forge project from starting scheduled work simultaneously.
+
 Playwright builds the site and runs Chromium against Astro's production preview,
 not the development server. Its browser coverage exercises desktop and mobile
 navigation, article listing/detail flows, article pagination, light and dark
