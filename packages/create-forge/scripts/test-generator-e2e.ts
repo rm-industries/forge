@@ -84,7 +84,10 @@ try {
   await access(join(defaultDirectory, 'node_modules'));
   await access(join(defaultDirectory, '.git', 'HEAD'));
   await access(join(defaultDirectory, '.github', 'actions', 'setup-project', 'action.yml'));
+  await access(join(defaultDirectory, '.github', 'dependabot.yml'));
+  await access(join(defaultDirectory, '.github', 'workflows', 'automation.yml'));
   await access(join(defaultDirectory, '.github', 'workflows', 'project.yml'));
+  await access(join(defaultDirectory, '.github', 'workflows', 'security.yml'));
   await runGeneratedQuality(defaultDirectory);
 
   const explicitDirectory = join(projectsDirectory, 'explicit-site');

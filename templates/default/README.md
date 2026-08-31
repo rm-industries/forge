@@ -70,6 +70,20 @@ permissions. Coverage, production builds, Lighthouse reports, and browser
 failure evidence are retained for seven days. All third-party actions use
 immutable commit pins.
 
+Security automation is included alongside project CI. CodeQL analyzes the
+project's TypeScript and GitHub Actions on pull requests, pushes to `main`, and
+a weekly schedule. Dependency review rejects pull requests that introduce
+known high- or critical-severity vulnerabilities. A separate scheduled
+automation workflow validates workflow syntax and scans GitHub Actions with
+Zizmor using read-only permissions.
+
+Dependabot checks npm and GitHub Actions weekly. Minor and patch npm updates are
+grouped by production or development scope, while major updates remain separate
+for deliberate review. Updates use cooldown periods to avoid adopting newly
+released versions immediately. No dependency is ignored; pinned dependencies,
+including pre-1.0 packages, still require their Dependabot pull requests to pass
+the complete project and security workflows before merging.
+
 Playwright builds the site and runs Chromium against Astro's production preview,
 not the development server. Its browser coverage exercises desktop and mobile
 navigation, article listing/detail flows, article pagination, light and dark
