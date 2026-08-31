@@ -59,6 +59,9 @@ tarball.
 7. For content-model releases, allow the template synchronization tracked by
    #95 to consume the verified result only after registry verification succeeds.
 
+The downstream workflow and recovery process are documented in
+[`template-synchronization.md`](template-synchronization.md).
+
 Example:
 
 ```sh
