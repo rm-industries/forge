@@ -111,7 +111,7 @@ jobs:
           INPUT_PACKAGE: ${{ inputs.package }}
           WORKSPACE: ${{ steps.plan.outputs.workspace }}
         run: |
-          npm pack --workspace "$WORKSPACE" --json --pack-destination .release > .release/pack.json
+          npm pack --workspace "$WORKSPACE" --ignore-scripts --json --pack-destination .release > .release/pack.json
           release_sha=$(git rev-parse HEAD)
           arguments=(--sha "$release_sha" --pack-result .release/pack.json --output .release/release.json)
           if [[ "$GITHUB_EVENT_NAME" == 'push' ]]; then
