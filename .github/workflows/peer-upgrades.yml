@@ -1,0 +1,152 @@
+---
+name: Peer Compatibility Updates
+
+on: # yamllint disable-line rule:truthy
+  schedule:
+    - cron: '7 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      dependency:
+        description: Integration peer package
+        required: true
+        default: '@sveltia/cms'
+        type: string
+      version:
+        description: Exact target version; empty uses the registry latest tag
+        required: false
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: peer-compatibility-updates
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  prepare:
+    name: Prepare compatibility update
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22.22.2'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare peer compatibility change
+        id: prepare
+        env:
+          DEPENDENCY: ${{ inputs.dependency || '@sveltia/cms' }}
+          TARGET_VERSION: ${{ inputs.version }}
+        run: |
+          arguments=("$DEPENDENCY" --write)
+          if [[ -n "$TARGET_VERSION" ]]; then
+            arguments+=(--version "$TARGET_VERSION")
+          fi
+          plan=$(npm run --silent peer:prepare -- "${arguments[@]}")
+          {
+            echo "plan=$plan"
+            echo "changed=$(jq -r .changed <<< "$plan")"
+            echo "dependency=$(jq -r .dependency <<< "$plan")"
+            echo "target=$(jq -r .targetVersion <<< "$plan")"
+            echo "package-version=$(jq -r .nextPackageVersion <<< "$plan")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Regenerate workspace lockfile
+        if: steps.prepare.outputs.changed == 'true'
+        run: npm install --package-lock-only --ignore-scripts
+
+      - name: Validate compatibility change
+        if: steps.prepare.outputs.changed == 'true'
+        run: npm run quality
+
+      - name: Create GitHub App token
+        if: steps.prepare.outputs.changed == 'true'
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.PEER_UPGRADE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.PEER_UPGRADE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Resolve GitHub App identity
+        if: steps.prepare.outputs.changed == 'true'
+        id: app-user
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+        run: echo "id=$(gh api "/users/${APP_SLUG}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+
+      - name: Push compatibility branch
+        if: steps.prepare.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          APP_USER_ID: ${{ steps.app-user.outputs.id }}
+          DEPENDENCY: ${{ steps.prepare.outputs.dependency }}
+          TARGET_VERSION: ${{ steps.prepare.outputs.target }}
+        run: |
+          dependency_slug=${DEPENDENCY//[^a-zA-Z0-9._-]/-}
+          branch="automation/peer-${dependency_slug}"
+          git config user.name "${APP_SLUG}[bot]"
+          git config user.email "${APP_USER_ID}+${APP_SLUG}[bot]@users.noreply.github.com"
+          gh auth setup-git
+          git switch -C "$branch"
+          git add package.json package-lock.json packages/content-model/package.json
+          git commit -m "chore: test ${DEPENDENCY} ${TARGET_VERSION} compatibility"
+          remote_commit=$(git ls-remote --heads origin "$branch" | cut -f1)
+          if [[ -n "$remote_commit" ]]; then
+            git push --force-with-lease="refs/heads/${branch}:${remote_commit}" origin "HEAD:refs/heads/${branch}"
+          else
+            git push origin "HEAD:refs/heads/${branch}"
+          fi
+
+      - name: Open or update compatibility pull request
+        if: steps.prepare.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          DEPENDENCY: ${{ steps.prepare.outputs.dependency }}
+          TARGET_VERSION: ${{ steps.prepare.outputs.target }}
+          PACKAGE_VERSION: ${{ steps.prepare.outputs.package-version }}
+        run: |
+          dependency_slug=${DEPENDENCY//[^a-zA-Z0-9._-]/-}
+          branch="automation/peer-${dependency_slug}"
+          pull_request=$(gh pr list --head "$branch" --state open --json number --jq '.[0].number')
+          body=$(printf '%s\n' \
+            '## Summary' \
+            '' \
+            "- test ${DEPENDENCY} ${TARGET_VERSION} against the content-model adapter" \
+            '- update the bounded peer range only after repository validation passes' \
+            "- prepare @rm-industries/content-model ${PACKAGE_VERSION} for protected publication" \
+            '' \
+            '## Release sequence' \
+            '' \
+            'After this PR merges, #33 publishes the prepared content-model prerelease. Issue #95 then updates the standalone template to the published package and tested Sveltia version.' \
+            '' \
+            'Generated by the peer compatibility automation introduced in #94.')
+          if [[ -n "$pull_request" ]]; then
+            gh pr edit "$pull_request" --title "Test ${DEPENDENCY} ${TARGET_VERSION} compatibility" --body "$body"
+          else
+            gh pr create --head "$branch" --base main --title "Test ${DEPENDENCY} ${TARGET_VERSION} compatibility" --body "$body"
+          fi
+
+      - name: Report compatible current range
+        if: steps.prepare.outputs.changed != 'true'
+        run: echo 'The registry version is already covered by the content-model peer range.'
