@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import {
+  addPeerReleaseNotes,
   createPeerUpgradePlan,
   peerRangeFor,
   preparePeerUpgrade,
@@ -63,6 +64,15 @@ describe('peer upgrade preparation', () => {
     });
   });
 
+  test('adds idempotent compatibility release notes', () => {
+    const plan = createPeerUpgradePlan(rootManifest, contentModelManifest, '@sveltia/cms', '0.197.1');
+    const changelog = '# Changelog\n\nIntroduction.\n\n## 0.1.0-alpha.0\n\n- Initial release.\n';
+    const updated = addPeerReleaseNotes(changelog, plan);
+    expect(updated).toContain('## 0.2.0-alpha.0');
+    expect(updated).toContain('`>=0.193.2 <0.194.0` to `>=0.197.1 <0.198.0`');
+    expect(addPeerReleaseNotes(updated, plan)).toBe(updated);
+  });
+
   test('writes only the root test range and content-model release metadata', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'forge-peer-upgrade-'));
     temporaryDirectories.push(directory);
@@ -71,6 +81,10 @@ describe('peer upgrade preparation', () => {
     await writeFile(
       join(directory, 'packages/content-model/package.json'),
       `${JSON.stringify(contentModelManifest, undefined, 2)}\n`,
+    );
+    await writeFile(
+      join(directory, 'packages/content-model/CHANGELOG.md'),
+      '# Changelog\n\nIntroduction.\n\n## 0.1.0-alpha.0\n\n- Initial release.\n',
     );
 
     await preparePeerUpgrade({
@@ -90,5 +104,8 @@ describe('peer upgrade preparation', () => {
       version: '0.2.0-alpha.0',
       peerDependencies: { '@sveltia/cms': '>=0.197.1 <0.198.0', astro: '^7.2.3' },
     });
+    await expect(readFile(join(directory, 'packages/content-model/CHANGELOG.md'), 'utf8')).resolves.toContain(
+      '## 0.2.0-alpha.0',
+    );
   });
 });

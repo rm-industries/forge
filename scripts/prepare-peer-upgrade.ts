@@ -68,6 +68,15 @@ const readManifest = async (path: string) => JSON.parse(await readFile(path, 'ut
 const writeManifest = async (path: string, manifest: PackageManifest) =>
   writeFile(path, `${JSON.stringify(manifest, undefined, 2)}\n`);
 
+export const addPeerReleaseNotes = (changelog: string, plan: PeerUpgradePlan) => {
+  const heading = `## ${plan.nextPackageVersion}`;
+  if (changelog.includes(heading)) return changelog;
+  const firstRelease = changelog.indexOf('\n## ');
+  if (firstRelease < 0) throw new Error('Content-model changelog has no release sections.');
+  const notes = `${heading}\n\n- Validate ${plan.dependency} ${plan.targetVersion} and update its supported peer range from \`${plan.previousPeerRange}\` to \`${plan.nextPeerRange}\`.\n`;
+  return `${changelog.slice(0, firstRelease + 1)}${notes}\n${changelog.slice(firstRelease + 1)}`;
+};
+
 export const resolveRegistryVersion = async (dependency: string) => {
   const response = await fetch(`https://registry.npmjs.org/${encodeURIComponent(dependency)}/latest`, {
     headers: { accept: 'application/json' },
@@ -90,6 +99,7 @@ export const preparePeerUpgrade = async ({
 }) => {
   const rootPath = resolve(cwd, 'package.json');
   const contentModelPath = resolve(cwd, 'packages/content-model/package.json');
+  const contentModelChangelogPath = resolve(cwd, 'packages/content-model/CHANGELOG.md');
   const rootManifest = await readManifest(rootPath);
   const contentModelManifest = await readManifest(contentModelPath);
   const target = targetVersion ?? (await resolveRegistryVersion(dependency));
@@ -102,8 +112,10 @@ export const preparePeerUpgrade = async ({
       [dependency]: plan.nextPeerRange,
     };
     contentModelManifest.version = plan.nextPackageVersion;
+    const changelog = await readFile(contentModelChangelogPath, 'utf8');
     await writeManifest(rootPath, rootManifest);
     await writeManifest(contentModelPath, contentModelManifest);
+    await writeFile(contentModelChangelogPath, addPeerReleaseNotes(changelog, plan));
   }
 
   return plan;

@@ -48,6 +48,9 @@ Run the release-level isolation check from the repository root:
 npm run verify:template
 ```
 
+Package versions, protected npm publication, dry runs, and recovery are
+documented in [Package releases](docs/package-releases.md).
+
 This copies the default template into the operating system's temporary
 directory, rejects unresolved generator tokens, personal reference identifiers,
 and local or workspace dependency protocols, confirms the documented starter
