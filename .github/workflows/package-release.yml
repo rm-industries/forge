@@ -154,6 +154,7 @@ jobs:
         with:
           node-version: '26.8.1'
           registry-url: https://registry.npmjs.org
+          package-manager-cache: false
 
       - name: Download inspected package
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -186,11 +187,12 @@ jobs:
 
       - name: Verify registry publication
         env:
+          ALREADY_PUBLISHED: ${{ steps.publish.outputs.already-published }}
           PACKAGE_NAME: ${{ needs.prepare.outputs.package-name }}
           RELEASE_TAG: ${{ needs.prepare.outputs.release-tag }}
           VERSION: ${{ needs.prepare.outputs.version }}
         run: |
-          for attempt in {1..10}; do
+          for _ in {1..10}; do
             if registry=$(npm view "${PACKAGE_NAME}@${VERSION}" --json 2>/dev/null); then
               break
             fi
@@ -207,7 +209,7 @@ jobs:
             echo '::error title=Registry metadata invalid::Version or integrity metadata does not match the release.'
             exit 1
           fi
-          jq --arg integrity "$registry_integrity" --argjson alreadyPublished "${{ steps.publish.outputs.already-published }}" \
+          jq --arg integrity "$registry_integrity" --argjson alreadyPublished "$ALREADY_PUBLISHED" \
             '. + {publication: {alreadyPublished: $alreadyPublished, registryIntegrity: $integrity, verified: true}}' \
             .release/release.json > .release/published.json
           {
