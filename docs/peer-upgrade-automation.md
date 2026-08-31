@@ -27,6 +27,12 @@ workflow requests only Contents and Pull requests access when it creates its
 short-lived installation token. The token is revoked when the job ends. Do not
 substitute a personal access token or expose either value to pull-request code.
 
+The workflow uses an exact Node.js release whose bundled npm version matches the
+root `packageManager` field, and verifies that match before regenerating the
+lockfile. This avoids both ad-hoc package-manager installation and unrelated
+lockfile normalization. Compatibility CI still tests every supported Node.js
+line without writing to the lockfile.
+
 Pull requests created with the App token trigger the repository's normal checks.
 Branch protection and human review remain responsible for deciding whether the
 tested peer range should become a published compatibility claim.
@@ -49,6 +55,11 @@ npm install --package-lock-only --ignore-scripts
 Omit `--version` to resolve the package's current npm `latest` tag. The command
 returns structured JSON and makes no changes when the resolved version already
 satisfies the peer range.
+
+Each run writes a job summary containing the proposed development range, peer
+range, content-model version, validation status, and resulting pull-request
+link. Action annotations call out registry failures, validation failures,
+missing GitHub App configuration, and no-op compatible releases.
 
 ## Recovery
 
