@@ -68,9 +68,9 @@ const readManifest = async (path: string) => JSON.parse(await readFile(path, 'ut
 const writeManifest = async (path: string, manifest: PackageManifest) =>
   writeFile(path, `${JSON.stringify(manifest, undefined, 2)}\n`);
 
-const resolveRegistryVersion = async (dependency: string) => {
+export const resolveRegistryVersion = async (dependency: string) => {
   const response = await fetch(`https://registry.npmjs.org/${encodeURIComponent(dependency)}/latest`, {
-    headers: { accept: 'application/vnd.npm.install-v1+json' },
+    headers: { accept: 'application/json' },
   });
   if (!response.ok) throw new Error(`Registry lookup for ${dependency} failed with HTTP ${response.status}.`);
   const metadata = (await response.json()) as { version?: string };
