@@ -33,7 +33,7 @@
     "verify:template:static": "node scripts/verify-template-static-quality.ts"
   },
   "devDependencies": {
-    "@sveltia/cms": "^0.193.2",
+    "@sveltia/cms": "^0.203.2",
     "@types/node": "^22.20.1",
     "@types/semver": "^7.8.0",
     "astro": "^7.2.4",
