@@ -115,6 +115,10 @@ jobs:
 
   build:
     name: Production build
+    needs:
+      - format
+      - spellcheck
+      - static-quality
     runs-on: ubuntu-latest
 
     permissions:
