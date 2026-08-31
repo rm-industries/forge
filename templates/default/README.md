@@ -75,7 +75,11 @@ project's TypeScript and GitHub Actions on pull requests, pushes to `main`, and
 a weekly schedule. Dependency review rejects pull requests that introduce
 known high- or critical-severity vulnerabilities. A separate scheduled
 automation workflow validates workflow syntax and scans GitHub Actions with
-Zizmor using read-only permissions.
+Zizmor. Zizmor uploads its findings to GitHub code scanning for review in the
+Security tab without failing the workflow solely because it found an issue.
+The job receives `security-events: write` only for that upload; all other access
+remains read-only. Repositories can make selected code-scanning severities
+merge-blocking later through their ruleset without changing the workflow.
 
 Dependabot checks npm and GitHub Actions weekly. Minor and patch npm updates are
 grouped by production or development scope, while major updates remain separate
