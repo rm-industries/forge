@@ -2,9 +2,14 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 
-import { createPeerUpgradePlan, peerRangeFor, preparePeerUpgrade } from './prepare-peer-upgrade.ts';
+import {
+  createPeerUpgradePlan,
+  peerRangeFor,
+  preparePeerUpgrade,
+  resolveRegistryVersion,
+} from './prepare-peer-upgrade.ts';
 
 const rootManifest = { devDependencies: { '@sveltia/cms': '^0.193.2', astro: '^7.2.4' } };
 const contentModelManifest = {
@@ -15,6 +20,7 @@ const contentModelManifest = {
 const temporaryDirectories: string[] = [];
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   await Promise.all(temporaryDirectories.splice(0).map((directory) => rm(directory, { force: true, recursive: true })));
 });
 
@@ -44,6 +50,17 @@ describe('peer upgrade preparation', () => {
     expect(() => createPeerUpgradePlan(rootManifest, contentModelManifest, 'unknown', '1.0.0')).toThrow(
       /does not declare unknown/,
     );
+  });
+
+  test('resolves scoped package versions from standard registry metadata', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(JSON.stringify({ version: '0.203.2' })));
+
+    await expect(resolveRegistryVersion('@sveltia/cms')).resolves.toBe('0.203.2');
+    expect(fetchMock).toHaveBeenCalledWith('https://registry.npmjs.org/%40sveltia%2Fcms/latest', {
+      headers: { accept: 'application/json' },
+    });
   });
 
   test('writes only the root test range and content-model release metadata', async () => {
