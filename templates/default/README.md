@@ -70,6 +70,29 @@ permissions. Coverage, production builds, Lighthouse reports, and browser
 failure evidence are retained for seven days. All third-party actions use
 immutable commit pins.
 
+Security automation is included alongside project CI. CodeQL analyzes the
+project's TypeScript and GitHub Actions on pull requests, pushes to `main`, and
+a weekly schedule. Dependency review rejects pull requests that introduce
+known high- or critical-severity vulnerabilities. A separate scheduled
+automation workflow validates workflow syntax and scans GitHub Actions with
+Zizmor. Zizmor uploads its findings to GitHub code scanning for review in the
+Security tab without failing the workflow solely because it found an issue.
+The job receives `security-events: write` only for that upload; all other access
+remains read-only. Repositories can make selected code-scanning severities
+merge-blocking later through their ruleset without changing the workflow.
+
+Dependabot checks npm and GitHub Actions weekly. Minor and patch npm updates are
+grouped by production or development scope, while major updates remain separate
+for deliberate review. Updates use cooldown periods to avoid adopting newly
+released versions immediately. No dependency is ignored; pinned dependencies,
+including pre-1.0 packages, still require their Dependabot pull requests to pass
+the complete project and security workflows before merging.
+
+GitHub chooses the Dependabot run times, distributing update checks across its
+available schedule. Forge derives distinct weekly CodeQL and workflow-validation
+minutes from the generated package name. This keeps generation reproducible
+while preventing every Forge project from starting scheduled work simultaneously.
+
 Playwright builds the site and runs Chromium against Astro's production preview,
 not the development server. Its browser coverage exercises desktop and mobile
 navigation, article listing/detail flows, article pagination, light and dark

@@ -5,6 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
+import { deriveScheduleMinutes } from '../src/schedule.ts';
 import { templateTokenPrefix } from '../src/template-tokens.ts';
 
 type PackResult = { filename: string };
@@ -42,11 +43,20 @@ const assertGeneratedProject = async (directory: string, packageName: string) =>
   const metadata = JSON.parse(await readFile(join(directory, 'package.json'), 'utf8')) as PackageMetadata;
   const lockfile = await readFile(join(directory, 'package-lock.json'), 'utf8');
   const siteConfig = await readFile(join(directory, 'src', 'config', 'site.ts'), 'utf8');
+  const securityWorkflow = await readFile(join(directory, '.github', 'workflows', 'security.yml'), 'utf8');
+  const automationWorkflow = await readFile(join(directory, '.github', 'workflows', 'automation.yml'), 'utf8');
   if (metadata.name !== packageName) {
     throw new Error(`Expected ${directory} to use package name ${packageName}.`);
   }
-  if (`${lockfile}\n${siteConfig}`.includes(templateTokenPrefix)) {
+  if (`${lockfile}\n${siteConfig}\n${securityWorkflow}\n${automationWorkflow}`.includes(templateTokenPrefix)) {
     throw new Error(`Generated fixture ${directory} contains an unresolved template token.`);
+  }
+  const scheduleMinutes = deriveScheduleMinutes(packageName);
+  if (
+    !securityWorkflow.includes(`cron: '${scheduleMinutes.security} 5 * * 1'`) ||
+    !automationWorkflow.includes(`cron: '${scheduleMinutes.automation} 5 * * 1'`)
+  ) {
+    throw new Error(`Generated fixture ${directory} does not use its derived workflow schedules.`);
   }
 };
 
@@ -84,7 +94,10 @@ try {
   await access(join(defaultDirectory, 'node_modules'));
   await access(join(defaultDirectory, '.git', 'HEAD'));
   await access(join(defaultDirectory, '.github', 'actions', 'setup-project', 'action.yml'));
+  await access(join(defaultDirectory, '.github', 'dependabot.yml'));
+  await access(join(defaultDirectory, '.github', 'workflows', 'automation.yml'));
   await access(join(defaultDirectory, '.github', 'workflows', 'project.yml'));
+  await access(join(defaultDirectory, '.github', 'workflows', 'security.yml'));
   await runGeneratedQuality(defaultDirectory);
 
   const explicitDirectory = join(projectsDirectory, 'explicit-site');

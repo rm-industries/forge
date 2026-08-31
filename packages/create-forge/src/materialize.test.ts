@@ -6,7 +6,8 @@ import { afterEach, describe, expect, test } from 'vitest';
 
 import { MaterializationError, materializeProject } from './materialize';
 import type { GeneratorOptions } from './options';
-import { templateTokens } from './template-tokens';
+import { deriveScheduleMinutes } from './schedule';
+import { templateTokenPrefix, templateTokens } from './template-tokens';
 
 const fixtures: string[] = [];
 const binaryFixture = Uint8Array.from([0, 255, 12, 128, 64]);
@@ -25,6 +26,7 @@ const options: GeneratorOptions = {
 const createTemplate = async (fixture: string) => {
   const template = join(fixture, 'template');
   await mkdir(join(template, 'src', 'config'), { recursive: true });
+  await mkdir(join(template, '.github', 'workflows'), { recursive: true });
   await mkdir(join(template, 'public'));
   await writeFile(join(template, '.editorconfig'), 'root = true\n');
   await writeFile(join(template, '.gitignore.template'), 'node_modules\n');
@@ -40,6 +42,14 @@ const createTemplate = async (fixture: string) => {
   await writeFile(
     join(template, 'src', 'config', 'site.ts'),
     `export const site = {\n  name: '${templateTokens.siteName}',\n  description: '${templateTokens.description}',\n  author: '${templateTokens.author}',\n  url: '${templateTokens.url}',\n  repository: '${templateTokens.repository}',\n};\n`,
+  );
+  await writeFile(
+    join(template, '.github', 'workflows', 'security.yml'),
+    `cron: '${templateTokens.securityScheduleMinute} 5 * * 1'\n`,
+  );
+  await writeFile(
+    join(template, '.github', 'workflows', 'automation.yml'),
+    `cron: '${templateTokens.automationScheduleMinute} 5 * * 1'\n`,
   );
   return template;
 };
@@ -66,17 +76,35 @@ describe('template materialization', () => {
       const generated = join(fixture, destination);
       const metadata = JSON.parse(await readFile(join(generated, 'package.json'), 'utf8')) as Record<string, unknown>;
       const site = await readFile(join(generated, 'src', 'config', 'site.ts'), 'utf8');
+      const securityWorkflow = await readFile(join(generated, '.github', 'workflows', 'security.yml'), 'utf8');
+      const automationWorkflow = await readFile(join(generated, '.github', 'workflows', 'automation.yml'), 'utf8');
+      const scheduleMinutes = deriveScheduleMinutes(options.packageName);
 
       expect(result.destination).toBe(generated);
       expect(metadata).toMatchObject({ name: options.packageName, version: '0.0.0', private: true });
       expect(site).toContain("name: 'Generated Site'");
       expect(site).toContain("repository: 'example/generated-site'");
+      expect(securityWorkflow).toContain(`cron: '${scheduleMinutes.security} 5 * * 1'`);
+      expect(automationWorkflow).toContain(`cron: '${scheduleMinutes.automation} 5 * * 1'`);
+      expect(`${securityWorkflow}${automationWorkflow}`).not.toContain(templateTokenPrefix);
       await expect(access(join(generated, '.editorconfig'))).resolves.toBeUndefined();
       await expect(readFile(join(generated, '.gitignore'), 'utf8')).resolves.toBe('node_modules\n');
       await expect(access(join(generated, '.gitignore.template'))).rejects.toMatchObject({ code: 'ENOENT' });
       expect(await readFile(join(generated, 'public', 'asset.bin'))).toEqual(Buffer.from(binaryFixture));
     },
   );
+
+  test('derives reproducible, distinct schedule minutes from the package name', () => {
+    const first = deriveScheduleMinutes(options.packageName);
+    const second = deriveScheduleMinutes(options.packageName);
+
+    expect(first).toEqual(second);
+    expect(first.security).toBeGreaterThanOrEqual(1);
+    expect(first.security).toBeLessThanOrEqual(59);
+    expect(first.automation).toBeGreaterThanOrEqual(1);
+    expect(first.automation).toBeLessThanOrEqual(59);
+    expect(first.security).not.toBe(first.automation);
+  });
 
   test('escapes generated TypeScript strings while preserving template formatting', async () => {
     const { fixture, template } = await createFixture();

@@ -7,6 +7,8 @@ export const templateTokens = Object.freeze({
   author: `${prefix}AUTHOR__`,
   url: `${prefix}URL__`,
   repository: `${prefix}REPOSITORY__`,
+  securityScheduleMinute: `${prefix}SECURITY_SCHEDULE_MINUTE__`,
+  automationScheduleMinute: `${prefix}AUTOMATION_SCHEDULE_MINUTE__`,
 });
 
 export const templateTokenPrefix = prefix;

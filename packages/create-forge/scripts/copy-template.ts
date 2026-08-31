@@ -57,3 +57,24 @@ for (const token of [
   if (!tokenizedSiteConfig.includes(token)) throw new Error(`Could not inject template token ${token}.`);
 }
 await writeFile(siteConfigPath, tokenizedSiteConfig);
+
+const workflowScheduleTokens = [
+  {
+    path: join(destinationDirectory, '.github', 'workflows', 'security.yml'),
+    schedule: "    - cron: '17 5 * * 1'",
+    token: templateTokens.securityScheduleMinute,
+  },
+  {
+    path: join(destinationDirectory, '.github', 'workflows', 'automation.yml'),
+    schedule: "    - cron: '43 5 * * 1'",
+    token: templateTokens.automationScheduleMinute,
+  },
+];
+
+for (const workflow of workflowScheduleTokens) {
+  const source = await readFile(workflow.path, 'utf8');
+  if (!source.includes(workflow.schedule)) {
+    throw new Error(`Could not find schedule in ${workflow.path}.`);
+  }
+  await writeFile(workflow.path, source.replace(workflow.schedule, `    - cron: '${workflow.token} 5 * * 1'`));
+}
