@@ -1,0 +1,129 @@
+import { readFile, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { inc, major, minor, satisfies, valid } from 'semver';
+
+type PackageManifest = {
+  name?: string;
+  version?: string;
+  devDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+};
+
+export type PeerUpgradePlan = {
+  changed: boolean;
+  dependency: string;
+  previousDevelopmentRange: string;
+  nextDevelopmentRange: string;
+  previousPeerRange: string;
+  nextPeerRange: string;
+  previousPackageVersion: string;
+  nextPackageVersion: string;
+  targetVersion: string;
+};
+
+const requireVersion = (value: string | undefined, field: string) => {
+  if (!value || !valid(value)) throw new Error(`${field} must be a valid semantic version.`);
+  return value;
+};
+
+export const peerRangeFor = (version: string) => {
+  const target = requireVersion(version, 'Target version');
+  if (major(target) > 0) return `^${target}`;
+  return `>=${target} <0.${minor(target) + 1}.0`;
+};
+
+export const createPeerUpgradePlan = (
+  rootManifest: PackageManifest,
+  contentModelManifest: PackageManifest,
+  dependency: string,
+  targetVersion: string,
+): PeerUpgradePlan => {
+  const target = requireVersion(targetVersion, 'Target version');
+  const packageVersion = requireVersion(contentModelManifest.version, 'Content-model package version');
+  const developmentRange = rootManifest.devDependencies?.[dependency];
+  const peerRange = contentModelManifest.peerDependencies?.[dependency];
+  if (!developmentRange) throw new Error(`Root devDependencies does not declare ${dependency}.`);
+  if (!peerRange) throw new Error(`Content-model peerDependencies does not declare ${dependency}.`);
+
+  const changed = !satisfies(target, peerRange, { includePrerelease: true });
+  const nextPackageVersion = changed ? inc(packageVersion, 'preminor', 'alpha') : packageVersion;
+  if (!nextPackageVersion) throw new Error(`Could not calculate a prerelease after ${packageVersion}.`);
+
+  return {
+    changed,
+    dependency,
+    previousDevelopmentRange: developmentRange,
+    nextDevelopmentRange: changed ? `^${target}` : developmentRange,
+    previousPeerRange: peerRange,
+    nextPeerRange: changed ? peerRangeFor(target) : peerRange,
+    previousPackageVersion: packageVersion,
+    nextPackageVersion,
+    targetVersion: target,
+  };
+};
+
+const readManifest = async (path: string) => JSON.parse(await readFile(path, 'utf8')) as PackageManifest;
+const writeManifest = async (path: string, manifest: PackageManifest) =>
+  writeFile(path, `${JSON.stringify(manifest, undefined, 2)}\n`);
+
+const resolveRegistryVersion = async (dependency: string) => {
+  const response = await fetch(`https://registry.npmjs.org/${encodeURIComponent(dependency)}/latest`, {
+    headers: { accept: 'application/vnd.npm.install-v1+json' },
+  });
+  if (!response.ok) throw new Error(`Registry lookup for ${dependency} failed with HTTP ${response.status}.`);
+  const metadata = (await response.json()) as { version?: string };
+  return requireVersion(metadata.version, `Latest ${dependency} version`);
+};
+
+export const preparePeerUpgrade = async ({
+  cwd,
+  dependency,
+  targetVersion,
+  write,
+}: {
+  cwd: string;
+  dependency: string;
+  targetVersion?: string;
+  write: boolean;
+}) => {
+  const rootPath = resolve(cwd, 'package.json');
+  const contentModelPath = resolve(cwd, 'packages/content-model/package.json');
+  const rootManifest = await readManifest(rootPath);
+  const contentModelManifest = await readManifest(contentModelPath);
+  const target = targetVersion ?? (await resolveRegistryVersion(dependency));
+  const plan = createPeerUpgradePlan(rootManifest, contentModelManifest, dependency, target);
+
+  if (write && plan.changed) {
+    rootManifest.devDependencies = { ...rootManifest.devDependencies, [dependency]: plan.nextDevelopmentRange };
+    contentModelManifest.peerDependencies = {
+      ...contentModelManifest.peerDependencies,
+      [dependency]: plan.nextPeerRange,
+    };
+    contentModelManifest.version = plan.nextPackageVersion;
+    await writeManifest(rootPath, rootManifest);
+    await writeManifest(contentModelPath, contentModelManifest);
+  }
+
+  return plan;
+};
+
+const run = async () => {
+  const args = process.argv.slice(2);
+  const versionIndex = args.indexOf('--version');
+  const targetVersion = versionIndex >= 0 ? args[versionIndex + 1] : undefined;
+  if (versionIndex >= 0 && !targetVersion) throw new Error('--version requires a semantic version.');
+  const dependency = args[0]?.startsWith('--') === false ? args[0] : '@sveltia/cms';
+  const plan = await preparePeerUpgrade({
+    cwd: process.cwd(),
+    dependency,
+    ...(targetVersion ? { targetVersion } : {}),
+    write: args.includes('--write'),
+  });
+  process.stdout.write(`${JSON.stringify(plan)}\n`);
+};
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  await run();
+}

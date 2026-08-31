@@ -18,6 +18,7 @@ export default defineConfig({
     'Macchiato',
     'Mohandas',
     'prefersdark',
+    'preminor',
     'rahul',
     'rahulmohandas',
     'subpaths',

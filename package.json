@@ -26,6 +26,7 @@
     "test:workspaces": "npm run test --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
     "pack": "npm pack --dry-run --workspaces",
+    "peer:prepare": "node scripts/prepare-peer-upgrade.ts",
     "quality": "npm run format && npm run lint && npm run typecheck && npm test && npm run build && npm run pack",
     "verify:template": "node scripts/verify-template.ts",
     "verify:template:static": "node scripts/verify-template-static-quality.ts"
@@ -33,11 +34,13 @@
   "devDependencies": {
     "@sveltia/cms": "^0.193.2",
     "@types/node": "^22.20.1",
+    "@types/semver": "^7.8.0",
     "astro": "^7.2.4",
     "cspell": "^10.0.1",
     "markdownlint-cli": "^0.49.0",
     "oxfmt": "^0.63.0",
     "oxlint": "^1.72.0",
+    "semver": "^7.8.5",
     "tsdown": "^0.22.14",
     "typescript": "^6.0.3",
     "vitest": "^4.1.11"
