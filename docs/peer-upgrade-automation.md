@@ -5,7 +5,7 @@ Forge treats integration peer ranges as tested compatibility claims. The
 dispatched manually for an exact package version. When a version falls outside
 the current content-model peer range, it prepares one focused pull request that
 updates the root test dependency, bounded peer range, lockfile, and next
-content-model prerelease version.
+content-model prerelease version and changelog entry.
 
 The workflow never updates the standalone template or publishes a package. A
 merged compatibility pull request proceeds through the protected publication
@@ -52,9 +52,11 @@ npm run peer:prepare -- @sveltia/cms --version 0.197.1 --write
 npm install --package-lock-only --ignore-scripts
 ```
 
-Omit `--version` to resolve the package's current npm `latest` tag. The command
-returns structured JSON and makes no changes when the resolved version already
-satisfies the peer range.
+The local command requires an exact `--version` and performs no network access.
+When a manual workflow dispatch leaves its version empty, the workflow resolves
+the package's current npm `latest` tag before passing that exact version to the
+file-writing command. The command returns structured JSON and makes no changes
+when the supplied version already satisfies the peer range.
 
 Each run writes a job summary containing the proposed development range, peer
 range, content-model version, validation status, and resulting pull-request

@@ -61,10 +61,11 @@ jobs:
           DEPENDENCY: ${{ inputs.dependency || '@sveltia/cms' }}
           TARGET_VERSION: ${{ inputs.version }}
         run: |
-          arguments=("$DEPENDENCY" --write)
-          if [[ -n "$TARGET_VERSION" ]]; then
-            arguments+=(--version "$TARGET_VERSION")
+          target_version="$TARGET_VERSION"
+          if [[ -z "$target_version" ]]; then
+            target_version=$(npm view "$DEPENDENCY@latest" version)
           fi
+          arguments=("$DEPENDENCY" --write --version "$target_version")
           if ! plan=$(npm run --silent peer:prepare -- "${arguments[@]}"); then
             echo '::error title=Peer lookup failed::Could not resolve or prepare the requested peer dependency update.'
             {
@@ -155,7 +156,7 @@ jobs:
           git config user.email "${APP_USER_ID}+${APP_SLUG}[bot]@users.noreply.github.com"
           gh auth setup-git
           git switch -C "$branch"
-          git add package.json package-lock.json packages/content-model/package.json
+          git add package.json package-lock.json packages/content-model/package.json packages/content-model/CHANGELOG.md
           git commit -m "chore: test ${DEPENDENCY} ${TARGET_VERSION} compatibility"
           remote_commit=$(git ls-remote --heads origin "$branch" | cut -f1)
           if [[ -n "$remote_commit" ]]; then
