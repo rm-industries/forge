@@ -2,11 +2,9 @@
 name: Published Template Synchronization
 
 on: # yamllint disable-line rule:truthy
-  workflow_run:
-    workflows:
-      - Package Release
+  repository_dispatch:
     types:
-      - completed
+      - content-model-published
   workflow_dispatch:
     inputs:
       version:
@@ -27,9 +25,6 @@ defaults:
 jobs:
   synchronize:
     name: Synchronize published content model
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
 
     permissions:
@@ -50,12 +45,18 @@ jobs:
       - name: Resolve verified publication
         id: source
         env:
+          EXPECTED_RELEASE_TAG: ${{ github.event.client_payload.release_tag }}
+          EXPECTED_VERSION: ${{ github.event.client_payload.version }}
           GH_TOKEN: ${{ github.token }}
           INPUT_VERSION: ${{ inputs.version }}
-          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+          SOURCE_RUN_ID: ${{ github.event.client_payload.source_run_id }}
         run: |
           mkdir .template-sync
-          if [[ "$GITHUB_EVENT_NAME" == 'workflow_run' ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == 'repository_dispatch' ]]; then
+            if [[ ! "$SOURCE_RUN_ID" =~ ^[0-9]+$ ]]; then
+              echo '::error title=Invalid source run::The publication dispatch did not provide a numeric workflow run ID.'
+              exit 1
+            fi
             artifact_name=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts" \
               --jq '[.artifacts[] | select(.expired == false and (.name | startswith("published-content-model-")))] | if length == 1 then .[0].name else empty end')
             if [[ -z "$artifact_name" ]]; then
@@ -66,6 +67,11 @@ jobs:
             gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$artifact_name" --dir .template-sync/source
             publication=.template-sync/source/published.json
             version=$(jq -er 'select(.packageName == "@rm-industries/content-model" and .publication.verified == true) | .version' "$publication")
+            release_tag=$(jq -er .releaseTag "$publication")
+            if [[ "$release_tag" != "$EXPECTED_RELEASE_TAG" || "$version" != "$EXPECTED_VERSION" ]]; then
+              echo '::error title=Publication dispatch mismatch::The dispatch payload does not match the verified publication artifact.'
+              exit 1
+            fi
             echo "publication=$publication" >> "$GITHUB_OUTPUT"
             echo "source-url=https://github.com/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" >> "$GITHUB_OUTPUT"
           else
@@ -121,7 +127,7 @@ jobs:
 
       - name: Regenerate standalone template lockfile
         if: steps.prepare.outputs.changed == 'true'
-        run: npm install --prefix templates/default --package-lock-only --ignore-scripts
+        run: npm run template:sync:lockfile
 
       - name: Validate repository and standalone outputs
         if: steps.prepare.outputs.changed == 'true'

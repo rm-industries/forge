@@ -1,16 +1,18 @@
 # Published template synchronization
 
 The `Published Template Synchronization` workflow updates the standalone
-template only after a content-model version is available from npm. A successful
-tagged `Package Release` run starts it automatically; maintainers can also
-dispatch it with an exact published version for recovery or a dry run.
+template only after a content-model version is available from npm. After a
+tagged `Package Release` run verifies the registry publication and uploads its
+evidence, it emits the narrow `content-model-published` repository event that
+starts synchronization. Maintainers can also dispatch the workflow with an
+exact published version for recovery or a dry run.
 
-The automatic path downloads the release workflow's `published-content-model-*`
-artifact and requires its verified publication marker. Both paths then read the
-package metadata and Sveltia versions from npm. The repository-owned TypeScript
-command verifies package identity, exact version, registry integrity, SLSA
-provenance metadata, and the declared `@sveltia/cms` peer range before changing
-the template.
+The automatic event carries the completed release run ID. The synchronization
+workflow downloads that run's `published-content-model-*` artifact and requires
+its verified publication marker. Both paths then read the package metadata and
+Sveltia versions from npm. The repository-owned TypeScript command verifies
+package identity, exact version, registry integrity, SLSA provenance metadata,
+and the declared `@sveltia/cms` peer range before changing the template.
 
 ## Pull-request flow
 
@@ -19,7 +21,8 @@ When synchronization is required, the workflow:
 1. selects the latest published Sveltia version contained by the content-model
    peer range;
 2. updates both exact template dependencies and regenerates the template
-   lockfile with the repository's pinned npm version;
+   lockfile with the repository's pinned npm version and lifecycle scripts
+   disabled;
 3. runs repository quality checks, isolated template installation and quality
    checks, and the packed-generator end-to-end suite before requesting write
    credentials;
