@@ -1,0 +1,261 @@
+---
+name: Package Release
+
+on: # yamllint disable-line rule:truthy
+  push:
+    tags:
+      - 'content-model-v*'
+      - 'create-forge-v*'
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Package to prepare without publishing
+        required: true
+        type: choice
+        options:
+          - content-model
+          - create-forge
+
+permissions: {}
+
+concurrency:
+  group: package-release-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  prepare:
+    name: Prepare package release
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    outputs:
+      artifact-name: ${{ steps.plan.outputs.artifact-name }}
+      npm-tag: ${{ steps.plan.outputs.npm-tag }}
+      package-name: ${{ steps.plan.outputs.package-name }}
+      package-slug: ${{ steps.plan.outputs.package-slug }}
+      prerelease: ${{ steps.plan.outputs.prerelease }}
+      release-tag: ${{ steps.plan.outputs.release-tag }}
+      version: ${{ steps.plan.outputs.version }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup project dependencies
+        uses: ./.github/actions/setup-project
+        with:
+          node-version: '26.8.1'
+
+      - name: Verify release npm version
+        run: |
+          expected_npm=$(node --print "require('./package.json').packageManager.split('@').at(-1)")
+          actual_npm=$(npm --version)
+          if [[ "$actual_npm" != "$expected_npm" ]]; then
+            echo "::error title=npm version mismatch::Expected npm ${expected_npm}, but Node supplied ${actual_npm}."
+            exit 1
+          fi
+
+      - name: Plan package release
+        id: plan
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_PACKAGE: ${{ inputs.package }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          release_sha=$(git rev-parse HEAD)
+          arguments=(--sha "$release_sha")
+          if [[ "$EVENT_NAME" == 'push' ]]; then
+            arguments+=(--tag "$RELEASE_TAG")
+          else
+            arguments+=(--package "$INPUT_PACKAGE")
+          fi
+          mkdir .release
+          npm run --silent release:prepare -- "${arguments[@]}" --output .release/plan.json
+          plan=$(<.release/plan.json)
+          artifact_name="package-release-$(jq -r .packageSlug <<< "$plan")-$(jq -r .version <<< "$plan")"
+          {
+            echo "artifact-name=$artifact_name"
+            echo "npm-tag=$(jq -r .npmTag <<< "$plan")"
+            echo "package-name=$(jq -r .packageName <<< "$plan")"
+            echo "package-slug=$(jq -r .packageSlug <<< "$plan")"
+            echo "prerelease=$(jq -r .prerelease <<< "$plan")"
+            echo "release-tag=$(jq -r .releaseTag <<< "$plan")"
+            echo "version=$(jq -r .version <<< "$plan")"
+            echo "workspace=$(jq -r .workspace <<< "$plan")"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo '## Package release preparation'
+            echo ''
+            echo '| Item | Value |'
+            echo '| --- | --- |'
+            echo "| Package | $(jq -r .packageName <<< "$plan") |"
+            echo "| Version | $(jq -r .version <<< "$plan") |"
+            echo "| Release tag | $(jq -r .releaseTag <<< "$plan") |"
+            echo "| npm tag | $(jq -r .npmTag <<< "$plan") |"
+            echo "| Commit | \`$release_sha\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run release quality gate
+        run: npm run quality
+
+      - name: Pack release artifact
+        env:
+          INPUT_PACKAGE: ${{ inputs.package }}
+          WORKSPACE: ${{ steps.plan.outputs.workspace }}
+        run: |
+          npm pack --workspace "$WORKSPACE" --ignore-scripts --json --pack-destination .release > .release/pack.json
+          release_sha=$(git rev-parse HEAD)
+          arguments=(--sha "$release_sha" --pack-result .release/pack.json --output .release/release.json)
+          if [[ "$GITHUB_EVENT_NAME" == 'push' ]]; then
+            arguments+=(--tag "$GITHUB_REF_NAME")
+          else
+            arguments+=(--package "$INPUT_PACKAGE")
+          fi
+          npm run --silent release:prepare -- "${arguments[@]}"
+          release=$(<.release/release.json)
+          echo "- ✅ Packed \`$(jq -r .tarball.filename <<< "$release")\` with integrity \`$(jq -r .tarball.integrity <<< "$release")\`." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload inspected package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ steps.plan.outputs.artifact-name }}
+          path: .release
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Publish package
+    if: github.event_name == 'push'
+    needs: prepare
+    runs-on: ubuntu-latest
+    environment: npm-release
+
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '26.8.1'
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Download inspected package
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ needs.prepare.outputs.artifact-name }}
+          path: .release
+
+      - name: Publish with provenance
+        id: publish
+        env:
+          NPM_TAG: ${{ needs.prepare.outputs.npm-tag }}
+          PACKAGE_NAME: ${{ needs.prepare.outputs.package-name }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          release=$(<.release/release.json)
+          tarball=".release/$(jq -r .tarball.filename <<< "$release")"
+          expected_integrity=$(jq -r .tarball.integrity <<< "$release")
+          if registry=$(npm view "${PACKAGE_NAME}@${VERSION}" --json 2>/dev/null); then
+            registry_integrity=$(jq -r .dist.integrity <<< "$registry")
+            if [[ "$registry_integrity" != "$expected_integrity" ]]; then
+              echo '::error title=Published version conflict::npm already contains this version with different package integrity.'
+              exit 1
+            fi
+            echo 'already-published=true' >> "$GITHUB_OUTPUT"
+            echo 'The identical package version already exists; publication is safely skipped.'
+          else
+            npm publish "$tarball" --access public --tag "$NPM_TAG" --provenance
+            echo 'already-published=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify registry publication
+        env:
+          ALREADY_PUBLISHED: ${{ steps.publish.outputs.already-published }}
+          PACKAGE_NAME: ${{ needs.prepare.outputs.package-name }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.release-tag }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          for _ in {1..10}; do
+            if registry=$(npm view "${PACKAGE_NAME}@${VERSION}" --json 2>/dev/null); then
+              break
+            fi
+            sleep 5
+          done
+          if [[ -z "${registry:-}" ]]; then
+            echo '::error title=Registry verification failed::The published package version did not become readable from npm.'
+            exit 1
+          fi
+          registry_version=$(jq -r .version <<< "$registry")
+          registry_integrity=$(jq -r .dist.integrity <<< "$registry")
+          expected_integrity=$(jq -r .tarball.integrity .release/release.json)
+          if [[ "$registry_version" != "$VERSION" || "$registry_integrity" != "$expected_integrity" ]]; then
+            echo '::error title=Registry metadata invalid::Version or integrity metadata does not match the release.'
+            exit 1
+          fi
+          jq --arg integrity "$registry_integrity" --argjson alreadyPublished "$ALREADY_PUBLISHED" \
+            '. + {publication: {alreadyPublished: $alreadyPublished, registryIntegrity: $integrity, verified: true}}' \
+            .release/release.json > .release/published.json
+          {
+            echo "## Published ${PACKAGE_NAME} ${VERSION}"
+            echo "- Registry integrity: \`${registry_integrity}\`"
+            echo "- Release tag: \`${RELEASE_TAG}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.release-tag }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          PACKAGE_NAME: ${{ needs.prepare.outputs.package-name }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo 'The GitHub release already exists; creation is safely skipped.'
+            exit 0
+          fi
+          jq -r .releaseNotes .release/release.json > .release/release-notes.md
+          arguments=("$RELEASE_TAG" --verify-tag --title "${PACKAGE_NAME} ${VERSION}" --notes-file .release/release-notes.md)
+          if [[ "$PRERELEASE" == 'true' ]]; then
+            arguments+=(--prerelease)
+          fi
+          gh release create "${arguments[@]}"
+
+      - name: Upload verified publication result
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: published-${{ needs.prepare.outputs.package-slug }}-${{ needs.prepare.outputs.version }}
+          path: .release/published.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Dispatch published content model
+        if: needs.prepare.outputs.package-slug == 'content-model'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.release-tag }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          jq -n \
+            --arg event_type 'content-model-published' \
+            --arg release_tag "$RELEASE_TAG" \
+            --arg source_run_id "$GITHUB_RUN_ID" \
+            --arg version "$VERSION" \
+            '{event_type: $event_type, client_payload: {release_tag: $release_tag, source_run_id: $source_run_id, version: $version}}' \
+            | gh api --method POST "repos/${GITHUB_REPOSITORY}/dispatches" --input -

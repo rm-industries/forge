@@ -1,6 +1,7 @@
 ---
 import type { SiteLink } from '../../config/site';
 import { isCurrentPath } from '../../lib/navigation';
+import { resolveSiteHref } from '../../lib/paths';
 
 interface Props {
   brand: string;
@@ -10,22 +11,24 @@ interface Props {
 }
 
 const { brand, brandHref = '/', links, currentPath } = Astro.props;
+const resolvedBrandHref = resolveSiteHref(brandHref);
 ---
 
 <div class="navbar rounded-box bg-base-200 shadow-sm">
   <div class="navbar-start">
-    <a href={brandHref} class="btn btn-ghost text-xl">{brand}</a>
+    <a href={resolvedBrandHref} class="btn btn-ghost text-xl">{brand}</a>
   </div>
 
   <nav class="navbar-end hidden sm:flex" aria-label="Primary navigation">
     <ul class="menu menu-horizontal" role="list">
       {
         links.map((item) => {
-          const isCurrent = isCurrentPath(currentPath, item.href);
+          const href = resolveSiteHref(item.href);
+          const isCurrent = isCurrentPath(currentPath, href);
 
           return (
             <li>
-              <a href={item.href} aria-current={isCurrent ? 'page' : undefined} class:list={[isCurrent && 'menu-active']}>
+              <a {href} aria-current={isCurrent ? 'page' : undefined} class:list={[isCurrent && 'menu-active']}>
                 {item.label}
               </a>
             </li>
@@ -42,11 +45,12 @@ const { brand, brandHref = '/', links, currentPath } = Astro.props;
         <ul class="menu" role="list">
           {
             links.map((item) => {
-              const isCurrent = isCurrentPath(currentPath, item.href);
+              const href = resolveSiteHref(item.href);
+              const isCurrent = isCurrentPath(currentPath, href);
 
               return (
                 <li>
-                  <a href={item.href} aria-current={isCurrent ? 'page' : undefined} class:list={[isCurrent && 'menu-active']}>
+                  <a {href} aria-current={isCurrent ? 'page' : undefined} class:list={[isCurrent && 'menu-active']}>
                     {item.label}
                   </a>
                 </li>

@@ -8,6 +8,7 @@
   ],
   "type": "module",
   "scripts": {
+    "audit": "audit-ci --config audit-ci.jsonc",
     "format": "oxfmt --check",
     "format:fix": "oxfmt",
     "lint": "npm run lint:repo",
@@ -26,18 +27,25 @@
     "test:workspaces": "npm run test --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
     "pack": "npm pack --dry-run --workspaces",
+    "peer:prepare": "node scripts/prepare-peer-upgrade.ts",
+    "release:prepare": "node scripts/prepare-package-release.ts",
+    "template:sync": "node scripts/prepare-template-sync.ts",
+    "template:sync:lockfile": "npm install --prefix templates/default --package-lock-only --ignore-scripts",
     "quality": "npm run format && npm run lint && npm run typecheck && npm test && npm run build && npm run pack",
     "verify:template": "node scripts/verify-template.ts",
     "verify:template:static": "node scripts/verify-template-static-quality.ts"
   },
   "devDependencies": {
-    "@sveltia/cms": "^0.193.2",
+    "@sveltia/cms": "^0.203.2",
     "@types/node": "^22.20.1",
+    "@types/semver": "^7.8.0",
     "astro": "^7.2.4",
+    "audit-ci": "7.1.0",
     "cspell": "^10.0.1",
     "markdownlint-cli": "^0.49.0",
     "oxfmt": "^0.63.0",
     "oxlint": "^1.72.0",
+    "semver": "^7.8.5",
     "tsdown": "^0.22.14",
     "typescript": "^6.0.3",
     "vitest": "^4.1.11"
@@ -46,5 +54,5 @@
     "node": "^22.22.2 || ^24.0.0 || ^26.0.0",
     "npm": "^10.9.0 || ^11.0.0"
   },
-  "packageManager": "npm@11.18.0"
+  "packageManager": "npm@11.19.0"
 }

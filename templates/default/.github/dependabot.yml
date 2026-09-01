@@ -33,6 +33,8 @@ updates:
     groups:
       production-dependencies:
         dependency-type: production
+        exclude-patterns:
+          - '@sveltia/cms'
         update-types:
           - minor
           - patch

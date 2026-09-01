@@ -54,6 +54,8 @@ updates:
     groups:
       production-dependencies:
         dependency-type: production
+        exclude-patterns:
+          - '@sveltia/cms'
         update-types:
           - minor
           - patch
@@ -81,6 +83,8 @@ updates:
     groups:
       generated-production-dependencies:
         dependency-type: production
+        exclude-patterns:
+          - '@sveltia/cms'
         update-types:
           - minor
           - patch

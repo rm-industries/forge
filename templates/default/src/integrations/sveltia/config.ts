@@ -3,11 +3,12 @@ import type { CmsConfig } from '@sveltia/cms';
 
 import { contentModels } from '../../config/content-models/registry.ts';
 import { cmsBranding } from '../../config/site.ts';
+import { resolveSiteHref } from '../../lib/paths.ts';
 
 export const sveltiaConfig = {
   load_config_file: false,
   app_title: cmsBranding.appTitle,
-  logo: { src: '/favicon.svg' },
+  logo: { src: resolveSiteHref('/favicon.svg') },
   backend: {
     name: 'github',
     repo: 'your-github-user/your-repository',
@@ -22,7 +23,7 @@ export const sveltiaConfig = {
     },
   },
   media_folder: 'public/assets',
-  public_folder: '/assets',
+  public_folder: resolveSiteHref('/assets'),
   output: { omit_empty_optional_fields: true },
   collections: contentModels.map(createSveltiaCollection),
 } satisfies CmsConfig;

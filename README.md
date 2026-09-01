@@ -48,6 +48,9 @@ Run the release-level isolation check from the repository root:
 npm run verify:template
 ```
 
+Package versions, protected npm publication, dry runs, and recovery are
+documented in [Package releases](docs/package-releases.md).
+
 This copies the default template into the operating system's temporary
 directory, rejects unresolved generator tokens, personal reference identifiers,
 and local or workspace dependency protocols, confirms the documented starter
@@ -55,6 +58,10 @@ defaults, performs a clean install, and runs the standalone template quality
 gate. The temporary copy is removed whether verification passes or fails.
 
 ## Default template
+
+The root `npm run audit` command covers the repository lockfile and npm
+workspaces. CI design, required checks, runtime coverage, and artifact retention
+are documented in [Continuous integration](docs/continuous-integration.md).
 
 `templates/default/` is a standalone Astro project rather than an npm
 workspace. It owns its dependencies and lockfile so the same directory can be

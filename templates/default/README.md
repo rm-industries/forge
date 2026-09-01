@@ -62,6 +62,10 @@ The generated `.github/workflows/project.yml` runs on pull requests targeting
 unit tests, the validated production build, browser and accessibility tests,
 and Lighthouse budgets so failures identify the affected gate directly. The
 required `Project` result succeeds only after every release-blocking job passes.
+On pushes to `main`, that result unlocks a separate GitHub Pages deployment;
+pull requests never upload or deploy a Pages artifact. Deployment setup,
+project-site URLs, custom domains, and environment protections are documented in
+[`docs/github-pages.md`](docs/github-pages.md).
 
 The workflow installs dependencies with `npm ci`, caches npm downloads using
 the lockfile, cancels superseded runs on the same Git reference, and grants only
@@ -80,13 +84,21 @@ Security tab without failing the workflow solely because it found an issue.
 The job receives `security-events: write` only for that upload; all other access
 remains read-only. Repositories can make selected code-scanning severities
 merge-blocking later through their ruleset without changing the workflow.
+The `Automation` aggregate runs when `.github/**` changes and succeeds only after
+both workflow syntax and security validation pass. Because it is path-filtered,
+do not configure it as a globally required status check; review it whenever an
+automation change causes it to appear.
 
 Dependabot checks npm and GitHub Actions weekly. Minor and patch npm updates are
 grouped by production or development scope, while major updates remain separate
 for deliberate review. Updates use cooldown periods to avoid adopting newly
-released versions immediately. No dependency is ignored; pinned dependencies,
-including pre-1.0 packages, still require their Dependabot pull requests to pass
-the complete project and security workflows before merging.
+released versions immediately. Because pre-1.0 Sveltia minor releases may be
+breaking, `@sveltia/cms` updates are kept separate from generic production
+dependency groups. Its pull requests must satisfy the compatibility line
+declared by `@rm-industries/content-model`; moving to a later minor requires a
+tested content-model release first. No version is ignored, security updates
+remain enabled, and every update must pass the complete project and security
+workflows before merging.
 
 GitHub chooses the Dependabot run times, distributing update checks across its
 available schedule. Forge derives distinct weekly CodeQL and workflow-validation
@@ -136,6 +148,12 @@ canonical URL, repository, language, navigation, social links, and derived CMS b
 configuration, shared layout, and reusable SEO head consume this single
 validated source. New pages should use `src/layouts/BaseLayout.astro` to inherit
 the document shell and canonical metadata.
+
+The canonical URL may include a pathname for a GitHub Pages project site, such
+as `https://owner.github.io/repository`. The Astro configuration derives its
+deployment base from that pathname, and shared URL helpers apply it to local
+navigation, metadata, supporting files, and assets. Root-hosted and custom-domain
+sites use an origin-only URL and therefore have no deployment prefix.
 
 The standalone source template uses `https://example.com` as a valid,
 non-production site origin. Projects created by Forge receive the values

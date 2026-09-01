@@ -1,0 +1,244 @@
+---
+name: Published Template Synchronization
+
+on: # yamllint disable-line rule:truthy
+  repository_dispatch:
+    types:
+      - content-model-published
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published @rm-industries/content-model version
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: published-template-synchronization
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  synchronize:
+    name: Synchronize published content model
+    runs-on: ubuntu-latest
+
+    permissions:
+      actions: read
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup project dependencies
+        uses: ./.github/actions/setup-project
+        with:
+          node-version: '26.8.1'
+
+      - name: Resolve verified publication
+        id: source
+        env:
+          EXPECTED_RELEASE_TAG: ${{ github.event.client_payload.release_tag }}
+          EXPECTED_VERSION: ${{ github.event.client_payload.version }}
+          GH_TOKEN: ${{ github.token }}
+          INPUT_VERSION: ${{ inputs.version }}
+          SOURCE_RUN_ID: ${{ github.event.client_payload.source_run_id }}
+        run: |
+          sync_directory="${RUNNER_TEMP}/forge-template-sync"
+          mkdir "$sync_directory"
+          if [[ "$GITHUB_EVENT_NAME" == 'repository_dispatch' ]]; then
+            if [[ ! "$SOURCE_RUN_ID" =~ ^[0-9]+$ ]]; then
+              echo '::error title=Invalid source run::The publication dispatch did not provide a numeric workflow run ID.'
+              exit 1
+            fi
+            artifact_name=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts" \
+              --jq '[.artifacts[] | select(.expired == false and (.name | startswith("published-content-model-")))] | if length == 1 then .[0].name else empty end')
+            if [[ -z "$artifact_name" ]]; then
+              echo 'eligible=false' >> "$GITHUB_OUTPUT"
+              echo '::notice title=No content-model publication::The completed release did not expose one verified content-model result.'
+              exit 0
+            fi
+            gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$artifact_name" --dir "${sync_directory}/source"
+            publication="${sync_directory}/source/published.json"
+            version=$(jq -er 'select(.packageName == "@rm-industries/content-model" and .publication.verified == true) | .version' "$publication")
+            release_tag=$(jq -er .releaseTag "$publication")
+            if [[ "$release_tag" != "$EXPECTED_RELEASE_TAG" || "$version" != "$EXPECTED_VERSION" ]]; then
+              echo '::error title=Publication dispatch mismatch::The dispatch payload does not match the verified publication artifact.'
+              exit 1
+            fi
+            echo "publication=$publication" >> "$GITHUB_OUTPUT"
+            echo "source-url=https://github.com/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" >> "$GITHUB_OUTPUT"
+          else
+            version="$INPUT_VERSION"
+            echo "source-url=https://github.com/${GITHUB_REPOSITORY}/actions/workflows/template-sync.yml" >> "$GITHUB_OUTPUT"
+          fi
+          if ! node -e 'const value=process.argv[1]; if (!/^v?(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?$/.test(value)) process.exit(1)' "$version"; then
+            echo '::error title=Invalid package version::The synchronization source did not provide an exact semantic version.'
+            exit 1
+          fi
+          echo 'eligible=true' >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Read registry metadata
+        if: steps.source.outputs.eligible == 'true'
+        env:
+          VERSION: ${{ steps.source.outputs.version }}
+        run: |
+          sync_directory="${RUNNER_TEMP}/forge-template-sync"
+          npm view "@rm-industries/content-model@${VERSION}" --json > "${sync_directory}/content-model.json"
+          npm view '@sveltia/cms' versions --json > "${sync_directory}/sveltia-versions.json"
+
+      - name: Prepare template synchronization
+        if: steps.source.outputs.eligible == 'true'
+        id: prepare
+        env:
+          PUBLICATION: ${{ steps.source.outputs.publication }}
+        run: |
+          sync_directory="${RUNNER_TEMP}/forge-template-sync"
+          arguments=(--metadata "${sync_directory}/content-model.json" --peer-versions "${sync_directory}/sveltia-versions.json" --write --output "${sync_directory}/plan.json")
+          if [[ -n "$PUBLICATION" ]]; then
+            arguments+=(--publication "$PUBLICATION")
+          fi
+          npm run --silent template:sync -- "${arguments[@]}"
+          plan=$(<"${sync_directory}/plan.json")
+          {
+            echo "changed=$(jq -r .changed <<< "$plan")"
+            echo "content-model=$(jq -r .contentModel.version <<< "$plan")"
+            echo "integration=$(jq -r .integration.version <<< "$plan")"
+            echo "integrity=$(jq -r .contentModel.integrity <<< "$plan")"
+            echo "peer-range=$(jq -r .integration.peerRange <<< "$plan")"
+            echo "release-tag=$(jq -r .releaseTag <<< "$plan")"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo '## Published template synchronization'
+            echo ''
+            echo '| Item | Value |'
+            echo '| --- | --- |'
+            echo "| Content model | $(jq -r .contentModel.previousVersion <<< "$plan") → $(jq -r .contentModel.version <<< "$plan") |"
+            echo "| Sveltia CMS | $(jq -r .integration.previousVersion <<< "$plan") → $(jq -r .integration.version <<< "$plan") |"
+            echo "| Published peer range | $(jq -r .integration.peerRange <<< "$plan") |"
+            echo "| Registry integrity | $(jq -r .contentModel.integrity <<< "$plan") |"
+            echo "| Change required | $(jq -r .changed <<< "$plan") |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Regenerate standalone template lockfile
+        if: steps.prepare.outputs.changed == 'true'
+        run: npm run template:sync:lockfile
+
+      - name: Install generated-project browser
+        if: steps.prepare.outputs.changed == 'true'
+        working-directory: templates/default
+        run: npx playwright install --with-deps chromium
+
+      - name: Validate repository and standalone outputs
+        if: steps.prepare.outputs.changed == 'true'
+        run: |
+          npm run quality
+          npm run verify:template
+          npm run test:generator:e2e
+
+      - name: Verify GitHub App configuration
+        if: steps.prepare.outputs.changed == 'true'
+        env:
+          APP_CLIENT_ID: ${{ vars.PEER_UPGRADE_APP_CLIENT_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.PEER_UPGRADE_APP_PRIVATE_KEY }}
+        run: |
+          if [[ -z "$APP_CLIENT_ID" || -z "$APP_PRIVATE_KEY" ]]; then
+            echo '::error title=GitHub App configuration missing::The repository-scoped peer-upgrade App is required to create synchronization pull requests.'
+            exit 1
+          fi
+
+      - name: Create GitHub App token
+        if: steps.prepare.outputs.changed == 'true'
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.PEER_UPGRADE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.PEER_UPGRADE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Resolve GitHub App identity
+        if: steps.prepare.outputs.changed == 'true'
+        id: app-user
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+        run: echo "id=$(gh api "/users/${APP_SLUG}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+
+      - name: Push synchronization branch
+        if: steps.prepare.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          APP_USER_ID: ${{ steps.app-user.outputs.id }}
+          CONTENT_MODEL: ${{ steps.prepare.outputs.content-model }}
+        run: |
+          branch='automation/template-content-model'
+          git config user.name "${APP_SLUG}[bot]"
+          git config user.email "${APP_USER_ID}+${APP_SLUG}[bot]@users.noreply.github.com"
+          gh auth setup-git
+          git switch -C "$branch"
+          git add templates/default/package.json templates/default/package-lock.json
+          git commit -m "chore: synchronize content model ${CONTENT_MODEL}"
+          remote_commit=$(git ls-remote --heads origin "$branch" | cut -f1)
+          if [[ -n "$remote_commit" ]]; then
+            git push --force-with-lease="refs/heads/${branch}:${remote_commit}" origin "HEAD:refs/heads/${branch}"
+          else
+            git push origin "HEAD:refs/heads/${branch}"
+          fi
+
+      - name: Open or update synchronization pull request
+        if: steps.prepare.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          CONTENT_MODEL: ${{ steps.prepare.outputs.content-model }}
+          INTEGRATION: ${{ steps.prepare.outputs.integration }}
+          INTEGRITY: ${{ steps.prepare.outputs.integrity }}
+          PEER_RANGE: ${{ steps.prepare.outputs.peer-range }}
+          RELEASE_TAG: ${{ steps.prepare.outputs.release-tag }}
+          SOURCE_URL: ${{ steps.source.outputs.source-url }}
+        run: |
+          branch='automation/template-content-model'
+          pull_request=$(gh pr list --head "$branch" --state open --json number --jq '.[0].number')
+          npm_url="https://www.npmjs.com/package/@rm-industries/content-model/v/${CONTENT_MODEL}"
+          release_url="https://github.com/${GITHUB_REPOSITORY}/releases/tag/${RELEASE_TAG}"
+          body=$(printf '%s\n' \
+            '## Summary' \
+            '' \
+            "- update the standalone template to @rm-industries/content-model ${CONTENT_MODEL}" \
+            "- update @sveltia/cms to ${INTEGRATION}, selected from the published peer range ${PEER_RANGE}" \
+            '- regenerate the standalone template lockfile from public registry artifacts' \
+            '- validate the isolated template, packed generator, and generated project before creating this PR' \
+            '' \
+            '## Publication evidence' \
+            '' \
+            "- npm package: ${npm_url}" \
+            "- GitHub release: ${release_url}" \
+            "- source publication: ${SOURCE_URL}" \
+            "- registry integrity: \`${INTEGRITY}\`" \
+            '' \
+            'Generated by the publication synchronization automation tracked in #95.' \
+            '' \
+            'Closes #95')
+          if [[ -n "$pull_request" ]]; then
+            gh pr edit "$pull_request" --title "Synchronize template with content-model ${CONTENT_MODEL}" --body "$body"
+            pull_request_url=$(gh pr view "$pull_request" --json url --jq .url)
+          else
+            pull_request_url=$(gh pr create --head "$branch" --base main --title "Synchronize template with content-model ${CONTENT_MODEL}" --body "$body")
+          fi
+          echo "- ✅ Synchronization pull request: ${pull_request_url}" >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=Template synchronization pull request::${pull_request_url}"
+
+      - name: Report current template
+        if: steps.source.outputs.eligible == 'true' && steps.prepare.outputs.changed != 'true'
+        run: |
+          echo '::notice title=Template current::The standalone template already uses the verified publication and matching integration.'
+          echo '- ✅ No standalone template synchronization is required.' >> "$GITHUB_STEP_SUMMARY"
