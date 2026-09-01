@@ -1,4 +1,6 @@
 ---
+import { resolveSiteHref } from '../../lib/paths';
+
 interface PaginationLink {
   href: string;
   label: string;
@@ -16,7 +18,7 @@ const { previous, next, label = 'Pagination' } = Astro.props;
 <nav aria-label={label} class="join grid grid-cols-2">
   {
     previous ? (
-      <a href={previous.href} rel="prev" class="btn btn-outline join-item">
+      <a href={resolveSiteHref(previous.href)} rel="prev" class="btn btn-outline join-item">
         <span aria-hidden="true">←</span>
         <span>{previous.label}</span>
       </a>
@@ -26,7 +28,7 @@ const { previous, next, label = 'Pagination' } = Astro.props;
   }
   {
     next ? (
-      <a href={next.href} rel="next" class="btn btn-outline join-item">
+      <a href={resolveSiteHref(next.href)} rel="next" class="btn btn-outline join-item">
         <span>{next.label}</span>
         <span aria-hidden="true">→</span>
       </a>

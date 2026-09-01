@@ -1,5 +1,6 @@
 ---
 import { site } from '../../config/site';
+import { resolveSiteHref } from '../../lib/paths';
 
 interface Props {
   title?: string;
@@ -21,18 +22,18 @@ const normalizedPath = (() => {
   const path = `/${canonicalPath}`.replace(/\/{2,}/g, '/');
   return path === '/' ? path : `${path.replace(/\/$/, '')}/`;
 })();
-const canonicalUrl = new URL(normalizedPath, site.url);
+const canonicalUrl = new URL(resolveSiteHref(normalizedPath), new URL(site.url).origin);
 const pageTitle = title ? `${title} | ${site.name}` : site.name;
-const socialImageUrl = new URL(site.socialImage, site.url);
+const socialImageUrl = new URL(resolveSiteHref(site.socialImage), new URL(site.url).origin);
 ---
 
 <title>{pageTitle}</title>
 <meta name="description" content={description} />
 <link rel="canonical" href={canonicalUrl} />
-<link rel="sitemap" href="/sitemap-index.xml" />
-<link rel="alternate" type="application/rss+xml" title={`${site.name} RSS feed`} href="/rss.xml" />
-<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-<link rel="manifest" href="/site.webmanifest" />
+<link rel="sitemap" href={resolveSiteHref('/sitemap-index.xml')} />
+<link rel="alternate" type="application/rss+xml" title={`${site.name} RSS feed`} href={resolveSiteHref('/rss.xml')} />
+<link rel="icon" href={resolveSiteHref('/favicon.svg')} type="image/svg+xml" />
+<link rel="manifest" href={resolveSiteHref('/site.webmanifest')} />
 
 <meta property="og:site_name" content={site.name} />
 <meta property="og:title" content={pageTitle} />

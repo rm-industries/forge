@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { site } from '../config/site';
 import Card from '../components/ui/Card.astro';
 import Container from '../components/ui/Container.astro';
+import { resolveSiteHref } from '../lib/paths';
 ---
 
 <BaseLayout>
@@ -14,8 +15,8 @@ import Container from '../components/ui/Container.astro';
           <h1 class="text-5xl font-bold tracking-tight sm:text-6xl">Build something worth publishing.</h1>
           <p class="text-lg">{site.description} Start with accessible components, typed configuration, and a theme system that works without client JavaScript.</p>
           <div class="flex flex-wrap justify-center gap-3">
-            <a href="/articles/" class="btn btn-primary">Read the examples</a>
-            <a href="/about/" class="btn btn-ghost">About this starter</a>
+            <a href={resolveSiteHref('/articles/')} class="btn btn-primary">Read the examples</a>
+            <a href={resolveSiteHref('/about/')} class="btn btn-ghost">About this starter</a>
           </div>
         </div>
       </div>
@@ -56,7 +57,7 @@ import Container from '../components/ui/Container.astro';
         <h2 id="start-title" class="card-title text-3xl">Replace the examples with your own story.</h2>
         <p>Update the typed site configuration, choose your content model, and grow the template one reusable piece at a time.</p>
         <div class="card-actions">
-          <a href="/articles/" class="btn">Browse the articles</a>
+          <a href={resolveSiteHref('/articles/')} class="btn">Browse the articles</a>
         </div>
       </div>
     </section>
