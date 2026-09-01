@@ -28,6 +28,14 @@ Run the complete local quality gate before requesting review:
 npm run quality
 ```
 
+The registry-backed dependency policy is intentionally separate from the
+deterministic quality command. Run it before requesting review when a lockfile
+or dependency manifest changes:
+
+```sh
+npm run audit
+```
+
 Use `npm run format:fix` to apply Oxfmt changes. Root formatting, Oxlint,
 Markdown linting, spelling, and TypeScript checks cover the entire repository.
 Package-specific type checking, tests, and builds are orchestrated through npm
@@ -50,9 +58,12 @@ npm run test:e2e
 
 Pull requests and pushes to `main` run the repository quality gate and validate
 a copy of the default template outside the workspace on every supported Node.js
-line. Changes under `.github/` also run workflow syntax and security checks.
-These jobs use committed lockfiles and do not require globally installed project
-tools.
+line. Workflow syntax and security checks run when repository or
+generated-template workflow files change, and the `Automation` aggregate
+provides one result for that conditional validation. It must not be configured
+as a globally required check. These jobs use committed lockfiles and do not
+require globally installed project tools. The required contexts and evidence
+strategy are documented in [Continuous integration](docs/continuous-integration.md).
 
 Actions are pinned to immutable commits, workflow permissions are denied by
 default, and superseded runs are cancelled. Keep these properties intact when

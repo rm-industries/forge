@@ -19,7 +19,7 @@
     "directory": "packages/create-forge"
   },
   "bin": {
-    "create-forge": "./dist/index.mjs"
+    "create-forge": "dist/index.mjs"
   },
   "files": [
     "dist"

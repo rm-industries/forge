@@ -57,3 +57,23 @@ jobs:
 
       - name: Validate workflows
         uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2
+
+  automation:
+    name: Automation
+    needs:
+      - security
+      - syntax
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Confirm automation checks
+        env:
+          SECURITY_RESULT: ${{ needs.security.result }}
+          SYNTAX_RESULT: ${{ needs.syntax.result }}
+        run: |
+          if [[ "$SECURITY_RESULT" != 'success' || "$SYNTAX_RESULT" != 'success' ]]; then
+            echo '::error title=Automation validation failed::Workflow security and syntax checks must both pass.'
+            exit 1
+          fi
+          echo 'Workflow security and syntax checks passed.'
