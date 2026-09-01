@@ -59,6 +59,10 @@ gate. The temporary copy is removed whether verification passes or fails.
 
 ## Default template
 
+The root `npm run audit` command covers the repository lockfile and npm
+workspaces. CI design, required checks, runtime coverage, and artifact retention
+are documented in [Continuous integration](docs/continuous-integration.md).
+
 `templates/default/` is a standalone Astro project rather than an npm
 workspace. It owns its dependencies and lockfile so the same directory can be
 copied outside this repository without relying on workspace hoisting. Run its

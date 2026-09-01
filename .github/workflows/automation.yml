@@ -7,11 +7,13 @@ on: # yamllint disable-line rule:truthy
       - main
     paths:
       - '.github/**'
+      - 'templates/default/.github/**'
   push:
     branches:
       - main
     paths:
       - '.github/**'
+      - 'templates/default/.github/**'
   schedule:
     - cron: '43 5 * * 1'
 
@@ -59,3 +61,23 @@ jobs:
         uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2
         with:
           files: '.github/workflows/*.yml,templates/default/.github/workflows/*.yml'
+
+  automation:
+    name: Automation
+    needs:
+      - security
+      - syntax
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Confirm automation checks
+        env:
+          SECURITY_RESULT: ${{ needs.security.result }}
+          SYNTAX_RESULT: ${{ needs.syntax.result }}
+        run: |
+          if [[ "$SECURITY_RESULT" != 'success' || "$SYNTAX_RESULT" != 'success' ]]; then
+            echo '::error title=Automation validation failed::Workflow security and syntax checks must both pass.'
+            exit 1
+          fi
+          echo 'Workflow security and syntax checks passed.'

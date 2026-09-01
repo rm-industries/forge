@@ -194,6 +194,27 @@ jobs:
       - name: Inspect package contents
         run: npm run pack
 
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup project
+        uses: ./.github/actions/setup-project
+        with:
+          node-version: '26.x'
+
+      - name: Audit root and workspace dependencies
+        run: npm run audit
+
   compatibility:
     name: Compatibility (${{ matrix.runtime }})
     runs-on: ubuntu-latest
@@ -225,11 +246,11 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Run repository quality checks
-        run: npm run quality
+      - name: Validate packages on supported runtime
+        run: npm run typecheck && npm test && npm run build
 
-  template-typecheck:
-    name: Template type-check (${{ matrix.runtime }})
+  template-compatibility:
+    name: Template compatibility (${{ matrix.runtime }})
     runs-on: ubuntu-latest
 
     permissions:
@@ -261,54 +282,15 @@ jobs:
           cache: npm
           cache-dependency-path: templates/default/package-lock.json
 
-      - name: Type-check copied template
+      - name: Validate copied template on supported runtime
         run: |
           template_directory="${RUNNER_TEMP}/forge-default-template"
           cp -R templates/default "$template_directory"
           cd "$template_directory"
           npm ci
           npm run typecheck
-
-  template-test:
-    name: Template test (${{ matrix.runtime }})
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runtime: minimum Node 22
-            node-version: '22.22.2'
-          - runtime: latest Node 22
-            node-version: '22.x'
-          - runtime: latest Node 24
-            node-version: '24.x'
-          - runtime: latest Node 26
-            node-version: '26.x'
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
-          cache-dependency-path: templates/default/package-lock.json
-
-      - name: Test copied template
-        run: |
-          template_directory="${RUNNER_TEMP}/forge-default-template"
-          cp -R templates/default "$template_directory"
-          cd "$template_directory"
-          npm ci
           npm test
+          npm run build
 
   template-coverage:
     name: Template unit coverage
@@ -344,49 +326,8 @@ jobs:
         with:
           name: template-unit-coverage
           path: ${{ runner.temp }}/forge-default-template/coverage
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 7
-
-  template-build:
-    name: Template build (${{ matrix.runtime }})
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runtime: minimum Node 22
-            node-version: '22.22.2'
-          - runtime: latest Node 22
-            node-version: '22.x'
-          - runtime: latest Node 24
-            node-version: '24.x'
-          - runtime: latest Node 26
-            node-version: '26.x'
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
-          cache-dependency-path: templates/default/package-lock.json
-
-      - name: Build copied template
-        run: |
-          template_directory="${RUNNER_TEMP}/forge-default-template"
-          cp -R templates/default "$template_directory"
-          cd "$template_directory"
-          npm ci
-          npm run build
 
   template-static-quality:
     name: Template static quality
@@ -447,14 +388,14 @@ jobs:
         run: npm run test:e2e
 
       - name: Upload browser test evidence
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: template-browser-tests
           path: |
             ${{ runner.temp }}/forge-default-template/playwright-report
             ${{ runner.temp }}/forge-default-template/test-results
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 7
 
   template-lighthouse:
@@ -494,7 +435,8 @@ jobs:
         with:
           name: template-lighthouse-reports
           path: ${{ runner.temp }}/forge-default-template/.lighthouseci
-          if-no-files-found: warn
+          include-hidden-files: true
+          if-no-files-found: error
           retention-days: 7
 
   template-isolation:
@@ -554,11 +496,10 @@ jobs:
       - test
       - build
       - pack
+      - dependency-audit
       - compatibility
-      - template-typecheck
-      - template-test
+      - template-compatibility
       - template-coverage
-      - template-build
       - template-static-quality
       - template-browser
       - template-lighthouse

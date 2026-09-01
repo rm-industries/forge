@@ -1,6 +1,7 @@
 ---
 import Container from '../components/ui/Container.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { resolveSiteHref } from '../lib/paths';
 ---
 
 <BaseLayout title="About" description="Learn how this generic Forge starter is structured and how to make it your own.">
@@ -16,7 +17,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <h2>What is already connected</h2>
       <p>Semantic navigation, responsive layout primitives, local fonts, theme-aware styling, canonical metadata, a sitemap, an RSS feed, and automated accessibility checks are ready to extend.</p>
 
-      <p><a href="/articles/">Explore the example articles</a> or return to the <a href="/">homepage</a>.</p>
+      <p>
+        <a href={resolveSiteHref('/articles/')}>Explore the example articles</a> or return to the
+        <a href={resolveSiteHref('/')}>homepage</a>.
+      </p>
     </article>
   </Container>
 </BaseLayout>
