@@ -132,6 +132,11 @@ jobs:
         if: steps.prepare.outputs.changed == 'true'
         run: npm run template:sync:lockfile
 
+      - name: Install generated-project browser
+        if: steps.prepare.outputs.changed == 'true'
+        working-directory: templates/default
+        run: npx playwright install --with-deps chromium
+
       - name: Validate repository and standalone outputs
         if: steps.prepare.outputs.changed == 'true'
         run: |
