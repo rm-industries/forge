@@ -84,6 +84,10 @@ Security tab without failing the workflow solely because it found an issue.
 The job receives `security-events: write` only for that upload; all other access
 remains read-only. Repositories can make selected code-scanning severities
 merge-blocking later through their ruleset without changing the workflow.
+The `Automation` aggregate runs when `.github/**` changes and succeeds only after
+both workflow syntax and security validation pass. Because it is path-filtered,
+do not configure it as a globally required status check; review it whenever an
+automation change causes it to appear.
 
 Dependabot checks npm and GitHub Actions weekly. Minor and patch npm updates are
 grouped by production or development scope, while major updates remain separate
