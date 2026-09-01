@@ -13,6 +13,8 @@ its verified publication marker. Both paths then read the package metadata and
 Sveltia versions from npm. The repository-owned TypeScript command verifies
 package identity, exact version, registry integrity, SLSA provenance metadata,
 and the declared `@sveltia/cms` peer range before changing the template.
+Registry metadata and publication evidence remain in the runner's temporary
+directory so repository-wide quality checks inspect only tracked project input.
 
 ## Pull-request flow
 

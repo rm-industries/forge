@@ -51,7 +51,8 @@ jobs:
           INPUT_VERSION: ${{ inputs.version }}
           SOURCE_RUN_ID: ${{ github.event.client_payload.source_run_id }}
         run: |
-          mkdir .template-sync
+          sync_directory="${RUNNER_TEMP}/forge-template-sync"
+          mkdir "$sync_directory"
           if [[ "$GITHUB_EVENT_NAME" == 'repository_dispatch' ]]; then
             if [[ ! "$SOURCE_RUN_ID" =~ ^[0-9]+$ ]]; then
               echo '::error title=Invalid source run::The publication dispatch did not provide a numeric workflow run ID.'
@@ -64,8 +65,8 @@ jobs:
               echo '::notice title=No content-model publication::The completed release did not expose one verified content-model result.'
               exit 0
             fi
-            gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$artifact_name" --dir .template-sync/source
-            publication=.template-sync/source/published.json
+            gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$artifact_name" --dir "${sync_directory}/source"
+            publication="${sync_directory}/source/published.json"
             version=$(jq -er 'select(.packageName == "@rm-industries/content-model" and .publication.verified == true) | .version' "$publication")
             release_tag=$(jq -er .releaseTag "$publication")
             if [[ "$release_tag" != "$EXPECTED_RELEASE_TAG" || "$version" != "$EXPECTED_VERSION" ]]; then
@@ -90,8 +91,9 @@ jobs:
         env:
           VERSION: ${{ steps.source.outputs.version }}
         run: |
-          npm view "@rm-industries/content-model@${VERSION}" --json > .template-sync/content-model.json
-          npm view '@sveltia/cms' versions --json > .template-sync/sveltia-versions.json
+          sync_directory="${RUNNER_TEMP}/forge-template-sync"
+          npm view "@rm-industries/content-model@${VERSION}" --json > "${sync_directory}/content-model.json"
+          npm view '@sveltia/cms' versions --json > "${sync_directory}/sveltia-versions.json"
 
       - name: Prepare template synchronization
         if: steps.source.outputs.eligible == 'true'
@@ -99,12 +101,13 @@ jobs:
         env:
           PUBLICATION: ${{ steps.source.outputs.publication }}
         run: |
-          arguments=(--metadata .template-sync/content-model.json --peer-versions .template-sync/sveltia-versions.json --write --output .template-sync/plan.json)
+          sync_directory="${RUNNER_TEMP}/forge-template-sync"
+          arguments=(--metadata "${sync_directory}/content-model.json" --peer-versions "${sync_directory}/sveltia-versions.json" --write --output "${sync_directory}/plan.json")
           if [[ -n "$PUBLICATION" ]]; then
             arguments+=(--publication "$PUBLICATION")
           fi
           npm run --silent template:sync -- "${arguments[@]}"
-          plan=$(<.template-sync/plan.json)
+          plan=$(<"${sync_directory}/plan.json")
           {
             echo "changed=$(jq -r .changed <<< "$plan")"
             echo "content-model=$(jq -r .contentModel.version <<< "$plan")"
