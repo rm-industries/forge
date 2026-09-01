@@ -62,6 +62,10 @@ The generated `.github/workflows/project.yml` runs on pull requests targeting
 unit tests, the validated production build, browser and accessibility tests,
 and Lighthouse budgets so failures identify the affected gate directly. The
 required `Project` result succeeds only after every release-blocking job passes.
+On pushes to `main`, that result unlocks a separate GitHub Pages deployment;
+pull requests never upload or deploy a Pages artifact. Deployment setup,
+project-site URLs, custom domains, and environment protections are documented in
+[`docs/github-pages.md`](docs/github-pages.md).
 
 The workflow installs dependencies with `npm ci`, caches npm downloads using
 the lockfile, cancels superseded runs on the same Git reference, and grants only
@@ -140,6 +144,12 @@ canonical URL, repository, language, navigation, social links, and derived CMS b
 configuration, shared layout, and reusable SEO head consume this single
 validated source. New pages should use `src/layouts/BaseLayout.astro` to inherit
 the document shell and canonical metadata.
+
+The canonical URL may include a pathname for a GitHub Pages project site, such
+as `https://owner.github.io/repository`. The Astro configuration derives its
+deployment base from that pathname, and shared URL helpers apply it to local
+navigation, metadata, supporting files, and assets. Root-hosted and custom-domain
+sites use an origin-only URL and therefore have no deployment prefix.
 
 The standalone source template uses `https://example.com` as a valid,
 non-production site origin. Projects created by Forge receive the values

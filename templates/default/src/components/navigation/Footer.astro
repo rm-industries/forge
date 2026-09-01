@@ -1,6 +1,7 @@
 ---
 import { site } from '../../config/site';
 import { isExternalHref } from '../../lib/navigation';
+import { resolveSiteHref } from '../../lib/paths';
 import Container from '../ui/Container.astro';
 ---
 
@@ -18,7 +19,7 @@ import Container from '../ui/Container.astro';
           <h2>Elsewhere</h2>
           {site.socialLinks.map((item) => (
             <a
-              href={item.href}
+              href={resolveSiteHref(item.href)}
               class="link link-hover"
               target={isExternalHref(item.href) ? '_blank' : undefined}
               rel={isExternalHref(item.href) ? 'noopener noreferrer' : undefined}
