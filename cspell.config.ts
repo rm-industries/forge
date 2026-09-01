@@ -21,6 +21,7 @@ export default defineConfig({
     'preminor',
     'rahul',
     'rahulmohandas',
+    'SLSA',
     'subpaths',
     'Sveltia',
     'unreviewed',

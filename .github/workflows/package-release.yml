@@ -244,3 +244,18 @@ jobs:
           path: .release/published.json
           if-no-files-found: error
           retention-days: 90
+
+      - name: Dispatch published content model
+        if: needs.prepare.outputs.package-slug == 'content-model'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.release-tag }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          jq -n \
+            --arg event_type 'content-model-published' \
+            --arg release_tag "$RELEASE_TAG" \
+            --arg source_run_id "$GITHUB_RUN_ID" \
+            --arg version "$VERSION" \
+            '{event_type: $event_type, client_payload: {release_tag: $release_tag, source_run_id: $source_run_id, version: $version}}' \
+            | gh api --method POST "repos/${GITHUB_REPOSITORY}/dispatches" --input -
