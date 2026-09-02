@@ -173,8 +173,8 @@ jobs:
         with:
           node-version: '26.x'
 
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install supported browsers
+        run: npx playwright install --with-deps chromium firefox webkit
 
       - name: Run browser and accessibility tests
         run: npm run test:e2e

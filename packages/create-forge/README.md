@@ -54,8 +54,14 @@ To exercise the packed CLI across the complete generator fixture matrix:
 npm run test:generator:e2e
 ```
 
-This generates default, fully specified, scoped-package-name, no-install, and
-conflict fixtures in an OS temporary directory. The default fixture installs,
-type-checks, and builds outside the Forge workspace. The conflict fixture also
-proves that a failed invocation leaves existing files unchanged. Every fixture
-is removed after the run.
+This generates default, fully specified, scoped-package-name, current-directory,
+no-install, and conflict fixtures in an OS temporary directory. The default
+fixture installs and runs the complete generated-project quality pipeline
+outside the Forge workspace. The conflict fixture also proves that a failed
+invocation leaves existing files unchanged. Every fixture is removed after the
+run.
+
+The release compatibility matrix runs the same packed fixtures with the
+generated project's core quality gate on every supported Node line on Ubuntu
+and on macOS. The complete end-to-end job adds the multi-browser and Lighthouse
+checks once on the primary Node runtime.

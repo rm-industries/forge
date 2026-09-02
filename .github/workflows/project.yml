@@ -467,11 +467,11 @@ jobs:
           cd "$template_directory"
           npm ci
 
-      - name: Install Chromium
+      - name: Install supported browsers
         working-directory: ${{ runner.temp }}/forge-default-template
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium firefox webkit
 
-      - name: Test copied template in Chromium
+      - name: Test copied template in supported browsers
         working-directory: ${{ runner.temp }}/forge-default-template
         run: npm run test:e2e
 
@@ -572,12 +572,62 @@ jobs:
         with:
           node-version: '26.x'
 
-      - name: Install generated-project browser
+      - name: Install generated-project browsers
         working-directory: templates/default
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium firefox webkit
 
       - name: Test packed generator
         run: npm run test:generator:e2e
+
+  generator-compatibility:
+    name: Generator compatibility (${{ matrix.runtime }})
+    needs: classify
+    if: needs.classify.outputs.generator == 'true'
+    runs-on: ${{ matrix.os }}
+
+    permissions:
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runtime: minimum Node 22 on Ubuntu
+            os: ubuntu-latest
+            node-version: '22.22.2'
+          - runtime: latest Node 22 on Ubuntu
+            os: ubuntu-latest
+            node-version: '22.x'
+          - runtime: latest Node 24 on Ubuntu
+            os: ubuntu-latest
+            node-version: '24.x'
+          - runtime: latest Node 26 on Ubuntu
+            os: ubuntu-latest
+            node-version: '26.x'
+          - runtime: latest Node 26 on macOS
+            os: macos-latest
+            node-version: '26.x'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup project
+        uses: ./.github/actions/setup-project
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Record compatibility environment
+        run: |
+          uname -a
+          node --version
+          npm --version
+          git --version
+
+      - name: Test packed generator compatibility
+        run: npm run test:generator:compatibility
 
   project:
     name: Project
@@ -601,6 +651,7 @@ jobs:
       - template-lighthouse
       - template-isolation
       - generator-e2e
+      - generator-compatibility
     if: always()
     runs-on: ubuntu-latest
 

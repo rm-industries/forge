@@ -14,6 +14,7 @@ type PackageMetadata = { name?: string };
 const execute = promisify(execFile);
 const packageDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const fixtureDirectory = await mkdtemp(join(tmpdir(), 'create-forge-e2e-'));
+const compatibilityMode = process.argv.includes('--compatibility');
 
 const exists = async (path: string) => {
   try {
@@ -30,12 +31,13 @@ const runGenerator = async (executable: string, cwd: string, args: string[]) => 
 };
 
 const runGeneratedQuality = async (cwd: string) => {
+  const script = compatibilityMode ? 'quality:core' : 'quality';
   try {
-    await execute('npm', ['run', 'quality'], { cwd, maxBuffer: 20 * 1024 * 1024 });
+    await execute('npm', ['run', script], { cwd, maxBuffer: 20 * 1024 * 1024 });
   } catch (error) {
     const failure = error as Error & { stdout?: string; stderr?: string };
     const output = `${failure.stdout ?? ''}\n${failure.stderr ?? ''}`.trim();
-    throw new Error(`Generated-project quality failed:\n${output.slice(-12_000)}`, { cause: error });
+    throw new Error(`Generated-project ${script} failed:\n${output.slice(-12_000)}`, { cause: error });
   }
 };
 
@@ -141,6 +143,11 @@ try {
   ]);
   await assertGeneratedProject(scopedDirectory, '@example/scoped-site');
 
+  const currentDirectory = join(projectsDirectory, 'current-directory-site');
+  await mkdir(currentDirectory);
+  await runGenerator(executable, currentDirectory, ['.', '--yes', '--no-install', '--no-git']);
+  await assertGeneratedProject(currentDirectory, 'current-directory-site');
+
   const noInstallDirectory = join(projectsDirectory, 'no-install-site');
   const { stdout: noInstallOutput } = await runGenerator(executable, projectsDirectory, [
     'no-install-site',
@@ -180,7 +187,8 @@ try {
     throw new Error('Conflict fixture did not fail safely with its existing filesystem state intact.');
   }
 
-  console.log(`Verified ${packResult.filename} across 5 isolated end-to-end generator fixtures.`);
+  const mode = compatibilityMode ? 'compatibility' : 'complete';
+  console.log(`Verified ${packResult.filename} across 6 isolated ${mode} generator fixtures.`);
 } finally {
   await rm(fixtureDirectory, { recursive: true, force: true });
 }
