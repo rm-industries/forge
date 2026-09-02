@@ -33,14 +33,14 @@ test('makes every Catppuccin flavor available explicitly', async ({ page }) => {
   }
 });
 
-test('serves fonts locally and presents a visible keyboard focus indicator', async ({ page }) => {
+test('serves fonts locally and presents a visible keyboard focus indicator', async ({ browserName, page }) => {
   const fontRequests: string[] = [];
   page.on('request', (request) => {
     if (request.resourceType() === 'font') fontRequests.push(request.url());
   });
 
   await page.goto(resolvePreviewPath('/'));
-  await page.keyboard.press('Tab');
+  await page.keyboard.press(browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab');
 
   await expect(page.locator('a').first()).toBeFocused();
   await expect(page.locator('a').first()).not.toHaveCSS('outline-style', 'none');

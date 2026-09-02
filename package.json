@@ -25,6 +25,7 @@
     "typecheck:root": "tsc --noEmit",
     "typecheck:workspaces": "npm run typecheck --workspaces --if-present",
     "test": "npm run test:root && npm run test:workspaces",
+    "test:generator:compatibility": "npm run test:compatibility --workspace @rm-industries/create-forge",
     "test:generator:e2e": "npm run test:e2e --workspace @rm-industries/create-forge",
     "test:root": "vitest run --config scripts/vitest.config.ts",
     "test:workspaces": "npm run test --workspaces --if-present",

@@ -49,9 +49,9 @@ test('identifies the current primary navigation item', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
 });
 
-test('moves keyboard users directly to the main content', async ({ page }) => {
+test('moves keyboard users directly to the main content', async ({ browserName, page }) => {
   await page.goto(resolvePreviewPath('/'));
-  await page.keyboard.press('Tab');
+  await page.keyboard.press(browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab');
 
   const skipLink = page.getByRole('link', { name: 'Skip to content' });
   await expect(skipLink).toBeFocused();

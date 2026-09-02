@@ -66,10 +66,17 @@ enabling GitHub Actions, while reviewing `Automation` whenever it appears.
 
 The minimum Node 22 release and the latest Node 22, 24, and 26 releases each run
 package type checks, tests, and builds. The standalone template uses the same
-matrix, with one clean install per runtime. Formatting, Markdown, spelling,
-package inspection, coverage, browser tests, Lighthouse, isolation, and packed
-generator acceptance run once on the primary Node 26 runtime because repeating
-them does not add version-compatibility evidence.
+matrix, with one clean install per runtime. The packed generator compatibility
+suite also runs on those four Linux runtimes and on the current macOS runner
+with Node 26. Each lane records its operating system, architecture, Node, npm,
+and Git versions before exercising the installed generator executable.
+
+Formatting, Markdown, spelling, package inspection, coverage, Lighthouse,
+isolation, and the complete generated-project acceptance suite run once on the
+primary Node 26 runtime because repeating them does not add compatibility
+evidence. The blocking Playwright suite runs once in each of Chromium, Firefox,
+and WebKit using the browser revisions associated with the committed Playwright
+version.
 
 The `Project` aggregate depends on all required jobs. A failure retains its
 specific job name while preventing the aggregate from succeeding. Its log also
