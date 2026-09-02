@@ -1,5 +1,10 @@
 # Package releases
 
+This document describes package-publication automation and recovery details.
+For the complete human checklist, simulated prerelease, checkpoint releases,
+rollback, and deprecation procedure, start with the
+[maintainer release guide](releasing.md).
+
 Forge publishes `@rm-industries/create-forge` and
 `@rm-industries/content-model` independently. A package version is prepared in
 a reviewed pull request, merged to `main`, and published only from a matching
