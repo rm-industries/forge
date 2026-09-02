@@ -16,3 +16,8 @@ supersedes the old one.
 These records implement
 [FGE-001](https://github.com/rm-industries/forge/issues/1) and follow the
 project roadmap represented by its linked work items.
+
+See the [architecture guide](../architecture.md) for the current system map,
+contract boundaries, data flow, and verification layers. Maintainer procedures
+are documented separately in the [maintainer guide](../maintaining.md) and
+[release guide](../releasing.md).
