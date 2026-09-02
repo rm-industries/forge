@@ -2,6 +2,8 @@ import { flavors } from '@catppuccin/palette';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
+import { previewOrigin, resolvePreviewPath } from './preview';
+
 const toRgb = (hex: string) => {
   const value = Number.parseInt(hex.slice(1), 16);
 
@@ -13,7 +15,7 @@ const pageBackground = async (page: Page) =>
 
 test('uses Latte for light mode and Mocha for dark mode', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
-  await page.goto('/');
+  await page.goto(resolvePreviewPath('/'));
   await expect(page.locator('html')).toHaveCSS('background-color', toRgb(flavors.latte.colors.base.hex));
   await expect(page.locator('main h1')).toHaveCSS('color', toRgb(flavors.latte.colors.text.hex));
 
@@ -23,7 +25,7 @@ test('uses Latte for light mode and Mocha for dark mode', async ({ page }) => {
 });
 
 test('makes every Catppuccin flavor available explicitly', async ({ page }) => {
-  await page.goto('/');
+  await page.goto(resolvePreviewPath('/'));
 
   for (const flavor of ['latte', 'frappe', 'macchiato', 'mocha'] as const) {
     await page.locator('html').evaluate((element, theme) => element.setAttribute('data-theme', theme), flavor);
@@ -37,11 +39,11 @@ test('serves fonts locally and presents a visible keyboard focus indicator', asy
     if (request.resourceType() === 'font') fontRequests.push(request.url());
   });
 
-  await page.goto('/');
+  await page.goto(resolvePreviewPath('/'));
   await page.keyboard.press('Tab');
 
   await expect(page.locator('a').first()).toBeFocused();
   await expect(page.locator('a').first()).not.toHaveCSS('outline-style', 'none');
   expect(fontRequests.length).toBeGreaterThan(0);
-  expect(fontRequests.every((url) => new URL(url).origin === 'http://127.0.0.1:4321')).toBe(true);
+  expect(fontRequests.every((url) => new URL(url).origin === previewOrigin)).toBe(true);
 });

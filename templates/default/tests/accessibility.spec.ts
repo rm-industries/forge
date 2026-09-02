@@ -2,6 +2,8 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
+import { resolvePreviewPath } from './preview';
+
 const publicRoutes = [
   { name: 'home', path: '/' },
   { name: 'about', path: '/about/' },
@@ -22,7 +24,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
   for (const route of publicRoutes) {
     test(`${route.name} has no serious or critical violations in ${colorScheme} mode`, async ({ page }) => {
       await page.emulateMedia({ colorScheme });
-      await page.goto(route.path);
+      await page.goto(resolvePreviewPath(route.path));
 
       expect(await analyzePage(page)).toEqual([]);
     });
@@ -31,7 +33,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
 for (const route of publicRoutes) {
   test(`${route.name} exposes one main landmark and one level-one heading`, async ({ page }) => {
-    await page.goto(route.path);
+    await page.goto(resolvePreviewPath(route.path));
 
     await expect(page.getByRole('banner')).toHaveCount(1);
     await expect(page.getByRole('main')).toHaveCount(1);
@@ -41,14 +43,14 @@ for (const route of publicRoutes) {
 }
 
 test('identifies the current primary navigation item', async ({ page }) => {
-  await page.goto('/');
+  await page.goto(resolvePreviewPath('/'));
 
   await expect(page.getByRole('navigation', { name: 'Primary navigation' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
 });
 
 test('moves keyboard users directly to the main content', async ({ page }) => {
-  await page.goto('/');
+  await page.goto(resolvePreviewPath('/'));
   await page.keyboard.press('Tab');
 
   const skipLink = page.getByRole('link', { name: 'Skip to content' });
@@ -62,7 +64,7 @@ test('moves keyboard users directly to the main content', async ({ page }) => {
 
 test('keeps navigation available without horizontal overflow on small screens', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
-  await page.goto('/');
+  await page.goto(resolvePreviewPath('/'));
 
   await page.locator('summary').click();
   await expect(page.getByRole('navigation', { name: 'Mobile navigation' })).toBeVisible();
@@ -75,7 +77,7 @@ test('keeps navigation available without horizontal overflow on small screens', 
 
 test('honors reduced-motion preferences', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/');
+  await page.goto(resolvePreviewPath('/'));
 
   const motionStyles = await page.getByRole('link', { name: 'Browse the articles' }).evaluate((element) => {
     const styles = getComputedStyle(element);
