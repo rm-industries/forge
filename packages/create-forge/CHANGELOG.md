@@ -2,6 +2,19 @@
 
 All notable changes to `@rm-industries/create-forge` are documented here.
 
+## 0.4.0-beta.2
+
+- Add the bundled template's quality-gated GitHub Pages deployment, including
+  project-path URL handling and custom-domain guidance.
+- Harden generated-project automation with a conditional workflow-validation
+  aggregate and strict Lighthouse evidence retention.
+- Update the bundled template to Astro 7.2.9, DaisyUI 5.7.22, and Oxfmt 0.65.0.
+- Update the generator runtime to Commander 15 without changing its documented
+  command-line interface or supported Node.js versions.
+- Existing generated projects remain unchanged; this release affects projects
+  created from the new generator version. No migration is required for generator
+  users.
+
 ## 0.4.0-beta.1
 
 - Update the bundled default template to
