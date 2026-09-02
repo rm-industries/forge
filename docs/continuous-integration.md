@@ -45,6 +45,12 @@ cancellation fails `Project`. The build retains its static-check dependency and
 runs only when package work is selected and every prerequisite succeeded or was
 intentionally skipped.
 
+For a documentation-only pull request, expect `Classify changes`, `Format`,
+`Lint Markdown`, `Spellcheck`, `Documentation links and commands`, and `Project`
+to run. Package, compatibility, template, browser, Lighthouse, and generator
+jobs should appear as skipped. This provides a quick review checklist for the
+lightweight route without weakening the required aggregate.
+
 `Automation` aggregates workflow syntax and workflow-security validation, but it
 runs only when workflow files change. Do not configure it as a globally required
 status check: unrelated pull requests would wait for a path-filtered workflow
