@@ -69,7 +69,8 @@ the complete Playwright and axe suite, and Lighthouse budgets in that order.
 Each stage is joined with `&&`, so the command stops immediately and returns a
 non-zero status when any stage fails. Browser tests and Lighthouse start from
 their own production build so they remain independently runnable and cannot
-accidentally inspect stale output.
+accidentally inspect stale output. Both use Astro's preview server and derive
+any deployment base path from the configured canonical site URL.
 
 The complete command is intentionally high cost. Use `npm run quality:static`
 for the quickest source-only feedback or `npm run quality:core` for every check
@@ -147,10 +148,12 @@ alternative-text quality.
 
 Lighthouse CI runs three times each against the production home, article
 listing, and article detail pages, then enforces median category scores and
-transfer budgets. The measured baseline, headroom, exclusions, and update rules
-are documented in `docs/performance-budget.md`. Reports are written to the
-generated `.lighthouseci/` directory; CI retains them for seven days even when
-an assertion fails.
+transfer budgets. Its typed runner prefixes those routes with a configured
+project path, so local checks exercise GitHub Pages project sites with the same
+asset URLs used in production. The measured baseline, headroom, exclusions, and
+update rules are documented in `docs/performance-budget.md`. Reports are written
+to the generated `.lighthouseci/` directory; CI retains them for seven days even
+when an assertion fails.
 
 The configured exclusions cover only generated output, dependency directories,
 and tool artifacts. Stylelint's exceptions recognize Tailwind and DaisyUI
