@@ -2,6 +2,18 @@
 
 All notable changes to `@rm-industries/create-forge` are documented here.
 
+## 0.4.0-beta.5
+
+- Make the generated Playwright configuration wait for the deployed project
+  path when a site's canonical URL includes one, such as a GitHub Pages project
+  site.
+- Resolve browser routes, navigation expectations, internal links, canonical
+  metadata, feeds, manifests, and not-found checks against the configured
+  deployment base.
+- Existing generated projects only need this change when they use a project-path
+  deployment. They can copy the updated Playwright configuration, test helper,
+  and browser specifications without regenerating the project.
+
 ## 0.4.0-beta.4
 
 - Correct the bundled article-authoring example so following it passes the
