@@ -259,3 +259,8 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/vim,node,astro,linux,macos,windows,visualstudiocode
+
+### Forge test output ###
+.lighthouseci/
+playwright-report/
+test-results/
