@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.7.0",
-    "commander": "^14.0.3",
+    "commander": "^15.0.0",
     "validate-npm-package-name": "^8.0.0"
   },
   "devDependencies": {
