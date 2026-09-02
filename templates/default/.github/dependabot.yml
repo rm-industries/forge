@@ -12,6 +12,9 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: chore
+    labels:
+      - dependencies
+      - github-actions
     groups:
       github-actions:
         patterns:
@@ -30,6 +33,9 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: chore
+    labels:
+      - dependencies
+      - npm
     groups:
       production-dependencies:
         dependency-type: production
