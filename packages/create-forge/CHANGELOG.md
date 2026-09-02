@@ -2,6 +2,17 @@
 
 All notable changes to `@rm-industries/create-forge` are documented here.
 
+## 0.4.0-beta.4
+
+- Correct the bundled article-authoring example so following it passes the
+  generated project's Markdownlint rules without duplicating the document title
+  as a top-level heading.
+- Add a regression test that keeps the documented article example aligned with
+  the article layout's title ownership.
+- Existing generated projects need no runtime migration. Projects created with
+  beta.3 can remove a repeated top-level heading from articles copied from that
+  guide, or copy the corrected guide from this release.
+
 ## 0.4.0-beta.3
 
 - Add complete generated-project guides for setup, content and CMS workflows,
