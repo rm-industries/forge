@@ -44,11 +44,17 @@ const runGeneratedQuality = async (cwd: string) => {
 const assertGeneratedProject = async (directory: string, packageName: string) => {
   const metadata = JSON.parse(await readFile(join(directory, 'package.json'), 'utf8')) as PackageMetadata;
   const lockfile = await readFile(join(directory, 'package-lock.json'), 'utf8');
+  const gitignore = await readFile(join(directory, '.gitignore'), 'utf8');
   const siteConfig = await readFile(join(directory, 'src', 'config', 'site.ts'), 'utf8');
   const securityWorkflow = await readFile(join(directory, '.github', 'workflows', 'security.yml'), 'utf8');
   const automationWorkflow = await readFile(join(directory, '.github', 'workflows', 'automation.yml'), 'utf8');
   if (metadata.name !== packageName) {
     throw new Error(`Expected ${directory} to use package name ${packageName}.`);
+  }
+  for (const path of ['.lighthouseci/', 'playwright-report/', 'test-results/']) {
+    if (!gitignore.split(/\r?\n/u).includes(path)) {
+      throw new Error(`Generated fixture ${directory} does not ignore ${path}.`);
+    }
   }
   if (`${lockfile}\n${siteConfig}\n${securityWorkflow}\n${automationWorkflow}`.includes(templateTokenPrefix)) {
     throw new Error(`Generated fixture ${directory} contains an unresolved template token.`);
