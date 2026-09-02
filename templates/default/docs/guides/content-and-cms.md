@@ -18,14 +18,14 @@ tags:
 draft: false
 ---
 
-# My first article
-
 Write the article body here.
 ```
 
 The file name becomes the article slug. Use a unique lowercase, hyphenated file
 name. Required fields, dates, defaults, and body content are validated during
-development, type checking, and builds.
+development, type checking, and builds. Do not repeat the title as a top-level
+Markdown heading: the front matter `title` is the article's document title, and
+the article layout renders it as the page heading.
 
 Set `draft: true` while writing. Draft articles appear during local development
 but are omitted from production article pages and RSS output. Before publishing:
