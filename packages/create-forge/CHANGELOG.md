@@ -2,6 +2,20 @@
 
 All notable changes to `@rm-industries/create-forge` are documented here.
 
+## 0.4.0-beta.6
+
+- Run Lighthouse against Astro's production preview server instead of a generic
+  static-file server.
+- Derive audited URLs from the configured canonical site URL so root and GitHub
+  Pages project-path deployments load the same routes and assets as production.
+- Add typed URL-generation coverage and document the deployment-aware
+  Lighthouse behavior.
+- Existing generated projects using a project-path deployment can copy the
+  Lighthouse runner, its configuration, and the updated package script without
+  regenerating the project.
+- Refresh the bundled template lockfile to patched `fast-uri` 3.1.7 after new
+  advisories affected the prior transitive version.
+
 ## 0.4.0-beta.5
 
 - Make the generated Playwright configuration wait for the deployed project

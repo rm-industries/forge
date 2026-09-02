@@ -1,12 +1,9 @@
 {
   "ci": {
     "collect": {
-      "staticDistDir": "./dist",
-      "url": [
-        "http://localhost/",
-        "http://localhost/articles/",
-        "http://localhost/articles/designing-a-calm-starting-point/"
-      ],
+      "startServerCommand": "npm run preview -- --host 127.0.0.1",
+      "startServerReadyPattern": "Local",
+      "startServerReadyTimeout": 30000,
       "numberOfRuns": 3
     },
     "assert": {

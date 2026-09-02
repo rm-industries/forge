@@ -3,7 +3,10 @@
 Lighthouse CI protects the generated site's public-page baseline. Run
 `npm run lighthouse:ci` after changes that can affect rendering, assets,
 metadata, or client behavior. The command builds the production site, collects
-three reports per route, and evaluates the median result.
+three reports per route from Astro's preview server, and evaluates the median
+result. The typed runner derives Astro's optional deployment base from
+`src/config/site.ts`, ensuring project-path assets and routes are measured at
+their production-relative locations.
 
 ## Enforced routes
 
