@@ -104,6 +104,27 @@ jobs:
       - name: Spellcheck
         run: npm run spellcheck
 
+  documentation:
+    name: Documentation links and commands
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup project
+        uses: ./.github/actions/setup-project
+        with:
+          node-version: '26.x'
+
+      - name: Check documentation links and commands
+        run: npm run docs:validate
+
   typecheck:
     name: Type-check
     runs-on: ubuntu-latest
@@ -153,6 +174,7 @@ jobs:
       - lint-code
       - lint-markdown
       - spellcheck
+      - documentation
       - typecheck
     runs-on: ubuntu-latest
 
@@ -492,6 +514,7 @@ jobs:
       - lint-code
       - lint-markdown
       - spellcheck
+      - documentation
       - typecheck
       - test
       - build

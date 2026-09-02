@@ -179,7 +179,9 @@ and package contents. The registry-backed audit and isolated template check are
 explicit because they have different network and runtime requirements.
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) for the review workflow, CI expectations,
-and template-specific checks. Architecture decisions live in
+and template-specific checks. The
+[documentation validation guide](docs/documentation-validation.md) explains
+link and critical-command checks. Architecture decisions live in
 [`docs/decisions/`](docs/decisions/README.md).
 
 ## Support and security

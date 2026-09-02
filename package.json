@@ -9,6 +9,9 @@
   "type": "module",
   "scripts": {
     "audit": "audit-ci --config audit-ci.jsonc",
+    "docs:check": "npm run format && npm run lint:markdown && npm run spellcheck && npm run docs:validate",
+    "docs:links:external": "node scripts/validate-documentation.ts --external",
+    "docs:validate": "node scripts/validate-documentation.ts",
     "format": "oxfmt --check",
     "format:fix": "oxfmt",
     "lint": "npm run lint:repo",
@@ -16,7 +19,7 @@
     "lint:code:fix": "oxlint --fix",
     "lint:markdown": "markdownlint \"**/*.md\" --ignore-path .gitignore",
     "lint:markdown:fix": "markdownlint --fix \"**/*.md\" --ignore-path .gitignore",
-    "lint:repo": "npm run lint:code && npm run lint:markdown && npm run spellcheck",
+    "lint:repo": "npm run lint:code && npm run lint:markdown && npm run spellcheck && npm run docs:validate",
     "spellcheck": "cspell \"**\"",
     "typecheck": "npm run typecheck:root && npm run typecheck:workspaces",
     "typecheck:root": "tsc --noEmit",
