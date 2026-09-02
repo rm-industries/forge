@@ -17,10 +17,35 @@ describe('CLI argument parsing', () => {
   test('prints help without prompting', async () => {
     const prompts = createPrompts([], []);
     const result = await runCli(['--help'], '0.3.0-alpha.0', { interactive: true, prompts });
-    expect(result).toMatchObject({
-      output: expect.stringContaining('Usage: create-forge [options] [destination]'),
-      exitCode: 0,
-    });
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "exitCode": 0,
+        "output": "Usage: create-forge [options] [destination]
+
+      Create a content-driven Forge website
+
+      Arguments:
+        destination                      directory where the project will be created
+
+      Options:
+        --name <name>                    npm package name (defaults to the directory
+                                         basename)
+        --site-name <name>               site name
+        --description <text>             site description
+        --author <name>                  site author
+        --url <url>                      absolute canonical HTTP(S) URL
+        --repository <owner/repository>  GitHub repository or an empty value
+        --install                        install dependencies
+        --no-install                     do not install dependencies
+        --git                            initialize a Git repository
+        --no-git                         do not initialize a Git repository
+        -y, --yes                        use documented defaults without prompting
+                                         (default: false)
+        -v, --version                    show the installed package version
+        -h, --help                       show this help message
+      ",
+      }
+    `);
     expect(prompts.text).not.toHaveBeenCalled();
   });
 
