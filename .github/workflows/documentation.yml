@@ -1,0 +1,39 @@
+---
+name: External Documentation Links
+
+on: # yamllint disable-line rule:truthy
+  schedule:
+    - cron: '31 9 * * 2'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  external-links:
+    name: External links
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup project
+        uses: ./.github/actions/setup-project
+        with:
+          node-version: '26.x'
+
+      - name: Check external documentation links
+        run: npm run docs:links:external
