@@ -11,6 +11,7 @@ test('serves every baseline page with configured canonical and social metadata',
 
     const canonicalUrl = new URL(resolvePreviewPath(route), site.url).href;
 
+    await expect(page.locator('meta[name="generator"]')).toHaveAttribute('content', 'Forge by RM Industries');
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', canonicalUrl);
     await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute('content', site.name);
     await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', canonicalUrl);

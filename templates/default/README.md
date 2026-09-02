@@ -289,6 +289,13 @@ reference in `robots.txt`. Replace `public/favicon.svg` and
 `public/social-card.svg` when establishing a project identity, and update
 `socialImage` in `src/config/site.ts` if the sharing image path changes.
 
+Every HTML page, including `/admin/`, also includes the nonvisual, standard
+`generator` metadata value `Forge by RM Industries`. It makes Forge-generated
+sites identifiable in page source without adding telemetry, network requests,
+client-side JavaScript, accessibility-tree content, or visible branding. This
+generated project is owned source: remove or change the element in
+`src/components/seo/SeoHead.astro` if you do not want to retain the attribution.
+
 ## Content manager
 
 Run the development server and open `/admin/` to use Sveltia CMS. Sveltia
