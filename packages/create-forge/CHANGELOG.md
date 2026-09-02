@@ -2,6 +2,18 @@
 
 All notable changes to `@rm-industries/create-forge` are documented here.
 
+## 0.4.0-beta.3
+
+- Add complete generated-project guides for setup, content and CMS workflows,
+  themes, accessibility, quality troubleshooting, and GitHub Pages deployment.
+- Refresh the bundled project README and maintainer-facing command guidance so
+  public claims correspond to automated checks or explicit manual validation.
+- Add repository documentation validation for internal links, heading anchors,
+  critical commands, spelling, Markdown quality, and resilient external links.
+- Existing generated projects remain unchanged; this release affects projects
+  created from the new generator version. Users can copy the new guides without
+  regenerating their project, and no runtime migration is required.
+
 ## 0.4.0-beta.2
 
 - Add the bundled template's quality-gated GitHub Pages deployment, including
