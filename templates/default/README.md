@@ -11,6 +11,30 @@ The template's `.editorconfig` shares UTF-8, LF, final-newline, two-space, and
 120-column settings with supported editors and Oxfmt. `oxfmt.config.ts` contains
 only formatter-specific behavior such as quote and import ordering.
 
+## Start here
+
+The generated documentation is organized by task:
+
+- [Getting started and site configuration](docs/guides/getting-started.md)
+  covers installation, local development, branding, identity assets, pages, and
+  the first verification pass.
+- [Content and CMS editing](docs/guides/content-and-cms.md) covers Markdown
+  articles, drafts, Sveltia local mode, deployed editing, shared model changes,
+  media, and recovery.
+- [Themes and accessibility](docs/guides/themes-and-accessibility.md) covers
+  themes, fonts, layout semantics, automated checks, and manual review.
+- [Quality checks, dependency updates, and troubleshooting](docs/guides/quality-and-troubleshooting.md)
+  explains the validation layers, common failures, Dependabot review, and safe
+  support requests.
+- [GitHub Pages deployment](docs/github-pages.md) covers project sites, custom
+  domains, environment protection, and deployment diagnosis.
+- [Accessibility review](docs/accessibility-checklist.md) and the
+  [Lighthouse performance budget](docs/performance-budget.md) record the
+  generated baseline and the manual checks projects must maintain.
+
+The remainder of this README is the complete command and implementation
+reference.
+
 | Command                  | Purpose                                                          |
 | ------------------------ | ---------------------------------------------------------------- |
 | `npm run dev`            | Start Astro's local development server.                          |
