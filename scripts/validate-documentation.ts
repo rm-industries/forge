@@ -68,7 +68,6 @@ export const findMarkdownLinks = (markdown: string): Link[] => {
 const headingSlug = (heading: string) =>
   heading
     .toLowerCase()
-    .replace(/<[^>]*>/gu, '')
     .replace(/\[([^\]]+)\]\([^)]*\)/gu, '$1')
     .replace(/[`*_~]/gu, '')
     .replace(/[^\p{Letter}\p{Number}\p{Mark}\- ]/gu, '')
