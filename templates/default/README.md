@@ -125,6 +125,21 @@ tested content-model release first. No version is ignored, security updates
 remain enabled, and every update must pass the complete project and security
 workflows before merging.
 
+Dependabot pull requests use `dependencies` plus the readable ecosystem label
+`npm` or `github-actions`. GitHub ignores configured custom labels that do not
+exist, so initialize them once after creating the repository:
+
+```sh
+gh label create dependencies --color 0366d6 --description "Pull requests that update a dependency file" --force
+gh label create npm --color cb3837 --description "Pull requests that update npm dependencies" --force
+gh label create github-actions --color 2088ff --description "Pull requests that update GitHub Actions dependencies" --force
+```
+
+Run these commands from the generated repository while authenticated with the
+GitHub CLI. They are idempotent because `--force` updates an existing label. If
+they are not run, Dependabot still opens update pull requests but omits any
+configured label that is missing.
+
 GitHub chooses the Dependabot run times, distributing update checks across its
 available schedule. Forge derives distinct weekly CodeQL and workflow-validation
 minutes from the generated package name. This keeps generation reproducible
