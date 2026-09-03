@@ -2,6 +2,22 @@
 
 All notable changes to `@rm-industries/create-forge` are documented here.
 
+## 1.0.0
+
+- Promote the reviewed CLI, deterministic project materialization, and bundled
+  default template to the first stable release without command-line contract
+  changes from `1.0.0-rc.2`; no CLI migration is required.
+- Generate an accessible Astro article site with Sveltia CMS, stable
+  `@rm-industries/content-model@1.0.0`, RSS and sitemap output, local fonts,
+  DaisyUI themes, comprehensive quality checks, security automation, and a
+  gated GitHub Pages deployment.
+- Support Node.js 22.22.2/24/26 and npm 10/11. Other package managers and older
+  Node.js versions are unsupported; Windows and WSL remain best effort for v1.
+- Generated projects are owned source and are not updated automatically by
+  later Forge releases. Report reproducible defects and feature proposals
+  through Forge GitHub Issues, and report vulnerabilities privately through the
+  repository security policy.
+
 ## 1.0.0-rc.2
 
 - Correct the generated GitHub Pages workflow annotation so its reviewed
