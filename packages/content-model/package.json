@@ -1,6 +1,6 @@
 {
   "name": "@rm-industries/content-model",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "description": "Typed, integration-neutral content models and adapters for content-driven websites",
   "keywords": [
     "astro",
@@ -43,7 +43,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "tag": "next"
+    "tag": "latest"
   },
   "scripts": {
     "build": "tsdown",
