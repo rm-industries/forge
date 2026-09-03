@@ -40,7 +40,7 @@
     "@astrojs/sitemap": "^3.7.3",
     "@fontsource/fira-code": "^5.3.0",
     "@fontsource/fira-sans": "^5.3.0",
-    "@rm-industries/content-model": "1.0.0-rc.1",
+    "@rm-industries/content-model": "1.0.0",
     "@sveltia/cms": "0.203.2",
     "astro": "^7.2.9"
   },
