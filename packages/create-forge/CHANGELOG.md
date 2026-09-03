@@ -2,6 +2,31 @@
 
 All notable changes to `@rm-industries/create-forge` are documented here.
 
+## 1.0.0-rc.2
+
+- Correct the generated GitHub Pages workflow annotation so its reviewed
+  `actions/deploy-pages` commit is identified as the exact `v5.0.0` release.
+- Keep action commit pins available for Dependabot updates; workflow-security
+  validation, rather than the template verifier, detects stale annotations.
+- Existing generated projects have no runtime or CLI migration. They may update
+  the annotation from `v5` to `v5.0.0`, or regenerate after reviewing local
+  customizations.
+
+## 1.0.0-rc.1
+
+- Bundle the release-candidate `@rm-industries/content-model@1.0.0-rc.1`
+  integration and its tested `@sveltia/cms@0.203.2` peer.
+- Add nonvisual Forge generator metadata to generated pages so public sites can
+  identify their origin without changing visible content.
+- Ignore Playwright, Lighthouse, and browser-test output in generated projects.
+- Standardize generated Dependabot pull-request labels and expand the generated
+  Playwright configuration for explicit browser compatibility runs.
+- Freeze and document the supported command-line interface, prompts, defaults,
+  validation behavior, exit codes, and Node.js compatibility matrix for 1.0.
+- Existing generated projects are not modified automatically. No CLI migration
+  is required from `0.4.0-beta.6`; projects may adopt the template changes
+  individually or regenerate after reviewing local customizations.
+
 ## 0.4.0-beta.6
 
 - Run Lighthouse against Astro's production preview server instead of a generic

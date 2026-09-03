@@ -2,6 +2,14 @@
   "name": "@rm-industries/forge-root",
   "version": "0.0.0",
   "private": true,
+  "description": "Monorepo for Forge, a generator for accessible, content-driven Astro websites",
+  "keywords": [
+    "astro",
+    "content-model",
+    "forge",
+    "monorepo",
+    "site-generator"
+  ],
   "license": "MIT",
   "workspaces": [
     "packages/*"
