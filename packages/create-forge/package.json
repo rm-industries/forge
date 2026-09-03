@@ -1,12 +1,22 @@
 {
   "name": "@rm-industries/create-forge",
   "version": "1.0.0-rc.2",
-  "description": "Create a content-driven Forge website",
+  "description": "Scaffold accessible, content-driven Astro websites with Sveltia CMS and production-ready tooling",
   "keywords": [
+    "accessibility",
     "astro",
+    "cms",
+    "content-driven",
     "create-forge",
-    "generator",
-    "sveltia"
+    "daisyui",
+    "github-pages",
+    "project-generator",
+    "static-site-generator",
+    "sveltia",
+    "sveltia-cms",
+    "tailwindcss",
+    "typescript",
+    "website-generator"
   ],
   "homepage": "https://github.com/rm-industries/forge/tree/main/packages/create-forge#readme",
   "bugs": {

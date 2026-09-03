@@ -1,7 +1,17 @@
 {
   "name": "@rm-industries/content-model",
   "version": "1.0.0-rc.1",
-  "description": "Integration-neutral content models and framework adapters",
+  "description": "Typed, integration-neutral content models and adapters for content-driven websites",
+  "keywords": [
+    "astro",
+    "cms",
+    "content-model",
+    "content-schema",
+    "static-site-generator",
+    "sveltia",
+    "sveltia-cms",
+    "typescript"
+  ],
   "homepage": "https://github.com/rm-industries/forge/tree/main/packages/content-model#readme",
   "bugs": {
     "url": "https://github.com/rm-industries/forge/issues"
