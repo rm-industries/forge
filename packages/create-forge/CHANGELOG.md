@@ -2,6 +2,16 @@
 
 All notable changes to `@rm-industries/create-forge` are documented here.
 
+## 1.0.0-rc.2
+
+- Correct the generated GitHub Pages workflow annotation so its reviewed
+  `actions/deploy-pages` commit is identified as the exact `v5.0.0` release.
+- Keep action commit pins available for Dependabot updates; workflow-security
+  validation, rather than the template verifier, detects stale annotations.
+- Existing generated projects have no runtime or CLI migration. They may update
+  the annotation from `v5` to `v5.0.0`, or regenerate after reviewing local
+  customizations.
+
 ## 1.0.0-rc.1
 
 - Bundle the release-candidate `@rm-industries/content-model@1.0.0-rc.1`
