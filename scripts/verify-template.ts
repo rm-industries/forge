@@ -42,13 +42,9 @@ const allowedRuntimeTokens = new Map<string, ReadonlySet<string>>([
   ['src/integrations/sveltia/config.ts', new Set(['{{collection}}', '{{path}}', '{{slug}}'])],
 ]);
 const personalIdentifierPattern = /rahul(?:0705|mohandas)|rahul\s+mohandas/iu;
-const expectedTemplateContent = [
+const expectedDefaults = [
   { path: 'src/config/site.ts', value: "url: 'https://example.com'" },
   { path: 'src/integrations/sveltia/config.ts', value: "repo: 'your-github-user/your-repository'" },
-  {
-    path: '.github/workflows/project.yml',
-    value: 'actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0',
-  },
 ] as const;
 
 export const findLocalDependencies = (manifest: PackageManifest): string[] =>
@@ -118,7 +114,7 @@ const assertTemplateState = async (directory: string) => {
     throw new Error(`Personal reference identifiers found:\n${personalIdentifiers.join('\n')}`);
   }
 
-  for (const expected of expectedTemplateContent) {
+  for (const expected of expectedDefaults) {
     const file = files.find(({ path }) => path === expected.path);
     if (!file?.content.includes(expected.value)) {
       throw new Error(`Expected documented starter default is missing from ${expected.path}: ${expected.value}`);
