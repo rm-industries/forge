@@ -4,11 +4,10 @@ Integration-neutral content collection definitions and validation for Forge.
 Astro and Sveltia adapters are separate package entry points introduced by the
 adapter milestones; the core module imports neither integration.
 
-The package is currently published as a prerelease. Install the version from
-the `next` tag when evaluating it:
+Install the stable package from npm:
 
 ```sh
-npm install @rm-industries/content-model@next
+npm install @rm-industries/content-model
 ```
 
 The package exports integration-specific adapters from
