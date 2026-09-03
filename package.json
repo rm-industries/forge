@@ -49,7 +49,7 @@
   },
   "devDependencies": {
     "@sveltia/cms": "^0.203.2",
-    "@types/node": "^22.20.1",
+    "@types/node": "^26.2.0",
     "@types/semver": "^7.8.0",
     "astro": "^7.2.4",
     "audit-ci": "7.1.0",
