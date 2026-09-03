@@ -1,10 +1,10 @@
 # `@rm-industries/create-forge`
 
-The publishable Forge project initializer. Once the generator milestone is
-complete, npm will resolve the primary command to this scoped package:
+The stable Forge project initializer. npm resolves the primary command to this
+scoped package:
 
 ```sh
-npm create @rm-industries/forge@next
+npm create @rm-industries/forge
 ```
 
 The initializer accepts interactive answers, documented defaults through

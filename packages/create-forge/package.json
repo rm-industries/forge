@@ -1,6 +1,6 @@
 {
   "name": "@rm-industries/create-forge",
-  "version": "1.0.0-rc.2",
+  "version": "1.0.0",
   "description": "Scaffold accessible, content-driven Astro websites with Sveltia CMS and production-ready tooling",
   "keywords": [
     "accessibility",
@@ -37,7 +37,7 @@
   "type": "module",
   "publishConfig": {
     "access": "public",
-    "tag": "next"
+    "tag": "latest"
   },
   "scripts": {
     "build": "tsdown && node scripts/copy-template.ts",

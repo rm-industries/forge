@@ -12,7 +12,7 @@ export interface ExternalLinkException {
 
 export const criticalCommands: CriticalCommand[] = [
   {
-    command: 'npm create @rm-industries/forge@next',
+    command: 'npm create @rm-industries/forge',
     documentation: 'README.md',
   },
   {

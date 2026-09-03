@@ -5,8 +5,7 @@ The generated project includes a responsive article site, Sveltia CMS, RSS and
 sitemap output, accessible navigation, quality checks, security automation, and
 a gated GitHub Pages deployment.
 
-Forge is maintained by [RM Industries](https://github.com/rm-industries). It is
-currently available as a prerelease; use the npm `next` tag while evaluating it.
+Forge is maintained by [RM Industries](https://github.com/rm-industries).
 
 ## Requirements
 
@@ -24,7 +23,7 @@ browser, dependency, and prerelease support details.
 Run the initializer from the directory that should contain the new project:
 
 ```sh
-npm create @rm-industries/forge@next
+npm create @rm-industries/forge
 ```
 
 The interactive flow asks for a destination, package and site metadata, and
@@ -34,7 +33,7 @@ branch but does not stage files or create a commit.
 For a non-interactive project using documented defaults:
 
 ```sh
-npm create @rm-industries/forge@next -- my-site --yes
+npm create @rm-industries/forge -- my-site --yes
 cd my-site
 npm run dev
 ```
@@ -43,7 +42,7 @@ Pass `--help` to see every input, including site metadata, canonical URL,
 repository, installation, and Git options:
 
 ```sh
-npm create @rm-industries/forge@next -- --help
+npm create @rm-industries/forge -- --help
 ```
 
 Generation refuses unsafe destination paths and requires confirmation before it
@@ -156,8 +155,8 @@ Forge publishes two independently versioned packages:
 - [`@rm-industries/content-model`](packages/content-model/README.md) provides
   integration-neutral models plus Astro and Sveltia adapters.
 
-Prereleases use the npm `next` tag. Generated projects pin the content-model
-version proven with their template. The
+Stable releases use npm's `latest` tag, while prereleases use `next`. Generated
+projects pin the content-model version proven with their template. The
 [package release guide](docs/package-releases.md) documents tags, protected
 publication, provenance, dry runs, and recovery.
 
