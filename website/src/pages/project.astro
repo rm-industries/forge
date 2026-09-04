@@ -1,12 +1,15 @@
 ---
 import Card from '../components/ui/Card.astro';
 import Container from '../components/ui/Container.astro';
+import PageIntro from '../components/ui/PageIntro.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="Project" description="Find Forge releases, roadmap, contribution, support, security, and licensing information.">
   <Container class="space-y-10 pb-16">
-    <header class="max-w-2xl space-y-3"><div class="badge badge-outline">Open source</div><h1 class="text-4xl font-bold">Build and improve Forge with RM Industries.</h1><p>Development, planning, support, and releases are public on GitHub. Security reports use a separate private channel.</p></header>
+    <PageIntro eyebrow="Open source" title="Build and improve Forge with RM Industries.">
+      <p>Development, planning, support, and releases are public on GitHub. Security reports use a separate private channel.</p>
+    </PageIntro>
     <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       <Card href="https://github.com/rm-industries/forge/releases"><h2 class="card-title">Releases</h2><p>Review package and project checkpoint history.</p></Card>
       <Card href="https://github.com/orgs/rm-industries/projects/3"><h2 class="card-title">Roadmap</h2><p>Follow planned milestones and current work.</p></Card>

@@ -1,16 +1,15 @@
 ---
 import Card from '../components/ui/Card.astro';
 import Container from '../components/ui/Container.astro';
+import PageIntro from '../components/ui/PageIntro.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="Features" description="Explore Forge content modeling, presentation, quality, automation, and deployment features.">
   <Container class="space-y-10 pb-16">
-    <header class="max-w-2xl space-y-3">
-      <div class="badge badge-outline">Features</div>
-      <h1 class="text-4xl font-bold">The pieces needed to publish with confidence.</h1>
+    <PageIntro eyebrow="Features" title="The pieces needed to publish with confidence.">
       <p>Forge combines a focused Astro site with explicit quality and maintenance contracts.</p>
-    </header>
+    </PageIntro>
     <div class="grid gap-6 md:grid-cols-2">
       <Card size="lg"><h2 class="card-title">Shared content model</h2><p>One typed definition drives Astro collections and Sveltia CMS configuration, reducing schema drift between rendering and editing.</p></Card>
       <Card size="lg"><h2 class="card-title">Accessible UI foundation</h2><p>Semantic layouts, keyboard navigation, responsive DaisyUI components, local fonts, and light and dark themes work without client JavaScript.</p></Card>

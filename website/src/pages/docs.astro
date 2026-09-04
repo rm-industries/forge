@@ -1,12 +1,15 @@
 ---
 import Card from '../components/ui/Card.astro';
 import Container from '../components/ui/Container.astro';
+import PageIntro from '../components/ui/PageIntro.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="Documentation" description="Find the canonical Forge guides, architecture, support policy, and release documentation.">
   <Container class="space-y-10 pb-16">
-    <header class="max-w-2xl space-y-3"><div class="badge badge-outline">Documentation</div><h1 class="text-4xl font-bold">Follow the versioned source.</h1><p>This site summarizes Forge. Package APIs and maintainer policies remain canonical in the repository so changes stay reviewable with the code they govern.</p></header>
+    <PageIntro eyebrow="Documentation" title="Follow the versioned source.">
+      <p>This site summarizes Forge. Package APIs and maintainer policies remain canonical in the repository so changes stay reviewable with the code they govern.</p>
+    </PageIntro>
     <div class="grid gap-6 md:grid-cols-2">
       <Card href="https://github.com/rm-industries/forge#readme"><h2 class="card-title">Project overview</h2><p>Installation, capabilities, repository map, packages, and support channels.</p></Card>
       <Card href="https://github.com/rm-industries/forge/blob/main/docs/architecture.md"><h2 class="card-title">Architecture</h2><p>System boundaries, data flow, verification layers, and accepted decisions.</p></Card>

@@ -14,13 +14,16 @@ const { brand, brandHref = '/', links, currentPath } = Astro.props;
 const resolvedBrandHref = resolveSiteHref(brandHref);
 ---
 
-<div class="navbar rounded-box bg-base-200 shadow-sm">
+<div class="navbar min-h-0 p-0">
   <div class="navbar-start">
-    <a href={resolvedBrandHref} class="btn btn-ghost text-xl">{brand}</a>
+    <a href={resolvedBrandHref} class="group flex items-center gap-3 font-semibold" aria-label={`${brand} home`}>
+      <span class="grid size-9 place-items-center rounded-sm border border-primary font-mono text-sm font-bold text-primary transition-colors group-hover:bg-primary group-hover:text-primary-content">FG</span>
+      <span>{brand}</span>
+    </a>
   </div>
 
   <nav class="navbar-end hidden sm:flex" aria-label="Primary navigation">
-    <ul class="menu menu-horizontal" role="list">
+    <ul class="menu menu-horizontal gap-1 p-0" role="list">
       {
         links.map((item) => {
           const href = resolveSiteHref(item.href);
@@ -28,7 +31,7 @@ const resolvedBrandHref = resolveSiteHref(brandHref);
 
           return (
             <li>
-              <a {href} aria-current={isCurrent ? 'page' : undefined} class:list={[isCurrent && 'menu-active']}>
+              <a {href} aria-current={isCurrent ? 'page' : undefined} class:list={['rounded-sm', isCurrent && 'menu-active']}>
                 {item.label}
               </a>
             </li>
@@ -40,7 +43,7 @@ const resolvedBrandHref = resolveSiteHref(brandHref);
 
   <div class="navbar-end sm:hidden">
     <details class="dropdown dropdown-end">
-      <summary class="btn btn-ghost">Menu</summary>
+      <summary class="btn btn-ghost rounded-sm">Menu</summary>
       <nav class="dropdown-content z-10 mt-3 w-52 rounded-box bg-base-200 p-2 shadow" aria-label="Mobile navigation">
         <ul class="menu" role="list">
           {

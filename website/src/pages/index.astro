@@ -3,47 +3,63 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { site } from '../config/site';
 import Card from '../components/ui/Card.astro';
 import Container from '../components/ui/Container.astro';
+import Eyebrow from '../components/ui/Eyebrow.astro';
 import { resolveSiteHref } from '../lib/paths';
 ---
 
 <BaseLayout>
-  <Container class="space-y-16 pb-16">
-    <section class="hero rounded-box bg-base-200 py-16 text-center">
-      <div class="hero-content flex-col">
-        <div class="badge badge-outline">Built with Forge</div>
-        <div class="max-w-3xl space-y-6">
-          <h1 class="text-5xl font-bold tracking-tight sm:text-6xl">Start with the foundation. Own what comes next.</h1>
-          <p class="text-lg">{site.description} Generate a complete project, commit the source, and shape it around your content.</p>
-          <div class="flex flex-wrap justify-center gap-3">
+  <Container class="space-y-24 pb-20">
+    <section class="grid min-h-[38rem] items-center gap-12 py-16 lg:grid-cols-[minmax(0,1.05fr)_minmax(24rem,0.95fr)] lg:py-24">
+      <div class="space-y-8">
+        <Eyebrow>Built with Forge</Eyebrow>
+        <div class="space-y-6">
+          <h1 class="max-w-3xl text-6xl leading-[0.9] font-bold tracking-[-0.055em] text-balance sm:text-7xl lg:text-8xl">Start with the foundation. Own what comes next.</h1>
+          <p class="max-w-2xl text-lg leading-relaxed">{site.description} Generate a complete project, commit the source, and shape it around your content.</p>
+          <div class="flex flex-wrap gap-3">
             <a href={resolveSiteHref('/get-started/')} class="btn btn-primary">Create a site</a>
             <a href="https://github.com/rm-industries/forge" class="btn btn-ghost">View on GitHub</a>
           </div>
         </div>
       </div>
+
+      <div class="relative rounded-sm bg-neutral p-6 text-neutral-content shadow-xl sm:p-10" aria-label="Forge workflow: define content, generate a site, and own the source">
+        <div class="absolute inset-0 opacity-20" aria-hidden="true" style="background-image: radial-gradient(currentColor 1px, transparent 1px); background-size: 20px 20px;"></div>
+        <div class="relative space-y-8">
+          <div class="font-mono text-xs tracking-[0.16em] uppercase opacity-70">One focused workflow</div>
+          <ol class="space-y-4">
+            <li class="flex items-center gap-4 rounded-sm border border-neutral-content/20 bg-neutral-content/5 p-4"><span class="font-mono text-primary">01</span><strong>Define the content</strong></li>
+            <li class="ml-6 flex items-center gap-4 rounded-sm border border-primary/50 bg-primary/15 p-4"><span class="font-mono text-primary">02</span><strong>Generate the site</strong></li>
+            <li class="ml-12 flex items-center gap-4 rounded-sm bg-base-100 p-4 text-base-content"><span class="font-mono text-success">03</span><strong>Own every file</strong></li>
+          </ol>
+          <code class="block text-sm text-neutral-content/70">npm create @rm-industries/forge</code>
+        </div>
+      </div>
     </section>
 
-    <section id="features" class="space-y-8" aria-labelledby="features-title">
-      <div class="max-w-2xl space-y-3">
-        <div class="badge">One command</div>
-        <h2 id="features-title" class="text-3xl font-bold">A complete content site, not an empty scaffold</h2>
-        <p>Run <code>npm create @rm-industries/forge</code> with Node.js 22.22.2 or newer on a supported line.</p>
+    <section id="features" class="space-y-10 border-t border-base-300 pt-10" aria-labelledby="features-title">
+      <div class="grid gap-6 lg:grid-cols-2 lg:gap-12">
+        <div class="space-y-4">
+          <Eyebrow>One command</Eyebrow>
+          <h2 id="features-title" class="text-4xl leading-tight font-bold tracking-tight sm:text-5xl">A complete content site, not an empty scaffold</h2>
+        </div>
+        <p class="max-w-xl self-end text-lg leading-relaxed">Run <code>npm create @rm-industries/forge</code> with Node.js 22.22.2 or newer on a supported line.</p>
       </div>
 
       <div class="grid gap-6 md:grid-cols-3">
         <Card size="lg">
-          <div class="badge">Content</div>
+          <div class="font-mono text-sm text-primary">01 / Content</div>
           <h3 class="card-title">One content contract</h3>
           <p>Define content once and derive typed Astro collections plus Sveltia CMS configuration from the same model.</p>
         </Card>
 
         <Card size="lg">
-          <div class="badge">Design</div>
+          <div class="font-mono text-sm text-primary">02 / Design</div>
           <h3 class="card-title">Accessible presentation</h3>
           <p>Start with semantic routes, keyboard-tested navigation, local fonts, responsive DaisyUI primitives, and light and dark themes.</p>
         </Card>
 
         <Card size="lg">
-          <div class="badge">Quality</div>
+          <div class="font-mono text-sm text-primary">03 / Quality</div>
           <h3 class="card-title">Production evidence</h3>
           <p>Formatting, linting, types, coverage, browser accessibility, Lighthouse, security analysis, and Pages deployment are connected.</p>
         </Card>
@@ -51,10 +67,10 @@ import { resolveSiteHref } from '../lib/paths';
 
     </section>
 
-    <section id="start" class="card bg-base-200" aria-labelledby="start-title">
-      <div class="card-body items-start">
-        <div class="badge badge-outline">Owned source</div>
-        <h2 id="start-title" class="card-title text-3xl">Forge creates the project. You control its future.</h2>
+    <section id="start" class="card rounded-sm bg-primary text-primary-content" aria-labelledby="start-title">
+      <div class="card-body items-start gap-5 p-8 sm:p-12">
+        <div class="font-mono text-xs tracking-[0.16em] uppercase">Owned source</div>
+        <h2 id="start-title" class="card-title max-w-3xl text-4xl leading-tight tracking-tight sm:text-5xl">Forge creates the project. You control its future.</h2>
         <p>The generator does not manage or overwrite an existing site. Update shared content-model behavior through npm and adopt template improvements as reviewed migrations.</p>
         <div class="card-actions">
           <a href={resolveSiteHref('/features/')} class="btn">Explore the features</a>
