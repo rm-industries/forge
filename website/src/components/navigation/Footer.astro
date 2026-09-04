@@ -3,15 +3,13 @@ import { site } from '../../config/site';
 import { isExternalHref } from '../../lib/navigation';
 import { resolveSiteHref } from '../../lib/paths';
 import Container from '../ui/Container.astro';
+import ForgeBrand from '../ui/ForgeBrand.astro';
 ---
 
 <footer class="border-t border-base-300 bg-base-200">
   <Container class="footer footer-horizontal py-12">
     <aside>
-      <a href={resolveSiteHref('/')} class="flex items-center gap-3 font-semibold">
-        <span class="grid size-9 place-items-center rounded-sm border border-primary font-mono text-sm font-bold text-primary">FG</span>
-        <span>{site.name}</span>
-      </a>
+      <ForgeBrand href={resolveSiteHref('/')} name={site.name} />
       <p class="max-w-xl">{site.description}</p>
       <p>© {new Date().getFullYear()} {site.name}</p>
     </aside>
