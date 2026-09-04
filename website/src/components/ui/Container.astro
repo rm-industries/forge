@@ -8,10 +8,10 @@ const { class: className, size = 'lg' } = Astro.props;
 const widths = {
   sm: 'max-w-2xl',
   md: 'max-w-4xl',
-  lg: 'max-w-5xl',
+  lg: 'max-w-6xl',
 };
 ---
 
-<div class:list={['container mx-auto px-4', widths[size], className]}>
+<div class:list={['container mx-auto px-5 sm:px-8', widths[size], className]}>
   <slot />
 </div>

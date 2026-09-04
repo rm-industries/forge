@@ -1,0 +1,21 @@
+---
+import Card from '../components/ui/Card.astro';
+import Container from '../components/ui/Container.astro';
+import PageIntro from '../components/ui/PageIntro.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { documentationGroup, documentationHref, documentationTitle } from '../lib/documentation';
+import { resolveSiteHref } from '../lib/paths';
+
+const documents = (await getCollection('documentation')).sort((left, right) => documentationTitle(left).localeCompare(documentationTitle(right)));
+const groups = Map.groupBy(documents, (entry) => documentationGroup(entry.id));
+---
+
+<BaseLayout title="Documentation" description="Find the canonical Forge guides, architecture, support policy, and release documentation.">
+  <Container class="space-y-10 pb-16">
+    <PageIntro eyebrow="Documentation" title="Follow the versioned source.">
+      <p>This site summarizes Forge. Package APIs and maintainer policies remain canonical in the repository so changes stay reviewable with the code they govern.</p>
+    </PageIntro>
+    {Array.from(groups).map(([group, entries]) => <section class="space-y-5"><h2 class="font-mono text-sm tracking-[0.12em] text-primary uppercase">{group}</h2><div class="grid gap-4 md:grid-cols-2">{entries.map((entry) => <Card href={resolveSiteHref(documentationHref(entry.id))}><h3 class="card-title">{documentationTitle(entry)}</h3></Card>)}</div></section>)}
+  </Container>
+</BaseLayout>

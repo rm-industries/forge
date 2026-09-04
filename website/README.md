@@ -287,20 +287,20 @@ include a theme control. This keeps the default experience functional without
 client-side JavaScript; a future control can select any documented `data-theme`
 value if a project chooses to persist a visitor preference.
 
-`Pagination.astro` is intentionally not rendered on the starter homepage: the
-template does not yet have a paginated collection, and fragment links would be
-a misleading demonstration. The content-listing work will compose it with real
-previous and next destinations.
+`Pagination.astro` is used on article detail routes with real previous and next
+destinations. It is not rendered on static landing pages that have no ordered
+collection.
 
 ## Routes and metadata
 
-The starter includes home, about, article index, article detail, content
-manager, and custom 404 pages. The shared article model lives in
+The project website includes home, get-started, features, packages,
+documentation, project, about, article index, article detail, content manager,
+and custom 404 pages. The shared article model lives in
 `src/config/content-models/articles.ts`; `src/content.config.ts` converts the
 model into Astro validation, while the Sveltia configuration converts the same
-model into CMS fields. Generic Markdown fixtures live in
-`src/content/articles/`. Draft entries are available during local development
-but are excluded from production routes and the RSS feed.
+model into CMS fields. Forge notes live in `src/content/articles/`. Draft entries
+are available during local development but are excluded from production routes
+and the RSS feed.
 
 The seed articles intentionally include no article images or other binary
 media. This keeps generated projects and repository checkouts small and avoids
