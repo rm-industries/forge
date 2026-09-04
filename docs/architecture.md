@@ -17,6 +17,10 @@ templates/default
 template snapshot                    @rm-industries/content-model
                                              │
                                   core + Astro + Sveltia adapters
+
+website ──generated once, then owned──▶ GitHub Pages project site
+   │
+   └── standalone install and lockfile; outside root workspaces
 ```
 
 - `packages/create-forge/` owns CLI parsing, prompts, validation, safe
@@ -29,6 +33,9 @@ template snapshot                    @rm-industries/content-model
   template-isolation tooling.
 - `.github/` owns repository automation; `templates/default/.github/` is copied
   into generated projects.
+- `website/` will own the public Forge project site as an isolated generated
+  consumer. It uses root workflows but retains its own installation, lockfile,
+  application source, and tool configuration.
 
 ## Contract boundaries
 
@@ -42,6 +49,15 @@ template has no independent package version: a generator release identifies the
 exact template snapshot it contains. See the
 [support policy](support-policy.md) and [versioning ADR](decisions/0006-versioning.md)
 for breaking-change rules.
+
+The project website has a separate deployment lifecycle. Merges affecting it
+publish a static GitHub Pages artifact from `website/`; npm package tags do not
+deploy it, and website deployments do not publish packages. Dependabot manages
+its installed npm dependencies as a separate ecosystem. Generator releases can
+only be adopted through selective, reviewed source migrations because the
+generator is not an installed website dependency. See
+[ADR 0007](decisions/0007-project-website.md) for the complete ownership,
+publishing, and update flow.
 
 ## Data flow
 
@@ -77,6 +93,7 @@ derive their respective configuration from the same model registry.
 | Safe project materialization | [ADR 0004](decisions/0004-template-materialization.md) |
 | Shared content model         | [ADR 0005](decisions/0005-shared-content-model.md)     |
 | Package versioning           | [ADR 0006](decisions/0006-versioning.md)               |
+| Project website              | [ADR 0007](decisions/0007-project-website.md)          |
 
 Create a new ADR when changing an accepted decision materially. Do not rewrite
 the history of an accepted record; mark the new record as superseding it and
