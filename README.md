@@ -162,9 +162,11 @@ publication, provenance, dry runs, and recovery.
 
 ## Contributing
 
-This repository uses npm workspaces for `packages/*`; `templates/default/` is a
-standalone project with its own lockfile so tests cannot rely on workspace
-hoisting. To validate repository changes:
+This repository uses npm workspaces for `packages/*`. Both `templates/default/`
+and the Forge project site in [`website/`](website/README.md) are standalone
+projects with their own lockfiles so tests cannot rely on workspace hoisting.
+Run their commands from the corresponding directory. To validate repository
+changes:
 
 ```sh
 npm ci
