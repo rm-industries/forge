@@ -12,10 +12,11 @@ supersedes the old one.
 | [0004](0004-template-materialization.md) | Safe template materialization                  | Accepted |
 | [0005](0005-shared-content-model.md)     | Publishable, integration-neutral content model | Accepted |
 | [0006](0006-versioning.md)               | Generator and content-model versioning         | Accepted |
+| [0007](0007-project-website.md)          | Isolated Forge project website                 | Accepted |
 
-These records implement
-[FGE-001](https://github.com/rm-industries/forge/issues/1) and follow the
-project roadmap represented by its linked work items.
+These records implement the Forge roadmap, beginning with
+[FGE-001](https://github.com/rm-industries/forge/issues/1), and follow the
+project roadmap represented by their linked work items.
 
 See the [architecture guide](../architecture.md) for the current system map,
 contract boundaries, data flow, and verification layers. Maintainer procedures
