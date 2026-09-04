@@ -33,7 +33,7 @@ website ──generated once, then owned──▶ GitHub Pages project site
   template-isolation tooling.
 - `.github/` owns repository automation; `templates/default/.github/` is copied
   into generated projects.
-- `website/` will own the public Forge project site as an isolated generated
+- `website/` owns the public Forge project site as an isolated generated
   consumer. It uses root workflows but retains its own installation, lockfile,
   application source, and tool configuration.
 

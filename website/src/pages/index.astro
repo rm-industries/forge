@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { site } from '../config/site';
+import Card from '../components/ui/Card.astro';
+import Container from '../components/ui/Container.astro';
+import { resolveSiteHref } from '../lib/paths';
+---
+
+<BaseLayout>
+  <Container class="space-y-16 pb-16">
+    <section class="hero rounded-box bg-base-200 py-16 text-center">
+      <div class="hero-content flex-col">
+        <div class="badge badge-outline">A thoughtful Astro starting point</div>
+        <div class="max-w-3xl space-y-6">
+          <h1 class="text-5xl font-bold tracking-tight sm:text-6xl">Build something worth publishing.</h1>
+          <p class="text-lg">{site.description} Start with accessible components, typed configuration, and a theme system that works without client JavaScript.</p>
+          <div class="flex flex-wrap justify-center gap-3">
+            <a href={resolveSiteHref('/articles/')} class="btn btn-primary">Read the examples</a>
+            <a href={resolveSiteHref('/about/')} class="btn btn-ghost">About this starter</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="space-y-8" aria-labelledby="features-title">
+      <div class="max-w-2xl space-y-3">
+        <div class="badge">Included by default</div>
+        <h2 id="features-title" class="text-3xl font-bold">A solid foundation, ready for your content</h2>
+        <p>Forge keeps the starting point practical: enough structure to demonstrate the system, without prescribing what your site must become.</p>
+      </div>
+
+      <div class="grid gap-6 md:grid-cols-3">
+        <Card size="lg">
+          <div class="badge">Content</div>
+          <h3 class="card-title">Content-first structure</h3>
+          <p>Use reusable layouts and components for articles, notes, documentation, or a personal site.</p>
+        </Card>
+
+        <Card size="lg">
+          <div class="badge">Design</div>
+          <h3 class="card-title">Adaptable themes</h3>
+          <p>Start with four Catppuccin flavors, local fonts, and accessible DaisyUI components.</p>
+        </Card>
+
+        <Card size="lg">
+          <div class="badge">Quality</div>
+          <h3 class="card-title">Production-minded checks</h3>
+          <p>Formatting, linting, type checking, browser tests, and accessibility assertions are already connected.</p>
+        </Card>
+      </div>
+
+    </section>
+
+    <section id="start" class="card bg-base-200" aria-labelledby="start-title">
+      <div class="card-body items-start">
+        <div class="badge badge-outline">Make it yours</div>
+        <h2 id="start-title" class="card-title text-3xl">Replace the examples with your own story.</h2>
+        <p>Update the typed site configuration, choose your content model, and grow the template one reusable piece at a time.</p>
+        <div class="card-actions">
+          <a href={resolveSiteHref('/articles/')} class="btn">Browse the articles</a>
+        </div>
+      </div>
+    </section>
+  </Container>
+</BaseLayout>
