@@ -1,0 +1,29 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+
+import Container from '../../components/ui/Container.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { documentationGroup, documentationTitle } from '../../lib/documentation';
+
+export const getStaticPaths = async () =>
+  (await getCollection('documentation')).map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+
+interface Props {
+  entry: CollectionEntry<'documentation'>;
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const title = documentationTitle(entry);
+const sourcePath = entry.filePath?.replace(/^.*?docs\//u, 'docs/') ?? `docs/${entry.id}.md`;
+---
+
+<BaseLayout {title} description={`Forge documentation: ${title}.`} canonicalPath={`/docs/${entry.id}/`}>
+  <Container class="pb-20">
+    <div class="mb-8 flex flex-wrap items-center justify-between gap-4 border-t border-base-300 pt-6">
+      <span class="font-mono text-xs tracking-[0.16em] text-primary uppercase">{documentationGroup(entry.id)}</span>
+      <a class="link link-hover text-sm" href={`https://github.com/rm-industries/forge/blob/main/${sourcePath}`}>View source on GitHub ↗</a>
+    </div>
+    <article class="prose prose-lg max-w-4xl"><Content /></article>
+  </Container>
+</BaseLayout>
