@@ -6,9 +6,14 @@ import { resolvePreviewPath } from './preview';
 
 const publicRoutes = [
   { name: 'home', path: '/' },
+  { name: 'get started', path: '/get-started/' },
+  { name: 'features', path: '/features/' },
+  { name: 'packages', path: '/packages/' },
+  { name: 'documentation', path: '/docs/' },
+  { name: 'project', path: '/project/' },
   { name: 'about', path: '/about/' },
   { name: 'article listing', path: '/articles/' },
-  { name: 'article detail', path: '/articles/designing-a-calm-starting-point/' },
+  { name: 'article detail', path: '/articles/own-the-output/' },
   { name: 'not found', path: '/does-not-exist/' },
 ] as const;
 
@@ -79,7 +84,7 @@ test('honors reduced-motion preferences', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(resolvePreviewPath('/'));
 
-  const motionStyles = await page.getByRole('link', { name: 'Browse the articles' }).evaluate((element) => {
+  const motionStyles = await page.getByRole('link', { name: 'Create a site' }).evaluate((element) => {
     const styles = getComputedStyle(element);
 
     return {

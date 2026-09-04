@@ -1,0 +1,32 @@
+---
+import Container from '../components/ui/Container.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { resolveSiteHref } from '../lib/paths';
+---
+
+<BaseLayout title="Get started" description="Create and validate an accessible, content-driven Forge website.">
+  <Container size="md" class="pb-16">
+    <article class="prose mx-auto">
+      <div class="badge badge-outline">Get started</div>
+      <h1>Create a Forge site.</h1>
+      <p class="lead">Use Node.js 22.22.2 or newer on the supported Node 22, 24, or 26 lines with npm 10.9 or 11.</p>
+
+      <h2>Generate the project</h2>
+      <pre><code>npm create @rm-industries/forge</code></pre>
+      <p>The initializer asks for the destination, package and site names, author, canonical URL, and GitHub repository. It can install dependencies and initialize a <code>main</code>-branch Git repository.</p>
+
+      <h2>Run it locally</h2>
+      <pre><code>cd your-project
+npm run dev</code></pre>
+
+      <h2>Validate before publishing</h2>
+      <pre><code>npm run quality</code></pre>
+      <p>This runs static checks, coverage, a validated build, browser and accessibility tests, and Lighthouse budgets. The generated project includes a secure GitHub Pages workflow.</p>
+
+      <h2>Own the result</h2>
+      <p>Generated files become your application source. Do not rerun Forge over an existing project. Package updates arrive through npm; source-template improvements are deliberate migrations that preserve your changes.</p>
+
+      <p><a href={resolveSiteHref('/features/')}>See what is included</a> or inspect the <a href="https://www.npmjs.com/package/@rm-industries/create-forge">initializer on npm</a>.</p>
+    </article>
+  </Container>
+</BaseLayout>

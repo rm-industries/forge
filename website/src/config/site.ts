@@ -85,8 +85,11 @@ export const site = defineSiteConfig({
   socialImage: '/social-card.svg',
   navigation: [
     { label: 'Home', href: '/' },
-    { label: 'Articles', href: '/articles/' },
-    { label: 'About', href: '/about/' },
+    { label: 'Get started', href: '/get-started/' },
+    { label: 'Features', href: '/features/' },
+    { label: 'Packages', href: '/packages/' },
+    { label: 'Docs', href: '/docs/' },
+    { label: 'Project', href: '/project/' },
   ],
   socialLinks: [{ label: 'Forge on GitHub', href: 'https://github.com/rm-industries/forge' }],
 });

@@ -1,0 +1,19 @@
+---
+import Card from '../components/ui/Card.astro';
+import Container from '../components/ui/Container.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Documentation" description="Find the canonical Forge guides, architecture, support policy, and release documentation.">
+  <Container class="space-y-10 pb-16">
+    <header class="max-w-2xl space-y-3"><div class="badge badge-outline">Documentation</div><h1 class="text-4xl font-bold">Follow the versioned source.</h1><p>This site summarizes Forge. Package APIs and maintainer policies remain canonical in the repository so changes stay reviewable with the code they govern.</p></header>
+    <div class="grid gap-6 md:grid-cols-2">
+      <Card href="https://github.com/rm-industries/forge#readme"><h2 class="card-title">Project overview</h2><p>Installation, capabilities, repository map, packages, and support channels.</p></Card>
+      <Card href="https://github.com/rm-industries/forge/blob/main/docs/architecture.md"><h2 class="card-title">Architecture</h2><p>System boundaries, data flow, verification layers, and accepted decisions.</p></Card>
+      <Card href="https://github.com/rm-industries/forge/blob/main/docs/support-policy.md"><h2 class="card-title">Support policy</h2><p>Supported runtimes, operating systems, browsers, dependencies, and compatibility rules.</p></Card>
+      <Card href="https://github.com/rm-industries/forge/blob/main/docs/releasing.md"><h2 class="card-title">Release guidance</h2><p>Package releases, checkpoint evidence, recovery, and maintainer responsibilities.</p></Card>
+      <Card href="https://github.com/rm-industries/forge/tree/main/docs/decisions"><h2 class="card-title">Decision records</h2><p>The rationale behind repository layout, templates, workspaces, content models, versioning, and this website.</p></Card>
+      <Card href="https://github.com/rm-industries/forge/blob/main/CONTRIBUTING.md"><h2 class="card-title">Contributing</h2><p>How to prepare changes, run checks, and submit focused reviews.</p></Card>
+    </div>
+  </Container>
+</BaseLayout>

@@ -10,13 +10,13 @@ import { resolveSiteHref } from '../lib/paths';
   <Container class="space-y-16 pb-16">
     <section class="hero rounded-box bg-base-200 py-16 text-center">
       <div class="hero-content flex-col">
-        <div class="badge badge-outline">A thoughtful Astro starting point</div>
+        <div class="badge badge-outline">Built with Forge</div>
         <div class="max-w-3xl space-y-6">
-          <h1 class="text-5xl font-bold tracking-tight sm:text-6xl">Build something worth publishing.</h1>
-          <p class="text-lg">{site.description} Start with accessible components, typed configuration, and a theme system that works without client JavaScript.</p>
+          <h1 class="text-5xl font-bold tracking-tight sm:text-6xl">Start with the foundation. Own what comes next.</h1>
+          <p class="text-lg">{site.description} Generate a complete project, commit the source, and shape it around your content.</p>
           <div class="flex flex-wrap justify-center gap-3">
-            <a href={resolveSiteHref('/articles/')} class="btn btn-primary">Read the examples</a>
-            <a href={resolveSiteHref('/about/')} class="btn btn-ghost">About this starter</a>
+            <a href={resolveSiteHref('/get-started/')} class="btn btn-primary">Create a site</a>
+            <a href="https://github.com/rm-industries/forge" class="btn btn-ghost">View on GitHub</a>
           </div>
         </div>
       </div>
@@ -24,28 +24,28 @@ import { resolveSiteHref } from '../lib/paths';
 
     <section id="features" class="space-y-8" aria-labelledby="features-title">
       <div class="max-w-2xl space-y-3">
-        <div class="badge">Included by default</div>
-        <h2 id="features-title" class="text-3xl font-bold">A solid foundation, ready for your content</h2>
-        <p>Forge keeps the starting point practical: enough structure to demonstrate the system, without prescribing what your site must become.</p>
+        <div class="badge">One command</div>
+        <h2 id="features-title" class="text-3xl font-bold">A complete content site, not an empty scaffold</h2>
+        <p>Run <code>npm create @rm-industries/forge</code> with Node.js 22.22.2 or newer on a supported line.</p>
       </div>
 
       <div class="grid gap-6 md:grid-cols-3">
         <Card size="lg">
           <div class="badge">Content</div>
-          <h3 class="card-title">Content-first structure</h3>
-          <p>Use reusable layouts and components for articles, notes, documentation, or a personal site.</p>
+          <h3 class="card-title">One content contract</h3>
+          <p>Define content once and derive typed Astro collections plus Sveltia CMS configuration from the same model.</p>
         </Card>
 
         <Card size="lg">
           <div class="badge">Design</div>
-          <h3 class="card-title">Adaptable themes</h3>
-          <p>Start with four Catppuccin flavors, local fonts, and accessible DaisyUI components.</p>
+          <h3 class="card-title">Accessible presentation</h3>
+          <p>Start with semantic routes, keyboard-tested navigation, local fonts, responsive DaisyUI primitives, and light and dark themes.</p>
         </Card>
 
         <Card size="lg">
           <div class="badge">Quality</div>
-          <h3 class="card-title">Production-minded checks</h3>
-          <p>Formatting, linting, type checking, browser tests, and accessibility assertions are already connected.</p>
+          <h3 class="card-title">Production evidence</h3>
+          <p>Formatting, linting, types, coverage, browser accessibility, Lighthouse, security analysis, and Pages deployment are connected.</p>
         </Card>
       </div>
 
@@ -53,11 +53,12 @@ import { resolveSiteHref } from '../lib/paths';
 
     <section id="start" class="card bg-base-200" aria-labelledby="start-title">
       <div class="card-body items-start">
-        <div class="badge badge-outline">Make it yours</div>
-        <h2 id="start-title" class="card-title text-3xl">Replace the examples with your own story.</h2>
-        <p>Update the typed site configuration, choose your content model, and grow the template one reusable piece at a time.</p>
+        <div class="badge badge-outline">Owned source</div>
+        <h2 id="start-title" class="card-title text-3xl">Forge creates the project. You control its future.</h2>
+        <p>The generator does not manage or overwrite an existing site. Update shared content-model behavior through npm and adopt template improvements as reviewed migrations.</p>
         <div class="card-actions">
-          <a href={resolveSiteHref('/articles/')} class="btn">Browse the articles</a>
+          <a href={resolveSiteHref('/features/')} class="btn">Explore the features</a>
+          <a href={resolveSiteHref('/docs/')} class="btn btn-ghost">Read the documentation</a>
         </div>
       </div>
     </section>

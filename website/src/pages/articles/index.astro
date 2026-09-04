@@ -7,12 +7,12 @@ import { getArticles } from '../../lib/articles';
 const articles = await getArticles({ includeDrafts: import.meta.env.DEV });
 ---
 
-<BaseLayout title="Articles" description="Generic example articles that demonstrate Forge content routes and metadata.">
+<BaseLayout title="Forge notes" description="Notes about Forge architecture, content modeling, ownership, and quality.">
   <Container class="space-y-10 pb-16">
     <header class="max-w-2xl space-y-3">
-      <div class="badge badge-outline">Example content</div>
-      <h1 class="text-4xl font-bold">Articles</h1>
-      <p>Replace these generic entries with your own subject matter when you connect the site to its content model.</p>
+      <div class="badge badge-outline">Built through the content model</div>
+      <h1 class="text-4xl font-bold">Forge notes</h1>
+      <p>Short explanations of the product decisions that shape generated sites and their maintenance.</p>
     </header>
 
     <div class="grid gap-6 md:grid-cols-2">
