@@ -2,7 +2,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="Forge">
   <style>
     .steel { fill: #4c4f69; }
-    .spark { fill: #8839ef; }
+    .spark { fill: #cba6f7; }
     @media (prefers-color-scheme: dark) {
       .steel { fill: #cdd6f4; }
       .spark { fill: #cba6f7; }
