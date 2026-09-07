@@ -1,6 +1,6 @@
 {
   "name": "@rm-industries/content-model",
-  "version": "1.0.0",
+  "version": "1.1.0-alpha.0",
   "description": "Typed, integration-neutral content models and adapters for content-driven websites",
   "keywords": [
     "astro",
@@ -52,7 +52,7 @@
     "typecheck": "tsc --project tsconfig.json --noEmit"
   },
   "peerDependencies": {
-    "@sveltia/cms": ">=0.203.2 <0.204.0",
+    "@sveltia/cms": ">=0.207.1 <0.208.0",
     "astro": "^7.2.3"
   },
   "peerDependenciesMeta": {
