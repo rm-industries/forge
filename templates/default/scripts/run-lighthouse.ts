@@ -6,10 +6,11 @@ import { getDeploymentConfig } from '../src/config/deployment.ts';
 import { site } from '../src/config/site.ts';
 import { resolveSiteHref } from '../src/lib/paths.ts';
 
-const previewOrigin = 'http://127.0.0.1:4321';
+const defaultPreviewOrigin = 'http://127.0.0.1:4321';
+const previewOrigin = process.env.FORGE_PREVIEW_ORIGIN ?? defaultPreviewOrigin;
 const auditedPaths = ['/', '/articles/', '/articles/designing-a-calm-starting-point/'] as const;
 
-export const getLighthouseUrls = (siteUrl: string, origin = previewOrigin): string[] => {
+export const getLighthouseUrls = (siteUrl: string, origin = defaultPreviewOrigin): string[] => {
   const deployment = getDeploymentConfig(siteUrl);
 
   return auditedPaths.map((path) => new URL(resolveSiteHref(path, deployment.base ?? '/'), origin).href);
@@ -17,8 +18,10 @@ export const getLighthouseUrls = (siteUrl: string, origin = previewOrigin): stri
 
 export const runLighthouse = (): void => {
   const lighthouseCli = createRequire(import.meta.url).resolve('@lhci/cli/src/cli.js');
-  const urlArguments = getLighthouseUrls(site.url).map((url) => `--collect.url=${url}`);
-  const result = spawnSync(process.execPath, [lighthouseCli, 'autorun', ...urlArguments], {
+  const previewPort = new URL(previewOrigin).port || '4321';
+  const urlArguments = getLighthouseUrls(site.url, previewOrigin).map((url) => `--collect.url=${url}`);
+  const serverArgument = `--collect.startServerCommand=npm run preview -- --host 127.0.0.1 --port ${previewPort}`;
+  const result = spawnSync(process.execPath, [lighthouseCli, 'autorun', serverArgument, ...urlArguments], {
     env: { ...process.env, ASTRO_PREVIEW_BACKGROUND: '0' },
     stdio: 'inherit',
   });

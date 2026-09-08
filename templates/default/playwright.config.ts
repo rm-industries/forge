@@ -2,6 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 import { previewOrigin, resolvePreviewUrl } from './tests/preview';
 
+const previewPort = new URL(previewOrigin).port || '4321';
+
 export default defineConfig({
   testDir: './tests',
   outputDir: 'test-results',
@@ -29,7 +31,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run build && npm run preview -- --host 127.0.0.1',
+    command: `npm run build && npm run preview -- --host 127.0.0.1 --port ${previewPort}`,
     env: {
       ...process.env,
       ASTRO_PREVIEW_BACKGROUND: '0',

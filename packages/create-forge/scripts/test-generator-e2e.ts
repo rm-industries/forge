@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process';
 import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,8 +33,25 @@ const runGenerator = async (executable: string, cwd: string, args: string[]) => 
 
 const runGeneratedQuality = async (cwd: string) => {
   const script = compatibilityMode ? 'quality:core' : 'quality';
+  const previewPort = await new Promise<number>((resolvePort, reject) => {
+    const server = createServer();
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      if (!address || typeof address === 'string') {
+        server.close();
+        reject(new Error('Could not allocate a generated-project preview port.'));
+        return;
+      }
+      server.close((error) => (error ? reject(error) : resolvePort(address.port)));
+    });
+  });
   try {
-    await execute('npm', ['run', script], { cwd, maxBuffer: 20 * 1024 * 1024 });
+    await execute('npm', ['run', script], {
+      cwd,
+      env: { ...process.env, FORGE_PREVIEW_ORIGIN: `http://127.0.0.1:${previewPort}` },
+      maxBuffer: 20 * 1024 * 1024,
+    });
   } catch (error) {
     const failure = error as Error & { stdout?: string; stderr?: string };
     const output = `${failure.stdout ?? ''}\n${failure.stderr ?? ''}`.trim();
