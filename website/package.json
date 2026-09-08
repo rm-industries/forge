@@ -44,12 +44,9 @@
     "quality:static:ci": "npm run lint:code && npm run lint:css && npm run lint:markdown && npm run audit:unused && npm run typecheck && npm run astro:check && npm run audit"
   },
   "dependencies": {
-    "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.3",
     "@fontsource/fira-code": "^5.3.0",
     "@fontsource/fira-sans": "^5.3.0",
-    "@rm-industries/content-model": "1.0.0",
-    "@sveltia/cms": "0.203.2",
     "astro": "^7.2.9"
   },
   "devDependencies": {

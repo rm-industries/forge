@@ -89,14 +89,13 @@ template lockfiles. Website dependency pull requests run the same affected site
 checks as human-authored dependency changes. They do not deploy before merge;
 after review and merge, they follow the normal `main` deployment flow.
 
-Dependabot may propose compatible direct and transitive updates, including a
-published `@rm-industries/content-model` version allowed by the website's
-manifest. Peer-related Astro or Sveltia updates must keep the selected
-content-model version's declared peer ranges satisfied and pass the complete
-affected compatibility, build, browser, and CMS checks. Security updates may be
-prioritized but do not bypass those gates. Major updates, pre-1.0 minor updates,
-peer-range changes, and deployment-tool updates remain focused, human-reviewed
-pull requests. This decision does not enable dependency auto-merge.
+The project website uses Astro's native content collection only to render the
+repository documentation. It does not consume the generated site's Sveltia CMS
+or shared content-model package, so those release and peer-compatibility flows
+remain isolated to the template and published packages. Security updates may be
+prioritized but do not bypass the website gates. Major updates and deployment-
+tool updates remain focused, human-reviewed pull requests. This decision does
+not enable dependency auto-merge.
 
 The root GitHub Actions Dependabot entry owns actions used by the root website
 workflows; no second actions entry is needed under `website/` after nested

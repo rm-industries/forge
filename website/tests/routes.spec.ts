@@ -3,19 +3,7 @@ import { expect, test } from '@playwright/test';
 import { site } from '../src/config/site';
 import { resolvePreviewPath, resolvePreviewUrl } from './preview';
 
-const routes = [
-  '/',
-  '/get-started/',
-  '/features/',
-  '/packages/',
-  '/docs/',
-  '/project/',
-  '/about/',
-  '/articles/',
-  '/articles/own-the-output/',
-  '/admin/',
-  '/404/',
-];
+const routes = ['/', '/get-started/', '/features/', '/packages/', '/docs/', '/project/', '/about/', '/404/'];
 
 test('serves every baseline page with configured canonical and social metadata', async ({ page }) => {
   for (const route of routes) {
@@ -29,24 +17,6 @@ test('serves every baseline page with configured canonical and social metadata',
     await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', canonicalUrl);
     await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image');
   }
-});
-
-test('serves the content manager without allowing search indexing', async ({ page }) => {
-  await page.goto(resolvePreviewPath('/admin/'));
-
-  await expect(page.locator('meta[name="robots"][content="noindex, nofollow"]')).toHaveCount(1);
-  await expect(page).toHaveTitle(/Content Manager/u);
-  await expect(page.locator('body')).not.toBeEmpty();
-});
-
-test('renders project article tags on listings and detail pages', async ({ page }) => {
-  await page.goto(resolvePreviewPath('/articles/'));
-  await expect(
-    page.locator(`a[href="${resolvePreviewPath('/articles/own-the-output/')}"]`).getByLabel('Article tags'),
-  ).toContainText('Ownership');
-
-  await page.goto(resolvePreviewPath('/articles/own-the-output/'));
-  await expect(page.getByLabel('Article tags')).toContainText('Architecture');
 });
 
 test('resolves every internal page link', async ({ page, request }) => {
@@ -79,12 +49,7 @@ test('resolves every internal page link', async ({ page, request }) => {
   }
 });
 
-test('serves feed, crawler, manifest, and not-found metadata', async ({ request }) => {
-  const feed = await request.get(resolvePreviewPath('/rss.xml'));
-  expect(feed.ok()).toBe(true);
-  expect(await feed.text()).toContain(new URL('articles/own-the-output/', site.url).href);
-  expect(await feed.text()).not.toContain('planned-migration-guidance');
-
+test('serves crawler, manifest, and not-found metadata', async ({ request }) => {
   const robots = await request.get(resolvePreviewPath('/robots.txt'));
   expect(robots.ok()).toBe(true);
   expect(await robots.text()).toContain(`Sitemap: ${new URL('sitemap-index.xml', site.url).href}`);

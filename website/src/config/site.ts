@@ -93,7 +93,3 @@ export const site = defineSiteConfig({
   ],
   socialLinks: [{ label: 'Forge on GitHub', href: 'https://github.com/rm-industries/forge' }],
 });
-
-export const cmsBranding = Object.freeze({
-  appTitle: `${site.name} Content Manager`,
-});

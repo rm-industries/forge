@@ -60,8 +60,6 @@ jobs:
             'docs/'
             'project/'
             'about/'
-            'articles/'
-            'rss.xml'
             'site.webmanifest'
             'sitemap-index.xml'
           )

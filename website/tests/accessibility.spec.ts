@@ -12,8 +12,6 @@ const publicRoutes = [
   { name: 'documentation', path: '/docs/' },
   { name: 'project', path: '/project/' },
   { name: 'about', path: '/about/' },
-  { name: 'article listing', path: '/articles/' },
-  { name: 'article detail', path: '/articles/own-the-output/' },
   { name: 'not found', path: '/does-not-exist/' },
 ] as const;
 

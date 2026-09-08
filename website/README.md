@@ -128,13 +128,9 @@ it whenever an automation change causes it to appear.
 Root Dependabot automation treats `/website` as an independent npm ecosystem.
 Minor and patch npm updates are grouped by production or development scope,
 while major updates remain separate for deliberate review. Updates use cooldown
-periods to avoid adopting newly released versions immediately. Because pre-1.0
-Sveltia minor releases may be breaking, `@sveltia/cms` updates are kept separate
-from generic production dependency groups. Its pull requests must satisfy the
-compatibility line declared by `@rm-industries/content-model`; moving to a later
-minor requires a tested content-model release first. No version is ignored,
-security updates remain enabled, and every update must pass the complete project
-and security workflows before merging.
+periods to avoid adopting newly released versions immediately. No version is
+ignored, security updates remain enabled, and every update must pass the
+complete project and security workflows before merging.
 
 Dependabot pull requests use `dependencies` plus the readable ecosystem label
 `npm` or `github-actions`. GitHub ignores configured custom labels that do not
@@ -187,17 +183,16 @@ directives used by `src/styles/global.css`; they do not suppress ordinary CSS
 rules. Knip uses its Astro integration without an ignore list, and Oxlint uses
 its recommended defaults without project-specific rule suppression.
 
-Vitest coverage includes configuration, shared content-model registration,
-Astro and Sveltia integration code, content utilities, URL helpers, theme
-configuration, and preview registration. Statements, branches, functions, and
-lines must remain at 100%. Add direct positive and negative tests when this
+Vitest coverage includes configuration, documentation utilities, URL helpers,
+theme configuration, and build validation. Statements, branches, functions,
+and lines must remain at 100%. Add direct positive and negative tests when this
 source grows; do not lower thresholds or exclude source merely to make a change
 pass. HTML details are written to `coverage/`, which is generated and ignored.
 CI enforces the same thresholds and retains the HTML report for seven days,
 including when the coverage job fails.
 
 Edit `src/config/site.ts` to change the site name, description, author,
-canonical URL, repository, language, navigation, social links, and derived CMS branding. The Astro
+canonical URL, repository, language, navigation, and social links. The Astro
 configuration, shared layout, and reusable SEO head consume this single
 validated source. New pages should use `src/layouts/BaseLayout.astro` to inherit
 the document shell and canonical metadata.
@@ -289,55 +284,24 @@ include a theme control. This keeps the default experience functional without
 client-side JavaScript; a future control can select any documented `data-theme`
 value if a project chooses to persist a visitor preference.
 
-`Pagination.astro` is used on article detail routes with real previous and next
-destinations. It is not rendered on static landing pages that have no ordered
-collection.
-
 ## Routes and metadata
 
 The project website includes home, get-started, features, packages,
-documentation, project, about, article index, article detail, content manager,
-and custom 404 pages. The shared article model lives in
-`src/config/content-models/articles.ts`; `src/content.config.ts` converts the
-model into Astro validation, while the Sveltia configuration converts the same
-model into CMS fields. Forge notes live in `src/content/articles/`. Draft entries
-are available during local development but are excluded from production routes
-and the RSS feed.
-
-The seed articles intentionally include no article images or other binary
-media. This keeps generated projects and repository checkouts small and avoids
-shipping decorative assets that most projects would immediately replace. Add
-purposeful media only when the site needs it, and pair each meaningful image
-with context-appropriate alternative text where it is rendered.
+documentation, project, about, and custom 404 pages. The documentation routes
+render the repository's Markdown files through the native Astro collection in
+`src/content.config.ts`. The project website intentionally has no CMS, article
+collection, or feed; those belong to generated Forge sites rather than this
+focused product and documentation site.
 
 Site configuration drives page titles, descriptions, canonical URLs, Open
-Graph and Twitter metadata, the RSS feed, the web manifest, and the sitemap
+Graph and Twitter metadata, the web manifest, and the sitemap
 reference in `robots.txt`. Replace `public/favicon.svg` and
 `public/social-card.svg` when establishing a project identity, and update
 `socialImage` in `src/config/site.ts` if the sharing image path changes.
 
-Every HTML page, including `/admin/`, also includes the nonvisual, standard
+Every HTML page also includes the nonvisual, standard
 `generator` metadata value `Forge by RM Industries`. It makes Forge-generated
 sites identifiable in page source without adding telemetry, network requests,
 client-side JavaScript, accessibility-tree content, or visible branding. This
 generated project is owned source: remove or change the element in
 `src/components/seo/SeoHead.astro` if you do not want to retain the attribution.
-
-## Content manager
-
-Run the development server and open `/admin/` to use Sveltia CMS. Sveltia
-automatically offers its local repository workflow in a supported browser;
-select the project root to write content directly to `src/content/articles/`.
-Review and commit those file changes normally.
-
-Before deploying the content manager, replace
-`your-github-user/your-repository` in
-`src/integrations/sveltia/config.ts` with the generated site's GitHub
-repository. The default configuration offers Sveltia's token authentication
-method but never stores a token in source: each editor supplies a token through
-the CMS interface, and Sveltia stores it in that browser. A production project
-can replace this with its own supported OAuth configuration.
-
-The generated CMS configuration lives in code rather than a duplicated YAML
-file. Change content fields in the shared model, then run `npm run typecheck`
-and `npm test` to verify that Astro and Sveltia still derive the same contract.
