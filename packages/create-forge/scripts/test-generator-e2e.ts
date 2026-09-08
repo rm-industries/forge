@@ -47,27 +47,26 @@ const allocatePreviewPort = () =>
   });
 
 const runGeneratedQuality = async (cwd: string) => {
-  const script = compatibilityMode ? 'quality:core' : 'quality';
   const [playwrightPort, lighthousePort] = await Promise.all([allocatePreviewPort(), allocatePreviewPort()]);
-  try {
-    await execute('npm', ['run', script], {
-      cwd,
-      env: {
-        ...process.env,
-        FORGE_PLAYWRIGHT_REPORTER: 'list',
-        FORGE_LIGHTHOUSE_ORIGIN: `http://127.0.0.1:${lighthousePort}`,
-        FORGE_PLAYWRIGHT_ORIGIN: `http://127.0.0.1:${playwrightPort}`,
-      },
-      maxBuffer: 20 * 1024 * 1024,
-    });
-  } catch (error) {
-    const failure = error as Error & { stdout?: string; stderr?: string };
-    const output = `${failure.stdout ?? ''}\n${failure.stderr ?? ''}`.trim();
-    const diagnosticOutput =
-      output.length > 12_000
-        ? `${output.slice(0, 6_000)}\n\n... output truncated ...\n\n${output.slice(-6_000)}`
-        : output;
-    throw new Error(`Generated-project ${script} failed:\n${diagnosticOutput}`);
+  const environment = {
+    ...process.env,
+    FORGE_PLAYWRIGHT_REPORTER: 'list',
+    FORGE_LIGHTHOUSE_ORIGIN: `http://127.0.0.1:${lighthousePort}`,
+    FORGE_PLAYWRIGHT_ORIGIN: `http://127.0.0.1:${playwrightPort}`,
+  };
+  const scripts = compatibilityMode ? ['quality:core'] : ['quality:core', 'test:e2e', 'lighthouse:ci'];
+  for (const script of scripts) {
+    try {
+      await execute('npm', ['run', script], { cwd, env: environment, maxBuffer: 20 * 1024 * 1024 });
+    } catch (error) {
+      const failure = error as Error & { stdout?: string; stderr?: string };
+      const output = `${failure.stdout ?? ''}\n${failure.stderr ?? ''}`.trim();
+      const diagnosticOutput =
+        output.length > 12_000
+          ? `${output.slice(0, 6_000)}\n\n... output truncated ...\n\n${output.slice(-6_000)}`
+          : output;
+      throw new Error(`Generated-project ${script} failed:\n${diagnosticOutput}`);
+    }
   }
 };
 
