@@ -1,5 +1,7 @@
 # Forge
 
+![Forge logo](docs/assets/forge-logo.svg)
+
 Forge creates an opinionated Astro website for publishing structured content.
 The generated project includes a responsive article site, Sveltia CMS, RSS and
 sitemap output, accessible navigation, quality checks, security automation, and

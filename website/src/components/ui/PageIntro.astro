@@ -1,0 +1,20 @@
+---
+import Eyebrow from './Eyebrow.astro';
+
+interface Props {
+  eyebrow: string;
+  title: string;
+}
+
+const { eyebrow, title } = Astro.props;
+---
+
+<header class="grid gap-6 border-t border-base-300 pt-8 lg:grid-cols-[minmax(0,2fr)_minmax(16rem,1fr)] lg:gap-12">
+  <div class="space-y-5">
+    <Eyebrow>{eyebrow}</Eyebrow>
+    <h1 class="max-w-4xl text-5xl leading-[0.95] font-bold tracking-[-0.045em] text-balance sm:text-6xl lg:text-7xl">{title}</h1>
+  </div>
+  <div class="max-w-xl self-end text-lg leading-relaxed">
+    <slot />
+  </div>
+</header>

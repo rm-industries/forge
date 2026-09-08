@@ -1,0 +1,18 @@
+---
+import Card from '../components/ui/Card.astro';
+import Container from '../components/ui/Container.astro';
+import PageIntro from '../components/ui/PageIntro.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Packages" description="Understand the two independently versioned npm packages published by Forge.">
+  <Container class="space-y-10 pb-16">
+    <PageIntro eyebrow="Packages" title="Two packages with separate responsibilities.">
+      <p>Install the generator to create a project; update the content model inside an existing project.</p>
+    </PageIntro>
+    <div class="grid gap-6 md:grid-cols-2">
+      <Card size="lg"><div class="badge">Initializer</div><h2 class="card-title"><code>@rm-industries/create-forge</code></h2><p>Validates project inputs, safely materializes the tested template snapshot, installs dependencies, and optionally initializes Git.</p><div class="card-actions"><a class="btn btn-primary" href="https://www.npmjs.com/package/@rm-industries/create-forge">View on npm</a><a class="btn btn-ghost" href="https://github.com/rm-industries/forge/tree/main/packages/create-forge">Source and API</a></div></Card>
+      <Card size="lg"><div class="badge">Library</div><h2 class="card-title"><code>@rm-industries/content-model</code></h2><p>Provides integration-neutral content definitions with matching Astro and Sveltia adapters. It can evolve independently after generation.</p><div class="card-actions"><a class="btn btn-primary" href="https://www.npmjs.com/package/@rm-industries/content-model">View on npm</a><a class="btn btn-ghost" href="https://github.com/rm-industries/forge/tree/main/packages/content-model">Source and API</a></div></Card>
+    </div>
+  </Container>
+</BaseLayout>

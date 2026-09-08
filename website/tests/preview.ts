@@ -2,7 +2,7 @@ import { getDeploymentConfig } from '../src/config/deployment';
 import { site } from '../src/config/site';
 import { resolveSiteHref } from '../src/lib/paths';
 
-export const previewOrigin = 'http://127.0.0.1:4321';
+export const previewOrigin = process.env.FORGE_PREVIEW_ORIGIN ?? 'http://127.0.0.1:4321';
 
 const deployment = getDeploymentConfig(site.url);
 

@@ -12,7 +12,7 @@ their production-relative locations.
 
 - `/` represents the landing-page layout and card content.
 - `/articles/` represents a content collection and repeated cards.
-- `/articles/designing-a-calm-starting-point/` represents rendered Markdown,
+- `/features/` represents a denser reusable-component route,
   typography, tags, and article pagination.
 
 The about and custom 404 pages reuse the same public layout with smaller or

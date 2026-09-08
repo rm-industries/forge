@@ -54,6 +54,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@astrojs/markdown-remark": "^7.2.4",
     "@axe-core/playwright": "^4.13.0",
     "@catppuccin/daisyui": "^2.1.1",
     "@catppuccin/palette": "^1.8.0",

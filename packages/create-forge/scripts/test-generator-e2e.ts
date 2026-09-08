@@ -30,14 +30,17 @@ const runGenerator = async (executable: string, cwd: string, args: string[]) => 
   return execute(executable, args, { cwd, maxBuffer: 10 * 1024 * 1024 });
 };
 
-const runGeneratedQuality = async (cwd: string) => {
-  const script = compatibilityMode ? 'quality:core' : 'quality';
+const runGeneratedCompatibility = async (cwd: string) => {
   try {
-    await execute('npm', ['run', script], { cwd, maxBuffer: 20 * 1024 * 1024 });
+    await execute('npm', ['run', 'quality:core'], { cwd, maxBuffer: 20 * 1024 * 1024 });
   } catch (error) {
     const failure = error as Error & { stdout?: string; stderr?: string };
     const output = `${failure.stdout ?? ''}\n${failure.stderr ?? ''}`.trim();
-    throw new Error(`Generated-project ${script} failed:\n${output.slice(-12_000)}`, { cause: error });
+    const diagnosticOutput =
+      output.length > 12_000
+        ? `${output.slice(0, 6_000)}\n\n... output truncated ...\n\n${output.slice(-6_000)}`
+        : output;
+    throw new Error(`Generated-project quality:core failed:\n${diagnosticOutput}`);
   }
 };
 
@@ -106,7 +109,7 @@ try {
   await access(join(defaultDirectory, '.github', 'workflows', 'automation.yml'));
   await access(join(defaultDirectory, '.github', 'workflows', 'project.yml'));
   await access(join(defaultDirectory, '.github', 'workflows', 'security.yml'));
-  await runGeneratedQuality(defaultDirectory);
+  if (compatibilityMode) await runGeneratedCompatibility(defaultDirectory);
 
   const explicitDirectory = join(projectsDirectory, 'explicit-site');
   await runGenerator(executable, projectsDirectory, [

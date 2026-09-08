@@ -7,7 +7,7 @@ import { site } from '../src/config/site.ts';
 import { resolveSiteHref } from '../src/lib/paths.ts';
 
 const previewOrigin = 'http://127.0.0.1:4321';
-const auditedPaths = ['/', '/articles/', '/articles/designing-a-calm-starting-point/'] as const;
+const auditedPaths = ['/', '/get-started/', '/features/'] as const;
 
 export const getLighthouseUrls = (siteUrl: string, origin = previewOrigin): string[] => {
   const deployment = getDeploymentConfig(siteUrl);

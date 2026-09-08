@@ -3,7 +3,19 @@ import { expect, test } from '@playwright/test';
 import { site } from '../src/config/site';
 import { resolvePreviewPath, resolvePreviewUrl } from './preview';
 
-const routes = ['/', '/about/', '/articles/', '/articles/designing-a-calm-starting-point/', '/admin/', '/404/'];
+const routes = [
+  '/',
+  '/get-started/',
+  '/features/',
+  '/packages/',
+  '/docs/',
+  '/project/',
+  '/about/',
+  '/articles/',
+  '/articles/own-the-output/',
+  '/admin/',
+  '/404/',
+];
 
 test('serves every baseline page with configured canonical and social metadata', async ({ page }) => {
   for (const route of routes) {
@@ -27,16 +39,14 @@ test('serves the content manager without allowing search indexing', async ({ pag
   await expect(page.locator('body')).not.toBeEmpty();
 });
 
-test('renders generic article tags on listings and detail pages', async ({ page }) => {
+test('renders project article tags on listings and detail pages', async ({ page }) => {
   await page.goto(resolvePreviewPath('/articles/'));
   await expect(
-    page
-      .locator(`a[href="${resolvePreviewPath('/articles/designing-a-calm-starting-point/')}"]`)
-      .getByLabel('Article tags'),
-  ).toContainText('Design');
+    page.locator(`a[href="${resolvePreviewPath('/articles/own-the-output/')}"]`).getByLabel('Article tags'),
+  ).toContainText('Ownership');
 
-  await page.goto(resolvePreviewPath('/articles/designing-a-calm-starting-point/'));
-  await expect(page.getByLabel('Article tags')).toContainText('Defaults');
+  await page.goto(resolvePreviewPath('/articles/own-the-output/'));
+  await expect(page.getByLabel('Article tags')).toContainText('Architecture');
 });
 
 test('resolves every internal page link', async ({ page, request }) => {
@@ -72,8 +82,8 @@ test('resolves every internal page link', async ({ page, request }) => {
 test('serves feed, crawler, manifest, and not-found metadata', async ({ request }) => {
   const feed = await request.get(resolvePreviewPath('/rss.xml'));
   expect(feed.ok()).toBe(true);
-  expect(await feed.text()).toContain(new URL('articles/designing-a-calm-starting-point/', site.url).href);
-  expect(await feed.text()).not.toContain('future-draft');
+  expect(await feed.text()).toContain(new URL('articles/own-the-output/', site.url).href);
+  expect(await feed.text()).not.toContain('planned-migration-guidance');
 
   const robots = await request.get(resolvePreviewPath('/robots.txt'));
   expect(robots.ok()).toBe(true);

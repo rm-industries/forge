@@ -32,6 +32,23 @@ html {
 body {
   min-height: 100vh;
   margin: 0;
+  background-image:
+    radial-gradient(circle at 85% 8%, color-mix(in oklab, var(--color-primary) 10%, transparent) 0, transparent 26rem),
+    linear-gradient(
+      180deg,
+      var(--color-base-100),
+      color-mix(in oklab, var(--color-base-200) 35%, var(--color-base-100))
+    );
+  background-attachment: fixed;
+}
+
+main {
+  overflow: clip;
+}
+
+::selection {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
 }
 
 .prose {
