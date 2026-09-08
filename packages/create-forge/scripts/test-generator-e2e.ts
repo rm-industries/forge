@@ -55,7 +55,11 @@ const runGeneratedQuality = async (cwd: string) => {
   } catch (error) {
     const failure = error as Error & { stdout?: string; stderr?: string };
     const output = `${failure.stdout ?? ''}\n${failure.stderr ?? ''}`.trim();
-    throw new Error(`Generated-project ${script} failed:\n${output.slice(-12_000)}`, { cause: error });
+    const diagnosticOutput =
+      output.length > 12_000
+        ? `${output.slice(0, 6_000)}\n\n... output truncated ...\n\n${output.slice(-6_000)}`
+        : output;
+    throw new Error(`Generated-project ${script} failed:\n${diagnosticOutput}`);
   }
 };
 
