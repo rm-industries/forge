@@ -79,7 +79,7 @@ export const site = defineSiteConfig({
   description:
     'Forge creates accessible, content-driven Astro websites with a shared content model and Sveltia CMS integration.',
   author: 'RM Industries',
-  url: 'https://rm-industries.github.io/forge/',
+  url: 'https://www.rm-industries.com/forge/',
   repository: 'rm-industries/forge',
   language: 'en',
   socialImage: '/social-card.svg',

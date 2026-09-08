@@ -73,7 +73,7 @@ jobs:
           home_page="${RUNNER_TEMP}/forge-home.html"
           curl --fail --silent --show-error --location --retry 5 --retry-delay 5 "$PAGE_URL" --output "$home_page"
           grep --fixed-strings '<meta name="generator" content="Forge by RM Industries">' "$home_page"
-          grep --fixed-strings '<link rel="canonical" href="https://rm-industries.github.io/forge/">' "$home_page"
+          grep --fixed-strings '<link rel="canonical" href="https://www.rm-industries.com/forge/">' "$home_page"
 
           missing_status="$(curl --silent --show-error --location --retry 5 --retry-delay 5 --output /dev/null --write-out '%{http_code}' "${PAGE_URL}does-not-exist/")"
           if [[ "$missing_status" != '404' ]]; then

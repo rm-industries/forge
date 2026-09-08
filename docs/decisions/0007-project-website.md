@@ -51,9 +51,12 @@ depends on being at a repository root:
 ### Public origin and deployment base
 
 Publish the site as the GitHub Pages project site at
-`https://rm-industries.github.io/forge/`. Production builds therefore use that
-origin and `/forge/` base. Internal links and assets must work both under the
-production base and in local development.
+`https://www.rm-industries.com/forge/`. The RM Industries organization Pages
+custom domain applies to its project sites, and the corresponding
+`rm-industries.github.io/forge/` URL redirects to this canonical origin.
+Production builds therefore use the custom origin and `/forge/` base. Internal
+links and assets must work both under the production base and in local
+development.
 
 Website publication means GitHub Pages deployment, not npm publication. Pull
 requests that affect the site run its affected quality, build, browser,

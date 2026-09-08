@@ -27,6 +27,10 @@ npm create @rm-industries/forge@1.0.0 -- website \
 
 The committed `package-lock.json` records the resolved application dependency
 versions and integrity values separately from this generator provenance.
+The bootstrap URL above records the original generator input. When Pages was
+enabled on 2026-09-08, GitHub applied the RM Industries organization custom
+domain to the project site. The maintained canonical URL is therefore
+`https://www.rm-industries.com/forge/`; the production base remains `/forge/`.
 
 ## Generated-file disposition
 

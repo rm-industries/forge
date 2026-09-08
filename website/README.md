@@ -1,7 +1,7 @@
 # Forge site
 
 This directory contains the public project website for Forge by RM Industries.
-It is published at <https://rm-industries.github.io/forge/> and is a standalone
+It is published at <https://www.rm-industries.com/forge/> and is a standalone
 Astro project intentionally excluded from the parent npm workspace. Install and
 run all commands from this directory.
 
