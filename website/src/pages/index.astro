@@ -29,7 +29,7 @@ import { resolveSiteHref } from '../lib/paths';
           <ol class="space-y-4">
             <li class="flex items-center gap-4 rounded-sm border border-neutral-content/20 bg-neutral-content/5 p-4"><span class="font-mono text-primary">01</span><strong>Define the content</strong></li>
             <li class="ml-6 flex items-center gap-4 rounded-sm border border-primary/50 bg-primary/15 p-4"><span class="font-mono text-primary">02</span><strong>Generate the site</strong></li>
-            <li class="ml-12 flex items-center gap-4 rounded-sm bg-base-100 p-4 text-base-content"><span class="font-mono text-success">03</span><strong>Own every file</strong></li>
+            <li class="ml-12 flex items-center gap-4 rounded-sm bg-base-100 p-4 text-base-content"><span class="font-mono font-bold">03</span><strong>Own every file</strong></li>
           </ol>
           <code class="block text-sm text-neutral-content/70">npm create @rm-industries/forge</code>
         </div>
@@ -47,19 +47,19 @@ import { resolveSiteHref } from '../lib/paths';
 
       <div class="grid gap-6 md:grid-cols-3">
         <Card size="lg">
-          <div class="font-mono text-sm text-primary">01 / Content</div>
+          <div class="border-primary border-l-4 pl-3 font-mono text-sm font-bold">01 / Content</div>
           <h3 class="card-title">One content contract</h3>
           <p>Define content once and derive typed Astro collections plus Sveltia CMS configuration from the same model.</p>
         </Card>
 
         <Card size="lg">
-          <div class="font-mono text-sm text-primary">02 / Design</div>
+          <div class="border-primary border-l-4 pl-3 font-mono text-sm font-bold">02 / Design</div>
           <h3 class="card-title">Accessible presentation</h3>
           <p>Start with semantic routes, keyboard-tested navigation, local fonts, responsive DaisyUI primitives, and light and dark themes.</p>
         </Card>
 
         <Card size="lg">
-          <div class="font-mono text-sm text-primary">03 / Quality</div>
+          <div class="border-primary border-l-4 pl-3 font-mono text-sm font-bold">03 / Quality</div>
           <h3 class="card-title">Production evidence</h3>
           <p>Formatting, linting, types, coverage, browser accessibility, Lighthouse, security analysis, and Pages deployment are connected.</p>
         </Card>
@@ -67,7 +67,7 @@ import { resolveSiteHref } from '../lib/paths';
 
     </section>
 
-    <section id="start" class="card rounded-sm bg-primary text-primary-content" aria-labelledby="start-title">
+    <section id="start" class="card rounded-sm border-l-8 border-primary bg-base-200 text-base-content" aria-labelledby="start-title">
       <div class="card-body items-start gap-5 p-8 sm:p-12">
         <div class="font-mono text-xs tracking-[0.16em] uppercase">Owned source</div>
         <h2 id="start-title" class="card-title max-w-3xl text-4xl leading-tight tracking-tight sm:text-5xl">Forge creates the project. You control its future.</h2>

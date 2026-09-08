@@ -2,6 +2,8 @@ import { dirname, relative, resolve, sep } from 'node:path';
 
 import type { RehypePlugin } from '@astrojs/markdown-remark';
 
+import { resolveSiteHref } from '../src/lib/paths';
+
 interface Node {
   children?: Node[];
   tagName?: string;
@@ -32,7 +34,7 @@ const createDocumentationLinkRewriter =
 
         if (path.endsWith('.md') && !docsPath.startsWith('../')) {
           const slug = docsPath.replace(/(?:^|\/)README\.md$/u, '').replace(/\.md$/u, '');
-          node.properties!.href = `${base}docs/${slug ? `${slug}/` : ''}${suffix}`;
+          node.properties!.href = `${resolveSiteHref(`/docs/${slug ? `${slug}/` : ''}`, base)}${suffix}`;
         } else {
           const repositoryPath = relative(repositoryDirectory, target).replaceAll(sep, '/');
           node.properties!.href = `https://github.com/rm-industries/forge/blob/main/${repositoryPath}${suffix}`;

@@ -43,6 +43,12 @@
     "release:prepare": "node scripts/prepare-package-release.ts",
     "template:sync": "node scripts/prepare-template-sync.ts",
     "template:sync:lockfile": "npm install --prefix templates/default --package-lock-only --ignore-scripts",
+    "website:build": "npm run build --prefix website",
+    "website:lighthouse": "npm run lighthouse:ci --prefix website",
+    "website:quality": "npm run quality --prefix website",
+    "website:quality:static": "npm run quality:static:ci --prefix website",
+    "website:test:browser": "npm run test:e2e --prefix website",
+    "website:test:coverage": "npm run test:coverage --prefix website",
     "quality": "npm run format && npm run lint && npm run typecheck && npm test && npm run build && npm run pack",
     "verify:template": "node scripts/verify-template.ts",
     "verify:template:static": "node scripts/verify-template-static-quality.ts"

@@ -35,6 +35,7 @@ jobs:
       generator: ${{ steps.selection.outputs.generator }}
       packages: ${{ steps.selection.outputs.packages }}
       template: ${{ steps.selection.outputs.template }}
+      website: ${{ steps.selection.outputs.website }}
 
     steps:
       - name: Checkout repository history
@@ -625,6 +626,191 @@ jobs:
       - name: Test packed generator compatibility
         run: npm run test:generator:compatibility
 
+  website-static-quality:
+    name: Website static quality
+    needs: classify
+    if: needs.classify.outputs.website == 'true'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '26.x'
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install website dependencies
+        run: npm ci --prefix website
+
+      - name: Validate website static quality
+        run: npm run website:quality:static
+
+  website-compatibility:
+    name: Website compatibility (Node 26)
+    needs: classify
+    if: needs.classify.outputs.website == 'true'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '26.x'
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install website dependencies
+        run: npm ci --prefix website
+
+      - name: Validate website on supported runtime
+        run: |
+          npm run typecheck --prefix website
+          npm run test:unit --prefix website
+          npm run build --prefix website
+          npm run validate:build --prefix website
+
+  website-validation:
+    name: Website unit coverage and build
+    needs: classify
+    if: needs.classify.outputs.website == 'true'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '26.x'
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install website dependencies
+        run: npm ci --prefix website
+
+      - name: Test website with coverage
+        run: npm run website:test:coverage
+
+      - name: Build and validate website
+        run: npm run website:build && npm run validate:build --prefix website
+
+      - name: Upload website coverage
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: website-unit-coverage
+          path: website/coverage
+          if-no-files-found: ignore
+          retention-days: 7
+
+  website-browser:
+    name: Website browser and accessibility tests
+    needs: classify
+    if: needs.classify.outputs.website == 'true'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '26.x'
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install website dependencies
+        run: npm ci --prefix website
+
+      - name: Install supported browsers
+        working-directory: website
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Test website in supported browsers
+        run: npm run website:test:browser
+
+      - name: Upload website browser test evidence
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: website-browser-tests
+          path: |
+            website/playwright-report
+            website/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+  website-lighthouse:
+    name: Website Lighthouse budgets
+    needs: classify
+    if: needs.classify.outputs.website == 'true'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '26.x'
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install website dependencies
+        run: npm ci --prefix website
+
+      - name: Install Lighthouse browser
+        working-directory: website
+        run: npx playwright install --with-deps chromium
+
+      - name: Enforce website Lighthouse budgets
+        run: npm run website:lighthouse
+
+      - name: Upload website Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: website-lighthouse-reports
+          path: website/.lighthouseci
+          if-no-files-found: ignore
+          include-hidden-files: true
+          retention-days: 7
+
   project:
     name: Project
     needs:
@@ -648,6 +834,11 @@ jobs:
       - template-isolation
       - generator-e2e
       - generator-compatibility
+      - website-static-quality
+      - website-compatibility
+      - website-validation
+      - website-browser
+      - website-lighthouse
     if: always()
     runs-on: ubuntu-latest
 
@@ -665,8 +856,9 @@ jobs:
           SELECTED_GENERATOR: ${{ needs.classify.outputs.generator }}
           SELECTED_PACKAGES: ${{ needs.classify.outputs.packages }}
           SELECTED_TEMPLATE: ${{ needs.classify.outputs.template }}
+          SELECTED_WEBSITE: ${{ needs.classify.outputs.website }}
         run: |
-          echo "Selected checks: audit=$SELECTED_AUDIT code=$SELECTED_CODE compatibility=$SELECTED_COMPATIBILITY documentation=$SELECTED_DOCUMENTATION generator=$SELECTED_GENERATOR packages=$SELECTED_PACKAGES template=$SELECTED_TEMPLATE"
+          echo "Selected checks: audit=$SELECTED_AUDIT code=$SELECTED_CODE compatibility=$SELECTED_COMPATIBILITY documentation=$SELECTED_DOCUMENTATION generator=$SELECTED_GENERATOR packages=$SELECTED_PACKAGES template=$SELECTED_TEMPLATE website=$SELECTED_WEBSITE"
           if ! jq --exit-status 'to_entries | all(.value.result == "success" or .value.result == "skipped")' <<< "$CHECK_RESULTS"; then
             echo '::error title=Project validation failed::Every selected project check must pass.'
             exit 1
