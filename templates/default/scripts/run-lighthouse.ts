@@ -7,7 +7,7 @@ import { site } from '../src/config/site.ts';
 import { resolveSiteHref } from '../src/lib/paths.ts';
 
 const defaultPreviewOrigin = 'http://127.0.0.1:4321';
-const previewOrigin = process.env.FORGE_PREVIEW_ORIGIN ?? defaultPreviewOrigin;
+const previewOrigin = process.env.FORGE_LIGHTHOUSE_ORIGIN ?? defaultPreviewOrigin;
 const auditedPaths = ['/', '/articles/', '/articles/designing-a-calm-starting-point/'] as const;
 
 export const getLighthouseUrls = (siteUrl: string, origin = defaultPreviewOrigin): string[] => {

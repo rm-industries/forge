@@ -31,9 +31,8 @@ const runGenerator = async (executable: string, cwd: string, args: string[]) => 
   return execute(executable, args, { cwd, maxBuffer: 10 * 1024 * 1024 });
 };
 
-const runGeneratedQuality = async (cwd: string) => {
-  const script = compatibilityMode ? 'quality:core' : 'quality';
-  const previewPort = await new Promise<number>((resolvePort, reject) => {
+const allocatePreviewPort = () =>
+  new Promise<number>((resolvePort, reject) => {
     const server = createServer();
     server.once('error', reject);
     server.listen(0, '127.0.0.1', () => {
@@ -46,10 +45,18 @@ const runGeneratedQuality = async (cwd: string) => {
       server.close((error) => (error ? reject(error) : resolvePort(address.port)));
     });
   });
+
+const runGeneratedQuality = async (cwd: string) => {
+  const script = compatibilityMode ? 'quality:core' : 'quality';
+  const [playwrightPort, lighthousePort] = await Promise.all([allocatePreviewPort(), allocatePreviewPort()]);
   try {
     await execute('npm', ['run', script], {
       cwd,
-      env: { ...process.env, FORGE_PREVIEW_ORIGIN: `http://127.0.0.1:${previewPort}` },
+      env: {
+        ...process.env,
+        FORGE_LIGHTHOUSE_ORIGIN: `http://127.0.0.1:${lighthousePort}`,
+        FORGE_PLAYWRIGHT_ORIGIN: `http://127.0.0.1:${playwrightPort}`,
+      },
       maxBuffer: 20 * 1024 * 1024,
     });
   } catch (error) {
