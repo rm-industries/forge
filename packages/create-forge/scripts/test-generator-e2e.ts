@@ -54,6 +54,7 @@ const runGeneratedQuality = async (cwd: string) => {
       cwd,
       env: {
         ...process.env,
+        FORGE_PLAYWRIGHT_REPORTER: 'list',
         FORGE_LIGHTHOUSE_ORIGIN: `http://127.0.0.1:${lighthousePort}`,
         FORGE_PLAYWRIGHT_ORIGIN: `http://127.0.0.1:${playwrightPort}`,
       },
