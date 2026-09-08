@@ -17,6 +17,8 @@ is required.
 The template's `.editorconfig` shares UTF-8, LF, final-newline, two-space, and
 120-column settings with supported editors and Oxfmt. `oxfmt.config.ts` contains
 only formatter-specific behavior such as quote and import ordering.
+`oxlint.config.ts` keeps code-quality rules local so a clean website checkout
+never discovers or imports the parent repository's tooling configuration.
 
 ## Start here
 
