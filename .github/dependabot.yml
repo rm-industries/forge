@@ -105,3 +105,35 @@ updates:
         update-types:
           - minor
           - patch
+
+  - package-ecosystem: npm
+    directory: /website
+    schedule:
+      interval: weekly
+      day: monday
+      time: '05:40'
+      timezone: UTC
+    cooldown:
+      default-days: 7
+      semver-major-days: 21
+      semver-minor-days: 7
+      semver-patch-days: 3
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+    labels:
+      - dependencies
+      - npm
+    groups:
+      website-production-dependencies:
+        dependency-type: production
+        exclude-patterns:
+          - '@sveltia/cms'
+        update-types:
+          - minor
+          - patch
+      website-development-dependencies:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch

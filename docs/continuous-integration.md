@@ -22,14 +22,15 @@ emits only reviewed boolean outputs. Changed filenames are passed to the typed
 classifier as NUL-delimited data; filenames never become workflow commands or
 shell expressions. The classifier selects these job groups:
 
-| Change class        | Selected validation                                                       |
-| ------------------- | ------------------------------------------------------------------------- |
-| Documentation only  | Format, Markdown lint, spelling, and documentation links and commands     |
-| Content model       | Repository/package checks and supported-runtime compatibility             |
-| Create Forge        | Repository/package checks, compatibility, and packed generator end-to-end |
-| Default template    | Package build/pack, every template check, and packed generator end-to-end |
-| Area dependency     | The affected area above plus dependency auditing                          |
-| Shared or ambiguous | Every repository, package, template, compatibility, and generator check   |
+| Change class        | Selected validation                                                              |
+| ------------------- | -------------------------------------------------------------------------------- |
+| Documentation only  | Format, Markdown lint, spelling, and documentation links and commands            |
+| Content model       | Repository/package checks and supported-runtime compatibility                    |
+| Create Forge        | Repository/package checks, compatibility, and packed generator end-to-end        |
+| Default template    | Package build/pack, every template check, and packed generator end-to-end        |
+| Project website     | Website static, runtime, coverage/build, browser, and Lighthouse checks          |
+| Area dependency     | The affected area above plus dependency auditing                                 |
+| Shared or ambiguous | Every repository, package, template, website, compatibility, and generator check |
 
 Documentation inside the bundled default template follows the template route,
 because it becomes part of generated projects. Root manifests and lockfiles,
@@ -37,6 +38,10 @@ because it becomes part of generated projects. Root manifests and lockfiles,
 empty or unavailable comparison deliberately select the full suite. A newly
 introduced path is therefore expensive until its ownership is reviewed and
 added to the classifier. Security analysis remains independent and broad.
+Website manifests and lockfiles stay on the website route because its static
+job applies the standalone audit policy; they do not also run the root
+workspace audit. Package-only changes do not select website browser or
+Lighthouse work.
 
 Every job remains in the `Project` aggregate's `needs` graph. The aggregate uses
 `always()` so jobs intentionally skipped by routing cannot leave the required
@@ -66,10 +71,13 @@ enabling GitHub Actions, while reviewing `Automation` whenever it appears.
 
 The minimum Node 22 release and the latest Node 22, 24, and 26 releases each run
 package type checks, tests, and builds. The standalone template uses the same
-matrix, with one clean install per runtime. The packed generator compatibility
-suite also runs on those four Linux runtimes and on the current macOS runner
-with Node 26. Each lane records its operating system, architecture, Node, npm,
-and Git versions before exercising the installed generator executable.
+matrix, with one clean install per runtime. The project website also installs
+from `website/package-lock.json` on each supported runtime before running its
+types, unit tests, build, and generated-output validation. The packed generator
+compatibility suite runs on those four Linux runtimes and on the current macOS
+runner with Node 26. Each lane records its operating system, architecture,
+Node, npm, and Git versions before exercising the installed generator
+executable.
 
 Formatting, Markdown, spelling, package inspection, coverage, Lighthouse,
 isolation, and the complete generated-project acceptance suite run once on the
@@ -109,6 +117,11 @@ npm run audit
 ```
 
 Run the template policy from `templates/default` with the same command.
+Run the website policy from the repository root with
+`npm run website:quality:static`, or use `npm run website:quality` for its
+complete standalone gate. Dependabot treats `/website` as an independent npm
+ecosystem and submits reviewable lockfile updates without regenerating owned
+website source.
 
 ## Negative verification
 

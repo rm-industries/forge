@@ -175,11 +175,20 @@ npm ci
 npm run quality
 npm run audit
 npm run verify:template
+npm run website:quality
 ```
 
 `npm run quality` covers formatting, linting, spelling, types, tests, builds,
 and package contents. The registry-backed audit and isolated template check are
 explicit because they have different network and runtime requirements.
+The `website:*` scripts run the standalone project site's checks through its
+own lockfile and dependency tree. Use `website:quality:static`,
+`website:test:coverage`, `website:build`, `website:test:browser`, or
+`website:lighthouse` when validating one layer. The root workflow selects these
+jobs for `website/**` and shared automation changes without running them for an
+unrelated package-only change. Future Forge upgrades are reviewed as owned
+source changes against the bootstrap record; automation never regenerates or
+overwrites `website/`.
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) for the review workflow, CI expectations,
 and template-specific checks. The

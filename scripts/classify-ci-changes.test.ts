@@ -12,6 +12,7 @@ describe('classifyCiChanges', () => {
       generator: false,
       packages: false,
       template: false,
+      website: false,
     });
   });
 
@@ -24,6 +25,7 @@ describe('classifyCiChanges', () => {
       generator: false,
       packages: true,
       template: false,
+      website: false,
     });
   });
 
@@ -63,6 +65,28 @@ describe('classifyCiChanges', () => {
     });
   });
 
+  it('routes website changes without unrelated package, template, or generator checks', () => {
+    expect(classifyCiChanges(['website/src/pages/index.astro'])).toEqual({
+      audit: false,
+      code: false,
+      compatibility: false,
+      documentation: false,
+      generator: false,
+      packages: false,
+      template: false,
+      website: true,
+    });
+  });
+
+  it('keeps website dependency auditing inside the standalone website checks', () => {
+    expect(classifyCiChanges(['website/package-lock.json'])).toMatchObject({
+      audit: false,
+      packages: false,
+      template: false,
+      website: true,
+    });
+  });
+
   it.each([
     ['shared tooling', ['scripts/verify-template.ts']],
     ['workflow automation', ['.github/workflows/project.yml']],
@@ -79,6 +103,7 @@ describe('classifyCiChanges', () => {
       generator: true,
       packages: true,
       template: true,
+      website: true,
     });
   });
 
@@ -92,7 +117,7 @@ describe('classifyCiChanges', () => {
 describe('serializeCiSelection', () => {
   it('emits only stable boolean workflow outputs', () => {
     expect(serializeCiSelection(classifyCiChanges(['docs/continuous-integration.md']))).toBe(
-      'audit=false\ncode=false\ncompatibility=false\ndocumentation=true\ngenerator=false\npackages=false\ntemplate=false\n',
+      'audit=false\ncode=false\ncompatibility=false\ndocumentation=true\ngenerator=false\npackages=false\ntemplate=false\nwebsite=false\n',
     );
   });
 });
