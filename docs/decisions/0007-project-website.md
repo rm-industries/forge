@@ -61,8 +61,10 @@ accessibility, and performance checks but never deploy to the production Pages
 environment. After those checks pass and a change reaches `main`, the Pages
 workflow builds from the committed `website/package-lock.json`, uploads the
 resulting static artifact, and deploys it through a protected `github-pages`
-environment. Concurrent deployments may cancel an older, superseded run. The
-deployment and Pages environment must remain traceable to the merged commit.
+environment. The deployment is selected only when the classifier identifies a
+website or shared-contract change. Production concurrency queues a newer run
+instead of cancelling an in-progress deployment. The deployment and Pages
+environment must remain traceable to the merged commit.
 
 Package releases and website deployments are independent:
 

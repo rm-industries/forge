@@ -1,0 +1,119 @@
+---
+name: Project Website Deployment
+
+on: # yamllint disable-line rule:truthy
+  workflow_call:
+
+permissions: {}
+
+concurrency:
+  group: project-website-production
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build Pages artifact
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout validated commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '26.x'
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install website dependencies
+        run: npm ci --prefix website
+
+      - name: Build production website
+        run: npm run website:build
+
+      - name: Validate production website
+        run: npm run validate:build --prefix website
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+        with:
+          path: website/dist
+
+  deploy:
+    name: Deploy GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    outputs:
+      page-url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
+
+  smoke-test:
+    name: Verify deployed website
+    needs: deploy
+    runs-on: ubuntu-latest
+
+    permissions: {}
+
+    steps:
+      - name: Verify public routes and metadata
+        env:
+          PAGE_URL: ${{ needs.deploy.outputs.page-url }}
+        run: |
+          if [[ "$PAGE_URL" != https://* ]]; then
+            echo "::error title=Invalid Pages URL::Expected an HTTPS deployment URL."
+            exit 1
+          fi
+
+          routes=(
+            ''
+            'get-started/'
+            'features/'
+            'packages/'
+            'docs/'
+            'project/'
+            'about/'
+            'articles/'
+            'rss.xml'
+            'site.webmanifest'
+            'sitemap-index.xml'
+          )
+
+          for route in "${routes[@]}"; do
+            curl --fail --silent --show-error --location --retry 5 --retry-delay 5 "${PAGE_URL}${route}" --output /dev/null
+          done
+
+          home_page="${RUNNER_TEMP}/forge-home.html"
+          curl --fail --silent --show-error --location --retry 5 --retry-delay 5 "$PAGE_URL" --output "$home_page"
+          grep --fixed-strings '<meta name="generator" content="Forge by RM Industries">' "$home_page"
+          grep --fixed-strings '<link rel="canonical" href="https://rm-industries.github.io/forge/">' "$home_page"
+
+          missing_status="$(curl --silent --show-error --location --retry 5 --retry-delay 5 --output /dev/null --write-out '%{http_code}' "${PAGE_URL}does-not-exist/")"
+          if [[ "$missing_status" != '404' ]]; then
+            echo "::error title=Invalid 404 response::Expected 404 but received ${missing_status}."
+            exit 1
+          fi
+
+          echo 'The deployed Forge website passed its public smoke checks.'
