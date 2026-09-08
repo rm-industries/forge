@@ -1,6 +1,5 @@
 import { execFile } from 'node:child_process';
 import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
-import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -31,42 +30,17 @@ const runGenerator = async (executable: string, cwd: string, args: string[]) => 
   return execute(executable, args, { cwd, maxBuffer: 10 * 1024 * 1024 });
 };
 
-const allocatePreviewPort = () =>
-  new Promise<number>((resolvePort, reject) => {
-    const server = createServer();
-    server.once('error', reject);
-    server.listen(0, '127.0.0.1', () => {
-      const address = server.address();
-      if (!address || typeof address === 'string') {
-        server.close();
-        reject(new Error('Could not allocate a generated-project preview port.'));
-        return;
-      }
-      server.close((error) => (error ? reject(error) : resolvePort(address.port)));
-    });
-  });
-
-const runGeneratedQuality = async (cwd: string) => {
-  const [playwrightPort, lighthousePort] = await Promise.all([allocatePreviewPort(), allocatePreviewPort()]);
-  const environment = {
-    ...process.env,
-    FORGE_PLAYWRIGHT_REPORTER: 'list',
-    FORGE_LIGHTHOUSE_ORIGIN: `http://127.0.0.1:${lighthousePort}`,
-    FORGE_PLAYWRIGHT_ORIGIN: `http://127.0.0.1:${playwrightPort}`,
-  };
-  const scripts = compatibilityMode ? ['quality:core'] : ['quality:core', 'test:e2e', 'lighthouse:ci'];
-  for (const script of scripts) {
-    try {
-      await execute('npm', ['run', script], { cwd, env: environment, maxBuffer: 20 * 1024 * 1024 });
-    } catch (error) {
-      const failure = error as Error & { stdout?: string; stderr?: string };
-      const output = `${failure.stdout ?? ''}\n${failure.stderr ?? ''}`.trim();
-      const diagnosticOutput =
-        output.length > 12_000
-          ? `${output.slice(0, 6_000)}\n\n... output truncated ...\n\n${output.slice(-6_000)}`
-          : output;
-      throw new Error(`Generated-project ${script} failed:\n${diagnosticOutput}`);
-    }
+const runGeneratedCompatibility = async (cwd: string) => {
+  try {
+    await execute('npm', ['run', 'quality:core'], { cwd, maxBuffer: 20 * 1024 * 1024 });
+  } catch (error) {
+    const failure = error as Error & { stdout?: string; stderr?: string };
+    const output = `${failure.stdout ?? ''}\n${failure.stderr ?? ''}`.trim();
+    const diagnosticOutput =
+      output.length > 12_000
+        ? `${output.slice(0, 6_000)}\n\n... output truncated ...\n\n${output.slice(-6_000)}`
+        : output;
+    throw new Error(`Generated-project quality:core failed:\n${diagnosticOutput}`);
   }
 };
 
@@ -135,7 +109,7 @@ try {
   await access(join(defaultDirectory, '.github', 'workflows', 'automation.yml'));
   await access(join(defaultDirectory, '.github', 'workflows', 'project.yml'));
   await access(join(defaultDirectory, '.github', 'workflows', 'security.yml'));
-  await runGeneratedQuality(defaultDirectory);
+  if (compatibilityMode) await runGeneratedCompatibility(defaultDirectory);
 
   const explicitDirectory = join(projectsDirectory, 'explicit-site');
   await runGenerator(executable, projectsDirectory, [

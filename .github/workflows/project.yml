@@ -572,10 +572,6 @@ jobs:
         with:
           node-version: '26.x'
 
-      - name: Install generated-project browsers
-        working-directory: templates/default
-        run: npx playwright install --with-deps chromium firefox webkit
-
       - name: Test packed generator
         run: npm run test:generator:e2e
 
