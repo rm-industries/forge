@@ -188,7 +188,10 @@ own lockfile and dependency tree. Use `website:quality:static`,
 jobs for `website/**` and shared automation changes without running them for an
 unrelated package-only change. Future Forge upgrades are reviewed as owned
 source changes against the bootstrap record; automation never regenerates or
-overwrites `website/`.
+overwrites `website/`. A website-affecting push to `main` deploys only after the
+stable `Project` aggregate succeeds; the dedicated workflow publishes the
+already validated `website/dist` artifact through the protected `github-pages`
+environment and smoke-tests the public project-path URL.
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) for the review workflow, CI expectations,
 and template-specific checks. The
