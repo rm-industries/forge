@@ -655,26 +655,13 @@ jobs:
         run: npm run website:quality:static
 
   website-compatibility:
-    name: Website compatibility (${{ matrix.runtime }})
+    name: Website compatibility (Node 26)
     needs: classify
     if: needs.classify.outputs.website == 'true'
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runtime: minimum Node 22
-            node-version: '22.22.2'
-          - runtime: latest Node 22
-            node-version: '22.x'
-          - runtime: latest Node 24
-            node-version: '24.x'
-          - runtime: latest Node 26
-            node-version: '26.x'
 
     steps:
       - name: Checkout repository
@@ -685,7 +672,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '26.x'
           cache: npm
           cache-dependency-path: website/package-lock.json
 
@@ -821,6 +808,7 @@ jobs:
           name: website-lighthouse-reports
           path: website/.lighthouseci
           if-no-files-found: ignore
+          include-hidden-files: true
           retention-days: 7
 
   project:

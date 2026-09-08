@@ -71,13 +71,14 @@ enabling GitHub Actions, while reviewing `Automation` whenever it appears.
 
 The minimum Node 22 release and the latest Node 22, 24, and 26 releases each run
 package type checks, tests, and builds. The standalone template uses the same
-matrix, with one clean install per runtime. The project website also installs
-from `website/package-lock.json` on each supported runtime before running its
-types, unit tests, build, and generated-output validation. The packed generator
-compatibility suite runs on those four Linux runtimes and on the current macOS
-runner with Node 26. Each lane records its operating system, architecture,
-Node, npm, and Git versions before exercising the installed generator
-executable.
+matrix, with one clean install per runtime. The project website is a deployed
+application rather than a published compatibility surface, so it installs from
+`website/package-lock.json` and runs its types, unit tests, build, and
+generated-output validation once on the primary Node 26 runtime. The packed
+generator compatibility suite runs on the four supported Linux runtimes and on
+the current macOS runner with Node 26. Each lane records its operating system,
+architecture, Node, npm, and Git versions before exercising the installed
+generator executable.
 
 Formatting, Markdown, spelling, package inspection, coverage, Lighthouse,
 isolation, and the complete generated-project acceptance suite run once on the

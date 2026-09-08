@@ -40,13 +40,14 @@ variance while still failing a meaningful regression.
 | Resource | Maximum bytes | Rationale                                                           |
 | -------- | ------------: | ------------------------------------------------------------------- |
 | Script   |             0 | The public template ships no client JavaScript.                     |
-| Total    |       125,000 | Approximately 24% headroom above the measured 100,675-byte maximum. |
+| Total    |       170,000 | Approximately 10% headroom above the measured 154,453-byte maximum. |
 
-The 2026-08-30 baseline used Lighthouse 12.6.1 and three local Chromium runs per
-route. Every run scored 99 performance and 100 for accessibility, best
-practices, and SEO. Script transfer was zero bytes. Total transfer was stable at
-100,675 bytes for home, 100,447 bytes for the listing, and 100,498 bytes for the
-article detail.
+The 2026-09-08 project-website baseline used Lighthouse 12.6.1 and three CI
+Chromium runs per route. Script transfer remained zero bytes. Total transfer was
+stable at 154,453 bytes for home, 154,385 bytes for getting started, and 130,360
+bytes for features. These measurements reflect the maintained Forge website,
+including its local fonts and project documentation, rather than the smaller
+generated-site template.
 
 The total budget leaves room for minor generated-content and toolchain variance
 without allowing an unreviewed asset or client bundle. Do not raise a threshold
