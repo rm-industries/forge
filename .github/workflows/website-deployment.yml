@@ -15,43 +15,8 @@ defaults:
     shell: bash
 
 jobs:
-  build:
-    name: Build Pages artifact
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout validated commit
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
-        with:
-          node-version: '26.x'
-          cache: npm
-          cache-dependency-path: website/package-lock.json
-
-      - name: Install website dependencies
-        run: npm ci --prefix website
-
-      - name: Build production website
-        run: npm run website:build
-
-      - name: Validate production website
-        run: npm run validate:build --prefix website
-
-      - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
-        with:
-          path: website/dist
-
   deploy:
     name: Deploy GitHub Pages
-    needs: build
     runs-on: ubuntu-latest
 
     permissions:

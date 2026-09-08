@@ -3,8 +3,9 @@
 The root project workflow invokes `.github/workflows/website-deployment.yml`
 after every validated push to `main`. Pull requests build and test the site, but
 they do not upload a Pages artifact or run a deployment. The called workflow
-rebuilds `website/` from the exact validated commit, validates the generated
-output, uploads only `website/dist`, deploys it, and smoke-tests the public URL.
+deploys the `website/dist` artifact produced by the existing coverage-and-build
+job, then smoke-tests the public URL. It does not repeat the install, build, or
+generated-output validation that the root `Project` gate already accepted.
 
 ## Enable deployment
 
@@ -18,10 +19,11 @@ Forge currently requires these settings to be enabled manually because the
 repository does not yet have a Pages site configured. The expected public URL
 is `https://rm-industries.github.io/forge/`.
 
-The build job has read-only repository access. The separate deployment job is
-the only job granted `pages: write` and `id-token: write`, and it cannot begin
-until the complete `Project` quality gate succeeds. Deployment concurrency does
-not cancel an in-progress production release, preventing a newer push from
+The coverage-and-build job has read-only repository access and uploads a Pages
+artifact only for an eligible `main` push. The separate deployment job is the
+only job granted `pages: write` and `id-token: write`, and it cannot begin until
+the complete `Project` quality gate succeeds. Deployment concurrency does not
+cancel an in-progress production release, preventing a newer push from
 interrupting a partially completed publication.
 
 ## Choose the public URL
