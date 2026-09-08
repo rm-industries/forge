@@ -9,11 +9,6 @@ import { validateBuild } from './validate-build';
 const requiredPaths = [
   '404.html',
   'about/index.html',
-  'admin/index.html',
-  'articles/one-model-two-integrations/index.html',
-  'articles/own-the-output/index.html',
-  'articles/quality-before-deployment/index.html',
-  'articles/index.html',
   'docs/index.html',
   'features/index.html',
   'get-started/index.html',
@@ -21,7 +16,6 @@ const requiredPaths = [
   'packages/index.html',
   'project/index.html',
   'robots.txt',
-  'rss.xml',
   'site.webmanifest',
   'sitemap-index.xml',
 ] as const;
@@ -50,8 +44,8 @@ describe('generated build validation', () => {
 
   test('reports a missing required output path', async () => {
     const fixture = await createFixture();
-    await rm(join(fixture, 'rss.xml'));
-    await expect(validateBuild(fixture)).rejects.toThrow('rss.xml');
+    await rm(join(fixture, 'site.webmanifest'));
+    await expect(validateBuild(fixture)).rejects.toThrow('site.webmanifest');
   });
 
   test('rejects unresolved generator tokens', async () => {

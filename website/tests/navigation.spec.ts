@@ -30,16 +30,3 @@ test('opens mobile navigation and follows a configured link', async ({ page }) =
     page.getByRole('heading', { level: 1, name: 'Build and improve Forge with RM Industries.' }),
   ).toBeVisible();
 });
-
-test('moves from the article listing into an article and through article pagination', async ({ page }) => {
-  await page.goto(resolvePreviewPath('/articles/'));
-
-  await page.getByRole('link', { name: /Own the output/u }).click();
-  await expect(page).toHaveURL(resolvePreviewUrl('/articles/own-the-output/'));
-  await expect(page.getByRole('heading', { level: 1, name: 'Own the output' })).toBeVisible();
-
-  const articleNavigation = page.getByRole('navigation', { name: 'Article navigation' });
-  await articleNavigation.getByRole('link', { name: /One model, two integrations/u }).click();
-  await expect(page).toHaveURL(resolvePreviewUrl('/articles/one-model-two-integrations/'));
-  await expect(page.getByRole('heading', { level: 1, name: 'One model, two integrations' })).toBeVisible();
-});

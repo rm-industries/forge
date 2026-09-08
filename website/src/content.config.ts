@@ -1,8 +1,6 @@
-import { createAstroCollections } from '@rm-industries/content-model/astro';
 import { glob } from 'astro/loaders';
 import { defineCollection } from 'astro:content';
 
-import { contentModels } from './config/content-models/registry.ts';
 import { documentationId } from './lib/documentation.ts';
 
 const documentation = defineCollection({
@@ -13,4 +11,4 @@ const documentation = defineCollection({
   }),
 });
 
-export const collections = { ...createAstroCollections(contentModels), documentation };
+export const collections = { documentation };

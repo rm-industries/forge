@@ -31,7 +31,7 @@ interrupting a partially completed publication.
 
 Set `url` in `src/config/site.ts` to the complete public address. Forge derives
 Astro's deployment base from this value, so canonical metadata, navigation,
-assets, the RSS feed, the web manifest, and CMS branding use the same path.
+assets and the web manifest use the same path.
 
 For a project site, include the repository name:
 
@@ -52,7 +52,7 @@ workflow succeeds on `main`, its deployment summary links to the published site.
 
 The workflow's `github-pages` environment records the deployment URL and commit.
 The `github-pages` artifact contains only `website/dist`, and the final smoke job
-requests every baseline section plus RSS, manifest, sitemap, canonical metadata,
+requests every baseline section plus the manifest, sitemap, canonical metadata,
 the Forge generator marker, and production 404 behavior. Browser accessibility
 and Lighthouse thresholds remain blocking inputs through the root `Project`
 gate.
