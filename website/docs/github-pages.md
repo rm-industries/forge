@@ -15,9 +15,10 @@ generated-output validation that the root `Project` gate already accepted.
 4. Restrict deployment branches to `main`. Add required reviewers when the site
    needs a manual production approval.
 
-Forge currently requires these settings to be enabled manually because the
-repository does not yet have a Pages site configured. The expected public URL
-is `https://rm-industries.github.io/forge/`.
+Forge Pages uses GitHub Actions as its source and enforces HTTPS. The RM
+Industries organization custom domain also applies to this project site, so its
+public URL is `https://www.rm-industries.com/forge/` and the corresponding
+`rm-industries.github.io` project path redirects there.
 
 The coverage-and-build job has read-only repository access and uploads a Pages
 artifact only for an eligible `main` push. The separate deployment job is the
