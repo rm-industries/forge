@@ -1,0 +1,5 @@
+paths:
+  .github/workflows/*.yml:
+    ignore:
+      # GitHub recommends $/ for same-repository actions, but Actionlint 1.7.12 does not recognize it yet.
+      - 'specifying action "\$/\.github/actions/setup-project" in invalid format because ref is missing'

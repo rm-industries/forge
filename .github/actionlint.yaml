@@ -1,0 +1,10 @@
+paths:
+  .github/workflows/*.yml:
+    ignore:
+      # GitHub recommends $/ for same-repository actions and workflows, but Actionlint 1.7.12 does not recognize it yet.
+      - 'specifying action "\$/\.github/actions/setup-project" in invalid format because ref is missing'
+      - 'reusable workflow call "\$/\.github/workflows/website-deployment\.yml" at "uses" is not following the format'
+  templates/default/.github/workflows/*.yml:
+    ignore:
+      # The generated workflow uses the same GitHub-supported self-repository syntax.
+      - 'specifying action "\$/\.github/actions/setup-project" in invalid format because ref is missing'

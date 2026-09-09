@@ -31,7 +31,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup project
-        uses: ./.github/actions/setup-project
+        uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
 
