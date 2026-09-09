@@ -2,6 +2,15 @@
 
 All notable changes to `@rm-industries/create-forge` are documented here.
 
+## 1.0.2
+
+- Generate projects with the published `@rm-industries/content-model@1.1.0`,
+  including the new reference-field capability.
+- Preserve Sveltia collection generation by explicitly passing each content
+  model to the adapter without forwarding the array index as adapter options.
+- Existing generated projects are not modified automatically. Projects that
+  update to content-model 1.1.0 should adopt the same explicit adapter callback.
+
 ## 1.0.1
 
 - Generate projects with `@rm-industries/content-model@1.0.1` and Sveltia CMS
