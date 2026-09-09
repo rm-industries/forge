@@ -50,7 +50,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup project dependencies
-        uses: ./.github/actions/setup-project
+        uses: $/.github/actions/setup-project
         with:
           node-version: '26.8.1'
 
