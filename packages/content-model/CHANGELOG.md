@@ -2,9 +2,16 @@
 
 All notable changes to `@rm-industries/content-model` are documented here.
 
-## 1.0.1-alpha.0
+## 1.0.1
 
-- Validate @sveltia/cms 0.207.1 and update its supported peer range from `>=0.203.2 <0.204.0` to `>=0.207.1 <0.208.0`.
+- Publish the validated Sveltia compatibility update directly as a stable patch
+  release without API or content-model schema changes.
+- Support Sveltia CMS `>=0.207.1 <0.208.0`, replacing the previously supported
+  `>=0.203.2 <0.204.0` line after validating the adapter against Sveltia CMS
+  0.207.1.
+- Consumers using the Sveltia adapter must upgrade `@sveltia/cms` to 0.207.1 or
+  another compatible 0.207 release. Consumers that do not use the optional
+  Sveltia adapter require no migration.
 
 ## 1.0.0
 
