@@ -2,7 +2,7 @@
 
 All notable changes to `@rm-industries/content-model` are documented here.
 
-## Unreleased
+## 1.1.0
 
 - Add integration-neutral single and multiple reference fields, recursive
   registry validation, Astro string-value schemas, and automatic Sveltia
