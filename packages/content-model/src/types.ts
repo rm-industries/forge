@@ -31,6 +31,27 @@ export interface DateContentField extends ContentFieldBase<'date', string> {
   mode?: 'date' | 'datetime';
 }
 
+interface ReferenceContentFieldBase extends FieldPresentation {
+  kind: 'reference';
+  collection: string;
+  required?: boolean;
+  valueField?: string;
+  displayFields: readonly string[];
+  searchFields?: readonly string[];
+}
+
+export interface SingleReferenceContentField extends ReferenceContentFieldBase {
+  multiple?: false;
+  default?: string;
+}
+
+export interface MultipleReferenceContentField extends ReferenceContentFieldBase {
+  multiple: true;
+  default?: readonly string[];
+}
+
+export type ReferenceContentField = SingleReferenceContentField | MultipleReferenceContentField;
+
 export interface ListContentField extends ContentFieldBase<'list', readonly unknown[]> {
   items: ContentField;
   itemLabel?: string;
@@ -49,6 +70,7 @@ export type ContentField =
   | BooleanContentField
   | NumberContentField
   | DateContentField
+  | ReferenceContentField
   | ListContentField
   | ObjectContentField
   | ImageContentField;
@@ -68,6 +90,7 @@ export interface ContentCollectionModel {
   extensions?: readonly ('json' | 'md' | 'mdx')[];
   format?: 'json';
   slug: string;
+  entryLabelField?: string;
   fields: ContentFields;
   body?: ContentBody;
   sort?: {

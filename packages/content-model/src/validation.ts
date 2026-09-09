@@ -7,6 +7,7 @@ import type {
   FieldEntry,
   ListContentField,
   NumberContentField,
+  ReferenceContentField,
   StringContentField,
 } from './types';
 
@@ -48,6 +49,12 @@ const validateDefault = (field: ContentField, path: string): void => {
     case 'asset':
       if (typeof value !== 'string') fail(`${path}.default`, 'must be a string.');
       break;
+    case 'reference':
+      if (field.multiple) {
+        if (!Array.isArray(value) || value.some((item) => typeof item !== 'string'))
+          fail(`${path}.default`, 'must be an array of strings for a multiple reference.');
+      } else if (typeof value !== 'string') fail(`${path}.default`, 'must be a string for a single reference.');
+      break;
     case 'boolean':
       if (typeof value !== 'boolean') fail(`${path}.default`, 'must be a boolean.');
       break;
@@ -59,6 +66,23 @@ const validateDefault = (field: ContentField, path: string): void => {
       break;
     case 'object':
       fail(`${path}.default`, 'object defaults are not supported in v1.');
+  }
+};
+
+const validateReference = (field: ReferenceContentField, path: string): void => {
+  requireIdentifier(field.collection, `${path}.collection`);
+  if (field.multiple !== undefined && typeof field.multiple !== 'boolean')
+    fail(`${path}.multiple`, 'must be a boolean.');
+  if (field.valueField !== undefined) requireText(field.valueField, `${path}.valueField`);
+
+  if (!Array.isArray(field.displayFields) || field.displayFields.length === 0)
+    fail(`${path}.displayFields`, 'must contain at least one field.');
+
+  for (const property of ['displayFields', 'searchFields'] as const) {
+    const values = field[property];
+    if (values === undefined) continue;
+    if (!Array.isArray(values) || values.length === 0) fail(`${path}.${property}`, 'must contain at least one field.');
+    values.forEach((value, index) => requireText(value, `${path}.${property}[${index}]`));
   }
 };
 
@@ -116,6 +140,12 @@ const validateListItem = (field: ContentField, value: unknown, path: string): vo
     case 'asset':
       if (typeof value !== 'string') fail(path, 'must be a string.');
       return;
+    case 'reference':
+      if (field.multiple) {
+        if (!Array.isArray(value) || value.some((item) => typeof item !== 'string'))
+          fail(path, 'must be an array of strings.');
+      } else if (typeof value !== 'string') fail(path, 'must be a string.');
+      return;
     case 'boolean':
       if (typeof value !== 'boolean') fail(path, 'must be a boolean.');
       return;
@@ -159,6 +189,9 @@ const validateField = (field: ContentField, path: string): void => {
     case 'date':
       validateDate(field, path);
       return;
+    case 'reference':
+      validateReference(field, path);
+      return;
     case 'list':
       validateList(field, path);
       return;
@@ -195,6 +228,14 @@ export const validateContentModel = (model: ContentCollectionModel): void => {
   requireText(model.folder, 'model.folder');
   requireText(model.slug, 'model.slug');
   validateFields(model.fields, `${model.name}.fields`);
+
+  if (model.entryLabelField !== undefined) {
+    requireFieldName(model.entryLabelField, `${model.name}.entryLabelField`);
+    if (!(model.entryLabelField in model.fields))
+      fail(`${model.name}.entryLabelField`, `references unknown field "${model.entryLabelField}".`);
+    if (model.fields[model.entryLabelField]?.kind !== 'string')
+      fail(`${model.name}.entryLabelField`, 'must reference a string field.');
+  }
 
   if (model.extensions) {
     if (model.extensions.length === 0) fail(`${model.name}.extensions`, 'must contain at least one extension.');
@@ -236,6 +277,31 @@ export const validateContentModels = (models: ContentModelRegistry): void => {
     if (names.has(model.name)) fail('models', `contains duplicate collection name "${model.name}".`);
     names.add(model.name);
   }
+
+  const validateReferences = (field: ContentField, path: string): void => {
+    if (field.kind === 'reference') {
+      const target = models.find((model) => model.name === field.collection);
+      if (!target) return fail(`${path}.collection`, `references unknown collection "${field.collection}".`);
+
+      for (const [property, values] of [
+        ['valueField', field.valueField ? [field.valueField] : []],
+        ['displayFields', field.displayFields ?? []],
+        ['searchFields', field.searchFields ?? []],
+      ] as const)
+        values.forEach((name, index) => {
+          if (name !== 'slug' && !(name in target.fields)) {
+            const suffix = property === 'valueField' ? property : `${property}[${index}]`;
+            fail(`${path}.${suffix}`, `references unknown field "${name}" in collection "${target.name}".`);
+          }
+        });
+    }
+    if (field.kind === 'list') validateReferences(field.items, `${path}.items`);
+    if (field.kind === 'object')
+      Object.entries(field.fields).forEach(([name, nested]) => validateReferences(nested, `${path}.fields.${name}`));
+  };
+
+  for (const model of models)
+    Object.entries(model.fields).forEach(([name, field]) => validateReferences(field, `${model.name}.fields.${name}`));
 };
 
 export const fieldsFromEntries = <const Entries extends readonly FieldEntry[]>(

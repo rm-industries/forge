@@ -16,13 +16,17 @@ type PresentFieldValue<Field extends ContentField> = Field extends { kind: 'stri
       ? number
       : Field extends { kind: 'date' }
         ? Date
-        : Field extends { kind: 'list'; items: infer Item extends ContentField }
-          ? Array<PresentFieldValue<Item>>
-          : Field extends { kind: 'object'; fields: infer Fields extends Record<string, ContentField> }
-            ? AstroFieldsOutput<Fields>
-            : Field extends { kind: 'asset'; assetType: 'image' }
-              ? ImageMetadata
-              : never;
+        : Field extends { kind: 'reference'; multiple: true }
+          ? string[]
+          : Field extends { kind: 'reference' }
+            ? string
+            : Field extends { kind: 'list'; items: infer Item extends ContentField }
+              ? Array<PresentFieldValue<Item>>
+              : Field extends { kind: 'object'; fields: infer Fields extends Record<string, ContentField> }
+                ? AstroFieldsOutput<Fields>
+                : Field extends { kind: 'asset'; assetType: 'image' }
+                  ? ImageMetadata
+                  : never;
 
 export type AstroFieldOutput<Field extends ContentField> = Field extends { required: true } | { default: unknown }
   ? PresentFieldValue<Field>
@@ -81,6 +85,16 @@ const createAstroField = (
       if (field.default !== undefined) return schema.default(new Date(field.default));
       if (forcePresent || field.required) return schema;
       return z.preprocess(parseOptionalDate, z.date().optional());
+    }
+    case 'reference': {
+      if (field.multiple) {
+        const schema = z.array(z.string());
+        if (field.default !== undefined) return schema.default([...field.default]);
+        return optionalUnlessRequired(schema, field, forcePresent);
+      }
+      const schema = z.string();
+      if (field.default !== undefined) return schema.default(field.default);
+      return optionalUnlessRequired(schema, field, forcePresent);
     }
     case 'list': {
       const schema = z.array(createAstroField(`${name} item`, field.items, image, true));

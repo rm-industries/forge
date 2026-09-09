@@ -1,7 +1,18 @@
 import type { EntryCollection, Field } from '@sveltia/cms';
 
-import type { ContentCollectionModel, ContentField } from '../types';
-import { validateContentModel } from '../validation';
+import type { ContentCollectionModel, ContentField, ContentModelRegistry } from '../types';
+import { validateContentModel, validateContentModels } from '../validation';
+
+export interface SveltiaFieldCustomizationContext {
+  collection: string;
+  path: string;
+  source: ContentField;
+}
+
+export interface SveltiaCollectionOptions {
+  summary?: string;
+  customizeField?: (field: Field, context: SveltiaFieldCustomizationContext) => Field;
+}
 
 const commonFieldProperties = (name: string, field: ContentField) => ({
   name,
@@ -10,24 +21,36 @@ const commonFieldProperties = (name: string, field: ContentField) => ({
   after_input: field.help,
 });
 
-const createSveltiaField = (name: string, field: ContentField): Field => {
+const toSveltiaReferenceField = (name: string) => (name === 'slug' ? '{{slug}}' : name);
+
+const createSveltiaField = (
+  name: string,
+  field: ContentField,
+  collection: string,
+  path: string,
+  customize?: SveltiaCollectionOptions['customizeField'],
+): Field => {
   const common = commonFieldProperties(name, field);
+
+  let generated: Field;
 
   switch (field.kind) {
     case 'string':
       if (field.options)
-        return {
+        generated = {
           ...common,
           widget: 'select',
           options: field.options.map((option) => ({ ...option })),
           default: field.default,
         };
-      if (field.multiline) return { ...common, widget: 'text', default: field.default };
-      return { ...common, default: field.default };
+      else if (field.multiline) generated = { ...common, widget: 'text', default: field.default };
+      else generated = { ...common, default: field.default };
+      break;
     case 'boolean':
-      return { ...common, widget: 'boolean', default: field.default };
+      generated = { ...common, widget: 'boolean', default: field.default };
+      break;
     case 'number':
-      return {
+      generated = {
         ...common,
         widget: 'number',
         value_type: field.integer ? 'int' : 'float',
@@ -35,58 +58,84 @@ const createSveltiaField = (name: string, field: ContentField): Field => {
         max: field.max,
         default: field.default,
       };
+      break;
     case 'date':
-      return {
+      generated = {
         ...common,
         widget: 'datetime',
         type: field.mode === 'datetime' ? 'datetime-local' : 'date',
         format: field.mode === 'datetime' ? undefined : 'YYYY-MM-DD',
         default: field.default,
       };
+      break;
+    case 'reference':
+      generated = {
+        ...common,
+        widget: 'relation',
+        collection: field.collection,
+        multiple: field.multiple ?? false,
+        value_field: toSveltiaReferenceField(field.valueField ?? 'slug'),
+        display_fields: field.displayFields?.map(toSveltiaReferenceField),
+        search_fields: field.searchFields?.map(toSveltiaReferenceField),
+        default:
+          field.default === undefined ? undefined : Array.isArray(field.default) ? [...field.default] : field.default,
+      };
+      break;
     case 'list':
       if (field.items.kind === 'string' && field.items.options)
-        return {
+        generated = {
           ...common,
           widget: 'select',
           multiple: true,
           options: field.items.options.map((option) => ({ ...option })),
           default: field.default ? [...field.default] : undefined,
         };
-      if (field.items.kind === 'string')
-        return { ...common, widget: 'list', default: field.default ? [...field.default] : undefined };
-      if (field.items.kind === 'object')
-        return {
+      else if (field.items.kind === 'string')
+        generated = { ...common, widget: 'list', default: field.default ? [...field.default] : undefined };
+      else if (field.items.kind === 'object')
+        generated = {
           ...common,
           widget: 'list',
           summary: field.itemLabel,
           default: field.default ? [...field.default] : undefined,
           fields: Object.entries(field.items.fields).map(([nestedName, nestedField]) =>
-            createSveltiaField(nestedName, nestedField),
+            createSveltiaField(nestedName, nestedField, collection, `${path}.items.fields.${nestedName}`, customize),
           ),
         };
-      return {
-        ...common,
-        widget: 'list',
-        default: field.default ? [...field.default] : undefined,
-        field: createSveltiaField('item', field.items),
-      };
+      else
+        generated = {
+          ...common,
+          widget: 'list',
+          default: field.default ? [...field.default] : undefined,
+          field: createSveltiaField('item', field.items, collection, `${path}.items`, customize),
+        };
+      break;
     case 'object':
-      return {
+      generated = {
         ...common,
         widget: 'object',
         fields: Object.entries(field.fields).map(([nestedName, nestedField]) =>
-          createSveltiaField(nestedName, nestedField),
+          createSveltiaField(nestedName, nestedField, collection, `${path}.fields.${nestedName}`, customize),
         ),
       };
+      break;
     case 'asset':
-      return { ...common, widget: 'image', default: field.default };
+      generated = { ...common, widget: 'image', default: field.default };
+      break;
   }
+
+  return customize ? customize(structuredClone(generated), { collection, path, source: field }) : generated;
 };
 
-export const createSveltiaCollection = (model: ContentCollectionModel): EntryCollection => {
+export const createSveltiaCollection = (
+  model: ContentCollectionModel,
+  options: SveltiaCollectionOptions = {},
+): EntryCollection => {
   validateContentModel(model);
 
-  const fields = Object.entries(model.fields).map(([name, field]) => createSveltiaField(name, field));
+  const fields = Object.entries(model.fields).map(([name, field]) =>
+    createSveltiaField(name, field, model.name, `${model.name}.fields.${name}`, options.customizeField),
+  );
   if (model.body)
     fields.push({
       name: model.body.name,
@@ -102,6 +151,8 @@ export const createSveltiaCollection = (model: ContentCollectionModel): EntryCol
     label_singular: model.labelSingular,
     folder: model.folder,
     slug: model.slug,
+    identifier_field: model.entryLabelField,
+    summary: options.summary,
     fields,
   };
 
@@ -115,4 +166,12 @@ export const createSveltiaCollection = (model: ContentCollectionModel): EntryCol
   }
 
   return collection;
+};
+
+export const createSveltiaCollections = (
+  models: ContentModelRegistry,
+  options?: (model: ContentCollectionModel) => SveltiaCollectionOptions | undefined,
+): EntryCollection[] => {
+  validateContentModels(models);
+  return models.map((model) => createSveltiaCollection(model, options?.(model)));
 };

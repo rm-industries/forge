@@ -37,6 +37,8 @@ The v1 language follows the model proven in the Forge reference site:
 - Markdown or MDX body content is collection-level `body` metadata;
 - dates use the `date` kind with `mode: 'date'` or `mode: 'datetime'`;
 - images use the `asset` kind with `assetType: 'image'`;
+- cross-collection relationships use a `reference` field with single or
+  multiple cardinality;
 - lists and objects recursively compose the same supported fields; and
 - boolean and number fields carry kind-appropriate defaults and constraints.
 
@@ -58,3 +60,97 @@ not belong in the core model.
 duplicate collection names. Validation reports the complete model path for
 unsupported kinds, invalid defaults or bounds, body collisions, and unknown sort
 fields.
+
+## Cross-collection references
+
+References preserve relationship semantics without coupling a model to a CMS.
+The `collection` is the registered target. `valueField` selects the stored
+string value and defaults to the entry slug. Required `displayFields` and
+optional `searchFields` are portable authoring hints. Every named value, display, and search field must
+exist on the target collection; `slug` is also accepted as the generated entry
+identifier.
+
+```ts
+import { defineModels } from '@rm-industries/content-model';
+
+export const models = defineModels([
+  {
+    name: 'skills',
+    label: 'Skills',
+    labelSingular: 'Skill',
+    folder: 'src/content/skills',
+    extensions: ['json'],
+    format: 'json',
+    slug: '{{name}}',
+    entryLabelField: 'name',
+    fields: {
+      name: { kind: 'string', required: true, label: 'Name' },
+    },
+  },
+  {
+    name: 'experience',
+    label: 'Experience',
+    labelSingular: 'Experience',
+    folder: 'src/content/experience',
+    extensions: ['md'],
+    slug: '{{slug}}',
+    fields: {
+      primarySkill: {
+        kind: 'reference',
+        collection: 'skills',
+        valueField: 'name',
+        displayFields: ['name'],
+        searchFields: ['name'],
+        required: true,
+        label: 'Primary skill',
+      },
+      skills: {
+        kind: 'reference',
+        collection: 'skills',
+        valueField: 'name',
+        displayFields: ['name'],
+        multiple: true,
+        default: [],
+        label: 'Skills',
+      },
+    },
+  },
+] as const);
+```
+
+Astro validates a single reference as a string and a multiple reference as an
+array of strings. It intentionally does not claim that referenced entries exist
+because schema construction does not load the target collection. Registry
+validation verifies the model-level target and field names instead. Sveltia
+maps the same definitions to relation widgets automatically.
+
+To migrate an existing workaround, replace a string field with a single
+reference, or replace a list of strings with a multiple reference. Persisted
+values remain strings or arrays of strings, so the content shape does not need
+to change.
+
+## Adapter-specific presentation
+
+`entryLabelField` is portable collection metadata and must name a string field
+in the same model. Sveltia maps it to `identifier_field`. CMS-specific summary
+templates remain adapter options:
+
+```ts
+import { createSveltiaCollections } from '@rm-industries/content-model/sveltia';
+
+const collections = createSveltiaCollections(models, (model) =>
+  model.name === 'skills' ? { summary: '{{name}}' } : undefined,
+);
+```
+
+For presentation needs that are specific to a Sveltia field, use the typed
+`customizeField` callback and return a new value. The adapter passes a cloned
+field plus its source-model path, so consumer code does not mutate adapter
+output, rebuild fields, or cast through the public field union.
+
+```ts
+const collections = createSveltiaCollections(models, () => ({
+  customizeField: (field, context) =>
+    context.path.endsWith('.description') ? { ...field, hint: 'Shown in collection cards.' } : field,
+}));
+```
