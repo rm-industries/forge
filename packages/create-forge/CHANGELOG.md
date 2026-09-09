@@ -2,6 +2,22 @@
 
 All notable changes to `@rm-industries/create-forge` are documented here.
 
+## 1.0.1
+
+- Generate projects with `@rm-industries/content-model@1.0.1` and Sveltia CMS
+  0.207.1, using the newly validated content-model peer combination.
+- Refresh the generated Astro, sitemap, browser-testing, formatting, linting,
+  styling, and unused-code tooling dependencies to their reviewed compatible
+  releases.
+- Use GitHub's commit-bound `$/` syntax for generated repository-local actions,
+  with a narrow Actionlint compatibility rule until Actionlint recognizes the
+  new GitHub syntax.
+- Update the generated Lighthouse audit policy for the current development-only
+  advisory while retaining its explicit expiry and threat-model rationale.
+- The Forge CLI is unchanged. Existing generated projects are not modified
+  automatically; maintainers may adopt these template updates individually or
+  regenerate after reviewing their owned-source customizations.
+
 ## 1.0.0
 
 - Promote the reviewed CLI, deterministic project materialization, and bundled
