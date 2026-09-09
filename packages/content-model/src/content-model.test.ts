@@ -89,6 +89,145 @@ test('rejects duplicate collection names', () => {
   expect(defineDuplicateModels).toThrow('models: contains duplicate collection name "articles".');
 });
 
+test('validates single, multiple, and recursively nested references against the registry', () => {
+  const skills = defineModel({
+    name: 'skills',
+    label: 'Skills',
+    labelSingular: 'Skill',
+    folder: 'src/content/skills',
+    format: 'json',
+    extensions: ['json'],
+    slug: '{{name}}',
+    entryLabelField: 'name',
+    fields: { name: { kind: 'string', required: true, label: 'Name' } },
+  });
+  const experience = defineModel({
+    name: 'experience',
+    label: 'Experience',
+    labelSingular: 'Experience',
+    folder: 'src/content/experience',
+    extensions: ['md'],
+    slug: '{{slug}}',
+    fields: {
+      primarySkill: {
+        kind: 'reference',
+        collection: 'skills',
+        required: true,
+        valueField: 'name',
+        displayFields: ['name'],
+        label: 'Primary skill',
+      },
+      relatedSkills: {
+        kind: 'reference',
+        collection: 'skills',
+        multiple: true,
+        default: [],
+        displayFields: ['name'],
+        searchFields: ['name'],
+        label: 'Related skills',
+      },
+      details: {
+        kind: 'object',
+        required: true,
+        label: 'Details',
+        fields: {
+          skill: { kind: 'reference', collection: 'skills', displayFields: ['name'], label: 'Skill' },
+        },
+      },
+      groups: {
+        kind: 'list',
+        label: 'Groups',
+        items: {
+          kind: 'object',
+          required: true,
+          label: 'Group',
+          fields: {
+            skills: {
+              kind: 'reference',
+              collection: 'skills',
+              multiple: true,
+              displayFields: ['name'],
+              label: 'Skills',
+            },
+          },
+        },
+      },
+    },
+  });
+
+  expect(() => defineModels([skills, experience])).not.toThrow();
+});
+
+test('reports the complete path for a reference to an unregistered collection', () => {
+  const { sort: _sort, ...articleWithoutSort } = articleModel;
+  const model = defineModel({
+    ...articleWithoutSort,
+    fields: {
+      metadata: {
+        kind: 'object',
+        label: 'Metadata',
+        fields: {
+          skills: {
+            kind: 'reference',
+            collection: 'skills',
+            multiple: true,
+            displayFields: ['name'],
+            label: 'Skills',
+          },
+        },
+      },
+    },
+  });
+
+  expect(() => defineModels([model])).toThrow(
+    'articles.fields.metadata.fields.skills.collection: references unknown collection "skills".',
+  );
+});
+
+test('validates reference cardinality, defaults, and authoring hints', () => {
+  expect(() =>
+    defineModel({
+      ...articleModel,
+      fields: {
+        skill: {
+          kind: 'reference',
+          collection: 'skills',
+          multiple: false,
+          default: [],
+          displayFields: ['name'],
+          label: 'Skill',
+        },
+      },
+    } as unknown as ContentCollectionModel),
+  ).toThrow('must be a string for a single reference');
+  expect(() =>
+    defineModel({
+      ...articleModel,
+      fields: {
+        skills: {
+          kind: 'reference',
+          collection: 'skills',
+          multiple: true,
+          default: 'typescript',
+          displayFields: ['name'],
+          label: 'Skills',
+        },
+      },
+    } as unknown as ContentCollectionModel),
+  ).toThrow('must be an array of strings for a multiple reference');
+  expect(() =>
+    defineModel({
+      ...articleModel,
+      fields: {
+        skill: { kind: 'reference', collection: 'skills', displayFields: [], label: 'Skill' },
+      },
+    }),
+  ).toThrow('displayFields: must contain at least one field');
+  expect(() => defineModel({ ...articleModel, entryLabelField: 'missing' })).toThrow(
+    'articles.entryLabelField: references unknown field "missing".',
+  );
+});
+
 test('rejects duplicate field entries before creating a field record', () => {
   expect(() =>
     defineFields([
@@ -156,6 +295,14 @@ test('field types reject defaults and presentation owned by another kind', () =>
     label: 'Title',
   } as const;
   const unsupportedKind = { kind: 'video', label: 'Video' } as const;
+  const invalidMultipleReference = {
+    kind: 'reference',
+    collection: 'skills',
+    multiple: true,
+    default: 'typescript',
+    displayFields: ['name'],
+    label: 'Skills',
+  } as const;
 
   // @ts-expect-error Boolean defaults must be booleans.
   const booleanField: ContentField = invalidBoolean;
@@ -163,8 +310,11 @@ test('field types reject defaults and presentation owned by another kind', () =>
   const stringField: ContentField = invalidString;
   // @ts-expect-error Video is not a supported v1 field kind.
   const videoField: ContentField = unsupportedKind;
+  // @ts-expect-error Multiple-reference defaults must be arrays of strings.
+  const referenceField: ContentField = invalidMultipleReference;
 
   expect(booleanField.kind).toBe('boolean');
   expect(stringField.kind).toBe('string');
   expect(videoField.kind).toBe('video');
+  expect(referenceField.kind).toBe('reference');
 });

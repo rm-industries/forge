@@ -4,7 +4,7 @@ import { describe, expect, test } from 'vitest';
 
 import { createAstroSchema } from '../astro';
 import { defineModel } from '../define-model';
-import { createSveltiaCollection } from './index';
+import { createSveltiaCollection, createSveltiaCollections } from './index';
 
 const image: SchemaContext['image'] = () =>
   z.object({
@@ -165,5 +165,111 @@ describe('Sveltia content adapter', () => {
       section: 'guides',
       author: { name: 'Forge' },
     });
+  });
+
+  test('maps references, portable entry labels, and adapter-owned summaries', () => {
+    const skills = defineModel({
+      name: 'skills',
+      label: 'Skills',
+      labelSingular: 'Skill',
+      folder: 'src/content/skills',
+      extensions: ['json'],
+      format: 'json',
+      slug: '{{name}}',
+      entryLabelField: 'name',
+      fields: { name: { kind: 'string', required: true, label: 'Name' } },
+    });
+    const experience = defineModel({
+      name: 'experience',
+      label: 'Experience',
+      labelSingular: 'Experience',
+      folder: 'src/content/experience',
+      extensions: ['md'],
+      slug: '{{slug}}',
+      fields: {
+        primarySkill: {
+          kind: 'reference',
+          collection: 'skills',
+          required: true,
+          valueField: 'name',
+          displayFields: ['name'],
+          searchFields: ['name'],
+          label: 'Primary skill',
+        },
+        skills: {
+          kind: 'reference',
+          collection: 'skills',
+          multiple: true,
+          default: [],
+          displayFields: ['name'],
+          label: 'Skills',
+        },
+        metadata: {
+          kind: 'object',
+          label: 'Metadata',
+          fields: {
+            featuredSkill: {
+              kind: 'reference',
+              collection: 'skills',
+              default: 'typescript',
+              displayFields: ['name'],
+              label: 'Featured skill',
+            },
+          },
+        },
+      },
+    });
+
+    const [skillCollection, experienceCollection] = createSveltiaCollections([skills, experience], (model) =>
+      model.name === 'skills' ? { summary: '{{name}}' } : undefined,
+    );
+
+    expect(skillCollection).toMatchObject({ identifier_field: 'name', summary: '{{name}}' });
+    expect(experienceCollection?.fields).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: 'primarySkill',
+          widget: 'relation',
+          collection: 'skills',
+          multiple: false,
+          value_field: 'name',
+          display_fields: ['name'],
+          search_fields: ['name'],
+        }),
+        expect.objectContaining({
+          name: 'skills',
+          widget: 'relation',
+          multiple: true,
+          value_field: '{{slug}}',
+          default: [],
+        }),
+        expect.objectContaining({
+          name: 'metadata',
+          widget: 'object',
+          fields: [
+            expect.objectContaining({
+              name: 'featuredSkill',
+              widget: 'relation',
+              collection: 'skills',
+              default: 'typescript',
+            }),
+          ],
+        }),
+      ]),
+    );
+  });
+
+  test('customizes generated fields immutably with typed field context', () => {
+    const original = createSveltiaCollection(articleModel);
+    const customized = createSveltiaCollection(articleModel, {
+      customizeField: (field, context) =>
+        context.path === 'articles.fields.description' ? { ...field, hint: 'Shown in article cards.' } : field,
+    });
+
+    expect(original.fields.find((field) => field.name === 'description')).not.toHaveProperty('hint');
+    expect(customized.fields.find((field) => field.name === 'description')).toHaveProperty(
+      'hint',
+      'Shown in article cards.',
+    );
   });
 });

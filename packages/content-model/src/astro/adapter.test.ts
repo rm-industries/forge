@@ -62,6 +62,42 @@ const articleModel = defineModel({
       label: 'Author',
     },
     coverImage: { kind: 'asset', assetType: 'image', label: 'Cover image' },
+    primarySkill: {
+      kind: 'reference',
+      collection: 'skills',
+      displayFields: ['name'],
+      required: true,
+      label: 'Primary skill',
+    },
+    secondarySkill: { kind: 'reference', collection: 'skills', displayFields: ['name'], label: 'Secondary skill' },
+    fallbackSkill: {
+      kind: 'reference',
+      collection: 'skills',
+      default: 'typescript',
+      displayFields: ['name'],
+      label: 'Fallback skill',
+    },
+    relatedSkills: {
+      kind: 'reference',
+      collection: 'skills',
+      multiple: true,
+      default: [],
+      displayFields: ['name'],
+      label: 'Related skills',
+    },
+    skillMetadata: {
+      kind: 'object',
+      label: 'Skill metadata',
+      fields: {
+        featuredSkill: {
+          kind: 'reference',
+          collection: 'skills',
+          displayFields: ['name'],
+          required: true,
+          label: 'Featured skill',
+        },
+      },
+    },
   },
   body: { name: 'body', label: 'Body', required: true },
 });
@@ -77,6 +113,7 @@ describe('Astro content adapter', () => {
       section: 'guides',
       author: { name: 'Example author' },
       coverImage,
+      primarySkill: 'typescript',
     });
 
     expect(article).toMatchObject({
@@ -87,16 +124,29 @@ describe('Astro content adapter', () => {
       tags: [],
       author: { name: 'Example author', featured: false },
       coverImage,
+      primarySkill: 'typescript',
+      relatedSkills: [],
+      fallbackSkill: 'typescript',
     });
     expect(article.description).toBeUndefined();
     expect(article.updatedAt).toBeUndefined();
+    expect(article.secondarySkill).toBeUndefined();
   });
 
   test.each([
-    ['a missing required field', { publishedAt: '2026-08-20', section: 'guides', author: { name: 'Author' } }],
+    [
+      'a missing required field',
+      { publishedAt: '2026-08-20', section: 'guides', author: { name: 'Author' }, primarySkill: 'typescript' },
+    ],
     [
       'an unsupported select value',
-      { title: 'Article', publishedAt: '2026-08-20', section: 'other', author: { name: 'Author' } },
+      {
+        title: 'Article',
+        publishedAt: '2026-08-20',
+        section: 'other',
+        author: { name: 'Author' },
+        primarySkill: 'typescript',
+      },
     ],
     [
       'a fractional integer',
@@ -106,6 +156,7 @@ describe('Astro content adapter', () => {
         section: 'guides',
         readingMinutes: 1.5,
         author: { name: 'Author' },
+        primarySkill: 'typescript',
       },
     ],
     [
@@ -116,9 +167,24 @@ describe('Astro content adapter', () => {
         section: 'guides',
         readingMinutes: 61,
         author: { name: 'Author' },
+        primarySkill: 'typescript',
       },
     ],
-    ['invalid nested data', { title: 'Article', publishedAt: '2026-08-20', section: 'guides', author: {} }],
+    [
+      'invalid nested data',
+      { title: 'Article', publishedAt: '2026-08-20', section: 'guides', author: {}, primarySkill: 'typescript' },
+    ],
+    [
+      'an invalid multiple reference',
+      {
+        title: 'Article',
+        publishedAt: '2026-08-20',
+        section: 'guides',
+        author: { name: 'Author' },
+        primarySkill: 'typescript',
+        relatedSkills: 'typescript',
+      },
+    ],
   ])('rejects %s with a useful field path', (_name, fixture) => {
     const result = schema.safeParse(fixture);
     const issues = result.success ? [] : result.error.issues;
@@ -133,6 +199,7 @@ describe('Astro content adapter', () => {
       publishedAt: '2026-08-20',
       section: 'guides',
       author: { name: 'Author' },
+      primarySkill: 'typescript',
     };
 
     expect(schema.parse({ ...required, updatedAt: '' }).updatedAt).toBeUndefined();
@@ -153,10 +220,20 @@ describe('Astro content adapter', () => {
   });
 
   test('creates a typed collection registry without duplicating collection names', () => {
-    const collections = createAstroCollections([articleModel] as const);
+    const skillModel = defineModel({
+      name: 'skills',
+      label: 'Skills',
+      labelSingular: 'Skill',
+      folder: 'src/content/skills',
+      extensions: ['json'],
+      format: 'json',
+      slug: '{{name}}',
+      fields: { name: { kind: 'string', required: true, label: 'Name' } },
+    });
+    const collections = createAstroCollections([articleModel, skillModel] as const);
     const collection = collections.articles;
 
-    expect(Object.keys(collections)).toEqual(['articles']);
+    expect(Object.keys(collections)).toEqual(['articles', 'skills']);
     expect(collection).toHaveProperty('loader');
     expect(collection).toHaveProperty('schema');
   });
@@ -167,12 +244,24 @@ describe('Astro content adapter', () => {
       publishedAt: '2026-08-20',
       section: 'notes',
       author: { name: 'Author' },
+      primarySkill: 'typescript',
     });
 
     const title: string = typedArticle.title;
     const publishedAt: Date = typedArticle.publishedAt;
     const draft: boolean = typedArticle.draft;
+    const primarySkill: string = typedArticle.primarySkill;
+    const relatedSkills: string[] = typedArticle.relatedSkills;
+    const secondarySkill: string | undefined = typedArticle.secondarySkill;
+    const fallbackSkill: string = typedArticle.fallbackSkill;
 
-    expect({ title, publishedAt, draft }).toMatchObject({ title: 'Typed article', draft: false });
+    expect({ title, publishedAt, draft, primarySkill, secondarySkill, fallbackSkill, relatedSkills }).toMatchObject({
+      title: 'Typed article',
+      draft: false,
+      primarySkill: 'typescript',
+      secondarySkill: undefined,
+      fallbackSkill: 'typescript',
+      relatedSkills: [],
+    });
   });
 });

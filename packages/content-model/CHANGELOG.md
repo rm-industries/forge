@@ -2,6 +2,17 @@
 
 All notable changes to `@rm-industries/content-model` are documented here.
 
+## Unreleased
+
+- Add integration-neutral single and multiple reference fields, recursive
+  registry validation, Astro string-value schemas, and automatic Sveltia
+  relation widgets.
+- Add portable collection entry-label metadata and typed, immutable Sveltia
+  collection and field customization options.
+- Preserve all existing 1.0 model definitions without migration; string and
+  list workarounds can move to references when relationship semantics are
+  useful.
+
 ## 1.0.1
 
 - Publish the validated Sveltia compatibility update directly as a stable patch

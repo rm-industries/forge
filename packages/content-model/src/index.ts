@@ -14,7 +14,10 @@ export type {
   ListContentField,
   NumberContentField,
   ObjectContentField,
+  MultipleReferenceContentField,
+  ReferenceContentField,
   SelectOption,
+  SingleReferenceContentField,
   StringContentField,
 } from './types';
 export { ContentModelValidationError, validateContentModel, validateContentModels } from './validation';
