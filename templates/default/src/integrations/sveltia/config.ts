@@ -25,5 +25,5 @@ export const sveltiaConfig = {
   media_folder: 'public/assets',
   public_folder: resolveSiteHref('/assets'),
   output: { omit_empty_optional_fields: true },
-  collections: contentModels.map(createSveltiaCollection),
+  collections: contentModels.map((model) => createSveltiaCollection(model)),
 } satisfies CmsConfig;
