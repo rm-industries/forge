@@ -111,19 +111,17 @@ failure evidence are retained for seven days. All third-party actions use
 immutable commit pins.
 
 Security automation is included alongside project CI. Root CodeQL automation
-analyzes the project's TypeScript and GitHub Actions on pull requests, pushes
-to `main`, and a weekly schedule. Dependency review rejects pull requests that introduce
-known high- or critical-severity vulnerabilities. A separate scheduled
-automation workflow validates workflow syntax and scans GitHub Actions with
-Zizmor. Zizmor uploads its findings to GitHub code scanning for review in the
-Security tab without failing the workflow solely because it found an issue.
-The job receives `security-events: write` only for that upload; all other access
-remains read-only. Repositories can make selected code-scanning severities
-merge-blocking later through their ruleset without changing the workflow.
-The root `Automation` aggregate runs when `.github/**` changes and succeeds only
-after both workflow syntax and security validation pass. Because it is
-path-filtered, do not configure it as a globally required status check; review
-it whenever an automation change causes it to appear.
+analyzes the project's TypeScript and GitHub Actions on pull requests, pushes to
+`main`, and a weekly schedule. Dependency review reports introduced dependency
+risk without blocking remediation pull requests. A separate scheduled
+automation workflow validates workflow syntax with Actionlint and scans GitHub
+Actions with Zizmor. Zizmor uploads its findings to GitHub code scanning and
+fails `Workflow security` when it finds an issue. The job receives
+`security-events: write` only for that upload; all other access remains
+read-only. `Workflow syntax` and `Workflow security` run when `.github/**`
+changes. Because they are path-filtered, do not configure them as globally
+required status checks; require both whenever an automation change causes them
+to appear.
 
 Root Dependabot automation treats `/website` as an independent npm ecosystem.
 Minor and patch npm updates are grouped by production or development scope,

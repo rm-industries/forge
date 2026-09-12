@@ -12,7 +12,7 @@ npm run quality
 ```
 
 - `quality:static` checks formatting, code, CSS, Markdown, spelling, unused code,
-  types, Astro diagnostics, and dependency policy.
+  types, and Astro diagnostics.
 - `quality:core` adds coverage-enforced unit tests, a production build, and
   required-output validation.
 - `quality` adds Playwright browser/accessibility tests and Lighthouse budgets.
@@ -98,7 +98,13 @@ Dependabot proposes npm and GitHub Actions updates. Before merging one:
 3. review changes to `package.json` and `package-lock.json` together;
 4. keep Sveltia updates within the exact content-model compatibility range;
 5. run `npm run audit`, `npm run quality`, and any affected manual check; and
-6. merge only after project and security workflows pass.
+6. review the project checks and all security findings before merging.
+
+CodeQL and dependency findings report through GitHub code scanning and
+Dependabot alerts rather than blocking ordinary pull requests. Actionlint and
+Zizmor block workflow changes with syntax or security defects. `npm run audit`
+remains an explicit release gate and must pass—or use a reviewed, justified,
+time-bounded exception—before publishing a release.
 
 Do not widen `@rm-industries/content-model` peer compatibility inside a
 generated project. Forge publishes tested content-model compatibility first,
