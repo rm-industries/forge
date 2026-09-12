@@ -463,15 +463,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - name: Setup template
+        uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
-          cache: npm
           cache-dependency-path: templates/default/package-lock.json
-
-      - name: Install template dependencies
-        run: npm ci --prefix templates/default
+          working-directory: templates/default
 
       - name: Audit template dependencies
         id: audit
@@ -687,15 +684,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - name: Setup website
+        uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
-          cache: npm
           cache-dependency-path: website/package-lock.json
-
-      - name: Install website dependencies
-        run: npm ci --prefix website
+          working-directory: website
 
       - name: Validate website static quality
         run: npm run website:quality:static
@@ -715,15 +709,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - name: Setup website
+        uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
-          cache: npm
           cache-dependency-path: website/package-lock.json
-
-      - name: Install website dependencies
-        run: npm ci --prefix website
+          working-directory: website
 
       - name: Audit website dependencies
         id: audit
@@ -752,15 +743,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - name: Setup website
+        uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
-          cache: npm
           cache-dependency-path: website/package-lock.json
-
-      - name: Install website dependencies
-        run: npm ci --prefix website
+          working-directory: website
 
       - name: Validate website on supported runtime
         run: |
@@ -784,15 +772,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - name: Setup website
+        uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
-          cache: npm
           cache-dependency-path: website/package-lock.json
-
-      - name: Install website dependencies
-        run: npm ci --prefix website
+          working-directory: website
 
       - name: Test website with coverage
         run: npm run website:test:coverage
@@ -830,15 +815,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - name: Setup website
+        uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
-          cache: npm
           cache-dependency-path: website/package-lock.json
-
-      - name: Install website dependencies
-        run: npm ci --prefix website
+          working-directory: website
 
       - name: Install supported browsers
         working-directory: website
@@ -873,15 +855,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - name: Setup website
+        uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
-          cache: npm
           cache-dependency-path: website/package-lock.json
-
-      - name: Install website dependencies
-        run: npm ci --prefix website
+          working-directory: website
 
       - name: Install Lighthouse browser
         working-directory: website
