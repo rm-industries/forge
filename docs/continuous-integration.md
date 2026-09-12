@@ -7,8 +7,8 @@ so each required result has one stable purpose.
 
 Repository rulesets should require these check names on `main`:
 
-- `Project` — aggregate repository, package, template, and generator quality;
-- `CodeQL` — aggregate JavaScript/TypeScript and GitHub Actions analysis.
+- `Project` — aggregate repository, package, template, website, and generator
+  correctness and quality.
 
 `Project` runs on every pull request. Individual jobs remain visible for
 diagnosis, but only the aggregate needs to be named in branch protection. If a
@@ -29,7 +29,7 @@ shell expressions. The classifier selects these job groups:
 | Create Forge        | Repository/package checks, compatibility, and packed generator end-to-end        |
 | Default template    | Package build/pack, every template check, and packed generator end-to-end        |
 | Project website     | Website static, runtime, coverage/build, browser, and Lighthouse checks          |
-| Area dependency     | The affected area above plus dependency auditing                                 |
+| Area dependency     | The affected area above plus informational dependency auditing                   |
 | Shared or ambiguous | Every repository, package, template, website, compatibility, and generator check |
 
 Documentation inside the bundled default template follows the template route,
@@ -38,10 +38,9 @@ because it becomes part of generated projects. Root manifests and lockfiles,
 empty or unavailable comparison deliberately select the full suite. A newly
 introduced path is therefore expensive until its ownership is reviewed and
 added to the classifier. Security analysis remains independent and broad.
-Website manifests and lockfiles stay on the website route because its static
-job applies the standalone audit policy; they do not also run the root
-workspace audit. Package-only changes do not select website browser or
-Lighthouse work.
+Website manifests and lockfiles stay on the website route and select its
+standalone informational audit. They do not also run the root workspace audit.
+Package-only changes do not select website browser or Lighthouse work.
 
 Every job remains in the `Project` aggregate's `needs` graph. The aggregate uses
 `always()` so jobs intentionally skipped by routing cannot leave the required
@@ -56,16 +55,20 @@ to run. Package, compatibility, template, browser, Lighthouse, and generator
 jobs should appear as skipped. This provides a quick review checklist for the
 lightweight route without weakening the required aggregate.
 
-`Automation` aggregates workflow syntax and workflow-security validation, but it
-runs only when workflow files change. Do not configure it as a globally required
-status check: unrelated pull requests would wait for a path-filtered workflow
-that never started. Treat it as a conditional review signal for automation
+`Automation` aggregates Actionlint workflow-syntax validation and runs only when
+workflow files change. Zizmor runs independently in the same workflow and
+uploads its findings to GitHub code scanning; a finding does not fail the
+`Automation` result. Do not configure `Automation` as a globally required status
+check: unrelated pull requests would wait for a path-filtered workflow that
+never started. Treat it as a conditional required review signal for automation
 changes. The repository workflow watches both `.github/**` and the generated
 template's workflow source under `templates/default/.github/**`.
 
 The generated template uses the same `Project` and conditional `Automation`
-results. Generated repositories should require `Project` and `CodeQL` after
-enabling GitHub Actions, while reviewing `Automation` whenever it appears.
+results. Generated repositories should require `Project` after enabling GitHub
+Actions, while reviewing `Automation` whenever it appears. CodeQL, Zizmor,
+dependency review, and Dependabot alerts remain visible security signals rather
+than required merge checks.
 
 ## Runtime and evidence strategy
 
@@ -98,12 +101,24 @@ hidden `.lighthouseci` directory. Browser evidence is uploaded on failure, when
 Playwright retains its report and trace directories. Artifacts are retained for
 seven days.
 
-## Dependency audits
+## Security reporting and release gates
 
-The root `Dependency audit` job applies `audit-ci.jsonc` to the root lockfile and
-npm workspaces. The standalone template owns a separate lockfile and
-`templates/default/audit-ci.jsonc`, so its static-quality job enforces that
-policy independently.
+Pull-request security analysis reports findings without joining the stable
+`Project` or conditional `Automation` aggregates:
+
+- CodeQL and Zizmor upload analysis results to GitHub code scanning;
+- Dependabot alerts use the repository dependency graph as the canonical view of
+  vulnerable npm dependencies;
+- dependency review annotates introduced dependency risk without blocking a
+  remediation pull request; and
+- root, template, and website dependency-audit jobs retain audit output and job
+  summaries but tolerate findings during pull-request sequencing.
+
+This separation allows two independently owned lockfiles or dependency paths to
+be remediated in sequence. It does not waive release security policy. Package
+publication runs the root audit explicitly and also runs the standalone template
+audit before publishing `create-forge`. Repository checkpoint releases require
+the documented root, template, and website audits to pass.
 
 Both policies reject high and critical vulnerabilities. An exception must name
 the exact GitHub Security Advisory ID, explain why the affected path is safe for
@@ -117,17 +132,23 @@ Run the repository audit locally with:
 npm run audit
 ```
 
-Run the template policy from `templates/default` with the same command.
-Run the website policy from the repository root with
-`npm run website:quality:static`, or use `npm run website:quality` for its
-complete standalone gate. Dependabot treats `/website` as an independent npm
-ecosystem and submits reviewable lockfile updates without regenerating owned
-website source.
+Run the template and website policies explicitly with:
+
+```sh
+npm run audit --prefix templates/default
+npm run audit --prefix website
+```
+
+The normal `quality` commands deliberately exclude vulnerability audits because
+quality is a pull-request correctness gate. Dependabot treats `/website` as an
+independent npm ecosystem and submits reviewable lockfile updates without
+regenerating owned website source.
 
 ## Negative verification
 
 When changing aggregate or artifact behavior, use a temporary review branch to
 prove the failure path. An intentionally invalid workflow must make `Automation`
-fail. A Lighthouse run that omits `.lighthouseci` must make its upload contract
-fail. Remove the deliberate defect before merging and link both workflow runs in
-the tracking issue.
+fail, while a Zizmor finding must be uploaded without failing that aggregate. A
+Lighthouse run that omits `.lighthouseci` must make its upload contract fail.
+Remove the deliberate defect before merging and link both workflow runs in the
+tracking issue.

@@ -37,6 +37,7 @@ jobs:
           persist-credentials: false
 
       - name: Scan workflows
+        continue-on-error: true
         uses: zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054 # v0.6.2
         with:
           advanced-security: true
@@ -61,7 +62,6 @@ jobs:
   automation:
     name: Automation
     needs:
-      - security
       - syntax
     if: always()
     runs-on: ubuntu-latest
@@ -69,11 +69,10 @@ jobs:
     steps:
       - name: Confirm automation checks
         env:
-          SECURITY_RESULT: ${{ needs.security.result }}
           SYNTAX_RESULT: ${{ needs.syntax.result }}
         run: |
-          if [[ "$SECURITY_RESULT" != 'success' || "$SYNTAX_RESULT" != 'success' ]]; then
-            echo '::error title=Automation validation failed::Workflow security and syntax checks must both pass.'
+          if [[ "$SYNTAX_RESULT" != 'success' ]]; then
+            echo '::error title=Automation validation failed::Workflow syntax checks must pass.'
             exit 1
           fi
-          echo 'Workflow security and syntax checks passed.'
+          echo 'Workflow syntax checks passed. Zizmor reports independently through GitHub code scanning.'

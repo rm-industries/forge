@@ -42,6 +42,7 @@ jobs:
       prerelease: ${{ steps.plan.outputs.prerelease }}
       release-tag: ${{ steps.plan.outputs.release-tag }}
       version: ${{ steps.plan.outputs.version }}
+      workspace: ${{ steps.plan.outputs.workspace }}
 
     steps:
       - name: Checkout repository
@@ -105,6 +106,15 @@ jobs:
 
       - name: Run release quality gate
         run: npm run quality
+
+      - name: Run release security gate
+        env:
+          WORKSPACE: ${{ steps.plan.outputs.workspace }}
+        run: |
+          npm run audit
+          if [[ "$WORKSPACE" == '@rm-industries/create-forge' ]]; then
+            npm run audit --prefix templates/default
+          fi
 
       - name: Pack release artifact
         env:

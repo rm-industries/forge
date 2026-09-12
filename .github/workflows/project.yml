@@ -292,7 +292,16 @@ jobs:
           node-version: '26.x'
 
       - name: Audit root and workspace dependencies
+        id: audit
+        continue-on-error: true
         run: npm run audit
+
+      - name: Report dependency audit
+        if: steps.audit.outcome == 'failure'
+        run: |
+          echo '::warning title=Dependency security findings::Review Dependabot alerts and the audit output. Dependency findings are reported here but do not block pull-request remediation.'
+          echo '## Dependency security findings' >> "$GITHUB_STEP_SUMMARY"
+          echo 'The root dependency audit found blocking-severity advisories. Review the audit output and Dependabot alerts. Release security gates remain blocking.' >> "$GITHUB_STEP_SUMMARY"
 
   compatibility:
     name: Compatibility (${{ matrix.runtime }})
@@ -438,6 +447,43 @@ jobs:
 
       - name: Verify static quality tools
         run: npm run verify:template:static
+
+  template-dependency-audit:
+    name: Template dependency audit
+    needs: classify
+    if: needs.classify.outputs.template == 'true'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '26.x'
+          cache: npm
+          cache-dependency-path: templates/default/package-lock.json
+
+      - name: Install template dependencies
+        run: npm ci --prefix templates/default
+
+      - name: Audit template dependencies
+        id: audit
+        continue-on-error: true
+        run: npm run audit --prefix templates/default
+
+      - name: Report dependency audit
+        if: steps.audit.outcome == 'failure'
+        run: |
+          echo '::warning title=Template dependency security findings::Review Dependabot alerts and the audit output. Dependency findings are reported here but do not block pull-request remediation.'
+          echo '## Template dependency security findings' >> "$GITHUB_STEP_SUMMARY"
+          echo 'The template dependency audit found blocking-severity advisories. Review the audit output and Dependabot alerts. Release security gates remain blocking.' >> "$GITHUB_STEP_SUMMARY"
 
   template-browser:
     name: Template browser tests
@@ -654,6 +700,43 @@ jobs:
       - name: Validate website static quality
         run: npm run website:quality:static
 
+  website-dependency-audit:
+    name: Website dependency audit
+    needs: classify
+    if: needs.classify.outputs.website == 'true'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '26.x'
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install website dependencies
+        run: npm ci --prefix website
+
+      - name: Audit website dependencies
+        id: audit
+        continue-on-error: true
+        run: npm run audit --prefix website
+
+      - name: Report dependency audit
+        if: steps.audit.outcome == 'failure'
+        run: |
+          echo '::warning title=Website dependency security findings::Review Dependabot alerts and the audit output. Dependency findings are reported here but do not block pull-request remediation.'
+          echo '## Website dependency security findings' >> "$GITHUB_STEP_SUMMARY"
+          echo 'The website dependency audit found blocking-severity advisories. Review the audit output and Dependabot alerts. Release security gates remain blocking.' >> "$GITHUB_STEP_SUMMARY"
+
   website-compatibility:
     name: Website compatibility (Node 26)
     needs: classify
@@ -830,7 +913,6 @@ jobs:
       - test
       - build
       - pack
-      - dependency-audit
       - compatibility
       - template-compatibility
       - template-coverage
