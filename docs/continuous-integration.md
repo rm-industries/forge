@@ -55,21 +55,20 @@ to run. Package, compatibility, template, browser, Lighthouse, and generator
 jobs should appear as skipped. This provides a quick review checklist for the
 lightweight route without weakening the required aggregate.
 
-`Automation` aggregates Actionlint workflow-syntax validation and Zizmor
-workflow-security analysis, and runs only when workflow files change. Both must
-pass: malformed or insecure workflow changes fail the aggregate, while Zizmor
-also uploads its findings to GitHub code scanning. Do not configure `Automation`
-as a globally required status check: unrelated pull requests would wait for a
-path-filtered workflow that never started. Treat it as a conditional required
-review signal for automation changes. The repository workflow watches both
-`.github/**` and the generated template's workflow source under
+`Workflow syntax` runs Actionlint and `Workflow security` runs Zizmor. Both run
+only when workflow files change, and both must pass before merging an automation
+change. Zizmor also uploads its findings to GitHub code scanning. Do not
+configure either check as globally required: unrelated pull requests would wait
+for a path-filtered workflow that never started. Treat them as conditional
+required review signals for automation changes. The repository workflow watches
+both `.github/**` and the generated template's workflow source under
 `templates/default/.github/**`.
 
-The generated template uses the same `Project` and conditional `Automation`
-results. Generated repositories should require `Project` after enabling GitHub
-Actions, while requiring a successful `Automation` result whenever it appears.
-CodeQL, dependency review, and Dependabot alerts remain visible security signals
-rather than required merge checks.
+The generated template uses the same `Project`, `Workflow syntax`, and `Workflow
+security` results. Generated repositories should require `Project` after
+enabling GitHub Actions, while requiring both workflow checks whenever they
+appear. CodeQL, dependency review, and Dependabot alerts remain visible security
+signals rather than required merge checks.
 
 ## Runtime and evidence strategy
 
@@ -105,11 +104,11 @@ seven days.
 ## Security reporting and release gates
 
 Dependency and source-code security analysis reports findings without joining
-the stable `Project` or conditional `Automation` aggregates:
+the stable `Project` check or the conditional workflow checks:
 
 - CodeQL uploads source analysis results to GitHub code scanning;
-- Zizmor uploads workflow analysis results to code scanning and blocks the
-  conditional `Automation` aggregate when it finds an insecure workflow;
+- Zizmor uploads workflow analysis results to code scanning and fails `Workflow
+security` when it finds an insecure workflow;
 - Dependabot alerts use the repository dependency graph as the canonical view of
   vulnerable npm dependencies;
 - dependency review annotates introduced dependency risk without blocking a
@@ -150,8 +149,9 @@ regenerating owned website source.
 ## Negative verification
 
 When changing aggregate or artifact behavior, use a temporary review branch to
-prove the failure path. An intentionally invalid workflow or Zizmor finding must
-make `Automation` fail, with the Zizmor finding also uploaded to code scanning. A
-Lighthouse run that omits `.lighthouseci` must make its upload contract fail.
+prove the failure path. An intentionally invalid workflow must fail `Workflow
+syntax`; a Zizmor finding must fail `Workflow security` and upload to code
+scanning. A Lighthouse run that omits `.lighthouseci` must make its upload
+contract fail.
 Remove the deliberate defect before merging and link both workflow runs in the
 tracking issue.
