@@ -100,10 +100,11 @@ Dependabot proposes npm and GitHub Actions updates. Before merging one:
 5. run `npm run audit`, `npm run quality`, and any affected manual check; and
 6. review the project checks and all security findings before merging.
 
-Security scans report through GitHub code scanning and Dependabot alerts rather
-than blocking ordinary pull requests. Actionlint remains the blocking workflow
-syntax check. `npm run audit` remains an explicit release gate and must pass—or
-use a reviewed, justified, time-bounded exception—before publishing a release.
+CodeQL and dependency findings report through GitHub code scanning and
+Dependabot alerts rather than blocking ordinary pull requests. Actionlint and
+Zizmor block workflow changes with syntax or security defects. `npm run audit`
+remains an explicit release gate and must pass—or use a reviewed, justified,
+time-bounded exception—before publishing a release.
 
 Do not widen `@rm-industries/content-model` peer compatibility inside a
 generated project. Forge publishes tested content-model compatibility first,
