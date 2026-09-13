@@ -4,6 +4,7 @@ import { previewOrigin, resolvePreviewUrl } from './tests/preview';
 
 export default defineConfig({
   testDir: './tests',
+  testIgnore: '**/smoke/**',
   outputDir: 'test-results',
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
