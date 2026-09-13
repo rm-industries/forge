@@ -112,6 +112,12 @@ post-build Markdown job would add no coverage. Source Markdown remains owned by
 the source lint job. Package and generator compatibility jobs remain separate
 because they intentionally exercise multiple supported runtimes.
 
+The repository's clean-copy template verification follows the same pattern on
+its primary Node 26 lane: `Template production build` creates one artifact for
+both template browser tests and Lighthouse. The template compatibility matrix
+still builds once per supported runtime because those builds prove a different
+contract and cannot share a Node 26 result.
+
 Coverage and Lighthouse uploads run even when their producer fails. Lighthouse
 uploads explicitly include the hidden `.lighthouseci` directory. Browser
 evidence is uploaded on failure, when Playwright retains its report and trace

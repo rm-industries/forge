@@ -26,6 +26,7 @@ const readWorkflow = (path: string): Workflow =>
   parse(readFileSync(new URL(path, import.meta.url), 'utf8')) as Workflow;
 
 const website = readWorkflow('../.github/workflows/website.yml');
+const project = readWorkflow('../.github/workflows/project.yml');
 const template = readWorkflow('../templates/default/.github/workflows/project.yml');
 
 const dependencies = (job: Job): string[] => (Array.isArray(job.needs) ? job.needs : job.needs ? [job.needs] : []);
@@ -98,6 +99,19 @@ describe('Forge website CI contract', () => {
     for (const consumer of ['validate-build', 'browser-tests', 'lighthouse']) {
       download(website, consumer, 'website-build', 'website/dist');
       expect(steps(website, consumer).some((step) => step.run?.includes('npm run build'))).toBe(false);
+    }
+  });
+});
+
+describe('repository template verification contract', () => {
+  it('shares one primary template build with browser and Lighthouse consumers', () => {
+    expect(dependencies(job(project, 'template-build')).sort()).toEqual(
+      ['classify', 'template-coverage', 'template-static-quality'].sort(),
+    );
+    for (const consumer of ['template-browser', 'template-lighthouse']) {
+      expect(dependencies(job(project, consumer))).toEqual(['template-build']);
+      download(project, consumer, 'template-build', '${{ runner.temp }}/forge-default-template/dist');
+      expect(steps(project, consumer).some((step) => step.run?.includes('npm run build'))).toBe(false);
     }
   });
 });
