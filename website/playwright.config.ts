@@ -29,7 +29,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run build && npm run preview -- --host 127.0.0.1',
+    command: 'npm run preview -- --host 127.0.0.1',
     env: {
       ...process.env,
       ASTRO_PREVIEW_BACKGROUND: '0',

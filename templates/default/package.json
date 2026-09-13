@@ -22,18 +22,19 @@
     "lint:markdown": "markdownlint \"**/*.md\" --ignore-path .gitignore",
     "lint:markdown:fix": "markdownlint --fix \"**/*.md\" --ignore-path .gitignore",
     "lighthouse:autorun": "lhci autorun",
-    "lighthouse:ci": "npm run build && node scripts/run-lighthouse.ts",
+    "lighthouse:ci": "node scripts/run-lighthouse.ts",
     "spellcheck": "cspell \"**\"",
-    "typecheck": "astro sync && tsc --noEmit",
+    "typecheck": "astro check",
     "test": "npm run test:unit",
     "test:a11y": "playwright test tests/accessibility.spec.ts",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:smoke": "playwright test --config playwright.smoke.config.ts",
     "test:unit": "vitest run",
     "quality": "npm run quality:core && npm run test:e2e && npm run lighthouse:ci",
     "quality:core": "npm run quality:static && npm run test:coverage && npm run build && npm run validate:build",
-    "quality:static": "npm run format && npm run lint && npm run audit:unused && npm run typecheck && npm run astro:check",
-    "quality:static:ci": "npm run lint:code && npm run lint:css && npm run lint:markdown && npm run audit:unused && npm run typecheck && npm run astro:check"
+    "quality:static": "npm run format && npm run lint && npm run audit:unused && npm run typecheck",
+    "quality:static:ci": "npm run lint:code && npm run lint:css && npm run lint:markdown && npm run audit:unused && npm run typecheck"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",

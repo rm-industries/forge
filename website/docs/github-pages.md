@@ -1,11 +1,11 @@
 # GitHub Pages deployment
 
-The root project workflow invokes `.github/workflows/website-deployment.yml`
-after every validated push to `main`. Pull requests build and test the site, but
-they do not upload a Pages artifact or run a deployment. The called workflow
-deploys the `website/dist` artifact produced by the existing coverage-and-build
-job, then smoke-tests the public URL. It does not repeat the install, build, or
-generated-output validation that the root `Project` gate already accepted.
+The path-scoped `.github/workflows/website.yml` workflow validates website
+changes and deploys every validated push to `main`. Pull requests build and test
+the site, but they do not upload a Pages artifact or run a deployment. The
+workflow deploys the Pages artifact packaged by its one build job, then
+smoke-tests the public URL. Build validation, browser tests, and Lighthouse each
+download the same separate `website-build` artifact and never rebuild it.
 
 ## Enable deployment
 
@@ -20,12 +20,12 @@ Industries organization custom domain also applies to this project site, so its
 public URL is `https://www.rm-industries.com/forge/` and the corresponding
 `rm-industries.github.io` project path redirects there.
 
-The coverage-and-build job has read-only repository access and uploads a Pages
-artifact only for an eligible `main` push. The separate deployment job is the
-only job granted `pages: write` and `id-token: write`, and it cannot begin until
-the complete `Project` quality gate succeeds. Deployment concurrency does not
-cancel an in-progress production release, preventing a newer push from
-interrupting a partially completed publication.
+The build job has read-only repository access and uploads a Pages artifact only
+for an eligible `main` push. The separate deployment job is the only job granted
+`pages: write` and `id-token: write`, and it depends directly on every website
+source, unit, build, validation, browser, and Lighthouse job. Deployment
+concurrency does not cancel an in-progress production release, preventing a
+newer push from interrupting a partially completed publication.
 
 ## Choose the public URL
 
@@ -51,15 +51,14 @@ workflow succeeds on `main`, its deployment summary links to the published site.
 ## Verify and trace a deployment
 
 The workflow's `github-pages` environment records the deployment URL and commit.
-The `github-pages` artifact contains only `website/dist`, and the final smoke job
-requests every baseline section plus the manifest, sitemap, canonical metadata,
-the Forge generator marker, and production 404 behavior. Browser accessibility
-and Lighthouse thresholds remain blocking inputs through the root `Project`
-gate.
+The `github-pages` artifact contains only `website/dist`, and the final Chromium
+smoke job verifies live reachability, expected content, loaded assets, and mobile
+overflow. The full three-browser accessibility suite and Lighthouse thresholds
+remain pre-deployment blockers.
 
-To inspect or retry a deployment, open **Actions → Project Continuous
-Integration**, select the push run, and follow **Deploy project website** into
-the called workflow. Use **Re-run failed jobs** only after identifying a
+To inspect or retry a deployment, open **Actions → Forge Website Continuous
+Integration**, select the push run, and open **Deploy GitHub Pages**. Use
+**Re-run failed jobs** only after identifying a
 transient Pages or network failure; code, quality, or generated-output failures
 must be corrected through a pull request.
 
