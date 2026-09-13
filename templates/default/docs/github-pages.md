@@ -13,8 +13,10 @@ not upload a Pages artifact or run a deployment.
    needs a manual production approval.
 
 The build job has read-only repository access. The separate deployment job is
-the only job granted `pages: write` and `id-token: write`, and it cannot begin
-until the complete `Project` quality gate succeeds.
+the only job granted `pages: write` and `id-token: write`, and it depends
+directly on every source, unit, build, validation, browser, and Lighthouse job.
+After deployment, one Chromium smoke test verifies the live URL, assets, and
+mobile layout.
 
 ## Choose the public URL
 

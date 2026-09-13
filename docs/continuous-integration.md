@@ -7,7 +7,7 @@ so each required result has one stable purpose.
 
 Repository rulesets should require these check names on `main`:
 
-- `Project` — aggregate repository, package, template, website, and generator
+- `Project` — aggregate repository, package, template, and generator
   correctness and quality.
 
 `Project` runs on every pull request. Individual jobs remain visible for
@@ -22,25 +22,23 @@ emits only reviewed boolean outputs. Changed filenames are passed to the typed
 classifier as NUL-delimited data; filenames never become workflow commands or
 shell expressions. The classifier selects these job groups:
 
-| Change class        | Selected validation                                                              |
-| ------------------- | -------------------------------------------------------------------------------- |
-| Documentation only  | Format, Markdown lint, spelling, and documentation links and commands            |
-| Content model       | Repository/package checks and supported-runtime compatibility                    |
-| Create Forge        | Repository/package checks, compatibility, and packed generator end-to-end        |
-| Default template    | Package build/pack, every template check, and packed generator end-to-end        |
-| Project website     | Website static, runtime, coverage/build, browser, and Lighthouse checks          |
-| Area dependency     | The affected area above plus informational dependency auditing                   |
-| Shared or ambiguous | Every repository, package, template, website, compatibility, and generator check |
+| Change class        | Selected validation                                                       |
+| ------------------- | ------------------------------------------------------------------------- |
+| Documentation only  | Format, Markdown lint, spelling, and documentation links and commands     |
+| Content model       | Repository/package checks and supported-runtime compatibility             |
+| Create Forge        | Repository/package checks, compatibility, and packed generator end-to-end |
+| Default template    | Package build/pack, every template check, and packed generator end-to-end |
+| Area dependency     | The affected area above plus informational dependency auditing            |
+| Shared or ambiguous | Every repository, package, template, compatibility, and generator check   |
 
 Documentation inside the bundled default template follows the template route,
 because it becomes part of generated projects. Root manifests and lockfiles,
 `.github/**`, shared `scripts/**`, root tooling, mixed unclassified paths, and an
-empty or unavailable comparison deliberately select the full suite. A newly
+empty or unavailable comparison deliberately select the full suite. Changes in
+`website/**` are ignored by this classifier because the path-scoped website
+workflow owns them. A newly
 introduced path is therefore expensive until its ownership is reviewed and
 added to the classifier. Security analysis remains independent and broad.
-Website manifests and lockfiles stay on the website route and select its
-standalone informational audit. They do not also run the root workspace audit.
-Package-only changes do not select website browser or Lighthouse work.
 
 Every job remains in the `Project` aggregate's `needs` graph. The aggregate uses
 `always()` so jobs intentionally skipped by routing cannot leave the required
@@ -64,22 +62,22 @@ required review signals for automation changes. The repository workflow watches
 both `.github/**` and the generated template's workflow source under
 `templates/default/.github/**`.
 
-The generated template uses the same `Project`, `Workflow syntax`, and `Workflow
-security` results. Generated repositories should require `Project` after
-enabling GitHub Actions, while requiring both workflow checks whenever they
-appear. CodeQL, dependency review, and Dependabot alerts remain visible security
-signals rather than required merge checks.
+The generated template intentionally has no aggregate/no-op project job. Its
+ruleset should require every source check, `Production build`, `Validate build`,
+`Browser and accessibility tests`, and `Lighthouse budgets`. It should also
+require both workflow checks whenever they appear. CodeQL, dependency review,
+and Dependabot alerts remain visible security signals rather than required merge
+checks.
 
 ## Runtime and evidence strategy
 
 The minimum Node 22 release and the latest Node 22, 24, and 26 releases each run
-package type checks, tests, and builds. The standalone template uses the same
-matrix, with one clean install per runtime. The project website is a deployed
-application rather than a published compatibility surface, so it installs from
-`website/package-lock.json` and runs its types, unit tests, build, and
-generated-output validation once on the primary Node 26 runtime. The packed
-generator compatibility suite runs on the four supported Linux runtimes and on
-the current macOS runner with Node 26. Each lane records its operating system,
+package type checks, tests, and builds. Standalone-template compatibility keeps
+the same matrix because generated projects declare those runtimes. The template
+CI shipped to users and the Forge project website are deployed applications, so
+their primary pipelines each run once on Node 26. The packed generator
+compatibility suite runs on the four supported Linux runtimes and on the current
+macOS runner with Node 26. Each compatibility lane records its operating system,
 architecture, Node, npm, and Git versions before exercising the installed
 generator executable.
 
@@ -95,11 +93,35 @@ specific job name while preventing the aggregate from succeeding. Its log also
 records the classifier's selected groups so unexpected routing can be audited
 without opening every skipped job.
 
-Coverage and Lighthouse uploads run even when their producer fails and treat a
-missing report directory as an error. Lighthouse uploads explicitly include the
-hidden `.lighthouseci` directory. Browser evidence is uploaded on failure, when
-Playwright retains its report and trace directories. Artifacts are retained for
-seven days.
+The path-scoped `.github/workflows/website.yml` workflow intentionally mirrors
+the generated template's workflow. It runs when website source, its workflow,
+or its shared setup action changes. The two sites use the same ownership model:
+
+| Stage              | Owner                                                                   |
+| ------------------ | ----------------------------------------------------------------------- |
+| Source checks      | Format, code/style/Markdown lint, spelling, Knip, and Astro diagnostics |
+| Unit tests         | One coverage run alongside source checks                                |
+| Build              | One production build and an immutable build artifact upload             |
+| Artifact consumers | Build validation, three-browser tests, and Lighthouse                   |
+| Deployment         | The Pages artifact packaged by the build job                            |
+| Live verification  | One Chromium smoke suite for routes, assets, and mobile overflow        |
+
+Artifact consumers depend only on the build and download its immutable output;
+they never rebuild or mutate it. Forge has no generated Markdown artifact, so a
+post-build Markdown job would add no coverage. Source Markdown remains owned by
+the source lint job. Package and generator compatibility jobs remain separate
+because they intentionally exercise multiple supported runtimes.
+
+The repository's clean-copy template verification follows the same pattern on
+its primary Node 26 lane: `Template production build` creates one artifact for
+both template browser tests and Lighthouse. The template compatibility matrix
+still builds once per supported runtime because those builds prove a different
+contract and cannot share a Node 26 result.
+
+Coverage and Lighthouse uploads run even when their producer fails. Lighthouse
+uploads explicitly include the hidden `.lighthouseci` directory. Browser
+evidence is uploaded on failure, when Playwright retains its report and trace
+directories. Artifacts are retained for seven days.
 
 ## Security reporting and release gates
 

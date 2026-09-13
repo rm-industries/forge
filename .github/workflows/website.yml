@@ -1,13 +1,21 @@
 ---
-name: Project Continuous Integration
+name: Forge Website Continuous Integration
 
 on: # yamllint disable-line rule:truthy
   pull_request:
     branches:
       - main
+    paths:
+      - 'website/**'
+      - '.github/workflows/website.yml'
+      - '.github/actions/setup-project/**'
   push:
     branches:
       - main
+    paths:
+      - 'website/**'
+      - '.github/workflows/website.yml'
+      - '.github/actions/setup-project/**'
 
 permissions: {}
 
@@ -18,6 +26,7 @@ concurrency:
 defaults:
   run:
     shell: bash
+    working-directory: website
 
 jobs:
   format:
@@ -37,6 +46,8 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
+          cache-dependency-path: website/package-lock.json
+          working-directory: website
 
       - name: Check formatting
         run: npm run format
@@ -58,6 +69,8 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
+          cache-dependency-path: website/package-lock.json
+          working-directory: website
 
       - name: Check spelling
         run: npm run spellcheck
@@ -79,6 +92,8 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
+          cache-dependency-path: website/package-lock.json
+          working-directory: website
 
       - name: Lint code
         run: npm run lint:code
@@ -97,6 +112,8 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
+          cache-dependency-path: website/package-lock.json
+          working-directory: website
       - name: Lint styles
         run: npm run lint:css
 
@@ -114,6 +131,8 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
+          cache-dependency-path: website/package-lock.json
+          working-directory: website
       - name: Lint source Markdown
         run: npm run lint:markdown
 
@@ -131,6 +150,8 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
+          cache-dependency-path: website/package-lock.json
+          working-directory: website
       - name: Audit unused code and dependencies
         run: npm run audit:unused
 
@@ -148,6 +169,8 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
+          cache-dependency-path: website/package-lock.json
+          working-directory: website
       - name: Check TypeScript and Astro diagnostics
         run: npm run typecheck
 
@@ -168,6 +191,8 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
+          cache-dependency-path: website/package-lock.json
+          working-directory: website
 
       - name: Audit dependencies
         id: audit
@@ -198,6 +223,8 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
+          cache-dependency-path: website/package-lock.json
+          working-directory: website
 
       - name: Run unit tests with coverage
         run: npm run test:coverage
@@ -206,8 +233,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: unit-coverage
-          path: coverage
+          name: website-unit-coverage
+          path: website/coverage
           if-no-files-found: error
           retention-days: 7
 
@@ -237,6 +264,8 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
+          cache-dependency-path: website/package-lock.json
+          working-directory: website
 
       - name: Build production site once
         run: npm run build
@@ -244,8 +273,8 @@ jobs:
       - name: Upload production build
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: site-build
-          path: dist
+          name: website-build
+          path: website/dist
           if-no-files-found: error
           retention-days: 7
 
@@ -253,7 +282,7 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
-          path: dist
+          path: website/dist
 
   validate-build:
     name: Validate build
@@ -271,11 +300,13 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
+          cache-dependency-path: website/package-lock.json
+          working-directory: website
       - name: Download production build
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          name: site-build
-          path: dist
+          name: website-build
+          path: website/dist
       - name: Validate production artifacts
         run: npm run validate:build
 
@@ -298,6 +329,8 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
+          cache-dependency-path: website/package-lock.json
+          working-directory: website
 
       - name: Install supported browsers
         run: npx playwright install --with-deps chromium firefox webkit
@@ -305,8 +338,8 @@ jobs:
       - name: Download production build
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          name: site-build
-          path: dist
+          name: website-build
+          path: website/dist
 
       - name: Run browser and accessibility tests
         run: npm run test:e2e
@@ -317,8 +350,8 @@ jobs:
         with:
           name: browser-test-failures
           path: |
-            playwright-report
-            test-results
+            website/playwright-report
+            website/test-results
           if-no-files-found: error
           retention-days: 7
 
@@ -341,6 +374,8 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
+          cache-dependency-path: website/package-lock.json
+          working-directory: website
 
       - name: Install Lighthouse browser
         run: npx playwright install --with-deps chromium
@@ -348,8 +383,8 @@ jobs:
       - name: Download production build
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          name: site-build
-          path: dist
+          name: website-build
+          path: website/dist
 
       - name: Enforce Lighthouse budgets
         run: npm run lighthouse:ci
@@ -359,7 +394,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: lighthouse-reports
-          path: .lighthouseci
+          path: website/.lighthouseci
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
@@ -396,7 +431,7 @@ jobs:
     steps:
       - name: Deploy GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
 
   smoke-deployed:
     name: Verify deployed website
@@ -415,6 +450,8 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: '26.x'
+          cache-dependency-path: website/package-lock.json
+          working-directory: website
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Verify deployed routes, assets, and mobile layout
@@ -425,9 +462,9 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: deployed-smoke-results
+          name: website-deployed-smoke-results
           path: |
-            playwright-report
-            test-results
+            website/playwright-report
+            website/test-results
           if-no-files-found: ignore
           retention-days: 7

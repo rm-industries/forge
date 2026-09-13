@@ -12,7 +12,6 @@ describe('classifyCiChanges', () => {
       generator: false,
       packages: false,
       template: false,
-      website: false,
     });
   });
 
@@ -25,7 +24,6 @@ describe('classifyCiChanges', () => {
       generator: false,
       packages: true,
       template: false,
-      website: false,
     });
   });
 
@@ -65,7 +63,7 @@ describe('classifyCiChanges', () => {
     });
   });
 
-  it('routes website changes without unrelated package, template, or generator checks', () => {
+  it('leaves website changes to the standalone website workflow', () => {
     expect(classifyCiChanges(['website/src/pages/index.astro'])).toEqual({
       audit: false,
       code: false,
@@ -74,7 +72,6 @@ describe('classifyCiChanges', () => {
       generator: false,
       packages: false,
       template: false,
-      website: true,
     });
   });
 
@@ -83,7 +80,6 @@ describe('classifyCiChanges', () => {
       audit: false,
       packages: false,
       template: false,
-      website: true,
     });
   });
 
@@ -103,7 +99,6 @@ describe('classifyCiChanges', () => {
       generator: true,
       packages: true,
       template: true,
-      website: true,
     });
   });
 
@@ -117,7 +112,7 @@ describe('classifyCiChanges', () => {
 describe('serializeCiSelection', () => {
   it('emits only stable boolean workflow outputs', () => {
     expect(serializeCiSelection(classifyCiChanges(['docs/continuous-integration.md']))).toBe(
-      'audit=false\ncode=false\ncompatibility=false\ndocumentation=true\ngenerator=false\npackages=false\ntemplate=false\nwebsite=false\n',
+      'audit=false\ncode=false\ncompatibility=false\ndocumentation=true\ngenerator=false\npackages=false\ntemplate=false\n',
     );
   });
 });

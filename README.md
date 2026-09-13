@@ -110,7 +110,7 @@ Run these inside the generated project:
 | `npm run quality`           | Run the complete static, unit, build, browser, and performance |
 |                             | gate.                                                          |
 | `npm run quality:core`      | Run checks that do not require the browser suite.              |
-| `npm run quality:static`    | Run formatting, linting, type, Astro, unused-code, and audit   |
+| `npm run quality:static`    | Run formatting, linting, Astro diagnostics, and unused-code    |
 |                             | checks.                                                        |
 | `npm run format:fix`        | Apply Oxfmt formatting.                                        |
 | `npm run lint:code:fix`     | Apply safe Oxlint fixes.                                       |
@@ -120,7 +120,7 @@ Run these inside the generated project:
 | `npm run test:e2e`          | Run the Playwright browser suite.                              |
 | `npm run test:a11y`         | Run the focused browser accessibility suite.                   |
 | `npm run test:coverage`     | Run unit tests with coverage enforcement.                      |
-| `npm run lighthouse:ci`     | Build and run the Lighthouse budgets.                          |
+| `npm run lighthouse:ci`     | Run Lighthouse budgets against an existing build.              |
 | `npm run audit`             | Check the installed dependency graph against audit policy.     |
 
 The committed lockfile makes `npm ci` the supported installation command.
@@ -181,17 +181,15 @@ npm run website:quality
 `npm run quality` covers formatting, linting, spelling, types, tests, builds,
 and package contents. The registry-backed audit and isolated template check are
 explicit because they have different network and runtime requirements.
-The `website:*` scripts run the standalone project site's checks through its
-own lockfile and dependency tree. Use `website:quality:static`,
-`website:test:coverage`, `website:build`, `website:test:browser`, or
-`website:lighthouse` when validating one layer. The root workflow selects these
-jobs for `website/**` and shared automation changes without running them for an
-unrelated package-only change. Future Forge upgrades are reviewed as owned
-source changes against the bootstrap record; automation never regenerates or
-overwrites `website/`. A website-affecting push to `main` deploys only after the
-stable `Project` aggregate succeeds; the dedicated workflow publishes the
-already validated `website/dist` artifact through the protected `github-pages`
-environment and smoke-tests the public project-path URL.
+The `website:*` scripts run the standalone project site's checks through its own
+lockfile and dependency tree. A dedicated, path-scoped website workflow mirrors
+the CI shipped in generated projects. It runs independent source checks and unit
+coverage, creates `website/dist` once,
+then gives that same artifact to build validation, browser tests, Lighthouse,
+and Pages deployment. Future Forge upgrades are reviewed as owned source changes
+against the bootstrap record; automation never regenerates or overwrites
+`website/`. Successful deployment is followed by a live Chromium smoke check of
+the public project-path URL, assets, and mobile overflow.
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) for the review workflow, CI expectations,
 and template-specific checks. The

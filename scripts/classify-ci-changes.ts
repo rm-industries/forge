@@ -10,7 +10,6 @@ export interface CiSelection {
   generator: boolean;
   packages: boolean;
   template: boolean;
-  website: boolean;
 }
 
 const documentationFiles = new Set(['CODE_OF_CONDUCT.md', 'CONTRIBUTING.md', 'LICENSE', 'README.md', 'SECURITY.md']);
@@ -24,6 +23,8 @@ const isLightweightDocumentation = (path: string): boolean =>
   !path.startsWith('templates/default/') &&
   !path.startsWith('website/');
 
+const isWebsite = (path: string): boolean => path.startsWith('website/');
+
 const selectEverything = (): CiSelection => ({
   audit: true,
   code: true,
@@ -32,7 +33,6 @@ const selectEverything = (): CiSelection => ({
   generator: true,
   packages: true,
   template: true,
-  website: true,
 });
 
 export const classifyCiChanges = (paths: readonly string[]): CiSelection => {
@@ -48,20 +48,18 @@ export const classifyCiChanges = (paths: readonly string[]): CiSelection => {
       generator: false,
       packages: false,
       template: false,
-      website: false,
     };
   }
 
   let contentModel = false;
   let createForge = false;
   let template = false;
-  let website = false;
   let full = false;
 
   for (const path of paths) {
     if (path.startsWith('.github/')) full = true;
     else if (path.startsWith('templates/default/')) template = true;
-    else if (path.startsWith('website/')) website = true;
+    else if (isWebsite(path)) continue;
     else if (isDocumentation(path)) continue;
     else if (path.startsWith('packages/content-model/')) contentModel = true;
     else if (path.startsWith('packages/create-forge/')) createForge = true;
@@ -83,7 +81,6 @@ export const classifyCiChanges = (paths: readonly string[]): CiSelection => {
     generator: createForge || template,
     packages,
     template,
-    website,
   };
 };
 
