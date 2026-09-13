@@ -509,6 +509,7 @@ jobs:
           cp -R templates/default "$template_directory"
           cd "$template_directory"
           npm ci
+          npm run build
 
       - name: Install supported browsers
         working-directory: ${{ runner.temp }}/forge-default-template
@@ -557,6 +558,7 @@ jobs:
           cp -R templates/default "$template_directory"
           cd "$template_directory"
           npm ci
+          npm run build
 
       - name: Enforce Lighthouse budgets
         working-directory: ${{ runner.temp }}/forge-default-template
