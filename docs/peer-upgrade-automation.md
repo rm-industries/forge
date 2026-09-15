@@ -4,13 +4,16 @@ Forge treats integration peer ranges as tested compatibility claims. The
 `Peer Compatibility Updates` workflow checks the npm registry weekly and can be
 dispatched manually for an exact package version. When a version falls outside
 the current content-model peer range, it prepares one focused pull request that
-updates the root test dependency, adds a bounded tested peer range, updates the
-lockfile, and prepares the next content-model patch version and changelog entry.
+updates the root test dependency, extends the bounded peer range through the
+newly validated minor, updates the lockfile, and prepares the next content-model
+patch version and changelog entry.
 A validated compatibility-only update does not add or change public API, so it
 is released as a patch rather than reserving a minor version for new
-backward-compatible capabilities. The existing peer range remains supported;
-removing a previously supported range would be a breaking change after `1.0.0`
-and cannot use this patch workflow.
+backward-compatible capabilities. Sveltia's compatibility floor is `0.193.2`,
+the earliest version supported by the published content model. Automation keeps
+that lower bound and moves the upper bound to the minor immediately following
+the newly validated Sveltia version. This produces one continuous range rather
+than an ever-growing list of individual minor ranges.
 
 The workflow never updates the standalone template or publishes a package. A
 merged compatibility pull request proceeds through the protected publication

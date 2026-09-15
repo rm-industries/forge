@@ -2,13 +2,17 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { inc, major, minor, satisfies, valid } from 'semver';
+import { inc, major, minVersion, minor, satisfies, valid } from 'semver';
 
 type PackageManifest = {
   name?: string;
   version?: string;
   devDependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
+};
+
+const peerCompatibilityFloors: Record<string, string> = {
+  '@sveltia/cms': '0.193.2',
 };
 
 export type PeerUpgradePlan = {
@@ -34,7 +38,14 @@ export const peerRangeFor = (version: string) => {
   return `>=${target} <0.${minor(target) + 1}.0`;
 };
 
-const extendPeerRange = (currentRange: string, version: string) => `${currentRange} || ${peerRangeFor(version)}`;
+export const extendPeerRange = (currentRange: string, version: string, compatibilityFloor?: string) => {
+  const target = requireVersion(version, 'Target version');
+  const minimum = minVersion(currentRange);
+  if (!minimum) throw new Error('Current peer range must be a valid semantic-version range.');
+  const lowerBound = compatibilityFloor ? requireVersion(compatibilityFloor, 'Compatibility floor') : minimum.version;
+  if (major(target) > 0 || major(minimum) > 0) return `${currentRange} || ${peerRangeFor(target)}`;
+  return `>=${lowerBound} <0.${minor(target) + 1}.0`;
+};
 
 export const createPeerUpgradePlan = (
   rootManifest: PackageManifest,
@@ -59,7 +70,7 @@ export const createPeerUpgradePlan = (
     previousDevelopmentRange: developmentRange,
     nextDevelopmentRange: changed ? `^${target}` : developmentRange,
     previousPeerRange: peerRange,
-    nextPeerRange: changed ? extendPeerRange(peerRange, target) : peerRange,
+    nextPeerRange: changed ? extendPeerRange(peerRange, target, peerCompatibilityFloors[dependency]) : peerRange,
     previousPackageVersion: packageVersion,
     nextPackageVersion,
     targetVersion: target,

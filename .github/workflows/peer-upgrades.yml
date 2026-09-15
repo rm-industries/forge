@@ -180,7 +180,7 @@ jobs:
             '## Summary' \
             '' \
             "- test ${DEPENDENCY} ${TARGET_VERSION} against the content-model adapter" \
-            '- add the bounded peer range only after repository validation passes' \
+            '- extend the bounded peer range only after repository validation passes' \
             "- prepare @rm-industries/content-model ${PACKAGE_VERSION} for protected publication" \
             '' \
             '## Release sequence' \

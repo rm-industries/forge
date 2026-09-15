@@ -7,14 +7,15 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 import {
   addPeerReleaseNotes,
   createPeerUpgradePlan,
+  extendPeerRange,
   peerRangeFor,
   preparePeerUpgrade,
 } from './prepare-peer-upgrade.ts';
 
-const rootManifest = { devDependencies: { '@sveltia/cms': '^0.193.2', astro: '^7.2.4' } };
+const rootManifest = { devDependencies: { '@sveltia/cms': '^0.207.1', astro: '^7.2.4' } };
 const contentModelManifest = {
   version: '1.1.0',
-  peerDependencies: { '@sveltia/cms': '>=0.193.2 <0.194.0', astro: '^7.2.3' },
+  peerDependencies: { '@sveltia/cms': '>=0.207.1 <0.208.0', astro: '^7.2.3' },
 };
 
 const temporaryDirectories: string[] = [];
@@ -26,24 +27,28 @@ afterEach(async () => {
 
 describe('peer upgrade preparation', () => {
   test('keeps a version already covered by the peer range unchanged', () => {
-    expect(createPeerUpgradePlan(rootManifest, contentModelManifest, '@sveltia/cms', '0.193.9')).toMatchObject({
+    expect(createPeerUpgradePlan(rootManifest, contentModelManifest, '@sveltia/cms', '0.207.9')).toMatchObject({
       changed: false,
       nextPackageVersion: '1.1.0',
-      nextPeerRange: '>=0.193.2 <0.194.0',
+      nextPeerRange: '>=0.207.1 <0.208.0',
     });
   });
 
   test('prepares a bounded pre-1.0 peer range and content-model patch release', () => {
-    expect(createPeerUpgradePlan(rootManifest, contentModelManifest, '@sveltia/cms', '0.197.1')).toMatchObject({
+    expect(createPeerUpgradePlan(rootManifest, contentModelManifest, '@sveltia/cms', '0.212.2')).toMatchObject({
       changed: true,
-      nextDevelopmentRange: '^0.197.1',
-      nextPeerRange: '>=0.193.2 <0.194.0 || >=0.197.1 <0.198.0',
+      nextDevelopmentRange: '^0.212.2',
+      nextPeerRange: '>=0.193.2 <0.213.0',
       nextPackageVersion: '1.1.1',
     });
   });
 
   test('uses a caret range for stable peers', () => {
     expect(peerRangeFor('8.1.2')).toBe('^8.1.2');
+  });
+
+  test('extends a pre-1.0 range continuously through the target minor', () => {
+    expect(extendPeerRange('>=0.207.1 <0.208.0', '0.212.2', '0.193.2')).toBe('>=0.193.2 <0.213.0');
   });
 
   test('rejects undeclared peers', () => {
@@ -53,12 +58,12 @@ describe('peer upgrade preparation', () => {
   });
 
   test('adds idempotent compatibility release notes', () => {
-    const plan = createPeerUpgradePlan(rootManifest, contentModelManifest, '@sveltia/cms', '0.197.1');
+    const plan = createPeerUpgradePlan(rootManifest, contentModelManifest, '@sveltia/cms', '0.212.2');
     const changelog = '# Changelog\n\nIntroduction.\n\n## 1.1.0\n\n- Previous release.\n';
     const updated = addPeerReleaseNotes(changelog, plan);
     expect(updated).toContain('## 1.1.1');
     expect(updated).toContain('supported peer range from\n');
-    expect(updated).toContain('`>=0.193.2 <0.194.0` to `>=0.193.2 <0.194.0 || >=0.197.1 <0.198.0`.');
+    expect(updated).toContain('`>=0.207.1 <0.208.0` to `>=0.193.2 <0.213.0`.');
     expect(updated.split('\n').every((line) => line.length <= 120)).toBe(true);
     expect(addPeerReleaseNotes(updated, plan)).toBe(updated);
   });
@@ -80,7 +85,7 @@ describe('peer upgrade preparation', () => {
     await preparePeerUpgrade({
       cwd: directory,
       dependency: '@sveltia/cms',
-      targetVersion: '0.197.1',
+      targetVersion: '0.212.2',
       write: true,
     });
 
@@ -88,12 +93,12 @@ describe('peer upgrade preparation', () => {
     const updatedContentModel = JSON.parse(
       await readFile(join(directory, 'packages/content-model/package.json'), 'utf8'),
     );
-    expect(updatedRoot).toEqual({ devDependencies: { '@sveltia/cms': '^0.197.1', astro: '^7.2.4' } });
+    expect(updatedRoot).toEqual({ devDependencies: { '@sveltia/cms': '^0.212.2', astro: '^7.2.4' } });
     expect(updatedContentModel).toEqual({
       ...contentModelManifest,
       version: '1.1.1',
       peerDependencies: {
-        '@sveltia/cms': '>=0.193.2 <0.194.0 || >=0.197.1 <0.198.0',
+        '@sveltia/cms': '>=0.193.2 <0.213.0',
         astro: '^7.2.3',
       },
     });
