@@ -57,7 +57,9 @@ describe('peer upgrade preparation', () => {
     const changelog = '# Changelog\n\nIntroduction.\n\n## 1.1.0\n\n- Previous release.\n';
     const updated = addPeerReleaseNotes(changelog, plan);
     expect(updated).toContain('## 1.1.1');
-    expect(updated).toContain('`>=0.193.2 <0.194.0` to `>=0.193.2 <0.194.0 || >=0.197.1 <0.198.0`');
+    expect(updated).toContain('supported peer range from\n');
+    expect(updated).toContain('`>=0.193.2 <0.194.0` to `>=0.193.2 <0.194.0 || >=0.197.1 <0.198.0`.');
+    expect(updated.split('\n').every((line) => line.length <= 120)).toBe(true);
     expect(addPeerReleaseNotes(updated, plan)).toBe(updated);
   });
 
