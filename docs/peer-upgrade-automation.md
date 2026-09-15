@@ -4,8 +4,13 @@ Forge treats integration peer ranges as tested compatibility claims. The
 `Peer Compatibility Updates` workflow checks the npm registry weekly and can be
 dispatched manually for an exact package version. When a version falls outside
 the current content-model peer range, it prepares one focused pull request that
-updates the root test dependency, bounded peer range, lockfile, and next
-content-model prerelease version and changelog entry.
+updates the root test dependency, adds a bounded tested peer range, updates the
+lockfile, and prepares the next content-model patch version and changelog entry.
+A validated compatibility-only update does not add or change public API, so it
+is released as a patch rather than reserving a minor version for new
+backward-compatible capabilities. The existing peer range remains supported;
+removing a previously supported range would be a breaking change after `1.0.0`
+and cannot use this patch workflow.
 
 The workflow never updates the standalone template or publishes a package. A
 merged compatibility pull request proceeds through the protected publication
@@ -74,4 +79,6 @@ the same deterministic branch is reused.
 Close an update pull request when upstream behavior is incompatible, and record
 the rejected version and reason in the pull request. The current peer range then
 remains authoritative. Never widen the range merely to make dependency
-installation succeed.
+installation succeed. If adopting the peer requires a public API change or a
+consumer migration, close the generated patch pull request and prepare the
+appropriate minor or major release manually.

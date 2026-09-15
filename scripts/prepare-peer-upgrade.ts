@@ -34,6 +34,8 @@ export const peerRangeFor = (version: string) => {
   return `>=${target} <0.${minor(target) + 1}.0`;
 };
 
+const extendPeerRange = (currentRange: string, version: string) => `${currentRange} || ${peerRangeFor(version)}`;
+
 export const createPeerUpgradePlan = (
   rootManifest: PackageManifest,
   contentModelManifest: PackageManifest,
@@ -48,8 +50,8 @@ export const createPeerUpgradePlan = (
   if (!peerRange) throw new Error(`Content-model peerDependencies does not declare ${dependency}.`);
 
   const changed = !satisfies(target, peerRange, { includePrerelease: true });
-  const nextPackageVersion = changed ? inc(packageVersion, 'preminor', 'alpha') : packageVersion;
-  if (!nextPackageVersion) throw new Error(`Could not calculate a prerelease after ${packageVersion}.`);
+  const nextPackageVersion = changed ? inc(packageVersion, 'patch') : packageVersion;
+  if (!nextPackageVersion) throw new Error(`Could not calculate a patch release after ${packageVersion}.`);
 
   return {
     changed,
@@ -57,7 +59,7 @@ export const createPeerUpgradePlan = (
     previousDevelopmentRange: developmentRange,
     nextDevelopmentRange: changed ? `^${target}` : developmentRange,
     previousPeerRange: peerRange,
-    nextPeerRange: changed ? peerRangeFor(target) : peerRange,
+    nextPeerRange: changed ? extendPeerRange(peerRange, target) : peerRange,
     previousPackageVersion: packageVersion,
     nextPackageVersion,
     targetVersion: target,
