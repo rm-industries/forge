@@ -75,7 +75,7 @@ export const addPeerReleaseNotes = (changelog: string, plan: PeerUpgradePlan) =>
   if (changelog.includes(heading)) return changelog;
   const firstRelease = changelog.indexOf('\n## ');
   if (firstRelease < 0) throw new Error('Content-model changelog has no release sections.');
-  const notes = `${heading}\n\n- Validate ${plan.dependency} ${plan.targetVersion} and update its supported peer range from \`${plan.previousPeerRange}\` to \`${plan.nextPeerRange}\`.\n`;
+  const notes = `${heading}\n\n- Validate ${plan.dependency} ${plan.targetVersion} and update its supported peer range from\n  \`${plan.previousPeerRange}\` to \`${plan.nextPeerRange}\`.\n`;
   return `${changelog.slice(0, firstRelease + 1)}${notes}\n${changelog.slice(firstRelease + 1)}`;
 };
 
