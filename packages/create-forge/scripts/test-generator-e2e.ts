@@ -157,6 +157,37 @@ try {
   await runGenerator(executable, currentDirectory, ['.', '--yes', '--no-install', '--no-git']);
   await assertGeneratedProject(currentDirectory, 'current-directory-site');
 
+  const nestedRepository = join(projectsDirectory, 'nested-repository');
+  const nestedDirectory = join(nestedRepository, 'website');
+  await mkdir(nestedRepository);
+  await writeFile(join(nestedRepository, 'README.md'), 'Existing repository content\n');
+  await runGenerator(executable, nestedRepository, [
+    'website',
+    '--yes',
+    '--repository-root',
+    '.',
+    '--no-install',
+    '--no-git',
+  ]);
+  const nestedReadme = await readFile(join(nestedRepository, 'README.md'), 'utf8');
+  const nestedProjectWorkflow = await readFile(join(nestedRepository, '.github', 'workflows', 'project.yml'), 'utf8');
+  const nestedSetupAction = await readFile(
+    join(nestedRepository, '.github', 'actions', 'setup-project', 'action.yml'),
+    'utf8',
+  );
+  const nestedDependabot = await readFile(join(nestedRepository, '.github', 'dependabot.yml'), 'utf8');
+  if (
+    nestedReadme !== 'Existing repository content\n' ||
+    (await exists(join(nestedDirectory, '.github'))) ||
+    !nestedProjectWorkflow.includes("- 'website/**'") ||
+    !nestedProjectWorkflow.includes('working-directory: website') ||
+    !nestedSetupAction.includes('default: website') ||
+    !nestedDependabot.includes('directory: /website')
+  ) {
+    throw new Error('Nested fixture did not preserve repository content or configure repository automation.');
+  }
+  await access(join(nestedDirectory, 'package.json'));
+
   const noInstallDirectory = join(projectsDirectory, 'no-install-site');
   const { stdout: noInstallOutput } = await runGenerator(executable, projectsDirectory, [
     'no-install-site',
@@ -197,7 +228,7 @@ try {
   }
 
   const mode = compatibilityMode ? 'compatibility' : 'complete';
-  console.log(`Verified ${packResult.filename} across 6 isolated ${mode} generator fixtures.`);
+  console.log(`Verified ${packResult.filename} across 7 isolated ${mode} generator fixtures.`);
 } finally {
   await rm(fixtureDirectory, { recursive: true, force: true });
 }

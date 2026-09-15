@@ -5,9 +5,15 @@ on: # yamllint disable-line rule:truthy
   pull_request:
     branches:
       - main
+    paths:
+      - '**'
+      - '.github/**'
   push:
     branches:
       - main
+    paths:
+      - '**'
+      - '.github/**'
   schedule:
     - cron: '17 5 * * 1'
 

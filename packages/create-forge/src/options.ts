@@ -1,5 +1,6 @@
 export type GeneratorOptions = {
   destination: string;
+  repositoryRoot: string;
   packageName: string;
   siteName: string;
   description: string;

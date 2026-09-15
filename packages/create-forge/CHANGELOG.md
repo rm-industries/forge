@@ -2,6 +2,15 @@
 
 All notable changes to `@rm-industries/create-forge` are documented here.
 
+## Unreleased
+
+- Add `--repository-root` so Forge can generate a site inside an existing
+  repository while preserving unrelated files and placing repository-owned
+  GitHub configuration at the repository root.
+- Configure generated workflows, artifacts, dependency installation,
+  Dependabot, and Git initialization for the selected nested project without
+  changing the existing root-level generation behavior.
+
 ## 1.0.2
 
 - Generate projects with the published `@rm-industries/content-model@1.1.0`,

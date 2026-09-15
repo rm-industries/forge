@@ -13,6 +13,21 @@ complete input contract. Unless disabled with `--no-install` or `--no-git`, it
 runs `npm install` and initializes a `main`-branch Git repository after files are
 created. It never stages files, reads Git identity, or creates a commit.
 
+By default, the destination is both the generated project root and repository
+root. To add a Forge site to an existing repository without replacing unrelated
+files, pass the site directory as the destination and identify the repository
+root separately:
+
+```sh
+npm create @rm-industries/forge website -- --repository-root .
+```
+
+Forge writes the application into `website/`, places repository-owned GitHub
+configuration in the root `.github/` directory, installs dependencies inside
+`website/`, and initializes Git at the repository root when needed. Generated
+workflow filters, working directories, artifact paths, and Dependabot settings
+are adjusted for the nested project automatically.
+
 The selected template is copied with dotfiles and file modes intact. Forge
 customizes only reviewed metadata files and refuses parent-traversal paths,
 symbolic-link collisions, filesystem roots, and unconfirmed non-empty
@@ -55,7 +70,7 @@ npm run test:generator:e2e
 ```
 
 This generates default, fully specified, scoped-package-name, current-directory,
-no-install, and conflict fixtures in an OS temporary directory. The default
+nested-project, no-install, and conflict fixtures in an OS temporary directory. The default
 fixture installs and runs the complete generated-project quality pipeline
 outside the Forge workspace. The conflict fixture also proves that a failed
 invocation leaves existing files unchanged. Every fixture is removed after the
