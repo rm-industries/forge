@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
@@ -44,13 +44,25 @@ const runGeneratedCompatibility = async (cwd: string) => {
   }
 };
 
-const assertGeneratedProject = async (directory: string, packageName: string) => {
+const assertGeneratedProject = async (directory: string, packageName: string, repositoryDirectory = directory) => {
   const metadata = JSON.parse(await readFile(join(directory, 'package.json'), 'utf8')) as PackageMetadata;
   const lockfile = await readFile(join(directory, 'package-lock.json'), 'utf8');
   const gitignore = await readFile(join(directory, '.gitignore'), 'utf8');
   const siteConfig = await readFile(join(directory, 'src', 'config', 'site.ts'), 'utf8');
-  const securityWorkflow = await readFile(join(directory, '.github', 'workflows', 'security.yml'), 'utf8');
-  const automationWorkflow = await readFile(join(directory, '.github', 'workflows', 'automation.yml'), 'utf8');
+  const securityWorkflow = await readFile(join(repositoryDirectory, '.github', 'workflows', 'security.yml'), 'utf8');
+  const automationWorkflow = await readFile(
+    join(repositoryDirectory, '.github', 'workflows', 'automation.yml'),
+    'utf8',
+  );
+  const projectWorkflow = await readFile(join(repositoryDirectory, '.github', 'workflows', 'project.yml'), 'utf8');
+  const setupAction = await readFile(
+    join(repositoryDirectory, '.github', 'actions', 'setup-project', 'action.yml'),
+    'utf8',
+  );
+  const dependabot = await readFile(join(repositoryDirectory, '.github', 'dependabot.yml'), 'utf8');
+  const projectDirectory = relative(repositoryDirectory, directory).split(sep).join('/') || '.';
+  const projectPathFilter = projectDirectory === '.' ? '**' : `${projectDirectory}/**`;
+  const dependabotDirectory = projectDirectory === '.' ? '/' : `/${projectDirectory}`;
   if (metadata.name !== packageName) {
     throw new Error(`Expected ${directory} to use package name ${packageName}.`);
   }
@@ -61,6 +73,26 @@ const assertGeneratedProject = async (directory: string, packageName: string) =>
   }
   if (`${lockfile}\n${siteConfig}\n${securityWorkflow}\n${automationWorkflow}`.includes(templateTokenPrefix)) {
     throw new Error(`Generated fixture ${directory} contains an unresolved template token.`);
+  }
+  for (const expected of [
+    `- '${projectPathFilter}'`,
+    `working-directory: ${projectDirectory}`,
+    `path: ${projectDirectory}/coverage`,
+    `path: ${projectDirectory}/dist`,
+    `${projectDirectory}/playwright-report`,
+    `${projectDirectory}/test-results`,
+    `path: ${projectDirectory}/.lighthouseci`,
+  ]) {
+    if (!projectWorkflow.includes(expected)) {
+      throw new Error(`Generated fixture ${directory} is missing project workflow value ${JSON.stringify(expected)}.`);
+    }
+  }
+  if (
+    !securityWorkflow.includes(`- '${projectPathFilter}'`) ||
+    !setupAction.includes(`default: ${projectDirectory}`) ||
+    !dependabot.includes(`- package-ecosystem: npm\n    directory: ${dependabotDirectory}`)
+  ) {
+    throw new Error(`Generated fixture ${directory} does not configure repository automation for its project root.`);
   }
   const scheduleMinutes = deriveScheduleMinutes(packageName);
   if (
@@ -161,32 +193,21 @@ try {
   const nestedDirectory = join(nestedRepository, 'website');
   await mkdir(nestedRepository);
   await writeFile(join(nestedRepository, 'README.md'), 'Existing repository content\n');
-  await runGenerator(executable, nestedRepository, [
-    'website',
-    '--yes',
-    '--repository-root',
-    '.',
-    '--no-install',
-    '--no-git',
-  ]);
+  const nestedArguments = ['website', '--yes', '--repository-root', '.', '--no-git'];
+  if (compatibilityMode) nestedArguments.push('--no-install');
+  const { stdout: nestedOutput } = await runGenerator(executable, nestedRepository, nestedArguments);
+  await assertGeneratedProject(nestedDirectory, 'website', nestedRepository);
   const nestedReadme = await readFile(join(nestedRepository, 'README.md'), 'utf8');
-  const nestedProjectWorkflow = await readFile(join(nestedRepository, '.github', 'workflows', 'project.yml'), 'utf8');
-  const nestedSetupAction = await readFile(
-    join(nestedRepository, '.github', 'actions', 'setup-project', 'action.yml'),
-    'utf8',
-  );
-  const nestedDependabot = await readFile(join(nestedRepository, '.github', 'dependabot.yml'), 'utf8');
-  if (
-    nestedReadme !== 'Existing repository content\n' ||
-    (await exists(join(nestedDirectory, '.github'))) ||
-    !nestedProjectWorkflow.includes("- 'website/**'") ||
-    !nestedProjectWorkflow.includes('working-directory: website') ||
-    !nestedSetupAction.includes('default: website') ||
-    !nestedDependabot.includes('directory: /website')
-  ) {
+  if (nestedReadme !== 'Existing repository content\n' || (await exists(join(nestedDirectory, '.github')))) {
     throw new Error('Nested fixture did not preserve repository content or configure repository automation.');
   }
-  await access(join(nestedDirectory, 'package.json'));
+  if (!compatibilityMode) {
+    if (!nestedOutput.includes('Dependencies: installed')) {
+      throw new Error('Nested fixture did not install dependencies from its project root.');
+    }
+    await runGeneratedCompatibility(nestedDirectory);
+    await access(join(nestedRepository, 'website', 'dist', 'index.html'));
+  }
 
   const noInstallDirectory = join(projectsDirectory, 'no-install-site');
   const { stdout: noInstallOutput } = await runGenerator(executable, projectsDirectory, [
