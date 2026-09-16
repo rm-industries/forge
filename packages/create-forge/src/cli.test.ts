@@ -28,6 +28,8 @@ describe('CLI argument parsing', () => {
         destination                      directory where the project will be created
 
       Options:
+        --repository-root <path>         repository root (defaults to the project
+                                         directory)
         --name <name>                    npm package name (defaults to the directory
                                          basename)
         --site-name <name>               site name
@@ -61,6 +63,7 @@ describe('CLI argument parsing', () => {
       exitCode: 0,
       options: {
         destination: 'my-forge-site',
+        repositoryRoot: 'my-forge-site',
         packageName: 'my-forge-site',
         siteName: 'My Forge Site',
         description: 'A content-driven website built with Forge',
@@ -87,6 +90,8 @@ describe('CLI argument parsing', () => {
     const result = await runCli(
       [
         'site-directory',
+        '--repository-root',
+        '.',
         '--name',
         '@example/site',
         '--site-name',
@@ -109,6 +114,7 @@ describe('CLI argument parsing', () => {
       exitCode: 0,
       options: {
         destination: 'site-directory',
+        repositoryRoot: '.',
         packageName: '@example/site',
         siteName: 'Example Site',
         install: false,

@@ -9,6 +9,9 @@ export const templateTokens = Object.freeze({
   repository: `${prefix}REPOSITORY__`,
   securityScheduleMinute: `${prefix}SECURITY_SCHEDULE_MINUTE__`,
   automationScheduleMinute: `${prefix}AUTOMATION_SCHEDULE_MINUTE__`,
+  projectDirectory: `${prefix}PROJECT_DIRECTORY__`,
+  projectPathFilter: `${prefix}PROJECT_PATH_FILTER__`,
+  dependabotDirectory: `${prefix}DEPENDABOT_DIRECTORY__`,
 });
 
 export const templateTokenPrefix = prefix;

@@ -74,6 +74,7 @@ export const resolveOptions = async (
             validate: textValidation(validateDestination),
           })),
   );
+  const repositoryRoot = validateDestination(provided.repositoryRoot ?? destination);
   const derivedPackageName = derivePackageName(destination);
   const packageName = validatePackageName(
     provided.packageName ??
@@ -143,5 +144,5 @@ export const resolveOptions = async (
   const install = provided.install ?? (useDefaults ? true : await promptConfirm(prompts, 'Install dependencies?'));
   const git = provided.git ?? (useDefaults ? true : await promptConfirm(prompts, 'Initialize a Git repository?'));
 
-  return { destination, packageName, siteName, description, author, url, repository, install, git };
+  return { destination, repositoryRoot, packageName, siteName, description, author, url, repository, install, git };
 };

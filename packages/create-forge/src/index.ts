@@ -48,10 +48,11 @@ if (result.options) {
         : {}),
     });
     await runProjectSetup(result.options, {
-      destination: materialized.destination,
+      projectRoot: materialized.projectRoot,
+      repositoryRoot: materialized.repositoryRoot,
       signal: controller.signal,
     });
-    result.output = formatCompletion(result.options, { destination: materialized.destination });
+    result.output = formatCompletion(result.options, { destination: materialized.projectRoot });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     result.output = `error: ${message}\n`;

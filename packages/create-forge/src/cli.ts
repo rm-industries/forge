@@ -16,6 +16,7 @@ const parseArguments = (args: readonly string[], version: string) => {
     .name('create-forge')
     .description('Create a content-driven Forge website')
     .argument('[destination]', 'directory where the project will be created')
+    .option('--repository-root <path>', 'repository root (defaults to the project directory)')
     .option('--name <name>', 'npm package name (defaults to the directory basename)')
     .option('--site-name <name>', 'site name')
     .option('--description <text>', 'site description')
@@ -58,6 +59,7 @@ const parseArguments = (args: readonly string[], version: string) => {
   const raw = program.opts();
   const provided: ProvidedOptions = {
     destination: program.args[0],
+    repositoryRoot: raw.repositoryRoot,
     packageName: raw.name,
     siteName: raw.siteName,
     description: raw.description,

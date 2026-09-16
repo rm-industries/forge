@@ -7,6 +7,7 @@ import { formatCompletion, supportsColor } from './reporter';
 
 const options: GeneratorOptions = {
   destination: 'generated-site',
+  repositoryRoot: 'generated-site',
   packageName: 'generated-site',
   siteName: 'Generated Site',
   description: 'A generated site',

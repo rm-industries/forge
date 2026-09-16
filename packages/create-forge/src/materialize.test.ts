@@ -13,6 +13,7 @@ const fixtures: string[] = [];
 const binaryFixture = Uint8Array.from([0, 255, 12, 128, 64]);
 const options: GeneratorOptions = {
   destination: 'generated-site',
+  repositoryRoot: 'generated-site',
   packageName: '@example/generated-site',
   siteName: 'Generated Site',
   description: 'A generated site',
@@ -27,6 +28,7 @@ const createTemplate = async (fixture: string) => {
   const template = join(fixture, 'template');
   await mkdir(join(template, 'src', 'config'), { recursive: true });
   await mkdir(join(template, '.github', 'workflows'), { recursive: true });
+  await mkdir(join(template, '.github', 'actions', 'setup-project'), { recursive: true });
   await mkdir(join(template, 'public'));
   await writeFile(join(template, '.editorconfig'), 'root = true\n');
   await writeFile(join(template, '.gitignore.template'), 'node_modules\n');
@@ -45,12 +47,21 @@ const createTemplate = async (fixture: string) => {
   );
   await writeFile(
     join(template, '.github', 'workflows', 'security.yml'),
-    `cron: '${templateTokens.securityScheduleMinute} 5 * * 1'\n`,
+    `cron: '${templateTokens.securityScheduleMinute} 5 * * 1'\npath: '${templateTokens.projectPathFilter}'\n`,
   );
   await writeFile(
     join(template, '.github', 'workflows', 'automation.yml'),
     `cron: '${templateTokens.automationScheduleMinute} 5 * * 1'\n`,
   );
+  await writeFile(
+    join(template, '.github', 'workflows', 'project.yml'),
+    `working-directory: ${templateTokens.projectDirectory}\npath: '${templateTokens.projectPathFilter}'\n`,
+  );
+  await writeFile(
+    join(template, '.github', 'actions', 'setup-project', 'action.yml'),
+    `default: ${templateTokens.projectDirectory}\n`,
+  );
+  await writeFile(join(template, '.github', 'dependabot.yml'), `directory: ${templateTokens.dependabotDirectory}\n`);
   return template;
 };
 
@@ -70,7 +81,7 @@ describe('template materialization', () => {
     async (destination) => {
       const { fixture, template } = await createFixture();
       const result = await materializeProject(
-        { ...options, destination },
+        { ...options, destination, repositoryRoot: destination },
         { templateDirectory: template, cwd: fixture },
       );
       const generated = join(fixture, destination);
@@ -104,6 +115,43 @@ describe('template materialization', () => {
     expect(first.automation).toBeGreaterThanOrEqual(1);
     expect(first.automation).toBeLessThanOrEqual(59);
     expect(first.security).not.toBe(first.automation);
+  });
+
+  test('creates a nested project while preserving unrelated repository content', async () => {
+    const { fixture, template } = await createFixture();
+    await writeFile(join(fixture, 'README.md'), 'Existing repository documentation.\n');
+
+    const result = await materializeProject(
+      { ...options, destination: 'website', repositoryRoot: '.' },
+      { templateDirectory: template, cwd: fixture },
+    );
+
+    expect(result).toMatchObject({
+      projectRoot: join(fixture, 'website'),
+      repositoryRoot: fixture,
+    });
+    await expect(readFile(join(fixture, 'README.md'), 'utf8')).resolves.toBe('Existing repository documentation.\n');
+    await expect(access(join(fixture, 'website', 'package.json'))).resolves.toBeUndefined();
+    await expect(access(join(fixture, 'website', '.github'))).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(readFile(join(fixture, '.github', 'workflows', 'project.yml'), 'utf8')).resolves.toContain(
+      "path: 'website/**'",
+    );
+    await expect(
+      readFile(join(fixture, '.github', 'actions', 'setup-project', 'action.yml'), 'utf8'),
+    ).resolves.toContain('default: website');
+    await expect(readFile(join(fixture, '.github', 'dependabot.yml'), 'utf8')).resolves.toContain(
+      'directory: /website',
+    );
+  });
+
+  test('rejects a project root outside its repository root', async () => {
+    const { fixture, template } = await createFixture();
+    await expect(
+      materializeProject(
+        { ...options, destination: 'website', repositoryRoot: 'repository' },
+        { templateDirectory: template, cwd: fixture },
+      ),
+    ).rejects.toThrow(/must be inside repository root/);
   });
 
   test('escapes generated TypeScript strings while preserving template formatting', async () => {

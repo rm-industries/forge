@@ -5,6 +5,7 @@ import { executeCommand, ProcessStepError, runProjectSetup, type CommandExecutor
 
 const options: GeneratorOptions = {
   destination: 'generated-site',
+  repositoryRoot: 'generated-site',
   packageName: 'generated-site',
   siteName: 'Generated Site',
   description: 'A generated site',
@@ -18,17 +19,24 @@ const options: GeneratorOptions = {
 describe('project setup steps', () => {
   test('runs npm installation and Git initialization in order', async () => {
     const execute = vi.fn<CommandExecutor>(async () => undefined);
-    await runProjectSetup(options, { destination: '/temporary/project', execute });
+    await runProjectSetup(options, {
+      projectRoot: '/temporary/repository/website',
+      repositoryRoot: '/temporary/repository',
+      execute,
+    });
 
-    expect(execute.mock.calls.map(([command]) => [command.executable, command.arguments])).toEqual([
-      ['npm', ['install']],
-      ['git', ['init', '--initial-branch=main']],
+    expect(execute.mock.calls.map(([command]) => [command.executable, command.arguments, command.cwd])).toEqual([
+      ['npm', ['install'], '/temporary/repository/website'],
+      ['git', ['init', '--initial-branch=main'], '/temporary/repository'],
     ]);
   });
 
   test('does not run installation or Git when both are disabled', async () => {
     const execute = vi.fn<CommandExecutor>(async () => undefined);
-    await runProjectSetup({ ...options, install: false, git: false }, { destination: '/temporary/project', execute });
+    await runProjectSetup(
+      { ...options, install: false, git: false },
+      { projectRoot: '/temporary/project', repositoryRoot: '/temporary/project', execute },
+    );
     expect(execute).not.toHaveBeenCalled();
   });
 
@@ -38,7 +46,13 @@ describe('project setup steps', () => {
       throw failure;
     });
 
-    await expect(runProjectSetup(options, { destination: '/temporary/project', execute })).rejects.toBe(failure);
+    await expect(
+      runProjectSetup(options, {
+        projectRoot: '/temporary/project',
+        repositoryRoot: '/temporary/project',
+        execute,
+      }),
+    ).rejects.toBe(failure);
     expect(execute).toHaveBeenCalledTimes(1);
   });
 
@@ -47,7 +61,12 @@ describe('project setup steps', () => {
     const execute = vi.fn<CommandExecutor>(async ({ signal }) => {
       expect(signal).toBe(controller.signal);
     });
-    await runProjectSetup(options, { destination: '/temporary/project', signal: controller.signal, execute });
+    await runProjectSetup(options, {
+      projectRoot: '/temporary/project',
+      repositoryRoot: '/temporary/project',
+      signal: controller.signal,
+      execute,
+    });
     expect(execute).toHaveBeenCalledTimes(2);
   });
 });

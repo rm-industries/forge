@@ -64,7 +64,8 @@ export const executeCommand: CommandExecutor = ({ executable, arguments: args, c
   });
 
 type ProjectSetupContext = {
-  destination: string;
+  projectRoot: string;
+  repositoryRoot: string;
   signal?: AbortSignal;
   execute?: CommandExecutor;
   environment?: NodeJS.ProcessEnv;
@@ -76,11 +77,19 @@ export const runProjectSetup = async (options: GeneratorOptions, context: Projec
     execute({
       executable,
       arguments: args,
-      cwd: context.destination,
+      cwd: context.projectRoot,
       ...(context.signal ? { signal: context.signal } : {}),
       ...(context.environment ? { environment: context.environment } : {}),
     });
 
   if (options.install) await command('npm', ['install']);
-  if (options.git) await command('git', ['init', '--initial-branch=main']);
+  if (options.git) {
+    await execute({
+      executable: 'git',
+      arguments: ['init', '--initial-branch=main'],
+      cwd: context.repositoryRoot,
+      ...(context.signal ? { signal: context.signal } : {}),
+      ...(context.environment ? { environment: context.environment } : {}),
+    });
+  }
 };

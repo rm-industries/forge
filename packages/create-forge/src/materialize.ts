@@ -12,7 +12,7 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, isAbsolute, join, parse, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, join, parse, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { GeneratorOptions } from './options';
@@ -127,9 +127,13 @@ const replaceRawToken = (source: string, token: string, value: string, field: st
   return source.replaceAll(token, value);
 };
 
-const customizeTemplate = async (destination: string, options: GeneratorOptions) => {
-  const packagePath = join(destination, 'package.json');
-  const packageLockPath = join(destination, 'package-lock.json');
+const customizeTemplate = async (projectRoot: string, repositoryRoot: string, options: GeneratorOptions) => {
+  const relativeProjectDirectory = relative(repositoryRoot, projectRoot);
+  const projectDirectory = relativeProjectDirectory.split(sep).join('/') || '.';
+  const projectPathFilter = projectDirectory === '.' ? '**' : `${projectDirectory}/**`;
+  const dependabotDirectory = projectDirectory === '.' ? '/' : `/${projectDirectory}`;
+  const packagePath = join(projectRoot, 'package.json');
+  const packageLockPath = join(projectRoot, 'package-lock.json');
   const packageMetadata = JSON.parse(await readFile(packagePath, 'utf8')) as Record<string, unknown>;
   const packageLock = JSON.parse(await readFile(packageLockPath, 'utf8')) as {
     name?: string;
@@ -152,7 +156,7 @@ const customizeTemplate = async (destination: string, options: GeneratorOptions)
   await writeFile(packagePath, `${JSON.stringify(packageMetadata, undefined, 2)}\n`);
   await writeFile(packageLockPath, `${JSON.stringify(packageLock, undefined, 2)}\n`);
 
-  const siteConfigPath = join(destination, 'src', 'config', 'site.ts');
+  const siteConfigPath = join(projectRoot, 'src', 'config', 'site.ts');
   let siteConfig = await readFile(siteConfigPath, 'utf8');
   siteConfig = replaceToken(siteConfig, templateTokens.siteName, options.siteName, 'site name');
   siteConfig = replaceToken(siteConfig, templateTokens.description, options.description, 'description');
@@ -163,8 +167,8 @@ const customizeTemplate = async (destination: string, options: GeneratorOptions)
   await writeFile(siteConfigPath, siteConfig);
 
   const scheduleMinutes = deriveScheduleMinutes(options.packageName);
-  const securityWorkflowPath = join(destination, '.github', 'workflows', 'security.yml');
-  const automationWorkflowPath = join(destination, '.github', 'workflows', 'automation.yml');
+  const securityWorkflowPath = join(repositoryRoot, '.github', 'workflows', 'security.yml');
+  const automationWorkflowPath = join(repositoryRoot, '.github', 'workflows', 'automation.yml');
   let securityWorkflow = await readFile(securityWorkflowPath, 'utf8');
   let automationWorkflow = await readFile(automationWorkflowPath, 'utf8');
   securityWorkflow = replaceRawToken(
@@ -181,27 +185,77 @@ const customizeTemplate = async (destination: string, options: GeneratorOptions)
   );
   await writeFile(securityWorkflowPath, securityWorkflow);
   await writeFile(automationWorkflowPath, automationWorkflow);
+
+  const tokenizedFiles = [
+    {
+      path: join(repositoryRoot, '.github', 'workflows', 'project.yml'),
+      replacements: [
+        [templateTokens.projectDirectory, projectDirectory, 'project directory'],
+        [templateTokens.projectPathFilter, projectPathFilter, 'project path filter'],
+      ],
+    },
+    {
+      path: securityWorkflowPath,
+      replacements: [[templateTokens.projectPathFilter, projectPathFilter, 'project path filter']],
+    },
+    {
+      path: join(repositoryRoot, '.github', 'actions', 'setup-project', 'action.yml'),
+      replacements: [[templateTokens.projectDirectory, projectDirectory, 'project directory']],
+    },
+    {
+      path: join(repositoryRoot, '.github', 'dependabot.yml'),
+      replacements: [[templateTokens.dependabotDirectory, dependabotDirectory, 'Dependabot directory']],
+    },
+  ] as const;
+  for (const file of tokenizedFiles) {
+    let source = await readFile(file.path, 'utf8');
+    for (const [token, value, field] of file.replacements) source = replaceRawToken(source, token, value, field);
+    await writeFile(file.path, source);
+  }
 };
 
 export const materializeProject = async (options: GeneratorOptions, context: MaterializationContext) => {
   const cwd = context.cwd ?? process.cwd();
-  const destination = resolveDestination(options.destination, cwd);
+  const projectRoot = resolveDestination(options.destination, cwd);
+  const repositoryRoot = resolveDestination(options.repositoryRoot, cwd);
+  const projectPath = relative(repositoryRoot, projectRoot);
+  if (projectPath.startsWith('..') || isAbsolute(projectPath)) {
+    throw new MaterializationError(`Project root ${projectRoot} must be inside repository root ${repositoryRoot}.`);
+  }
   const templateDirectory = resolveTemplateDirectory(context.templateDirectory);
-  const destinationExisted = await pathExists(destination);
-  if (destinationExisted) {
-    const destinationStat = await lstat(destination);
-    if (destinationStat.isSymbolicLink() || !destinationStat.isDirectory()) {
-      throw new MaterializationError(`Unsafe destination ${destination}: expected a regular directory.`);
-    }
+  const repositoryStat = await getPathStat(repositoryRoot);
+  if (repositoryStat && (repositoryStat.isSymbolicLink() || !repositoryStat.isDirectory())) {
+    throw new MaterializationError(`Unsafe repository root ${repositoryRoot}: expected a regular directory.`);
   }
-  if (destinationExisted && !(await isDirectoryEmpty(destination))) {
-    const confirmed = await context.confirmOverwrite?.(destination);
-    if (!confirmed) {
-      throw new MaterializationError(`Destination ${destination} is not empty. No files were changed.`);
-    }
-  }
-
   const files = await listTemplateFiles(templateDirectory);
+  const destinationExisted = await pathExists(projectRoot);
+  if (destinationExisted) {
+    const destinationStat = await lstat(projectRoot);
+    if (destinationStat.isSymbolicLink() || !destinationStat.isDirectory()) {
+      throw new MaterializationError(`Unsafe destination ${projectRoot}: expected a regular directory.`);
+    }
+  }
+  if (destinationExisted && !(await isDirectoryEmpty(projectRoot))) {
+    const confirmed = await context.confirmOverwrite?.(projectRoot);
+    if (!confirmed) {
+      throw new MaterializationError(`Destination ${projectRoot} is not empty. No files were changed.`);
+    }
+  }
+  if (projectRoot !== repositoryRoot) {
+    const repositoryFiles = files.filter((file) => file.relativePath.startsWith(`.github${sep}`));
+    let hasRepositoryConflict = false;
+    for (const file of repositoryFiles) {
+      if (await pathExists(join(repositoryRoot, file.relativePath))) {
+        hasRepositoryConflict = true;
+        break;
+      }
+    }
+    if (hasRepositoryConflict && !(await context.confirmOverwrite?.(repositoryRoot))) {
+      throw new MaterializationError(
+        `Repository root ${repositoryRoot} contains conflicting files. No files were changed.`,
+      );
+    }
+  }
   const backupDirectory = await mkdtemp(join(tmpdir(), 'create-forge-backup-'));
   const createdFiles = new Set<string>();
   const createdDirectories = new Set<string>();
@@ -209,11 +263,13 @@ export const materializeProject = async (options: GeneratorOptions, context: Mat
 
   try {
     assertNotAborted(context.signal);
-    await ensureDirectory(destination, createdDirectories);
+    await ensureDirectory(repositoryRoot, createdDirectories);
+    await ensureDirectory(projectRoot, createdDirectories);
     for (const file of files) {
       assertNotAborted(context.signal);
-      const target = join(destination, file.relativePath);
-      const targetRelative = relative(destination, target);
+      const targetRoot = file.relativePath.startsWith(`.github${sep}`) ? repositoryRoot : projectRoot;
+      const target = join(targetRoot, file.relativePath);
+      const targetRelative = relative(targetRoot, target);
       if (targetRelative.startsWith('..') || isAbsolute(targetRelative))
         throw new Error(`Unsafe template path ${file.relativePath}.`);
       await ensureDirectory(dirname(target), createdDirectories);
@@ -234,15 +290,16 @@ export const materializeProject = async (options: GeneratorOptions, context: Mat
       context.onFileCopied?.(target);
     }
     assertNotAborted(context.signal);
-    await customizeTemplate(destination, options);
+    await customizeTemplate(projectRoot, repositoryRoot, options);
     const tokenBytes = Buffer.from(templateTokenPrefix);
     for (const file of files) {
       assertNotAborted(context.signal);
-      if ((await readFile(join(destination, file.relativePath))).includes(tokenBytes)) {
+      const targetRoot = file.relativePath.startsWith(`.github${sep}`) ? repositoryRoot : projectRoot;
+      if ((await readFile(join(targetRoot, file.relativePath))).includes(tokenBytes)) {
         throw new Error(`Generated file ${file.relativePath} contains an unresolved template token.`);
       }
     }
-    return { destination, filesCopied: files.length };
+    return { destination: projectRoot, projectRoot, repositoryRoot, filesCopied: files.length };
   } catch (error) {
     const cleanupErrors: unknown[] = [];
     for (const [target, backup] of backups) {
@@ -270,7 +327,7 @@ export const materializeProject = async (options: GeneratorOptions, context: Mat
     }
     const reason = error instanceof Error ? error.message : String(error);
     const recovery = cleanupErrors.length
-      ? `Recovery: review ${destination}; some changes could not be rolled back automatically.`
+      ? `Recovery: review ${repositoryRoot}; some changes could not be rolled back automatically.`
       : `Recovery: changes from this invocation were rolled back; resolve the error and retry.`;
     throw new MaterializationError(`${reason} ${recovery}`, { cause: error });
   } finally {

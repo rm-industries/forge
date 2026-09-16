@@ -26,7 +26,8 @@ test('runs real npm and Git setup in a clean temporary project', async () => {
 
   const options = { install: true, git: true } as GeneratorOptions;
   await runProjectSetup(options, {
-    destination,
+    projectRoot: destination,
+    repositoryRoot: destination,
     environment: { ...process.env, npm_config_dry_run: 'false' },
   });
 
