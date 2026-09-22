@@ -49,7 +49,7 @@
     "verify:package": "npm run build && node scripts/verify-package.ts"
   },
   "dependencies": {
-    "@clack/prompts": "^1.7.0",
+    "@clack/prompts": "^1.8.1",
     "commander": "^15.0.0",
     "validate-npm-package-name": "^8.0.0"
   },
