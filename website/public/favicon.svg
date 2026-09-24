@@ -1,5 +1,5 @@
 <!-- Canonical source: https://github.com/rm-industries/forge/blob/main/docs/assets/forge-logo.svg -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="Forge">
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" role="img" aria-label="Forge">
   <style>
     .steel { fill: #4c4f69; }
     .spark { fill: #cba6f7; }
