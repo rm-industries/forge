@@ -25,7 +25,7 @@ const resolvedBrandHref = resolveSiteHref(brandHref);
       {
         links.map((item) => {
           const href = resolveSiteHref(item.href);
-          const isCurrent = isCurrentPath(currentPath, href);
+          const isCurrent = isCurrentPath(currentPath, href, item.href === '/');
 
           return (
             <li>
@@ -47,7 +47,7 @@ const resolvedBrandHref = resolveSiteHref(brandHref);
           {
             links.map((item) => {
               const href = resolveSiteHref(item.href);
-              const isCurrent = isCurrentPath(currentPath, href);
+              const isCurrent = isCurrentPath(currentPath, href, item.href === '/');
 
               return (
                 <li>
