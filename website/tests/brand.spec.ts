@@ -54,3 +54,30 @@ test('renders favicon and social card at their intended intrinsic sizes', async 
     { height: 630, width: 1200 },
   ]);
 });
+
+test('uses the shared Fira typography and responsive type hierarchy', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto(resolvePreviewPath('/'));
+  await page.evaluate(() => document.fonts.ready);
+
+  const mobile = await page.evaluate(() => {
+    const heading = document.querySelector('h1');
+    const command = document.querySelector('code');
+    if (!heading || !command) throw new Error('Expected homepage typography');
+
+    return {
+      bodyFamily: getComputedStyle(document.body).fontFamily,
+      commandFamily: getComputedStyle(command).fontFamily,
+      headingSize: Number.parseFloat(getComputedStyle(heading).fontSize),
+    };
+  });
+
+  expect(mobile.bodyFamily).toContain('Fira Sans');
+  expect(mobile.commandFamily).toContain('Fira Code');
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const desktopHeadingSize = await page
+    .locator('h1')
+    .evaluate((heading) => Number.parseFloat(getComputedStyle(heading).fontSize));
+  expect(desktopHeadingSize).toBeGreaterThan(mobile.headingSize);
+});

@@ -13,8 +13,8 @@ import { resolveSiteHref } from '../lib/paths';
       <div class="space-y-8">
         <Eyebrow>Built with Forge</Eyebrow>
         <div class="space-y-6">
-          <h1 class="max-w-3xl text-6xl leading-[0.9] font-bold tracking-[-0.055em] text-balance sm:text-7xl lg:text-8xl">Start with the foundation. Own what comes next.</h1>
-          <p class="max-w-2xl text-lg leading-relaxed">{site.description} Generate a complete project, commit the source, and shape it around your content.</p>
+          <h1 class="max-w-3xl text-[clamp(3.25rem,7vw,6.5rem)] leading-[0.94] font-bold tracking-[-0.06em] text-balance">Start with the foundation. Own what comes next.</h1>
+          <p class="max-w-2xl text-xl leading-relaxed sm:text-2xl">{site.description} Generate a complete project, commit the source, and shape it around your content.</p>
           <div class="flex flex-wrap gap-3">
             <a href={resolveSiteHref('/get-started/')} class="btn btn-primary">Create a site</a>
             <a href="https://github.com/rm-industries/forge" class="btn btn-ghost">View on GitHub</a>
@@ -25,7 +25,7 @@ import { resolveSiteHref } from '../lib/paths';
       <div class="relative rounded-sm bg-neutral p-6 text-neutral-content shadow-xl sm:p-10" aria-label="Forge workflow: define content, generate a site, and own the source">
         <div class="absolute inset-0 opacity-20" aria-hidden="true" style="background-image: radial-gradient(currentColor 1px, transparent 1px); background-size: 20px 20px;"></div>
         <div class="relative space-y-8">
-          <div class="font-mono text-xs tracking-[0.16em] uppercase opacity-70">One focused workflow</div>
+          <div class="font-mono text-sm font-medium tracking-[0.12em] uppercase opacity-70">One focused workflow</div>
           <ol class="space-y-4">
             <li class="flex items-center gap-4 rounded-sm border border-neutral-content/20 bg-neutral-content/5 p-4"><span class="font-mono text-primary">01</span><strong>Define the content</strong></li>
             <li class="ml-6 flex items-center gap-4 rounded-sm border border-primary/50 bg-primary/15 p-4"><span class="font-mono text-primary">02</span><strong>Generate the site</strong></li>
@@ -40,7 +40,7 @@ import { resolveSiteHref } from '../lib/paths';
       <div class="grid gap-6 lg:grid-cols-2 lg:gap-12">
         <div class="space-y-4">
           <Eyebrow>One command</Eyebrow>
-          <h2 id="features-title" class="text-4xl leading-tight font-bold tracking-tight sm:text-5xl">A complete content site, not an empty scaffold</h2>
+          <h2 id="features-title" class="text-[clamp(2.25rem,5vw,4rem)] leading-none font-bold tracking-[-0.045em]">A complete content site, not an empty scaffold</h2>
         </div>
         <p class="max-w-xl self-end text-lg leading-relaxed">Run <code>npm create @rm-industries/forge</code> with Node.js 22.22.2 or newer on a supported line.</p>
       </div>
@@ -48,19 +48,19 @@ import { resolveSiteHref } from '../lib/paths';
       <div class="grid gap-6 md:grid-cols-3">
         <Card size="lg">
           <div class="border-primary border-l-4 pl-3 font-mono text-sm font-bold">01 / Content</div>
-          <h3 class="card-title">One content contract</h3>
+          <h3 class="card-title text-2xl">One content contract</h3>
           <p>Define content once and derive typed Astro collections plus Sveltia CMS configuration from the same model.</p>
         </Card>
 
         <Card size="lg">
           <div class="border-primary border-l-4 pl-3 font-mono text-sm font-bold">02 / Design</div>
-          <h3 class="card-title">Accessible presentation</h3>
+          <h3 class="card-title text-2xl">Accessible presentation</h3>
           <p>Start with semantic routes, keyboard-tested navigation, local fonts, responsive DaisyUI primitives, and light and dark themes.</p>
         </Card>
 
         <Card size="lg">
           <div class="border-primary border-l-4 pl-3 font-mono text-sm font-bold">03 / Quality</div>
-          <h3 class="card-title">Production evidence</h3>
+          <h3 class="card-title text-2xl">Production evidence</h3>
           <p>Formatting, linting, types, coverage, browser accessibility, Lighthouse, security analysis, and Pages deployment are connected.</p>
         </Card>
       </div>
@@ -69,8 +69,8 @@ import { resolveSiteHref } from '../lib/paths';
 
     <section id="start" class="card rounded-sm border-l-8 border-primary bg-base-200 text-base-content" aria-labelledby="start-title">
       <div class="card-body items-start gap-5 p-8 sm:p-12">
-        <div class="font-mono text-xs tracking-[0.16em] uppercase">Owned source</div>
-        <h2 id="start-title" class="card-title max-w-3xl text-4xl leading-tight tracking-tight sm:text-5xl">Forge creates the project. You control its future.</h2>
+        <div class="font-mono text-sm font-medium tracking-[0.12em] uppercase">Owned source</div>
+        <h2 id="start-title" class="card-title max-w-3xl text-[clamp(2.25rem,5vw,4rem)] leading-none tracking-[-0.045em]">Forge creates the project. You control its future.</h2>
         <p>The generator does not manage or overwrite an existing site. Update shared content-model behavior through npm and adopt template improvements as reviewed migrations.</p>
         <div class="card-actions">
           <a href={resolveSiteHref('/features/')} class="btn">Explore the features</a>
