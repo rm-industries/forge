@@ -91,5 +91,8 @@ export const site = defineSiteConfig({
     { label: 'Docs', href: '/docs/' },
     { label: 'Project', href: '/project/' },
   ],
-  socialLinks: [{ label: 'Forge on GitHub', href: 'https://github.com/rm-industries/forge' }],
+  socialLinks: [
+    { label: 'RM Industries', href: 'https://www.rm-industries.com/' },
+    { label: 'Forge on GitHub', href: 'https://github.com/rm-industries/forge' },
+  ],
 });
