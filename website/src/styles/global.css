@@ -29,6 +29,13 @@ html {
   font-family: var(--font-sans);
 }
 
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--font-mono);
+}
+
 body {
   min-height: 100vh;
   margin: 0;

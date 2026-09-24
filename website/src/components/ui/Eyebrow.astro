@@ -6,6 +6,6 @@ interface Props {
 const { class: className } = Astro.props;
 ---
 
-<div class:list={['badge badge-outline h-auto rounded-sm px-3 py-2 font-mono text-xs font-medium tracking-[0.16em] uppercase', className]}>
+<div class:list={['badge badge-outline h-auto rounded-sm px-3 py-2 font-mono text-sm font-medium tracking-[0.1em] uppercase sm:text-base', className]}>
   <slot />
 </div>
