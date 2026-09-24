@@ -12,6 +12,7 @@ export default defineConfig({
     'fontsource',
     'GHSA',
     'inspectable',
+    'labelledby',
     'lhci',
     'lighthouseci',
     'lighthouserc',

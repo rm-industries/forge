@@ -11,6 +11,7 @@ export default defineConfig({
     'Fira',
     'fontsource',
     'GHSA',
+    'labelledby',
     'lhci',
     'lighthouseci',
     'Macchiato',
