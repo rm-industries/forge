@@ -14,10 +14,10 @@
   <text x="324" y="246" fill="#bac2de" font-family="'Fira Sans', system-ui, sans-serif" font-size="30">Define content. Generate the site. Own every file.</text>
 
   <g aria-hidden="true">
-    <line x1="278" y1="410" x2="430" y2="410" stroke="#6c7086" stroke-width="4" />
+    <line x1="332" y1="410" x2="430" y2="410" stroke="#6c7086" stroke-width="4" />
     <line x1="666" y1="410" x2="818" y2="410" stroke="#cba6f7" stroke-width="4" />
 
-    <rect x="96" y="338" width="182" height="144" rx="16" fill="#45475a" />
+    <rect x="96" y="338" width="236" height="144" rx="16" fill="#45475a" />
     <rect x="430" y="338" width="236" height="144" rx="16" fill="#45475a" stroke="#cba6f7" stroke-width="4" />
     <rect x="818" y="338" width="286" height="144" rx="16" fill="#11111b" />
 
