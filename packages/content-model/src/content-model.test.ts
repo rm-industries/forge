@@ -283,6 +283,60 @@ test('rejects invalid defaults, select options, bounds, and sort fields', () => 
   );
 });
 
+test('validates conditional requirements against compatible sibling fields', () => {
+  const { sort: _sort, ...articleWithoutSort } = articleModel;
+  const conditionalModel = {
+    ...articleWithoutSort,
+    fields: {
+      draft: { kind: 'boolean', default: false, label: 'Draft' },
+      coverImage: {
+        kind: 'asset',
+        assetType: 'image',
+        requiredWhen: { field: 'draft', equals: false },
+        label: 'Cover image',
+      },
+    },
+  } as const;
+
+  expect(() => defineModel(conditionalModel)).not.toThrow();
+  expect(() =>
+    defineModel({
+      ...conditionalModel,
+      fields: {
+        ...conditionalModel.fields,
+        coverImage: {
+          ...conditionalModel.fields.coverImage,
+          requiredWhen: { field: 'missing', equals: false },
+        },
+      },
+    }),
+  ).toThrow('references unknown sibling field "missing"');
+  expect(() =>
+    defineModel({
+      ...conditionalModel,
+      fields: {
+        ...conditionalModel.fields,
+        coverImage: {
+          ...conditionalModel.fields.coverImage,
+          requiredWhen: { field: 'coverImage', equals: false },
+        },
+      },
+    }),
+  ).toThrow('cannot reference the same field');
+  expect(() =>
+    defineModel({
+      ...conditionalModel,
+      fields: {
+        ...conditionalModel.fields,
+        coverImage: {
+          ...conditionalModel.fields.coverImage,
+          requiredWhen: { field: 'draft', equals: 'false' },
+        },
+      },
+    } as unknown as ContentCollectionModel),
+  ).toThrow('must be a boolean because "draft" is a boolean field');
+});
+
 test('field types reject defaults and presentation owned by another kind', () => {
   const invalidBoolean = {
     kind: 'boolean',
@@ -303,6 +357,11 @@ test('field types reject defaults and presentation owned by another kind', () =>
     displayFields: ['name'],
     label: 'Skills',
   } as const;
+  const invalidConditionalRequirement = {
+    kind: 'string',
+    requiredWhen: { field: 'draft', equals: [] },
+    label: 'Title',
+  } as const;
 
   // @ts-expect-error Boolean defaults must be booleans.
   const booleanField: ContentField = invalidBoolean;
@@ -312,9 +371,12 @@ test('field types reject defaults and presentation owned by another kind', () =>
   const videoField: ContentField = unsupportedKind;
   // @ts-expect-error Multiple-reference defaults must be arrays of strings.
   const referenceField: ContentField = invalidMultipleReference;
+  // @ts-expect-error Conditional comparisons support only scalar values.
+  const conditionalField: ContentField = invalidConditionalRequirement;
 
   expect(booleanField.kind).toBe('boolean');
   expect(stringField.kind).toBe('string');
   expect(videoField.kind).toBe('video');
   expect(referenceField.kind).toBe('reference');
+  expect(conditionalField.kind).toBe('string');
 });
