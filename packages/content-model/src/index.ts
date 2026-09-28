@@ -1,6 +1,7 @@
 export { defineFields, defineModel, defineModels } from './define-model';
 export type {
   BooleanContentField,
+  ConditionalFieldRequirement,
   ContentBody,
   ContentCollectionModel,
   ContentField,

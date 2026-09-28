@@ -3,9 +3,18 @@ export interface FieldPresentation {
   help?: string;
 }
 
-interface ContentFieldBase<Kind extends string, Default = never> extends FieldPresentation {
-  kind: Kind;
+export interface ConditionalFieldRequirement {
+  field: string;
+  equals: string | number | boolean;
+}
+
+interface FieldRequirement {
   required?: boolean;
+  requiredWhen?: ConditionalFieldRequirement;
+}
+
+interface ContentFieldBase<Kind extends string, Default = never> extends FieldPresentation, FieldRequirement {
+  kind: Kind;
   default?: Default;
 }
 
@@ -31,10 +40,9 @@ export interface DateContentField extends ContentFieldBase<'date', string> {
   mode?: 'date' | 'datetime';
 }
 
-interface ReferenceContentFieldBase extends FieldPresentation {
+interface ReferenceContentFieldBase extends FieldPresentation, FieldRequirement {
   kind: 'reference';
   collection: string;
-  required?: boolean;
   valueField?: string;
   displayFields: readonly string[];
   searchFields?: readonly string[];

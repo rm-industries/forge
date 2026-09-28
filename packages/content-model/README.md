@@ -56,6 +56,28 @@ Defaults are content values; labels, help text, multiline hints, and list item
 labels are integration-neutral authoring metadata. Adapter-specific settings do
 not belong in the core model.
 
+`requiredWhen` makes a field required when a sibling string, boolean, or number
+field equals a scalar value. References must exist in the same collection or
+nested object, cannot point to the field itself, and must compare compatible
+values.
+
+```ts
+fields: {
+  draft: { kind: 'boolean', default: false, label: 'Draft' },
+  coverImage: {
+    kind: 'asset',
+    assetType: 'image',
+    requiredWhen: { field: 'draft', equals: false },
+    label: 'Cover image',
+  },
+}
+```
+
+The Astro adapter enforces the condition during content and build validation.
+Sveltia cannot represent dependent required fields, so it renders the field as
+optional while the shared model retains the condition. Astro remains the
+authoritative enforcement boundary.
+
 `defineModel` validates one model at runtime. `defineModels` additionally rejects
 duplicate collection names. Validation reports the complete model path for
 unsupported kinds, invalid defaults or bounds, body collisions, and unknown sort

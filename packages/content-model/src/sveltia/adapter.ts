@@ -17,7 +17,7 @@ export interface SveltiaCollectionOptions {
 const commonFieldProperties = (name: string, field: ContentField) => ({
   name,
   label: field.label,
-  required: field.required ?? false,
+  required: field.requiredWhen ? false : (field.required ?? false),
   after_input: field.help,
 });
 
