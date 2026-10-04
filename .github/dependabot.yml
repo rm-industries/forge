@@ -17,6 +17,8 @@ updates:
     labels:
       - dependencies
       - github-actions
+    assignees:
+      - rahul0705
     groups:
       github-actions:
         patterns:
@@ -37,6 +39,8 @@ updates:
     labels:
       - dependencies
       - github-actions
+    assignees:
+      - rahul0705
     groups:
       generated-project-actions:
         patterns:
@@ -60,6 +64,8 @@ updates:
     labels:
       - dependencies
       - npm
+    assignees:
+      - rahul0705
     groups:
       production-dependencies:
         dependency-type: production
@@ -92,6 +98,8 @@ updates:
     labels:
       - dependencies
       - npm
+    assignees:
+      - rahul0705
     groups:
       generated-production-dependencies:
         dependency-type: production
@@ -124,6 +132,8 @@ updates:
     labels:
       - dependencies
       - npm
+    assignees:
+      - rahul0705
     groups:
       website-production-dependencies:
         dependency-type: production
