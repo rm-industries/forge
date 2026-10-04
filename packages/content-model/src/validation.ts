@@ -164,6 +164,8 @@ const validateListItem = (field: ContentField, value: unknown, path: string): vo
 
 const validateList = (field: ListContentField, path: string): void => {
   validateField(field.items, `${path}.items`);
+  if (field.items.requiredWhen !== undefined)
+    fail(`${path}.items.requiredWhen`, 'is only supported for named fields in a collection or object.');
   if (field.itemLabel !== undefined) requireText(field.itemLabel, `${path}.itemLabel`);
   field.default?.forEach((item, index) => validateListItem(field.items, item, `${path}.default[${index}]`));
 };
@@ -174,6 +176,17 @@ const validateField = (field: ContentField, path: string): void => {
   if (field.help !== undefined) requireText(field.help, `${path}.help`);
   if (field.required !== undefined && typeof field.required !== 'boolean')
     fail(`${path}.required`, 'must be a boolean.');
+  if (field.requiredWhen !== undefined) {
+    if (!field.requiredWhen || typeof field.requiredWhen !== 'object' || Array.isArray(field.requiredWhen))
+      fail(`${path}.requiredWhen`, 'must be a conditional requirement.');
+    requireFieldName(field.requiredWhen.field, `${path}.requiredWhen.field`);
+    if (!Object.hasOwn(field.requiredWhen, 'equals')) fail(`${path}.requiredWhen.equals`, 'is required.');
+    if (!['string', 'number', 'boolean'].includes(typeof field.requiredWhen.equals))
+      fail(`${path}.requiredWhen.equals`, 'must be a string, number, or boolean.');
+    if (typeof field.requiredWhen.equals === 'number' && !Number.isFinite(field.requiredWhen.equals))
+      fail(`${path}.requiredWhen.equals`, 'must be a finite number.');
+    if (field.required) fail(`${path}.requiredWhen`, 'cannot be combined with required: true.');
+  }
 
   validateDefault(field, path);
 
@@ -216,6 +229,38 @@ const validateFields = (fields: ContentFields, path: string): void => {
   for (const [name, field] of entries) {
     requireFieldName(name, `${path}.${name}`);
     validateField(field, `${path}.${name}`);
+  }
+
+  for (const [name, field] of entries) {
+    const condition = field.requiredWhen;
+    if (!condition) continue;
+    if (condition.field === name) fail(`${path}.${name}.requiredWhen.field`, 'cannot reference the same field.');
+
+    const source =
+      fields[condition.field] ??
+      fail(`${path}.${name}.requiredWhen.field`, `references unknown sibling field "${condition.field}".`);
+
+    const equalsType = typeof condition.equals;
+    if (source.kind === 'string') {
+      if (equalsType !== 'string')
+        fail(`${path}.${name}.requiredWhen.equals`, `must be a string because "${condition.field}" is a string field.`);
+      if (source.options && !source.options.some((option) => option.value === condition.equals))
+        fail(`${path}.${name}.requiredWhen.equals`, `must match an option configured for "${condition.field}".`);
+    } else if (source.kind === 'boolean') {
+      if (equalsType !== 'boolean')
+        fail(
+          `${path}.${name}.requiredWhen.equals`,
+          `must be a boolean because "${condition.field}" is a boolean field.`,
+        );
+    } else if (source.kind === 'number') {
+      if (equalsType !== 'number')
+        fail(`${path}.${name}.requiredWhen.equals`, `must be a number because "${condition.field}" is a number field.`);
+    } else {
+      fail(
+        `${path}.${name}.requiredWhen.field`,
+        `must reference a string, boolean, or number field; "${condition.field}" is ${source.kind}.`,
+      );
+    }
   }
 };
 

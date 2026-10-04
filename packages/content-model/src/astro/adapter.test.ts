@@ -219,6 +219,31 @@ describe('Astro content adapter', () => {
     expect(() => createAstroSchema(model, { image })).toThrow('image defaults cannot be converted');
   });
 
+  test('enforces conditional requirements at content validation time', () => {
+    const model = defineModel({
+      name: 'conditional-articles',
+      label: 'Conditional articles',
+      labelSingular: 'Conditional article',
+      folder: 'src/content/conditional-articles',
+      slug: '{{slug}}',
+      fields: {
+        draft: { kind: 'boolean', default: false, label: 'Draft' },
+        coverImage: {
+          kind: 'asset',
+          assetType: 'image',
+          requiredWhen: { field: 'draft', equals: false },
+          label: 'Cover image',
+        },
+      },
+    });
+    const conditionalSchema = createAstroSchema(model, { image });
+    const coverImage = { src: '/cover.png', width: 1200, height: 630, format: 'png' as const };
+
+    expect(conditionalSchema.parse({ draft: true }).coverImage).toBeUndefined();
+    expect(() => conditionalSchema.parse({})).toThrow('coverImage is required when draft equals false');
+    expect(conditionalSchema.parse({ draft: false, coverImage }).coverImage).toEqual(coverImage);
+  });
+
   test('creates a typed collection registry without duplicating collection names', () => {
     const skillModel = defineModel({
       name: 'skills',

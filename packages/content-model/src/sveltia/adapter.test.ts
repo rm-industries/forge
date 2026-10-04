@@ -167,6 +167,26 @@ describe('Sveltia content adapter', () => {
     });
   });
 
+  test('keeps conditionally required fields optional in the editor', () => {
+    const { sort: _sort, ...articleWithoutSort } = articleModel;
+    const model = defineModel({
+      ...articleWithoutSort,
+      fields: {
+        draft: { kind: 'boolean', default: false, label: 'Draft' },
+        coverImage: {
+          kind: 'asset',
+          assetType: 'image',
+          requiredWhen: { field: 'draft', equals: false },
+          label: 'Cover image',
+        },
+      },
+    });
+    const coverImage = createSveltiaCollection(model).fields.find((field) => field.name === 'coverImage');
+
+    expect(coverImage).toMatchObject({ widget: 'image', required: false });
+    expect(model.fields.coverImage.requiredWhen).toEqual({ field: 'draft', equals: false });
+  });
+
   test('maps references, portable entry labels, and adapter-owned summaries', () => {
     const skills = defineModel({
       name: 'skills',

@@ -51,6 +51,26 @@ const parseOptionalDate = (value: unknown) => {
 const optionalUnlessRequired = (schema: z.ZodType, field: ContentField, forcePresent: boolean) =>
   forcePresent || field.required ? schema : schema.optional();
 
+const createAstroFieldsSchema = (
+  fields: Readonly<Record<string, ContentField>>,
+  image: SchemaContext['image'],
+): z.ZodType =>
+  z
+    .object(
+      Object.fromEntries(Object.entries(fields).map(([name, field]) => [name, createAstroField(name, field, image)])),
+    )
+    .superRefine((value, context) => {
+      for (const [name, field] of Object.entries(fields)) {
+        const condition = field.requiredWhen;
+        if (condition && value[condition.field] === condition.equals && value[name] === undefined)
+          context.addIssue({
+            code: 'custom',
+            path: [name],
+            message: `${name} is required when ${condition.field} equals ${JSON.stringify(condition.equals)}.`,
+          });
+      }
+    });
+
 const createAstroField = (
   name: string,
   field: ContentField,
@@ -102,14 +122,7 @@ const createAstroField = (
       return optionalUnlessRequired(schema, field, forcePresent);
     }
     case 'object': {
-      const schema = z.object(
-        Object.fromEntries(
-          Object.entries(field.fields).map(([nestedName, nestedField]) => [
-            nestedName,
-            createAstroField(`${name}.${nestedName}`, nestedField, image),
-          ]),
-        ),
-      );
+      const schema = createAstroFieldsSchema(field.fields, image);
       return optionalUnlessRequired(schema, field, forcePresent);
     }
     case 'asset': {
@@ -128,11 +141,7 @@ export const createAstroSchema = <const Model extends ContentCollectionModel>(
 ): z.ZodType<AstroModelData<Model>> => {
   validateContentModel(model);
 
-  const shape = Object.fromEntries(
-    Object.entries(model.fields).map(([name, field]) => [name, createAstroField(name, field, context.image)]),
-  );
-
-  return z.object(shape) as z.ZodType<AstroModelData<Model>>;
+  return createAstroFieldsSchema(model.fields, context.image) as z.ZodType<AstroModelData<Model>>;
 };
 
 export const createAstroCollection = <const Model extends ContentCollectionModel>(model: Model) => {
