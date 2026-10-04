@@ -9,7 +9,6 @@
     "noEmit": true,
     "noImplicitOverride": true,
     "noUncheckedIndexedAccess": true,
-    "skipLibCheck": true,
     "strict": true,
     "target": "ES2022",
     "types": ["node"],
