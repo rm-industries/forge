@@ -2,6 +2,14 @@
 
 All notable changes to `@rm-industries/content-model` are documented here.
 
+## 1.1.5
+
+- Publish the Sveltia CMS 0.228.0 compatibility update prepared in 1.1.4,
+  which was not published after the release security gate detected an existing
+  vulnerable root development dependency.
+- Preserve the supported peer range `>=0.193.2 <0.229.0`; no consumer migration
+  or API changes are required.
+
 ## 1.1.4
 
 - Validate @sveltia/cms 0.228.0 and update its supported peer range from
