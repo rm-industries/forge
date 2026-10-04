@@ -2,7 +2,7 @@
 
 All notable changes to `@rm-industries/create-forge` are documented here.
 
-## Unreleased
+## 1.0.3
 
 - Add `--repository-root` so Forge can generate a site inside an existing
   repository while preserving unrelated files and placing repository-owned
@@ -10,6 +10,10 @@ All notable changes to `@rm-industries/create-forge` are documented here.
 - Configure generated workflows, artifacts, dependency installation,
   Dependabot, and Git initialization for the selected nested project without
   changing the existing root-level generation behavior.
+- Generate projects with `@rm-industries/content-model@1.1.5` and Sveltia CMS
+  0.228.0 using their published, validated compatibility range.
+- Existing generated projects are unchanged. Use the new initializer when
+  scaffolding a nested site or adopt the generated changes manually.
 
 ## 1.0.2
 
