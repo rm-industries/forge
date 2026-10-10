@@ -198,6 +198,11 @@ The standalone source template uses `https://example.com` as a valid,
 non-production site origin. Projects created by Forge receive the values
 selected through the generator input contract.
 
+CI file generation supports GitHub Actions, GitLab CI, or both independently
+of repository hosting. See the Forge
+[CI provider guide](https://github.com/rm-industries/forge/blob/main/docs/ci-providers.md)
+for the generator API and the distinction between enabled and primary providers.
+
 ## Styling and themes
 
 The template uses Tailwind CSS v4 through its Vite plugin, DaisyUI, and the
