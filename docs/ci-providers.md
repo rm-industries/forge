@@ -92,8 +92,32 @@ or safety of an action release. Existing workflow execution tests the updated
 actions; release notes and paths not exercised by CI still require review.
 Zuke is an exact npm alias dependency, installed and locked by npm.
 Dependabot update behavior for the JSR registry remains unverified.
-Only Zuke’s pure CI renderer is used: its build executor still contains Deno
-APIs and is not part of Forge’s Node-based authoring flow.
+CI generation uses Zuke’s pure renderer under Node. The optional local executor
+uses the native Deno package because its npm-transpiled entry point does not
+execute correctly under Deno with source maps.
+
+## Local pipeline
+
+Run `npm ci` as usual; it installs the pinned Deno runtime as a development
+dependency. No global runtime installation or separate workstation setup is
+required. Local execution uses the existing repository npm scripts:
+
+```sh
+npm run pipeline                        # all repository quality tasks
+npm run pipeline -- --list              # available targets
+npm run pipeline -- quality --dry-run   # inspect the execution plan
+npm run pipeline -- typecheck           # one task
+```
+
+`packages/create-forge/scripts/local-ci.ts` defines the target graph. `pack`
+depends on `build`, and `quality` depends on all checks. Existing npm commands
+remain available. This runs the current local Node version; it does not recreate
+CI's runner images or Node matrix. It does not run deployment or browser tests.
+
+The local executor loads exact `jsr:@zuke/core@1.70.1`, with integrity recorded in
+`local-ci.deno.lock` and enforced with `--frozen`. The first invocation may fetch
+that dependency into Deno's cache. There is no `deno.json`; YAML generation keeps
+using npm and `package-lock.json`. Execution records under `.zuke/` are ignored.
 
 Forge's repository workflows are not migrated to Zuke: its current interface
 cannot express all their matrix, path-filter, and working-directory settings.

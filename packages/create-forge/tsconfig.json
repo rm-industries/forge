@@ -8,5 +8,6 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "scripts/**/*.ts", "*.config.ts"]
+  "include": ["src/**/*.ts", "scripts/**/*.ts", "*.config.ts"],
+  "exclude": ["scripts/local-ci.ts"]
 }

@@ -51,7 +51,8 @@
     "website:test:coverage": "npm run test:coverage --prefix website",
     "quality": "npm run format && npm run lint && npm run typecheck && npm test && npm run build && npm run pack",
     "verify:template": "node scripts/verify-template.ts",
-    "verify:template:static": "node scripts/verify-template-static-quality.ts"
+    "verify:template:static": "node scripts/verify-template-static-quality.ts",
+    "pipeline": "deno run --check --frozen --no-config --lock=packages/create-forge/scripts/local-ci.deno.lock --node-modules-dir=manual --allow-read --allow-env --allow-run=npm --allow-write=.zuke packages/create-forge/scripts/local-ci.ts"
   },
   "devDependencies": {
     "@sveltia/cms": "^0.228.0",
@@ -60,6 +61,7 @@
     "astro": "^7.3.5",
     "audit-ci": "7.1.0",
     "cspell": "^10.3.6",
+    "deno": "2.9.6",
     "markdownlint-cli": "^0.49.0",
     "oxfmt": "^0.70.0",
     "oxlint": "^1.85.0",
