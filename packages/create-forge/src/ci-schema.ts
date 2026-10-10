@@ -7,7 +7,7 @@ const runtimes = z.array(z.enum(['22.22.2', '22', '24', '26'])).min(1);
 const step = z.union([
   z.strictObject({
     uses: z.string().regex(/^actions\/checkout@[a-f0-9]{40}$/),
-    with: z.strictObject({ 'persist-credentials': z.literal(false) }),
+    with: z.strictObject({ 'persist-credentials': z.union([z.literal(false), z.literal('false')]) }),
   }),
   z.strictObject({
     uses: z.string().regex(/^actions\/setup-node@[a-f0-9]{40}$/),
@@ -34,7 +34,10 @@ const gitlabJob = z.strictObject({
 export const ciSchemas = {
   github: z.strictObject({
     name: command,
-    on: z.strictObject({ push: z.null(), pull_request: z.null() }),
+    on: z.strictObject({
+      push: z.union([z.null(), z.strictObject({})]),
+      pull_request: z.union([z.null(), z.strictObject({})]),
+    }),
     permissions: z.strictObject({}),
     concurrency: z.strictObject({
       group: z.literal('${{ github.workflow }}-${{ github.ref }}'),

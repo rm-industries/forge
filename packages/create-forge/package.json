@@ -40,14 +40,16 @@
     "tag": "latest"
   },
   "scripts": {
-    "build": "tsdown && node scripts/copy-template.ts && tsc -p tsconfig.build.json",
+    "build": "tsdown && node scripts/copy-template.ts && tsc -p tsconfig.build.json && node --input-type=module -e \"import { copyFileSync } from 'node:fs'; copyFileSync('src/github.yml', 'dist/github.yml')\"",
     "prepack": "npm run typecheck && npm test && npm run build",
-    "test": "vitest run",
+    "test": "vitest run && npm run test:ci",
     "test:compatibility": "npm run build && node scripts/test-generator-e2e.ts --compatibility",
     "test:e2e": "npm run build && node scripts/test-generator-e2e.ts",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "verify:package": "npm run build && node scripts/verify-package.ts",
-    "test:ci": "node --test src/ci.test.ts"
+    "test:ci": "node --test src/ci.test.ts src/ci-pins.test.ts",
+    "ci:generate": "deno run --frozen --config zuke/deno.json --allow-env=LOG_TOKENS,LOG_STREAM --allow-read=../../.github,src --allow-write=src/github.yml zuke/pipeline.ts",
+    "ci:check": "deno check --frozen --config zuke/deno.json zuke/pipeline.ts && deno run --frozen --config zuke/deno.json --allow-env=LOG_TOKENS,LOG_STREAM --allow-read=../../.github,src --allow-write=src/github.yml zuke/pipeline.ts --check"
   },
   "dependencies": {
     "@clack/prompts": "^1.8.1",
@@ -58,7 +60,8 @@
   },
   "devDependencies": {
     "@types/validate-npm-package-name": "^4.0.2",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "deno": "2.9.6"
   },
   "engines": {
     "node": "^22.22.2 || ^24.0.0 || ^26.0.0",

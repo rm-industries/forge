@@ -1,4 +1,9 @@
+import { readFileSync } from 'node:fs';
+
+import { checks } from './ci-plan.ts';
 import { ciSchemas, validateCiYaml } from './ci-schema.ts';
+
+export { createCiPinResolver } from './ci-pins.ts';
 
 export type CiProvider = keyof typeof ciSchemas;
 export interface CiConfig {
@@ -6,50 +11,12 @@ export interface CiConfig {
   primary?: CiProvider | undefined;
 }
 
-// Provider renderers consume one validation plan; deployment is a separate concern.
-const runtimes = ['22.22.2', '22', '24', '26'];
-const checks = [
-  { id: 'quality', runtimes, commands: ['npm run lint:css', 'npm run typecheck', 'npm test', 'npm run build'] },
-  { id: 'browser', runtimes: ['26'], commands: ['npx playwright install --with-deps chromium', 'npm run test:e2e'] },
-];
-
 const providers = {
   github: {
     path: '.github/workflows/ci.yml',
     schema: ciSchemas.github,
     render() {
-      return `name: Project CI
-on:
-  push:
-  pull_request:
-permissions: {}
-concurrency:
-  group: \${{ github.workflow }}-\${{ github.ref }}
-  cancel-in-progress: true
-jobs:
-${checks
-  .map(
-    ({ id, commands, runtimes }) => `  ${id}:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        node: ${JSON.stringify(runtimes)}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
-        with:
-          node-version: \${{ matrix.node }}
-          cache: npm
-      - run: npm ci
-${commands.map((command) => `      - run: ${command}`).join('\n')}`,
-  )
-  .join('\n')}
-`;
+      return readFileSync(new URL('./github.yml', import.meta.url), 'utf8');
     },
   },
   gitlab: {

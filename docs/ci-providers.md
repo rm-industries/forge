@@ -35,9 +35,10 @@ runner with Docker image support and permission to install Chromium dependencies
 Its [pipeline rules](https://docs.gitlab.com/ci/jobs/job_rules/) avoid duplicate
 branch and merge request pipelines. Generated files run without Forge installed.
 
-The renderers share a logical check plan and register their output path in one
-provider registry. A new provider adds a renderer there without changing selection
-or generation code. The existing Forge repository workflows remain in place;
+GitHub is authored in TypeScript with Zuke and stored as committed generated
+YAML. GitLab retains its existing renderer because Zuke cannot preserve the
+pipeline rules used here. Both register their output path in one provider registry.
+The existing Forge repository workflows remain in place;
 these generated files target the standalone default template's scripts.
 
 No deployment jobs are generated. Deployment targets, environments, and branch
@@ -47,3 +48,47 @@ a second CI provider must only add validation. Primary does not suppress checks.
 
 The full project materialization CLI is not implemented yet. This API returns
 file contents for that integration without writing into existing projects.
+
+## Zuke and action updates
+
+The standalone GitHub pipeline is defined in
+`packages/create-forge/zuke/pipeline.ts`, using exact `@zuke/core@1.70.1` and
+Deno versions with committed Deno and npm lockfiles. Zuke is an authoring tool;
+generated projects run their YAML without needing Deno or Zuke.
+
+```sh
+npm run ci:generate -w @rm-industries/create-forge
+npm run ci:check -w @rm-industries/create-forge
+```
+
+Generation writes `packages/create-forge/src/github.yml`. The package build copies
+this file into `dist`, and `generateCi` validates and returns it. The check
+command type-checks the authoring code and rejects stale generated output. CI
+runs this gate on pull requests, including Dependabot pull requests.
+
+`createCiPinResolver` reads `uses` nodes from parsed YAML, preserving full commit
+SHAs and version comments. It rejects missing requested pins, mutable action
+references, malformed YAML, duplicate keys, and conflicting references or version
+comments. Local actions and Docker references are outside the action pin map.
+Arbitrary Zuke steps explicitly call this resolver for their action references.
+
+Forge reads action pins from its existing `.github/workflows` files and setup
+composite action. Dependabot scans the repository workflows; when it updates a
+pin, regenerate and commit the resulting template YAML in the same pull request.
+If occurrences disagree, first update them to the intended reference together.
+The resolver never guesses which conflicting SHA is newer. No bot pushes commits
+or merges updates automatically.
+
+Once materialized into a project, the generated workflow is that project's pin
+source for its own Dependabot updates. Forge's pinned defaults and subsequent
+project updates are maintained independently. The materialization CLI and a
+project-local Zuke authoring setup are not implemented yet.
+
+A generation check proves structure and pin synchronization, not compatibility
+or safety of an action release. Existing workflow execution tests the updated
+actions; release notes and paths not exercised by CI still require review.
+Dependabot's npm configuration covers the Deno runtime. Updates to Zuke's JSR
+version and Deno lockfile are manual reviewed changes for now.
+
+Forge's repository workflows are not migrated to Zuke: its current interface
+cannot express all their matrix, path-filter, and working-directory settings.

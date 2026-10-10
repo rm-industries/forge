@@ -5,7 +5,17 @@
     "declaration": true,
     "outDir": "dist",
     "rootDir": "src",
-    "rewriteRelativeImportExtensions": true
+    "rewriteRelativeImportExtensions": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
-  "exclude": ["src/**/*.test.ts"]
+  "exclude": [
+    "src/**/*.test.ts"
+  ],
+  "include": [
+    "src/ci.ts",
+    "src/ci-schema.ts",
+    "src/ci-pins.ts",
+    "src/ci-plan.ts"
+  ]
 }

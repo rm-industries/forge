@@ -1,0 +1,9 @@
+{
+  "imports": {
+    "yaml": "npm:yaml@2.9.1"
+  },
+  "nodeModulesDir": "none",
+  "compilerOptions": {
+    "strict": true
+  }
+}

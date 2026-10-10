@@ -189,6 +189,9 @@ jobs:
         with:
           node-version: '26.x'
 
+      - name: Check generated GitHub CI
+        run: npm run ci:check -w @rm-industries/create-forge
+
       - name: Type-check TypeScript
         run: npm run typecheck
 
