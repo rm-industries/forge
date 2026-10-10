@@ -1,7 +1,7 @@
 import { generateCi, type CiJob, type CiPipeline, type CiPinResolver } from 'jsr:@zuke/core@1.70.1';
 
-import { createCiPinResolver } from '../src/ci-pins.ts';
-import { checks } from '../src/ci-plan.ts';
+import { createCiPinResolver } from '../src/ci/pins.ts';
+import { checks } from '../src/ci/plan.ts';
 
 const repository = new URL('../../../', import.meta.url);
 const workflows: Record<string, string> = {};
@@ -43,7 +43,7 @@ export const pipeline = {
 } satisfies CiPipeline;
 
 if (import.meta.main) {
-  const output = new URL('../src/github.yml', import.meta.url);
+  const output = new URL('../src/ci/github.yml', import.meta.url);
   const generated = generateCi(pipeline, 'github');
   if (Deno.args.includes('--check')) {
     if (Deno.readTextFileSync(output).replace(/\r\n/g, '\n') !== generated) {

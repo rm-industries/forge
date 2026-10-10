@@ -6,5 +6,5 @@ export default defineConfig({
   sortImports: true,
   sortTailwindcss: true,
   sortPackageJson: true,
-  ignorePatterns: ['packages/create-forge/src/github.yml'],
+  ignorePatterns: ['packages/create-forge/src/ci/github.yml'],
 });

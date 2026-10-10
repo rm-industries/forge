@@ -61,7 +61,7 @@ npm run ci:generate -w @rm-industries/create-forge
 npm run ci:check -w @rm-industries/create-forge
 ```
 
-Generation writes `packages/create-forge/src/github.yml`. The package build copies
+Generation writes `packages/create-forge/src/ci/github.yml`. The package build copies
 this file into `dist`, and `generateCi` validates and returns it. The check
 command type-checks the authoring code and rejects stale generated output. CI
 runs this gate on pull requests, including Dependabot pull requests.

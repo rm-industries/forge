@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 
-import { checks } from './ci-plan.ts';
-import { ciSchemas, validateCiYaml } from './ci-schema.ts';
+import { checks } from './plan.ts';
+import { ciSchemas, validateCiYaml } from './schema.ts';
 
-export { createCiPinResolver } from './ci-pins.ts';
+export { createCiPinResolver } from './pins.ts';
 
 export type CiProvider = keyof typeof ciSchemas;
 export interface CiConfig {

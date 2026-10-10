@@ -4,8 +4,8 @@ import test from 'node:test';
 
 import { parse, stringify } from 'yaml';
 
-import { ciSchemas, validateCiYaml } from './ci-schema.ts';
-import { type CiConfig, defineCiConfig, generateCi, isPrimaryCi } from './ci.ts';
+import { type CiConfig, defineCiConfig, generateCi, isPrimaryCi } from './index.ts';
+import { ciSchemas, validateCiYaml } from './schema.ts';
 
 test('generate either provider or both independently of the primary', () => {
   assert.deepEqual(Object.keys(generateCi()), ['.github/workflows/ci.yml']);
@@ -15,7 +15,7 @@ test('generate either provider or both independently of the primary', () => {
   assert.equal(Object.keys(files).length, 2);
   assert.deepEqual(files, generateCi({ ...config, primary: 'gitlab' }));
   const scripts = JSON.parse(
-    readFileSync(new URL('../../../templates/default/package.json', import.meta.url), 'utf8'),
+    readFileSync(new URL('../../../../templates/default/package.json', import.meta.url), 'utf8'),
   ).scripts;
   for (const content of Object.values(files)) {
     for (const script of ['lint:css', 'typecheck', 'test', 'build', 'test:e2e']) {

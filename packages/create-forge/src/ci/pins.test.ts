@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { createCiPinResolver } from './ci-pins.ts';
+import { createCiPinResolver } from './pins.ts';
 
 const sha = 'a'.repeat(40);
 const workflow = (pin = sha, version = 'v7') =>

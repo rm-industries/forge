@@ -10,5 +10,5 @@
     "moduleResolution": "NodeNext"
   },
   "exclude": ["src/**/*.test.ts"],
-  "include": ["src/ci.ts", "src/ci-schema.ts", "src/ci-pins.ts", "src/ci-plan.ts"]
+  "include": ["src/ci/**/*.ts"]
 }
