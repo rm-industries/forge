@@ -57,7 +57,8 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@types/validate-npm-package-name": "^4.0.2"
+    "@types/validate-npm-package-name": "^4.0.2",
+    "typescript": "^6.0.3"
   },
   "engines": {
     "node": "^22.22.2 || ^24.0.0 || ^26.0.0",
