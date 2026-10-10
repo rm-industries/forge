@@ -15,6 +15,14 @@ test('resolve current YAML pins and preserve Dependabot SHA and version updates'
   assert.deepEqual(updated('actions/checkout'), { ref: `actions/checkout@${'b'.repeat(40)}`, version: 'v8' });
 });
 
+test('self-repository references need no external action pin', () => {
+  const resolve = createCiPinResolver({
+    'ci.yml': `${workflow()}      - uses: $/.github/actions/setup-project\n`,
+  });
+  assert.deepEqual(resolve('actions/checkout'), { ref: `actions/checkout@${sha}`, version: 'v7' });
+  assert.throws(() => resolve('$/.github/actions/setup-project'), /Missing action pin/);
+});
+
 test('reject conflicting pins, mutable references, malformed YAML and duplicate keys', () => {
   assert.throws(() => createCiPinResolver({ a: workflow(), b: workflow('b'.repeat(40)) }), /Conflicting pins/);
   assert.throws(() => createCiPinResolver({ a: workflow(), b: workflow(sha, 'v8') }), /Conflicting pins/);

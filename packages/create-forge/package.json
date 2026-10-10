@@ -55,7 +55,7 @@
     "verify:package": "npm run build && node scripts/verify-package.ts",
     "test:ci": "node --test src/ci.test.ts src/ci-pins.test.ts",
     "ci:generate": "deno run --frozen --config zuke/deno.json --allow-env=LOG_TOKENS,LOG_STREAM --allow-read=../../.github,src --allow-write=src/github.yml zuke/pipeline.ts",
-    "ci:check": "deno check --frozen --config zuke/deno.json zuke/pipeline.ts && deno run --frozen --config zuke/deno.json --allow-env=LOG_TOKENS,LOG_STREAM --allow-read=../../.github,src --allow-write=src/github.yml zuke/pipeline.ts --check"
+    "ci:check": "deno test --frozen --config zuke/deno.json --allow-env=LOG_TOKENS,LOG_STREAM zuke/pipeline.test.ts && deno check --frozen --config zuke/deno.json zuke/pipeline.ts && deno run --frozen --config zuke/deno.json --allow-env=LOG_TOKENS,LOG_STREAM --allow-read=../../.github,src --allow-write=src/github.yml zuke/pipeline.ts --check"
   },
   "dependencies": {
     "@clack/prompts": "^1.8.1",

@@ -70,7 +70,9 @@ runs this gate on pull requests, including Dependabot pull requests.
 SHAs and version comments. It rejects missing requested pins, mutable action
 references, malformed YAML, duplicate keys, and conflicting references or version
 comments. Local actions and Docker references are outside the action pin map.
-Arbitrary Zuke steps explicitly call this resolver for their action references.
+Arbitrary Zuke steps explicitly call this resolver for their external action references.
+Self-repository (`$/`) and workspace-relative (`./`) actions are passed directly
+to Zuke and are excluded from the external pin map. Zuke preserves `$/` verbatim.
 
 Forge reads action pins from `project.yml`, `automation.yml`, and the setup
 composite action. Dependabot scans the repository workflows; when it updates a

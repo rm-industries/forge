@@ -11,7 +11,7 @@ export function createCiPinResolver(workflows: Record<string, string>) {
         if (!isScalar(pair.key) || pair.key.value !== 'uses' || !isScalar(pair.value)) return;
         const ref = pair.value.value;
         if (typeof ref !== 'string') throw new TypeError(`Invalid action reference in ${path}`);
-        if (ref.startsWith('./') || ref.startsWith('docker://')) return;
+        if (ref.startsWith('$/') || ref.startsWith('./') || ref.startsWith('docker://')) return;
         const match = /^([^@\s]+)@([a-f0-9]{40})$/.exec(ref);
         if (!match) throw new TypeError(`Action must use a full commit SHA in ${path}: ${ref}`);
         const action = match[1]!;
