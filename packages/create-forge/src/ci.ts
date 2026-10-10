@@ -1,4 +1,10 @@
-import { ciSchemas, validateCiYaml } from './ci-schema.mjs';
+import { ciSchemas, validateCiYaml } from './ci-schema.ts';
+
+export type CiProvider = keyof typeof ciSchemas;
+export interface CiConfig {
+  enabled: readonly CiProvider[];
+  primary?: CiProvider | undefined;
+}
 
 // Provider renderers consume one validation plan; deployment is a separate concern.
 const runtimes = ['22.22.2', '22', '24', '26'];
@@ -77,7 +83,7 @@ ${commands.map((command) => `    - ${command}`).join('\n')}`,
 };
 
 /** Validate CI selection independently of repository hosting. Primary is optional for validation. */
-export function defineCiConfig({ enabled, primary } = {}) {
+export function defineCiConfig({ enabled, primary }: CiConfig): Readonly<CiConfig> {
   if (
     !Array.isArray(enabled) ||
     enabled.length === 0 ||
@@ -93,7 +99,7 @@ export function defineCiConfig({ enabled, primary } = {}) {
 }
 
 /** Return relative paths and contents without writing or overwriting project files. */
-export function generateCi(config = { enabled: ['github'], primary: 'github' }) {
+export function generateCi(config: CiConfig = { enabled: ['github'], primary: 'github' }) {
   const { enabled } = defineCiConfig(config);
   return Object.fromEntries(
     enabled.map((id) => {
@@ -104,7 +110,7 @@ export function generateCi(config = { enabled: ['github'], primary: 'github' }) 
 }
 
 /** Authoritative automation must call this guard before generating deployment jobs. */
-export function isPrimaryCi(config, provider) {
+export function isPrimaryCi(config: CiConfig, provider: CiProvider) {
   const { primary } = defineCiConfig(config);
   if (primary === undefined) {
     throw new TypeError('Authoritative automation requires a primary CI provider');

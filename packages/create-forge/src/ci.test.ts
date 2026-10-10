@@ -4,17 +4,19 @@ import test from 'node:test';
 
 import { parse, stringify } from 'yaml';
 
-import { ciSchemas, validateCiYaml } from './ci-schema.mjs';
-import { defineCiConfig, generateCi, isPrimaryCi } from './ci.mjs';
+import { ciSchemas, validateCiYaml } from './ci-schema.ts';
+import { type CiConfig, defineCiConfig, generateCi, isPrimaryCi } from './ci.ts';
 
 test('generate either provider or both independently of the primary', () => {
   assert.deepEqual(Object.keys(generateCi()), ['.github/workflows/ci.yml']);
   assert.deepEqual(Object.keys(generateCi({ enabled: ['gitlab'] })), ['.gitlab-ci.yml']);
-  const config = { enabled: ['github', 'gitlab'], primary: 'github' };
+  const config: CiConfig = { enabled: ['github', 'gitlab'], primary: 'github' };
   const files = generateCi(config);
   assert.equal(Object.keys(files).length, 2);
   assert.deepEqual(files, generateCi({ ...config, primary: 'gitlab' }));
-  const scripts = JSON.parse(readFileSync(new URL('../../../templates/default/package.json', import.meta.url))).scripts;
+  const scripts = JSON.parse(
+    readFileSync(new URL('../../../templates/default/package.json', import.meta.url), 'utf8'),
+  ).scripts;
   for (const content of Object.values(files)) {
     for (const script of ['lint:css', 'typecheck', 'test', 'build', 'test:e2e']) {
       assert.ok(scripts[script]);
@@ -28,8 +30,8 @@ test('generate either provider or both independently of the primary', () => {
 });
 
 test('validate final YAML and reject syntax errors, duplicate keys, and extra documents', () => {
-  for (const provider of ['github', 'gitlab']) {
-    const content = Object.values(generateCi({ enabled: [provider] }))[0];
+  for (const provider of ['github', 'gitlab'] as const) {
+    const content = Object.values(generateCi({ enabled: [provider] }))[0]!;
     assert.equal(validateCiYaml(ciSchemas[provider], content), content);
     for (const invalid of ['jobs: [', `${content}\nquality: {}\nquality: {}`, `${content}\n---\nextra: true`]) {
       assert.throws(() => validateCiYaml(ciSchemas[provider], invalid));
@@ -38,25 +40,25 @@ test('validate final YAML and reject syntax errors, duplicate keys, and extra do
 });
 
 test('reject unknown nested fields and incorrect types without stripping or coercing', () => {
-  for (const provider of ['github', 'gitlab']) {
-    const content = Object.values(generateCi({ enabled: [provider] }))[0];
+  for (const provider of ['github', 'gitlab'] as const) {
+    const content = Object.values(generateCi({ enabled: [provider] }))[0]!;
     for (const mutate of [
-      (config) => {
+      (config: ReturnType<typeof parse>) => {
         config.unrecognized = true;
       },
-      (config) => {
+      (config: ReturnType<typeof parse>) => {
         const job = provider === 'github' ? config.jobs.quality : config.quality;
         job.unrecognized = true;
       },
-      (config) => {
+      (config: ReturnType<typeof parse>) => {
         if (provider === 'github') config.jobs.quality.strategy['fail-fast'] = 'false';
         else config.default.interruptible = 'true';
       },
-      (config) => {
+      (config: ReturnType<typeof parse>) => {
         if (provider === 'github') config.jobs.browser.steps = [];
         else config.browser.script = [];
       },
-      (config) => {
+      (config: ReturnType<typeof parse>) => {
         if (provider === 'github') config.jobs.quality.steps[0].with['persist-credentials'] = true;
         else config.quality.parallel.matrix[0].NODE_VERSION = [26];
       },
@@ -77,14 +79,14 @@ test('reject invalid selections and require a primary for authoritative automati
     { enabled: ['github'], primary: 'gitlab' },
     { enabled: ['github'], primary: ['github'] },
   ]) {
-    assert.throws(() => generateCi(config), TypeError);
+    assert.throws(() => generateCi(config as unknown as CiConfig), TypeError);
   }
   assert.throws(() => isPrimaryCi({ enabled: ['github'] }, 'github'), TypeError);
-  for (const primary of ['github', 'gitlab']) {
-    const config = { enabled: ['github', 'gitlab'], primary };
-    assert.equal(['github', 'gitlab'].filter((id) => isPrimaryCi(config, id)).length, 1);
+  for (const primary of ['github', 'gitlab'] as const) {
+    const config: CiConfig = { enabled: ['github', 'gitlab'], primary };
+    assert.equal((['github', 'gitlab'] as const).filter((id) => isPrimaryCi(config, id)).length, 1);
   }
-  const enabled = ['github'];
+  const enabled: CiConfig['enabled'][number][] = ['github'];
   const config = defineCiConfig({ enabled });
   enabled.push('gitlab');
   assert.deepEqual(config.enabled, ['github']);

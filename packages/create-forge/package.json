@@ -40,32 +40,33 @@
     "tag": "latest"
   },
   "scripts": {
-    "build": "tsdown && node scripts/copy-template.ts",
+    "build": "tsdown && node scripts/copy-template.ts && tsc -p tsconfig.build.json",
     "prepack": "npm run typecheck && npm test && npm run build",
     "test": "vitest run",
     "test:compatibility": "npm run build && node scripts/test-generator-e2e.ts --compatibility",
     "test:e2e": "npm run build && node scripts/test-generator-e2e.ts",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "verify:package": "npm run build && node scripts/verify-package.ts",
-    "test:ci": "node --test src/ci.test.mjs"
+    "test:ci": "node --test src/ci.test.ts"
   },
   "dependencies": {
     "@clack/prompts": "^1.8.1",
     "commander": "^15.0.0",
-    "validate-npm-package-name": "^8.0.0"
+    "validate-npm-package-name": "^8.0.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/validate-npm-package-name": "^4.0.2"
-  },
-  "dependencies": {
-    "yaml": "^2.9.1",
-    "zod": "^4.6.5"
   },
   "engines": {
     "node": "^22.22.2 || ^24.0.0 || ^26.0.0",
     "npm": "^10.9.0 || ^11.0.0"
   },
   "exports": {
-    "./ci": "./src/ci.mjs"
+    "./ci": {
+      "types": "./dist/ci.d.ts",
+      "import": "./dist/ci.js"
+    }
   }
 }

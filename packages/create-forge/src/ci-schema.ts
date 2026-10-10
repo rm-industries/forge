@@ -53,7 +53,7 @@ export const ciSchemas = {
 };
 
 /** Parse emitted text, then reject malformed YAML and unknown or invalid fields. */
-export function validateCiYaml(schema, content) {
+export function validateCiYaml(schema: z.ZodType, content: string) {
   const document = parseDocument(content, { uniqueKeys: true });
   if (document.errors.length > 0) {
     throw document.errors[0];
