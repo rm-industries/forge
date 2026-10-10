@@ -53,9 +53,9 @@
     "test:e2e": "npm run build && node scripts/test-generator-e2e.ts",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "verify:package": "npm run build && node scripts/verify-package.ts",
-    "test:ci": "node --test src/ci/*.test.ts",
-    "ci:generate": "deno run --frozen --config zuke/deno.json --allow-env=LOG_TOKENS,LOG_STREAM --allow-read=../../.github,src --allow-write=src/ci/github.yml zuke/pipeline.ts",
-    "ci:check": "deno test --frozen --config zuke/deno.json --allow-env=LOG_TOKENS,LOG_STREAM zuke/pipeline.test.ts && deno check --frozen --config zuke/deno.json zuke/pipeline.ts && deno run --frozen --config zuke/deno.json --allow-env=LOG_TOKENS,LOG_STREAM --allow-read=../../.github,src --allow-write=src/ci/github.yml zuke/pipeline.ts --check"
+    "test:ci": "node --test src/ci/*.test.ts scripts/ci.test.ts",
+    "ci:generate": "node scripts/ci.ts",
+    "ci:check": "npm run typecheck && node --test scripts/ci.test.ts && node scripts/ci.ts --check"
   },
   "dependencies": {
     "@clack/prompts": "^1.8.1",
@@ -66,7 +66,7 @@
   },
   "devDependencies": {
     "@types/validate-npm-package-name": "^4.0.2",
-    "deno": "2.9.6",
+    "@zuke/core": "npm:@jsr/zuke__core@1.70.1",
     "typescript": "^6.0.3"
   },
   "engines": {

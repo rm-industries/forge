@@ -52,9 +52,10 @@ file contents for that integration without writing into existing projects.
 ## Zuke and action updates
 
 The standalone GitHub pipeline is defined in
-`packages/create-forge/zuke/pipeline.ts`, using exact `@zuke/core@1.70.1` and
-Deno versions with committed Deno and npm lockfiles. Zuke is an authoring tool;
-generated projects run their YAML without needing Deno or Zuke.
+`packages/create-forge/scripts/ci.ts`, using exact `@zuke/core@1.70.1` through JSR’s npm distribution and
+`package-lock.json`. The repository’s `.npmrc` routes the `@jsr` scope to JSR.
+Zuke generation runs under Node with the existing TypeScript checks and tests;
+generated projects run their YAML without needing Zuke.
 
 ```sh
 npm run ci:generate -w @rm-industries/create-forge
@@ -89,8 +90,10 @@ materialization CLI and a project-local Zuke authoring setup remain follow-up wo
 A generation check proves structure and pin synchronization, not compatibility
 or safety of an action release. Existing workflow execution tests the updated
 actions; release notes and paths not exercised by CI still require review.
-Dependabot's npm configuration covers the Deno runtime. Updates to Zuke's JSR
-version and Deno lockfile are manual reviewed changes for now.
+Zuke is an exact npm alias dependency, installed and locked by npm.
+Dependabot update behavior for the JSR registry remains unverified.
+Only Zuke’s pure CI renderer is used: its build executor still contains Deno
+APIs and is not part of Forge’s Node-based authoring flow.
 
 Forge's repository workflows are not migrated to Zuke: its current interface
 cannot express all their matrix, path-filter, and working-directory settings.

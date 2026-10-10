@@ -1,7 +1,11 @@
-import { generateCi, type CiPipeline } from 'jsr:@zuke/core@1.70.1';
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import { generateCi, type CiPipeline } from '@zuke/core';
 import { parseDocument } from 'yaml';
 
-Deno.test('Zuke preserves self-repository action references', () => {
+test('Zuke preserves self-repository action references', () => {
+  assert.equal('Deno' in globalThis, false);
   const reference = '$/.github/actions/setup-project';
   const pipeline = {
     bootstrap: false,
