@@ -34,6 +34,15 @@ for (const colorScheme of ['light', 'dark'] as const) {
   }
 }
 
+for (const theme of ['frappe', 'macchiato'] as const) {
+  test(`home has no serious or critical violations in ${theme} theme`, async ({ page }) => {
+    await page.goto(resolvePreviewPath('/'));
+    await page.locator('html').evaluate((element, value) => element.setAttribute('data-theme', value), theme);
+
+    expect(await analyzePage(page)).toEqual([]);
+  });
+}
+
 for (const route of publicRoutes) {
   test(`${route.name} exposes one main landmark and one level-one heading`, async ({ page }) => {
     await page.goto(resolvePreviewPath(route.path));
