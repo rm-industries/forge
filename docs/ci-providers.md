@@ -52,8 +52,9 @@ file contents for that integration without writing into existing projects.
 ## Zuke and action updates
 
 The standalone GitHub pipeline is defined in
-`packages/create-forge/scripts/ci.ts`, using exact `@zuke/core@1.70.1` through JSR’s npm distribution and
-`package-lock.json`. The repository’s `.npmrc` routes the `@jsr` scope to JSR.
+`packages/create-forge/scripts/ci.ts`, using `@zuke/core@^1.70.1` through JSR’s npm distribution and
+`package-lock.json`. Zuke and the npm-managed Deno runtime use caret ranges;
+the lockfiles retain the exact versions installed and reviewed. The repository’s `.npmrc` routes the `@jsr` scope to JSR.
 Zuke generation runs under Node with the existing TypeScript checks and tests;
 generated projects run their YAML without needing Zuke.
 
@@ -114,7 +115,7 @@ depends on `build`, and `quality` depends on all checks. Existing npm commands
 remain available. This runs the current local Node version; it does not recreate
 CI's runner images or Node matrix. It does not run deployment or browser tests.
 
-The local executor loads exact `jsr:@zuke/core@1.70.1`, with integrity recorded in
+The local executor loads `jsr:@zuke/core@^1.70.1`, with integrity recorded in
 `local-ci.deno.lock` and enforced with `--frozen`. The first invocation may fetch
 that dependency into Deno's cache. There is no `deno.json`; YAML generation keeps
 using npm and `package-lock.json`. Execution records under `.zuke/` are ignored.

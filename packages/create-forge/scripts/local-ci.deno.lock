@@ -1,7 +1,7 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@zuke/core@1.70.1": "1.70.1"
+    "jsr:@zuke/core@^1.70.1": "1.70.1"
   },
   "jsr": {
     "@zuke/core@1.70.1": {

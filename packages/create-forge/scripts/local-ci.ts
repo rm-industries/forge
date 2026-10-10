@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { Build, run, target } from 'jsr:@zuke/core@1.70.1';
+import { Build, run, target } from 'jsr:@zuke/core@^1.70.1';
 
 const repository = fileURLToPath(new URL('../../../', import.meta.url));
 const npmTask = (script: string) =>
