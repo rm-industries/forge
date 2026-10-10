@@ -7,20 +7,19 @@ import { resolveSiteHref } from '../lib/paths';
 <BaseLayout title="Get started" description="Create and validate an accessible, content-driven Forge website.">
   <Container size="md" class="pb-16">
     <article class="prose mx-auto">
-      <div class="badge badge-outline font-mono">Get started</div>
+      <div class="badge badge-neutral font-mono">Get started</div>
       <h1>Create a Forge site.</h1>
       <p class="lead">Use Node.js 22.22.2 or newer on the supported Node 22, 24, or 26 lines with npm 10.9 or 11.</p>
 
       <h2>Generate the project</h2>
-      <pre><code>npm create @rm-industries/forge</code></pre>
+      <div class="mockup-code"><pre data-prefix="$"><code>npm create @rm-industries/forge</code></pre></div>
       <p>The initializer asks for the destination, package and site names, author, canonical URL, and GitHub repository. It can install dependencies and initialize a <code>main</code>-branch Git repository.</p>
 
       <h2>Run it locally</h2>
-      <pre><code>cd your-project
-npm run dev</code></pre>
+      <div class="mockup-code"><pre data-prefix="$"><code>cd your-project</code></pre><pre data-prefix="$"><code>npm run dev</code></pre></div>
 
       <h2>Validate before publishing</h2>
-      <pre><code>npm run quality</code></pre>
+      <div class="mockup-code"><pre data-prefix="$"><code>npm run quality</code></pre></div>
       <p>This runs static checks, coverage, a validated build, browser and accessibility tests, and Lighthouse budgets. The generated project includes a secure GitHub Pages workflow.</p>
 
       <h2>Own the result</h2>
