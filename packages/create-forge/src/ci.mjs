@@ -1,3 +1,5 @@
+import { ciSchemas, validateCiYaml } from './ci-schema.mjs';
+
 // Provider renderers consume one validation plan; deployment is a separate concern.
 const runtimes = ['22.22.2', '22', '24', '26'];
 const checks = [
@@ -8,6 +10,7 @@ const checks = [
 const providers = {
   github: {
     path: '.github/workflows/ci.yml',
+    schema: ciSchemas.github,
     render() {
       return `name: Project CI
 on:
@@ -45,6 +48,7 @@ ${commands.map((command) => `      - run: ${command}`).join('\n')}`,
   },
   gitlab: {
     path: '.gitlab-ci.yml',
+    schema: ciSchemas.gitlab,
     render() {
       return `workflow:
   rules:
@@ -91,7 +95,12 @@ export function defineCiConfig({ enabled, primary } = {}) {
 /** Return relative paths and contents without writing or overwriting project files. */
 export function generateCi(config = { enabled: ['github'], primary: 'github' }) {
   const { enabled } = defineCiConfig(config);
-  return Object.fromEntries(enabled.map((id) => [providers[id].path, providers[id].render()]));
+  return Object.fromEntries(
+    enabled.map((id) => {
+      const provider = providers[id];
+      return [provider.path, validateCiYaml(provider.schema, provider.render())];
+    }),
+  );
 }
 
 /** Authoritative automation must call this guard before generating deployment jobs. */

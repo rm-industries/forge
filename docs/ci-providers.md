@@ -1,5 +1,13 @@
 # Generated project CI
 
+Every generated CI file is parsed as YAML and validated with a strict Zod
+schema before it is returned. Malformed YAML, duplicate keys, unknown fields,
+and invalid field types throw errors; fields are never silently removed.
+Schemas cover the validation pipeline Forge emits and must be extended alongside
+new generated features. They are not complete GitHub or GitLab schemas and do not
+prove that commands or rule expressions work. Use provider validation, including
+GitLab CI Lint, to check pipeline semantics in the target project.
+
 The generator package exposes `@rm-industries/create-forge/ci`. Repository
 hosting is independent of CI selection: a mirrored project can enable both
 providers. The default is GitHub Actions with GitHub as primary.

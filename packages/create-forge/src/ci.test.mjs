@@ -2,6 +2,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
+import { parse, stringify } from 'yaml';
+
+import { ciSchemas, validateCiYaml } from './ci-schema.mjs';
 import { defineCiConfig, generateCi, isPrimaryCi } from './ci.mjs';
 
 test('generate either provider or both independently of the primary', () => {
@@ -21,6 +24,47 @@ test('generate either provider or both independently of the primary', () => {
     assert.ok(content.includes('22.22.2'));
     assert.ok(content.includes('playwright install --with-deps chromium'));
     assert.doesNotMatch(content, /deploy|environment:|pages:/);
+  }
+});
+
+test('validate final YAML and reject syntax errors, duplicate keys, and extra documents', () => {
+  for (const provider of ['github', 'gitlab']) {
+    const content = Object.values(generateCi({ enabled: [provider] }))[0];
+    assert.equal(validateCiYaml(ciSchemas[provider], content), content);
+    for (const invalid of ['jobs: [', `${content}\nquality: {}\nquality: {}`, `${content}\n---\nextra: true`]) {
+      assert.throws(() => validateCiYaml(ciSchemas[provider], invalid));
+    }
+  }
+});
+
+test('reject unknown nested fields and incorrect types without stripping or coercing', () => {
+  for (const provider of ['github', 'gitlab']) {
+    const content = Object.values(generateCi({ enabled: [provider] }))[0];
+    for (const mutate of [
+      (config) => {
+        config.unrecognized = true;
+      },
+      (config) => {
+        const job = provider === 'github' ? config.jobs.quality : config.quality;
+        job.unrecognized = true;
+      },
+      (config) => {
+        if (provider === 'github') config.jobs.quality.strategy['fail-fast'] = 'false';
+        else config.default.interruptible = 'true';
+      },
+      (config) => {
+        if (provider === 'github') config.jobs.browser.steps = [];
+        else config.browser.script = [];
+      },
+      (config) => {
+        if (provider === 'github') config.jobs.quality.steps[0].with['persist-credentials'] = true;
+        else config.quality.parallel.matrix[0].NODE_VERSION = [26];
+      },
+    ]) {
+      const config = parse(content);
+      mutate(config);
+      assert.throws(() => validateCiYaml(ciSchemas[provider], stringify(config)));
+    }
   }
 });
 
