@@ -5,10 +5,8 @@ import { checks } from '../src/ci-plan.ts';
 
 const repository = new URL('../../../', import.meta.url);
 const workflows: Record<string, string> = {};
-for (const entry of Deno.readDirSync(new URL('.github/workflows/', repository))) {
-  if (entry.isFile && /\.ya?ml$/.test(entry.name)) {
-    workflows[entry.name] = Deno.readTextFileSync(new URL(`.github/workflows/${entry.name}`, repository));
-  }
+for (const name of ['project.yml', 'automation.yml']) {
+  workflows[name] = Deno.readTextFileSync(new URL(`.github/workflows/${name}`, repository));
 }
 workflows['setup-project/action.yml'] = Deno.readTextFileSync(
   new URL('.github/actions/setup-project/action.yml', repository),

@@ -35,6 +35,12 @@
     "dist"
   ],
   "type": "module",
+  "exports": {
+    "./ci": {
+      "types": "./dist/ci.d.ts",
+      "import": "./dist/ci.js"
+    }
+  },
   "publishConfig": {
     "access": "public",
     "tag": "latest"
@@ -60,17 +66,11 @@
   },
   "devDependencies": {
     "@types/validate-npm-package-name": "^4.0.2",
-    "typescript": "^6.0.3",
-    "deno": "2.9.6"
+    "deno": "2.9.6",
+    "typescript": "^6.0.3"
   },
   "engines": {
     "node": "^22.22.2 || ^24.0.0 || ^26.0.0",
     "npm": "^10.9.0 || ^11.0.0"
-  },
-  "exports": {
-    "./ci": {
-      "types": "./dist/ci.d.ts",
-      "import": "./dist/ci.js"
-    }
   }
 }

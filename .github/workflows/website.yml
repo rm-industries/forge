@@ -43,7 +43,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup project
-        uses: $/.github/actions/setup-project
+        uses: ./.github/actions/setup-project
         with:
           node-version: '26.x'
           cache-dependency-path: website/package-lock.json
@@ -66,7 +66,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup project
-        uses: $/.github/actions/setup-project
+        uses: ./.github/actions/setup-project
         with:
           node-version: '26.x'
           cache-dependency-path: website/package-lock.json
@@ -89,7 +89,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup project
-        uses: $/.github/actions/setup-project
+        uses: ./.github/actions/setup-project
         with:
           node-version: '26.x'
           cache-dependency-path: website/package-lock.json
@@ -109,7 +109,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup project
-        uses: $/.github/actions/setup-project
+        uses: ./.github/actions/setup-project
         with:
           node-version: '26.x'
           cache-dependency-path: website/package-lock.json
@@ -128,7 +128,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup project
-        uses: $/.github/actions/setup-project
+        uses: ./.github/actions/setup-project
         with:
           node-version: '26.x'
           cache-dependency-path: website/package-lock.json
@@ -147,7 +147,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup project
-        uses: $/.github/actions/setup-project
+        uses: ./.github/actions/setup-project
         with:
           node-version: '26.x'
           cache-dependency-path: website/package-lock.json
@@ -166,7 +166,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup project
-        uses: $/.github/actions/setup-project
+        uses: ./.github/actions/setup-project
         with:
           node-version: '26.x'
           cache-dependency-path: website/package-lock.json
@@ -188,7 +188,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup project
-        uses: $/.github/actions/setup-project
+        uses: ./.github/actions/setup-project
         with:
           node-version: '26.x'
           cache-dependency-path: website/package-lock.json
@@ -220,7 +220,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup project
-        uses: $/.github/actions/setup-project
+        uses: ./.github/actions/setup-project
         with:
           node-version: '26.x'
           cache-dependency-path: website/package-lock.json
@@ -261,7 +261,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup project
-        uses: $/.github/actions/setup-project
+        uses: ./.github/actions/setup-project
         with:
           node-version: '26.x'
           cache-dependency-path: website/package-lock.json
@@ -297,7 +297,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup project
-        uses: $/.github/actions/setup-project
+        uses: ./.github/actions/setup-project
         with:
           node-version: '26.x'
           cache-dependency-path: website/package-lock.json
@@ -326,7 +326,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup project
-        uses: $/.github/actions/setup-project
+        uses: ./.github/actions/setup-project
         with:
           node-version: '26.x'
           cache-dependency-path: website/package-lock.json
@@ -371,7 +371,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup project
-        uses: $/.github/actions/setup-project
+        uses: ./.github/actions/setup-project
         with:
           node-version: '26.x'
           cache-dependency-path: website/package-lock.json
@@ -447,7 +447,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup project
-        uses: $/.github/actions/setup-project
+        uses: ./.github/actions/setup-project
         with:
           node-version: '26.x'
           cache-dependency-path: website/package-lock.json

@@ -46,7 +46,7 @@ mappings are separate follow-up work. Future deployment generation must use the
 primary guard and an explicitly selected deployment target/environment; enabling
 a second CI provider must only add validation. Primary does not suppress checks.
 
-The full project materialization CLI is not implemented yet. This API returns
+The project materialization CLI does not yet call this API. This API returns
 file contents for that integration without writing into existing projects.
 
 ## Zuke and action updates
@@ -72,7 +72,7 @@ references, malformed YAML, duplicate keys, and conflicting references or versio
 comments. Local actions and Docker references are outside the action pin map.
 Arbitrary Zuke steps explicitly call this resolver for their action references.
 
-Forge reads action pins from its existing `.github/workflows` files and setup
+Forge reads action pins from `project.yml`, `automation.yml`, and the setup
 composite action. Dependabot scans the repository workflows; when it updates a
 pin, regenerate and commit the resulting template YAML in the same pull request.
 If occurrences disagree, first update them to the intended reference together.
@@ -81,8 +81,8 @@ or merges updates automatically.
 
 Once materialized into a project, the generated workflow is that project's pin
 source for its own Dependabot updates. Forge's pinned defaults and subsequent
-project updates are maintained independently. The materialization CLI and a
-project-local Zuke authoring setup are not implemented yet.
+project updates are maintained independently. Wiring this API into the
+materialization CLI and a project-local Zuke authoring setup remain follow-up work.
 
 A generation check proves structure and pin synchronization, not compatibility
 or safety of an action release. Existing workflow execution tests the updated
