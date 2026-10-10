@@ -1,3 +1,4 @@
+import { validateCiPrefix } from './ci/paths';
 import {
   defaultDescription,
   defaultUrl,
@@ -144,5 +145,17 @@ export const resolveOptions = async (
   const install = provided.install ?? (useDefaults ? true : await promptConfirm(prompts, 'Install dependencies?'));
   const git = provided.git ?? (useDefaults ? true : await promptConfirm(prompts, 'Initialize a Git repository?'));
 
-  return { destination, repositoryRoot, packageName, siteName, description, author, url, repository, install, git };
+  return {
+    destination,
+    repositoryRoot,
+    packageName,
+    siteName,
+    description,
+    author,
+    url,
+    repository,
+    install,
+    git,
+    ...(provided.ciPrefix === undefined ? {} : { ciPrefix: validateCiPrefix(provided.ciPrefix) }),
+  };
 };

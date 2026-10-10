@@ -30,6 +30,8 @@ describe('CLI argument parsing', () => {
       Options:
         --repository-root <path>         repository root (defaults to the project
                                          directory)
+        --ci-prefix <name>               workflow filename prefix (defaults to the
+                                         relative project directory)
         --name <name>                    npm package name (defaults to the directory
                                          basename)
         --site-name <name>               site name
@@ -50,6 +52,19 @@ describe('CLI argument parsing', () => {
     `);
     expect(prompts.text).not.toHaveBeenCalled();
   });
+
+  test('accepts a workflow prefix without another prompt', async () => {
+    const result = await runCli(['website', '--yes', '--ci-prefix', 'docs-site'], '1.0.3', { interactive: false });
+    expect(result).toMatchObject({ exitCode: 0, options: { ciPrefix: 'docs-site' } });
+  });
+
+  test.each(['../outside', 'site.yml', 'Site', '', 'a'.repeat(81)])(
+    'rejects unsafe workflow prefix %s',
+    async (prefix) => {
+      const result = await runCli(['website', '--yes', '--ci-prefix', prefix], '1.0.3', { interactive: false });
+      expect(result).toMatchObject({ exitCode: 1, output: expect.stringContaining('CI prefix') });
+    },
+  );
 
   test('prints the installed package version', async () => {
     await expect(runCli(['--version'], '0.3.0-alpha.0')).resolves.toEqual({ output: '0.3.0-alpha.0\n', exitCode: 0 });

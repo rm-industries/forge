@@ -264,3 +264,5 @@ $RECYCLE.BIN/
 .lighthouseci/
 playwright-report/
 test-results/
+
+.zuke/

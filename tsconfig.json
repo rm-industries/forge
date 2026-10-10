@@ -15,5 +15,5 @@
     "verbatimModuleSyntax": true
   },
   "include": ["*.config.ts", "scripts/**/*.ts"],
-  "exclude": ["dist", "coverage", "playwright-report", "test-results"]
+  "exclude": ["dist", "coverage", "playwright-report", "test-results", "scripts/ci", "scripts/pipeline.ts"]
 }

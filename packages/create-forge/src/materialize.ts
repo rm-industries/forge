@@ -15,9 +15,11 @@ import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, parse, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { deriveCiPrefix, validateCiPrefix, workflowPath } from './ci/paths';
 import type { GeneratorOptions } from './options';
 import { deriveScheduleMinutes } from './schedule';
 import { templateTokenPrefix, templateTokens } from './template-tokens';
+import { writeProjectCi } from './write-ci';
 
 export class MaterializationError extends Error {}
 
@@ -27,6 +29,7 @@ type MaterializationContext = {
   signal?: AbortSignal;
   confirmOverwrite?: (destination: string) => Promise<boolean>;
   onFileCopied?: (path: string) => void;
+  generateCi?: typeof writeProjectCi;
 };
 
 type TemplateFile = { source: string; relativePath: string; mode: number };
@@ -127,10 +130,15 @@ const replaceRawToken = (source: string, token: string, value: string, field: st
   return source.replaceAll(token, value);
 };
 
-const customizeTemplate = async (projectRoot: string, repositoryRoot: string, options: GeneratorOptions) => {
+const customizeTemplate = async (
+  projectRoot: string,
+  repositoryRoot: string,
+  options: GeneratorOptions,
+  ciPrefix?: string,
+  skipped: Set<string> = new Set(),
+) => {
   const relativeProjectDirectory = relative(repositoryRoot, projectRoot);
   const projectDirectory = relativeProjectDirectory.split(sep).join('/') || '.';
-  const projectPathFilter = projectDirectory === '.' ? '**' : `${projectDirectory}/**`;
   const dependabotDirectory = projectDirectory === '.' ? '/' : `/${projectDirectory}`;
   const packagePath = join(projectRoot, 'package.json');
   const packageLockPath = join(projectRoot, 'package-lock.json');
@@ -167,50 +175,42 @@ const customizeTemplate = async (projectRoot: string, repositoryRoot: string, op
   await writeFile(siteConfigPath, siteConfig);
 
   const scheduleMinutes = deriveScheduleMinutes(options.packageName);
-  const securityWorkflowPath = join(repositoryRoot, '.github', 'workflows', 'security.yml');
-  const automationWorkflowPath = join(repositoryRoot, '.github', 'workflows', 'automation.yml');
-  let securityWorkflow = await readFile(securityWorkflowPath, 'utf8');
-  let automationWorkflow = await readFile(automationWorkflowPath, 'utf8');
-  securityWorkflow = replaceRawToken(
-    securityWorkflow,
-    templateTokens.securityScheduleMinute,
-    String(scheduleMinutes.security),
-    'security schedule minute',
+  const configPath = join(projectRoot, 'scripts', 'ci', 'config.json');
+  const config = JSON.parse(await readFile(configPath, 'utf8'));
+  config.directory = projectDirectory;
+  config.repositoryRoot = relative(projectRoot, repositoryRoot).split(sep).join('/') || '.';
+  config.securityMinute = scheduleMinutes.security;
+  config.automationMinute = scheduleMinutes.automation;
+  if (ciPrefix === undefined) delete config.prefix;
+  else config.prefix = ciPrefix;
+  const configJson = JSON.stringify(config, undefined, 2).replace(
+    /"providers": \[[^\]]+\]/,
+    `"providers": ${JSON.stringify(config.providers).replaceAll(',', ', ')}`,
   );
-  automationWorkflow = replaceRawToken(
-    automationWorkflow,
-    templateTokens.automationScheduleMinute,
-    String(scheduleMinutes.automation),
-    'automation schedule minute',
-  );
-  await writeFile(securityWorkflowPath, securityWorkflow);
-  await writeFile(automationWorkflowPath, automationWorkflow);
+  await writeFile(configPath, `${configJson}\n`);
 
-  const tokenizedFiles = [
-    {
-      path: join(repositoryRoot, '.github', 'workflows', 'project.yml'),
-      replacements: [
-        [templateTokens.projectDirectory, projectDirectory, 'project directory'],
-        [templateTokens.projectPathFilter, projectPathFilter, 'project path filter'],
-      ],
-    },
-    {
-      path: securityWorkflowPath,
-      replacements: [[templateTokens.projectPathFilter, projectPathFilter, 'project path filter']],
-    },
-    {
-      path: join(repositoryRoot, '.github', 'actions', 'setup-project', 'action.yml'),
-      replacements: [[templateTokens.projectDirectory, projectDirectory, 'project directory']],
-    },
-    {
-      path: join(repositoryRoot, '.github', 'dependabot.yml'),
-      replacements: [[templateTokens.dependabotDirectory, dependabotDirectory, 'Dependabot directory']],
-    },
-  ] as const;
-  for (const file of tokenizedFiles) {
-    let source = await readFile(file.path, 'utf8');
-    for (const [token, value, field] of file.replacements) source = replaceRawToken(source, token, value, field);
-    await writeFile(file.path, source);
+  const deploymentPath = join(repositoryRoot, workflowPath('deployment', ciPrefix));
+  let deployment = await readFile(deploymentPath, 'utf8');
+  deployment = replaceRawToken(
+    deployment,
+    templateTokens.ciWorkflowName,
+    JSON.stringify(`${ciPrefix ? `${ciPrefix}: ` : ''}Project Continuous Integration`),
+    'CI workflow name',
+  );
+  deployment = replaceRawToken(deployment, templateTokens.projectDirectory, projectDirectory, 'project directory');
+  await writeFile(deploymentPath, deployment);
+
+  const dependabot = join(repositoryRoot, '.github', 'dependabot.yml');
+  if (!skipped.has(dependabot)) {
+    await writeFile(
+      dependabot,
+      replaceRawToken(
+        await readFile(dependabot, 'utf8'),
+        templateTokens.dependabotDirectory,
+        dependabotDirectory,
+        'Dependabot directory',
+      ),
+    );
   }
 };
 
@@ -222,12 +222,27 @@ export const materializeProject = async (options: GeneratorOptions, context: Mat
   if (projectPath.startsWith('..') || isAbsolute(projectPath)) {
     throw new MaterializationError(`Project root ${projectRoot} must be inside repository root ${repositoryRoot}.`);
   }
+  const ciPrefix = options.ciPrefix === undefined ? deriveCiPrefix(projectPath) : validateCiPrefix(options.ciPrefix);
   const templateDirectory = resolveTemplateDirectory(context.templateDirectory);
   const repositoryStat = await getPathStat(repositoryRoot);
   if (repositoryStat && (repositoryStat.isSymbolicLink() || !repositoryStat.isDirectory())) {
     throw new MaterializationError(`Unsafe repository root ${repositoryRoot}: expected a regular directory.`);
   }
-  const files = await listTemplateFiles(templateDirectory);
+  let files = (await listTemplateFiles(templateDirectory)).map((file) => {
+    const path = file.relativePath.split(sep).join('/');
+    const workflow = /^\.github\/workflows\/(project|security|automation|deployment)\.yml$/.exec(path);
+    return workflow ? { ...file, relativePath: workflowPath(workflow[1]!, ciPrefix).split('/').join(sep) } : file;
+  });
+  const skipped = new Set<string>();
+  const retained: TemplateFile[] = [];
+  for (const file of files) {
+    const shared =
+      file.relativePath.startsWith(`.github${sep}`) && !file.relativePath.startsWith(`.github${sep}workflows${sep}`);
+    const path = join(repositoryRoot, file.relativePath);
+    if (shared && (await pathExists(path))) skipped.add(path);
+    else retained.push(file);
+  }
+  files = retained;
   const destinationExisted = await pathExists(projectRoot);
   if (destinationExisted) {
     const destinationStat = await lstat(projectRoot);
@@ -254,6 +269,15 @@ export const materializeProject = async (options: GeneratorOptions, context: Mat
       throw new MaterializationError(
         `Repository root ${repositoryRoot} contains conflicting files. No files were changed.`,
       );
+    }
+  }
+  const approvedWorkflows = new Set<string>();
+  for (const name of ['project', 'security', 'automation']) {
+    const path = join(repositoryRoot, workflowPath(name, ciPrefix));
+    if (await pathExists(path)) {
+      if (!(await context.confirmOverwrite?.(path)))
+        throw new MaterializationError(`Workflow ${path} already exists. No files were changed.`);
+      approvedWorkflows.add(path);
     }
   }
   const backupDirectory = await mkdtemp(join(tmpdir(), 'create-forge-backup-'));
@@ -290,7 +314,31 @@ export const materializeProject = async (options: GeneratorOptions, context: Mat
       context.onFileCopied?.(target);
     }
     assertNotAborted(context.signal);
-    await customizeTemplate(projectRoot, repositoryRoot, options);
+    await customizeTemplate(projectRoot, repositoryRoot, options, ciPrefix, skipped);
+    const stagedCi = join(backupDirectory, 'generated-ci');
+    await mkdir(stagedCi);
+    await (context.generateCi ?? writeProjectCi)(projectRoot, stagedCi, context.signal);
+    const generatedFiles = await listTemplateFiles(stagedCi);
+    for (const file of generatedFiles) {
+      if (
+        !/^\.github[\\/]workflows[\\/][a-z0-9-]+\.yml$/.test(file.relativePath) &&
+        file.relativePath !== '.gitlab-ci.yml'
+      )
+        throw new Error('Unexpected generated CI path');
+      const path = join(repositoryRoot, file.relativePath);
+      const existing = await getPathStat(path);
+      if (existing) {
+        if (existing.isSymbolicLink() || !existing.isFile()) throw new Error(`Unsafe destination entry ${path}`);
+        if (!approvedWorkflows.has(path) && !(await context.confirmOverwrite?.(path)))
+          throw new Error(`Workflow ${path} already exists; no workflow was overwritten.`);
+        const backup = join(backupDirectory, 'workflow-backups', file.relativePath);
+        await mkdir(dirname(backup), { recursive: true });
+        await copyFile(path, backup);
+        backups.set(path, backup);
+      } else createdFiles.add(path);
+      await ensureDirectory(dirname(path), createdDirectories);
+      await copyFile(file.source, path);
+    }
     const tokenBytes = Buffer.from(templateTokenPrefix);
     for (const file of files) {
       assertNotAborted(context.signal);
@@ -299,7 +347,13 @@ export const materializeProject = async (options: GeneratorOptions, context: Mat
         throw new Error(`Generated file ${file.relativePath} contains an unresolved template token.`);
       }
     }
-    return { destination: projectRoot, projectRoot, repositoryRoot, filesCopied: files.length };
+    return {
+      destination: projectRoot,
+      projectRoot,
+      repositoryRoot,
+      filesCopied: files.length + generatedFiles.length,
+      skippedConfiguration: [...skipped].map((path) => relative(repositoryRoot, path).split(sep).join('/')),
+    };
   } catch (error) {
     const cleanupErrors: unknown[] = [];
     for (const [target, backup] of backups) {

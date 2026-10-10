@@ -42,7 +42,10 @@
     "quality": "npm run quality:core && npm run test:e2e && npm run lighthouse:ci",
     "quality:core": "npm run quality:static && npm run test:coverage && npm run build && npm run validate:build",
     "quality:static": "npm run format && npm run lint && npm run audit:unused && npm run typecheck",
-    "quality:static:ci": "npm run lint:code && npm run lint:css && npm run lint:markdown && npm run audit:unused && npm run typecheck"
+    "quality:static:ci": "npm run lint:code && npm run lint:css && npm run lint:markdown && npm run audit:unused && npm run typecheck",
+    "pipeline": "deno run --check --frozen --no-config --lock=../templates/default/scripts/ci/deno.lock --import-map=../templates/default/scripts/ci/imports.json --node-modules-dir=none --allow-read --allow-env --allow-run=npm --allow-write scripts/pipeline.ts",
+    "ci:generate": "deno run --check --frozen --no-config --lock=../templates/default/scripts/ci/deno.lock --import-map=../templates/default/scripts/ci/imports.json --node-modules-dir=none --allow-read --allow-env --allow-run=npm --allow-write scripts/pipeline.ts generate-ci",
+    "ci:check": "deno run --check --frozen --no-config --lock=../templates/default/scripts/ci/deno.lock --import-map=../templates/default/scripts/ci/imports.json --node-modules-dir=none --allow-read --allow-env --allow-run=npm --allow-write scripts/pipeline.ts generate-ci --check"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",
@@ -64,6 +67,7 @@
     "audit-ci": "7.1.0",
     "cspell": "^10.3.6",
     "daisyui": "^5.7.47",
+    "deno": "^2.9.6",
     "knip": "^6.38.0",
     "markdownlint-cli": "^0.49.0",
     "oxfmt": "^0.70.0",

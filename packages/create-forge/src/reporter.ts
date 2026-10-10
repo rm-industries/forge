@@ -6,6 +6,7 @@ type CompletionContext = {
   destination: string;
   cwd?: string;
   color?: boolean;
+  skippedConfiguration?: string[];
 };
 
 const ansi = {
@@ -38,5 +39,8 @@ export const formatCompletion = (options: GeneratorOptions, context: CompletionC
     'npm run dev',
   ];
 
-  return `${decorate.green('✓')} Created ${options.siteName} in ${destination}\n\n${decorate.bold('Setup')}\n  Dependencies: ${options.install ? 'installed' : 'skipped'}\n  Git repository: ${options.git ? 'initialized' : 'skipped'}\n\n${decorate.bold('Next steps')}\n${commands.map((command) => `  ${command}`).join('\n')}\n`;
+  const skipped = context.skippedConfiguration?.length
+    ? `\n${decorate.bold('Preserved existing configuration')}\n${context.skippedConfiguration.map((path) => `  ${path}`).join('\n')}\n`
+    : '';
+  return `${decorate.green('✓')} Created ${options.siteName} in ${destination}\n\n${decorate.bold('Setup')}\n  Dependencies: ${options.install ? 'installed' : 'skipped'}\n  Git repository: ${options.git ? 'initialized' : 'skipped'}\n\n${skipped}${decorate.bold('Next steps')}\n${commands.map((command) => `  ${command}`).join('\n')}\n`;
 };
