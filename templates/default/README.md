@@ -81,35 +81,37 @@ deployment.
 
 ## Continuous integration
 
-The generated `.github/workflows/project.yml` runs on pull requests targeting
-`main` and on pushes to `main`. Formatting, code/style/Markdown linting,
-spelling, unused-code analysis, Astro diagnostics, and unit coverage report
-independently. One production build follows those checks; build validation,
-browser tests, and Lighthouse download and test that same artifact. Deployment
-depends directly on every applicable check and publishes the Pages artifact
-packaged by the build job. A live Chromium smoke test then verifies the deployed
-URL, assets, and mobile layout. There is no aggregate/no-op project job.
-Deployment setup, project-site URLs, custom domains, and environment protections
-are documented in [`docs/github-pages.md`](docs/github-pages.md).
+The TypeScript Zuke graph in `scripts/ci/site.ts` defines local work and generates
+`.github/workflows/project.yml`, `security.yml`, and `automation.yml`. They run
+on every pull request targeting `main` and every push to `main`. `npm ci` installs
+the runtime through npm; no global runtime installation is needed.
 
-The workflow installs dependencies with `npm ci`, caches npm downloads using the
-lockfile, cancels superseded pull-request runs, serializes deployment runs, and
-grants only read access outside deployment. Pull requests receive no secrets or
-write permissions. Coverage, production builds, Lighthouse reports, and browser
-failure evidence are retained for seven days. All third-party actions use
-immutable commit pins.
+```sh
+npm run pipeline -- --list
+npm run pipeline -- quality
+npm run ci:generate
+npm run ci:check
+```
 
-Security automation is included alongside project CI. CodeQL analyzes the
-project's TypeScript and GitHub Actions on pull requests, pushes to `main`, and
-a weekly schedule. Dependency review reports introduced dependency risk without
-blocking remediation pull requests. A separate scheduled automation workflow
-validates workflow syntax with Actionlint and scans GitHub Actions with Zizmor.
-Zizmor uploads its findings to GitHub code scanning and fails `Workflow security`
-when it finds an issue. The job receives `security-events: write` only for that
-upload; all other access remains read-only. `Workflow syntax` and `Workflow
-security` run when `.github/**` changes. Because they are path-filtered, do not
-configure them as globally required status checks; require both whenever an
-automation change causes them to appear.
+Commit generated validation YAML so it is reviewable and Dependabot can update
+action pins. Generation reads those pins and version comments instead of
+reverting them to bootstrap defaults. Conflicting pins fail generation.
+
+Formatting, linting, spelling, unused-code analysis, Astro diagnostics, and unit
+coverage precede the build. Build validation, browser tests, Lighthouse, and audit
+precede the `Project` aggregate. Isolated hosted jobs run their target's
+prerequisites again. Coverage, builds, Lighthouse, and browser evidence are
+retained for seven days. External actions use immutable commit pins.
+
+Pages deployment stays editable in `deployment.yml` because Zuke cannot model
+its environment or output fields. It follows successful validation of a push
+to `main` from this repository, downloads that run's build, and deploys its exact
+commit. Smoke tests verify the deployed URL. See
+[`docs/github-pages.md`](docs/github-pages.md) for setup and protections.
+
+CodeQL, dependency review, Actionlint, and Zizmor run independently of the work
+graph's local npm tasks. Security and automation workflows also run weekly.
+Review their findings before merging changes to automation or dependencies.
 
 Dependabot checks npm and GitHub Actions weekly. Minor and patch npm updates are
 grouped by production or development scope, while major updates remain separate

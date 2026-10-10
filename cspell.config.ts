@@ -3,9 +3,12 @@ import { defineConfig } from 'cspell';
 export default defineConfig({
   ignorePaths: ['node_modules', 'dist', 'coverage', 'playwright-report', 'test-results', '.lighthouseci'],
   words: [
+    'zizmorcore',
+    'cicd',
     'apng',
     'autorun',
     'Catppuccin',
+    'cicd',
     'contentinfo',
     'daisyui',
     'Deno',

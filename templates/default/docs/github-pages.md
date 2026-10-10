@@ -1,6 +1,6 @@
 # GitHub Pages deployment
 
-The project workflow publishes the validated production build to GitHub Pages
+The deployment workflow publishes the validated production build to GitHub Pages
 after every push to `main`. Pull requests build and test the site, but they do
 not upload a Pages artifact or run a deployment.
 
@@ -13,8 +13,10 @@ not upload a Pages artifact or run a deployment.
    needs a manual production approval.
 
 The build job has read-only repository access. The separate deployment job is
-the only job granted `pages: write` and `id-token: write`, and it depends
-directly on every source, unit, build, validation, browser, and Lighthouse job.
+the only job granted `pages: write` and `id-token: write`. It starts after a
+successful project validation workflow for a push to `main` from this repository,
+and downloads that run’s build artifact. The workflow checks out that exact
+commit for deployment and smoke verification.
 After deployment, one Chromium smoke test verifies the live URL, assets, and
 mobile layout.
 

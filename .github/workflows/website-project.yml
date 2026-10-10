@@ -1,0 +1,332 @@
+name: "website: Project Continuous Integration"
+"on":
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+permissions: {}
+concurrency:
+  group: "${{ github.workflow_ref }}-${{ github.ref }}"
+  cancel-in-progress: true
+jobs:
+  format:
+    name: format
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: "false"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "26"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: "npm ci --prefix 'website'"
+      - name: Run format
+        run: "npm --prefix 'website' run pipeline -- 'format'"
+        continue-on-error: false
+  lintCode:
+    name: lintCode
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: "false"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "26"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: "npm ci --prefix 'website'"
+      - name: Run lintCode
+        run: "npm --prefix 'website' run pipeline -- 'lintCode'"
+        continue-on-error: false
+  lintStyles:
+    name: lintStyles
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: "false"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "26"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: "npm ci --prefix 'website'"
+      - name: Run lintStyles
+        run: "npm --prefix 'website' run pipeline -- 'lintStyles'"
+        continue-on-error: false
+  lintMarkdown:
+    name: lintMarkdown
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: "false"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "26"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: "npm ci --prefix 'website'"
+      - name: Run lintMarkdown
+        run: "npm --prefix 'website' run pipeline -- 'lintMarkdown'"
+        continue-on-error: false
+  spellcheck:
+    name: spellcheck
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: "false"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "26"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: "npm ci --prefix 'website'"
+      - name: Run spellcheck
+        run: "npm --prefix 'website' run pipeline -- 'spellcheck'"
+        continue-on-error: false
+  auditUnused:
+    name: auditUnused
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: "false"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "26"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: "npm ci --prefix 'website'"
+      - name: Run auditUnused
+        run: "npm --prefix 'website' run pipeline -- 'auditUnused'"
+        continue-on-error: false
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: "false"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "26"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: "npm ci --prefix 'website'"
+      - name: Run typecheck
+        run: "npm --prefix 'website' run pipeline -- 'typecheck'"
+        continue-on-error: false
+  unitTests:
+    name: unitTests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: "false"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "26"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: "npm ci --prefix 'website'"
+      - name: Run unitTests
+        run: "npm --prefix 'website' run pipeline -- 'unitTests'"
+        continue-on-error: false
+      - if: "always()"
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: unit-coverage
+          path: website/coverage
+          if-no-files-found: error
+          retention-days: "7"
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs:
+      - format
+      - lintCode
+      - lintStyles
+      - lintMarkdown
+      - spellcheck
+      - auditUnused
+      - typecheck
+      - unitTests
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: "false"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "26"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: "npm ci --prefix 'website'"
+      - name: Run build
+        run: "npm --prefix 'website' run pipeline -- 'build'"
+        continue-on-error: false
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: site-build
+          path: website/dist
+          if-no-files-found: error
+          retention-days: "7"
+  validateBuild:
+    name: validateBuild
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs:
+      - build
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: "false"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "26"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: "npm ci --prefix 'website'"
+      - name: Run validateBuild
+        run: "npm --prefix 'website' run pipeline -- 'validateBuild'"
+        continue-on-error: false
+  browserTests:
+    name: browserTests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs:
+      - build
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: "false"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "26"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: "npm ci --prefix 'website'"
+      - name: Run browserTests
+        run: "npm --prefix 'website' run pipeline -- 'browserTests'"
+        continue-on-error: false
+      - if: "always()"
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: browser-results
+          path: |
+            website/playwright-report
+            website/test-results
+          if-no-files-found: ignore
+          retention-days: "7"
+  lighthouse:
+    name: lighthouse
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs:
+      - build
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: "false"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "26"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: "npm ci --prefix 'website'"
+      - name: Run lighthouse
+        run: "npm --prefix 'website' run pipeline -- 'lighthouse'"
+        continue-on-error: false
+      - if: "always()"
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lighthouse-reports
+          path: website/.lighthouseci
+          include-hidden-files: "true"
+          if-no-files-found: error
+          retention-days: "7"
+  audit:
+    name: audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: "false"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "26"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: "npm ci --prefix 'website'"
+      - name: Run audit
+        run: "npm --prefix 'website' run pipeline -- 'audit'"
+        continue-on-error: true
+  compatibility:
+    name: compatibility
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs:
+      - typecheck
+      - unitTests
+      - build
+    strategy:
+      fail-fast: false
+      matrix:
+        node:
+          - 22.22.2
+          - "22"
+          - "24"
+          - "26"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: "false"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "${{ matrix.node }}"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: "npm ci --prefix 'website'"
+      - name: Run compatibility
+        run: "npm --prefix 'website' run pipeline -- 'compatibility'"
+  quality:
+    name: Website
+    runs-on: ubuntu-latest
+    permissions: {}
+    needs:
+      - validateBuild
+      - browserTests
+      - lighthouse
+      - audit
+    steps:
+      - run: "true"

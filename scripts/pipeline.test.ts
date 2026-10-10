@@ -8,7 +8,7 @@ test('npm exposes the local Zuke graph without running its tasks', { timeout: 60
     encoding: 'utf8',
     timeout: 55_000,
   });
-  expect(result.status, result.stderr).toBe(0);
+  expect({ status: result.status, error: result.status === 0 ? '' : result.stderr }).toEqual({ status: 0, error: '' });
   for (const name of ['format', 'lint', 'typecheck', 'test', 'build', 'pack', 'quality']) {
     expect(result.stdout).toContain(name);
   }

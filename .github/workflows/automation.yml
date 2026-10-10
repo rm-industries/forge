@@ -1,63 +1,37 @@
----
 name: Repository Automation Validation
-
-on: # yamllint disable-line rule:truthy
-  pull_request:
-    branches:
-      - main
-    paths:
-      - '.github/**'
-      - 'templates/default/.github/**'
+"on":
   push:
     branches:
       - main
-    paths:
-      - '.github/**'
-      - 'templates/default/.github/**'
+  pull_request:
+    branches:
+      - main
   schedule:
-    - cron: '43 5 * * 1'
-
+    - cron: "43 5 * * 1"
 permissions: {}
-
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: "${{ github.workflow_ref }}-${{ github.ref }}"
   cancel-in-progress: true
-
 jobs:
   security:
-    name: Workflow security
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
       security-events: write
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          persist-credentials: false
-
-      - name: Scan workflows
-        uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
+          persist-credentials: "false"
+      - uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
         with:
-          advanced-security: true
+          advanced-security: "true"
           collect: all
-
   syntax:
-    name: Workflow syntax
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          persist-credentials: false
-
-      - name: Validate workflows
-        uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2
-        with:
-          files: '.github/workflows/*.yml,templates/default/.github/workflows/*.yml'
+          persist-credentials: "false"
+      - uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2

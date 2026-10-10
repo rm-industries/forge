@@ -1,0 +1,18 @@
+{
+  "version": "5",
+  "specifiers": {
+    "jsr:@zuke/core@^1.70.1": "1.70.1",
+    "npm:yaml@^2.9.1": "2.9.1"
+  },
+  "jsr": {
+    "@zuke/core@1.70.1": {
+      "integrity": "460f26674c3bd9cee040056c5f423c705570740af8f5fee8a7d0ffe60073900f"
+    }
+  },
+  "npm": {
+    "yaml@2.9.1": {
+      "integrity": "sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==",
+      "bin": true
+    }
+  }
+}

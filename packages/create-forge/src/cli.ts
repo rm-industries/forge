@@ -17,6 +17,7 @@ const parseArguments = (args: readonly string[], version: string) => {
     .description('Create a content-driven Forge website')
     .argument('[destination]', 'directory where the project will be created')
     .option('--repository-root <path>', 'repository root (defaults to the project directory)')
+    .option('--ci-prefix <name>', 'workflow filename prefix (defaults to the relative project directory)')
     .option('--name <name>', 'npm package name (defaults to the directory basename)')
     .option('--site-name <name>', 'site name')
     .option('--description <text>', 'site description')
@@ -60,6 +61,7 @@ const parseArguments = (args: readonly string[], version: string) => {
   const provided: ProvidedOptions = {
     destination: program.args[0],
     repositoryRoot: raw.repositoryRoot,
+    ciPrefix: raw.ciPrefix,
     packageName: raw.name,
     siteName: raw.siteName,
     description: raw.description,

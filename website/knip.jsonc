@@ -1,0 +1,4 @@
+{
+  // Native Deno checks the shared CI graph separately.
+  "ignore": ["scripts/ci/**", "scripts/pipeline.ts"],
+}

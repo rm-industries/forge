@@ -25,8 +25,15 @@ npm create @rm-industries/forge website -- --repository-root .
 Forge writes the application into `website/`, places repository-owned GitHub
 configuration in the root `.github/` directory, installs dependencies inside
 `website/`, and initializes Git at the repository root when needed. Generated
-workflow filters, working directories, artifact paths, and Dependabot settings
-are adjusted for the nested project automatically.
+workflow execution paths, artifact paths, and Dependabot settings
+are adjusted for the nested project automatically. Workflow files are named
+`website-project.yml`, `website-security.yml`, and `website-automation.yml`, plus editable `website-deployment.yml`, for
+this example, leaving existing unprefixed workflows untouched. Override the
+prefix with `--ci-prefix docs-site`. Prefixes contain lowercase letters, numbers,
+and single hyphens, with a maximum length of 80 characters. A standalone project
+keeps the unprefixed workflow names unless a prefix is explicitly provided.
+Existing shared configuration, such as Dependabot settings, is preserved. Forge
+reports the configuration it skipped so you can integrate it manually.
 
 The selected template is copied with dotfiles and file modes intact. Forge
 customizes only reviewed metadata files and refuses parent-traversal paths,
@@ -44,6 +51,19 @@ After successful creation, Forge reports the created path, whether dependency
 and Git setup ran or was skipped, and only the commands still needed to start
 development. Output remains readable when color is disabled and contains no
 telemetry or promotional messages.
+
+## CI and local work
+
+Generated projects receive a TypeScript Zuke graph and its generated validation
+workflows. `npm ci` installs the runtime through npm; no separate workstation
+setup is needed. Run `npm run pipeline -- --list` to inspect targets, or
+`npm run pipeline -- quality` for the site checks. `npm run ci:generate` writes
+validation YAML, and `npm run ci:check` detects drift. Commit that output so
+Dependabot can update action pins. Deployment stays editable YAML because Zuke
+cannot yet model the required Pages environments and outputs.
+
+See [the CI documentation](../../docs/ci-providers.md) for graph ownership,
+pin resolution, provider support, and execution limitations.
 
 ## Package verification
 

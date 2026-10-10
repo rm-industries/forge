@@ -1,0 +1,46 @@
+{
+  "actions/checkout": {
+    "ref": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+    "version": "v7"
+  },
+  "actions/upload-artifact": {
+    "ref": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+    "version": "v7.0.1"
+  },
+  "actions/upload-pages-artifact": {
+    "ref": "actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9",
+    "version": "v5"
+  },
+  "actions/download-artifact": {
+    "ref": "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+    "version": "v8"
+  },
+  "actions/deploy-pages": {
+    "ref": "actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346",
+    "version": "v5.0.1"
+  },
+  "zizmorcore/zizmor-action": {
+    "ref": "zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054",
+    "version": "v0.6.2"
+  },
+  "raven-actions/actionlint": {
+    "ref": "raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7",
+    "version": "v2"
+  },
+  "github/codeql-action/init": {
+    "ref": "github/codeql-action/init@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd",
+    "version": "v4.37.7"
+  },
+  "github/codeql-action/analyze": {
+    "ref": "github/codeql-action/analyze@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd",
+    "version": "v4.37.7"
+  },
+  "actions/dependency-review-action": {
+    "ref": "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294",
+    "version": "v5"
+  },
+  "actions/setup-node": {
+    "ref": "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+    "version": "v7"
+  }
+}

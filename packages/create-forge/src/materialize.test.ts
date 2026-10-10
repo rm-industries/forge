@@ -45,24 +45,31 @@ const createTemplate = async (fixture: string) => {
     join(template, 'src', 'config', 'site.ts'),
     `export const site = {\n  name: '${templateTokens.siteName}',\n  description: '${templateTokens.description}',\n  author: '${templateTokens.author}',\n  url: '${templateTokens.url}',\n  repository: '${templateTokens.repository}',\n};\n`,
   );
+  await mkdir(join(template, 'scripts', 'ci'), { recursive: true });
   await writeFile(
-    join(template, '.github', 'workflows', 'security.yml'),
-    `cron: '${templateTokens.securityScheduleMinute} 5 * * 1'\npath: '${templateTokens.projectPathFilter}'\n`,
+    join(template, 'scripts', 'ci', 'config.json'),
+    JSON.stringify({ providers: ['github'], primary: 'github' }),
   );
   await writeFile(
-    join(template, '.github', 'workflows', 'automation.yml'),
-    `cron: '${templateTokens.automationScheduleMinute} 5 * * 1'\n`,
+    join(template, '.github', 'workflows', 'deployment.yml'),
+    `workflow: ${templateTokens.ciWorkflowName}\nworking-directory: ${templateTokens.projectDirectory}\n`,
   );
-  await writeFile(
-    join(template, '.github', 'workflows', 'project.yml'),
-    `working-directory: ${templateTokens.projectDirectory}\npath: '${templateTokens.projectPathFilter}'\n`,
-  );
-  await writeFile(
-    join(template, '.github', 'actions', 'setup-project', 'action.yml'),
-    `default: ${templateTokens.projectDirectory}\n`,
-  );
+  await writeFile(join(template, '.github', 'actions', 'setup-project', 'action.yml'), 'existing shared fixture\n');
   await writeFile(join(template, '.github', 'dependabot.yml'), `directory: ${templateTokens.dependabotDirectory}\n`);
   return template;
+};
+
+const generateCi = async (projectRoot: string, outputRoot: string) => {
+  const config = JSON.parse(await readFile(join(projectRoot, 'scripts', 'ci', 'config.json'), 'utf8'));
+  const workflows = join(outputRoot, '.github', 'workflows');
+  await mkdir(workflows, { recursive: true });
+  for (const name of ['project', 'security', 'automation']) {
+    const minute = name === 'security' ? config.securityMinute : config.automationMinute;
+    await writeFile(
+      join(workflows, `${config.prefix ? `${config.prefix}-` : ''}${name}.yml`),
+      `directory: '${config.directory}'\ncron: '${minute} 5 * * 1'\n`,
+    );
+  }
 };
 
 const createFixture = async () => {
@@ -82,7 +89,7 @@ describe('template materialization', () => {
       const { fixture, template } = await createFixture();
       const result = await materializeProject(
         { ...options, destination, repositoryRoot: destination },
-        { templateDirectory: template, cwd: fixture },
+        { templateDirectory: template, generateCi, cwd: fixture },
       );
       const generated = join(fixture, destination);
       const metadata = JSON.parse(await readFile(join(generated, 'package.json'), 'utf8')) as Record<string, unknown>;
@@ -123,7 +130,7 @@ describe('template materialization', () => {
 
     const result = await materializeProject(
       { ...options, destination: 'website', repositoryRoot: '.' },
-      { templateDirectory: template, cwd: fixture },
+      { templateDirectory: template, generateCi, cwd: fixture },
     );
 
     expect(result).toMatchObject({
@@ -133,15 +140,76 @@ describe('template materialization', () => {
     await expect(readFile(join(fixture, 'README.md'), 'utf8')).resolves.toBe('Existing repository documentation.\n');
     await expect(access(join(fixture, 'website', 'package.json'))).resolves.toBeUndefined();
     await expect(access(join(fixture, 'website', '.github'))).rejects.toMatchObject({ code: 'ENOENT' });
-    await expect(readFile(join(fixture, '.github', 'workflows', 'project.yml'), 'utf8')).resolves.toContain(
-      "path: 'website/**'",
+    await expect(readFile(join(fixture, '.github', 'workflows', 'website-project.yml'), 'utf8')).resolves.toContain(
+      "directory: 'website'",
     );
     await expect(
       readFile(join(fixture, '.github', 'actions', 'setup-project', 'action.yml'), 'utf8'),
-    ).resolves.toContain('default: website');
+    ).resolves.toContain('existing shared fixture');
     await expect(readFile(join(fixture, '.github', 'dependabot.yml'), 'utf8')).resolves.toContain(
       'directory: /website',
     );
+  });
+
+  test('keeps existing workflows when namespacing a nested project', async () => {
+    const { fixture, template } = await createFixture();
+    await mkdir(join(fixture, '.github', 'workflows'), { recursive: true });
+    await writeFile(join(fixture, '.github', 'workflows', 'project.yml'), 'existing pipeline\n');
+    await materializeProject(
+      { ...options, destination: 'website', repositoryRoot: '.' },
+      { templateDirectory: template, generateCi, cwd: fixture },
+    );
+    await expect(readFile(join(fixture, '.github', 'workflows', 'project.yml'), 'utf8')).resolves.toBe(
+      'existing pipeline\n',
+    );
+    for (const name of ['project', 'security', 'automation']) {
+      await expect(access(join(fixture, '.github', 'workflows', `website-${name}.yml`))).resolves.toBeUndefined();
+    }
+  });
+
+  test('preserves shared configuration and reports skipped files', async () => {
+    const { fixture, template } = await createFixture();
+    const shared = join(fixture, '.github', 'dependabot.yml');
+    await mkdir(join(fixture, '.github'), { recursive: true });
+    await writeFile(shared, 'existing updates\n');
+    const result = await materializeProject(
+      { ...options, destination: 'website', repositoryRoot: '.' },
+      { templateDirectory: template, generateCi, cwd: fixture },
+    );
+    expect(result.skippedConfiguration).toContain('.github/dependabot.yml');
+    expect(await readFile(shared, 'utf8')).toBe('existing updates\n');
+    expect(await readFile(join(fixture, '.github/workflows/website-deployment.yml'), 'utf8')).toContain(
+      'website: Project Continuous Integration',
+    );
+  });
+
+  test('rolls back copied sources when CI generation fails', async () => {
+    const { fixture, template } = await createFixture();
+    await expect(
+      materializeProject(options, {
+        templateDirectory: template,
+        cwd: fixture,
+        generateCi: async () => {
+          throw new Error('renderer failed');
+        },
+      }),
+    ).rejects.toThrow(/renderer failed.*rolled back/);
+    await expect(access(join(fixture, options.destination))).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  test('uses an explicit workflow prefix and rejects a collision before copying', async () => {
+    const { fixture, template } = await createFixture();
+    await mkdir(join(fixture, '.github', 'workflows'), { recursive: true });
+    const workflow = join(fixture, '.github', 'workflows', 'site-project.yml');
+    await writeFile(workflow, 'keep me\n');
+    await expect(
+      materializeProject(
+        { ...options, destination: 'website', repositoryRoot: '.', ciPrefix: 'site' },
+        { templateDirectory: template, generateCi, cwd: fixture },
+      ),
+    ).rejects.toThrow(/already exists/);
+    await expect(readFile(workflow, 'utf8')).resolves.toBe('keep me\n');
+    await expect(access(join(fixture, 'website'))).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
   test('rejects a project root outside its repository root', async () => {
@@ -149,7 +217,7 @@ describe('template materialization', () => {
     await expect(
       materializeProject(
         { ...options, destination: 'website', repositoryRoot: 'repository' },
-        { templateDirectory: template, cwd: fixture },
+        { templateDirectory: template, generateCi, cwd: fixture },
       ),
     ).rejects.toThrow(/must be inside repository root/);
   });
@@ -158,7 +226,7 @@ describe('template materialization', () => {
     const { fixture, template } = await createFixture();
     await materializeProject(
       { ...options, author: "O'Reilly \\ Studio" },
-      { templateDirectory: template, cwd: fixture },
+      { templateDirectory: template, generateCi, cwd: fixture },
     );
 
     const site = await readFile(join(fixture, options.destination, 'src', 'config', 'site.ts'), 'utf8');
@@ -169,7 +237,9 @@ describe('template materialization', () => {
     const { fixture, template } = await createFixture();
     const destination = join(fixture, options.destination);
     await mkdir(destination);
-    await expect(materializeProject(options, { templateDirectory: template, cwd: fixture })).resolves.toMatchObject({
+    await expect(
+      materializeProject(options, { templateDirectory: template, generateCi, cwd: fixture }),
+    ).resolves.toMatchObject({
       destination,
     });
   });
@@ -180,9 +250,9 @@ describe('template materialization', () => {
     await mkdir(destination);
     await writeFile(join(destination, 'existing.txt'), 'keep me');
 
-    await expect(materializeProject(options, { templateDirectory: template, cwd: fixture })).rejects.toThrow(
-      /is not empty\. No files were changed/,
-    );
+    await expect(
+      materializeProject(options, { templateDirectory: template, generateCi, cwd: fixture }),
+    ).rejects.toThrow(/is not empty\. No files were changed/);
     await expect(readFile(join(destination, 'existing.txt'), 'utf8')).resolves.toBe('keep me');
   });
 
@@ -194,6 +264,7 @@ describe('template materialization', () => {
 
     await materializeProject(options, {
       templateDirectory: template,
+      generateCi,
       cwd: fixture,
       confirmOverwrite: async () => true,
     });
@@ -210,7 +281,12 @@ describe('template materialization', () => {
     await symlink(external, join(destination, 'src'));
 
     await expect(
-      materializeProject(options, { templateDirectory: template, cwd: fixture, confirmOverwrite: async () => true }),
+      materializeProject(options, {
+        templateDirectory: template,
+        generateCi,
+        cwd: fixture,
+        confirmOverwrite: async () => true,
+      }),
     ).rejects.toThrow(/Unsafe destination entry/);
     await expect(readFile(join(external, 'site.ts'), 'utf8')).resolves.toBe('external contents');
   });
@@ -218,7 +294,7 @@ describe('template materialization', () => {
   test.each(['../outside', 'nested/../outside'])('rejects traversal destination %s', async (destination) => {
     const { fixture, template } = await createFixture();
     await expect(
-      materializeProject({ ...options, destination }, { templateDirectory: template, cwd: fixture }),
+      materializeProject({ ...options, destination }, { templateDirectory: template, generateCi, cwd: fixture }),
     ).rejects.toThrow(MaterializationError);
     await expect(access(join(fixture, 'outside'))).rejects.toMatchObject({ code: 'ENOENT' });
   });
@@ -229,6 +305,7 @@ describe('template materialization', () => {
     await expect(
       materializeProject(options, {
         templateDirectory: template,
+        generateCi,
         cwd: fixture,
         signal: controller.signal,
         onFileCopied: () => controller.abort(),
@@ -245,7 +322,12 @@ describe('template materialization', () => {
     await writeFile(join(template, 'src', 'config', 'site.ts'), 'missing required tokens');
 
     await expect(
-      materializeProject(options, { templateDirectory: template, cwd: fixture, confirmOverwrite: async () => true }),
+      materializeProject(options, {
+        templateDirectory: template,
+        generateCi,
+        cwd: fixture,
+        confirmOverwrite: async () => true,
+      }),
     ).rejects.toThrow(/Recovery:/);
     await expect(readFile(join(destination, 'package.json'), 'utf8')).resolves.toBe('original contents');
   });

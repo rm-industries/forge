@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "@zuke/core": "jsr:@zuke/core@^1.70.1",
+    "yaml": "npm:yaml@^2.9.1"
+  }
+}
