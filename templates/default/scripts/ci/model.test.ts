@@ -19,6 +19,15 @@ const config = configSchema.parse({
 const pins = (action: string) => ({ ref: `${action}@${'a'.repeat(40)}` });
 
 describe('shared work and provider rendering', () => {
+  test('filters workflow validation while keeping project and security checks unconditional', () => {
+    const workflows = createGithubWorkflows(config, pins);
+    for (const event of ['push', 'pull_request'] as const) {
+      expect(workflows.automation.on[event]).toEqual({ branches: ['main'], paths: ['.github/**'] });
+      expect(workflows.project.on[event]).toEqual({ branches: ['main'] });
+      expect(workflows.security.on[event]).toEqual({ branches: ['main'] });
+    }
+    expect(workflows.automation.on.schedule).toEqual([{ cron: '43 5 * * 1' }]);
+  });
   test('validates dependencies and computes an order with each prerequisite once', () => {
     expect(() => defineWork({ a: { name: 'A', commands: ['true'], needs: ['missing'] } })).toThrow(
       'Unknown dependency',

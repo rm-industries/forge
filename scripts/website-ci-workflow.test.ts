@@ -19,6 +19,10 @@ interface Job {
 }
 
 interface Workflow {
+  on: {
+    push?: { paths?: string[] | undefined } | null | undefined;
+    pull_request?: { paths?: string[] | undefined } | null | undefined;
+  };
   concurrency?:
     | {
         'cancel-in-progress'?: string | boolean | undefined;
@@ -32,6 +36,7 @@ const readWorkflow = (path: string): Workflow =>
 
 const website = readWorkflow('../.github/workflows/website.yml');
 const project = readWorkflow('../.github/workflows/project.yml');
+const automation = readWorkflow('../.github/workflows/automation.yml');
 const template = createGithubWorkflows(
   configSchema.parse({
     directory: '.',
@@ -65,6 +70,31 @@ const download = (workflow: Workflow, job: string, name: string, path: string) =
 };
 
 describe('generated website CI contract', () => {
+  it('watches website content and automation build inputs without filtering required validation', () => {
+    for (const event of ['push', 'pull_request'] as const) {
+      expect(website.on[event]?.paths).toEqual([
+        'website/**',
+        'docs/**',
+        '.github/workflows/website.yml',
+        '.github/actions/setup-project/**',
+      ]);
+      expect(automation.on[event]?.paths).toEqual(
+        expect.arrayContaining([
+          '.github/**',
+          'templates/default/scripts/ci/**',
+          'packages/create-forge/scripts/**',
+          'packages/create-forge/src/**',
+          'packages/create-forge/*.config.ts',
+          'packages/create-forge/tsconfig.json',
+          'tsconfig.json',
+          '**/package.json',
+          '**/package-lock.json',
+        ]),
+      );
+      expect(project.on[event]).not.toHaveProperty('paths');
+      expect(template.on[event]).not.toHaveProperty('paths');
+    }
+  });
   const sourceJobs = [
     'format',
     'lint-code',

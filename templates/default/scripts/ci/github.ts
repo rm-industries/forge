@@ -125,9 +125,13 @@ export function createGithubWorkflows(config: SiteCiConfig, pins: ActionResolver
   });
   const auxiliary = (kind: 'security' | 'automation', name: string, minute: number) => {
     const definition = structuredClone(githubExtras[kind]);
+    const trigger = {
+      branches: ['main'],
+      ...(kind === 'automation' ? { paths: ['.github/**'] } : {}),
+    };
     return githubWorkflowSchema.parse({
       ...base(name),
-      on: { ...base(name).on, schedule: [{ cron: `${minute} 5 * * 1` }] },
+      on: { push: trigger, pull_request: trigger, schedule: [{ cron: `${minute} 5 * * 1` }] },
       jobs: definition,
     });
   };

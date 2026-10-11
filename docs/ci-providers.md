@@ -105,6 +105,25 @@ The template's source defaults support development and tests; published bootstra
 defaults are refreshed at build time. Updating action compatibility still requires
 review and a Forge release to reach new consumers.
 
+## Change filters
+
+Project validation intentionally runs on every change, including nested projects
+and GitLab child pipelines. Consumer projects may depend on files outside their
+own directory. GitHub's required Project check must also report a result for each
+pull request: skipping its workflow with `paths` or `paths-ignore` would leave it
+pending. Security scans cover the whole repository and remain unfiltered.
+
+Generated GitHub automation runs on `.github/**` changes and on its weekly
+schedule. Its scanners read workflows and local actions, so application-only
+changes do not need another workflow scan. Forge's own automation also watches
+the CI renderer and generator build inputs because it renders template workflows
+before scanning. The Forge website watches `website/**`, its shared setup action,
+its workflow, and `docs/**`, which supplies its documentation pages and logo.
+
+Release, synchronization, and maintenance workflows retain their tag, dispatch,
+or scheduled triggers. Path filters apply to push and pull-request events, not
+these triggers. Filtered workflows should not be configured as required checks.
+
 ## Validation
 
 Tests cover graph validation, native deployment fields, artifact reuse, provider
