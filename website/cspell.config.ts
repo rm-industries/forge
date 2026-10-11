@@ -4,9 +4,6 @@ export default defineConfig({
   // Ignore only installed dependencies and generated tool output.
   ignorePaths: ['node_modules', 'dist', 'coverage', 'playwright-report', 'test-results', '.lighthouseci'],
   words: [
-    'Zuke',
-    'zizmorcore',
-    'cicd',
     'autorun',
     'Catppuccin',
     'contentinfo',

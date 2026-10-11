@@ -177,6 +177,11 @@ const customizeTemplate = async (
   const scheduleMinutes = deriveScheduleMinutes(options.packageName);
   const configPath = join(projectRoot, 'scripts', 'ci', 'config.json');
   const config = JSON.parse(await readFile(configPath, 'utf8'));
+  if (options.ciProviders) {
+    config.providers = options.ciProviders;
+    config.primary = options.primaryCi ?? (options.ciProviders.includes('github') ? 'github' : 'gitlab');
+  }
+  if (options.primaryCi) config.primary = options.primaryCi;
   config.directory = projectDirectory;
   config.repositoryRoot = relative(projectRoot, repositoryRoot).split(sep).join('/') || '.';
   config.securityMinute = scheduleMinutes.security;
@@ -188,17 +193,6 @@ const customizeTemplate = async (
     `"providers": ${JSON.stringify(config.providers).replaceAll(',', ', ')}`,
   );
   await writeFile(configPath, `${configJson}\n`);
-
-  const deploymentPath = join(repositoryRoot, workflowPath('deployment', ciPrefix));
-  let deployment = await readFile(deploymentPath, 'utf8');
-  deployment = replaceRawToken(
-    deployment,
-    templateTokens.ciWorkflowName,
-    JSON.stringify(`${ciPrefix ? `${ciPrefix}: ` : ''}Project Continuous Integration`),
-    'CI workflow name',
-  );
-  deployment = replaceRawToken(deployment, templateTokens.projectDirectory, projectDirectory, 'project directory');
-  await writeFile(deploymentPath, deployment);
 
   const dependabot = join(repositoryRoot, '.github', 'dependabot.yml');
   if (!skipped.has(dependabot)) {
@@ -272,7 +266,9 @@ export const materializeProject = async (options: GeneratorOptions, context: Mat
     }
   }
   const approvedWorkflows = new Set<string>();
-  for (const name of ['project', 'security', 'automation']) {
+  for (const name of (options.ciProviders ?? ['github']).includes('github')
+    ? ['project', 'security', 'automation']
+    : []) {
     const path = join(repositoryRoot, workflowPath(name, ciPrefix));
     if (await pathExists(path)) {
       if (!(await context.confirmOverwrite?.(path)))
@@ -322,6 +318,7 @@ export const materializeProject = async (options: GeneratorOptions, context: Mat
     for (const file of generatedFiles) {
       if (
         !/^\.github[\\/]workflows[\\/][a-z0-9-]+\.yml$/.test(file.relativePath) &&
+        !/^\.gitlab[\\/]ci[\\/][a-z0-9-]+\.yml$/.test(file.relativePath) &&
         file.relativePath !== '.gitlab-ci.yml'
       )
         throw new Error('Unexpected generated CI path');

@@ -42,21 +42,18 @@
   "scripts": {
     "build": "tsdown && node scripts/copy-template.ts",
     "prepack": "npm run typecheck && npm test && npm run build",
-    "test": "vitest run && npm run test:ci",
+    "test": "vitest run",
     "test:compatibility": "npm run build && node scripts/test-generator-e2e.ts --compatibility",
     "test:e2e": "npm run build && node scripts/test-generator-e2e.ts",
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "verify:package": "npm run build && node scripts/verify-package.ts",
-    "test:ci": "node --test src/ci/*.test.ts && npm run ci:test --prefix ../..",
-    "ci:generate": "npm run ci:generate --prefix ../..",
-    "ci:check": "npm run ci:check --prefix ../.."
+    "verify:package": "npm run build && node scripts/verify-package.ts"
   },
   "dependencies": {
     "@clack/prompts": "^1.8.1",
     "commander": "^15.0.0",
-    "deno": "^2.9.6",
     "validate-npm-package-name": "^8.0.0",
-    "yaml": "^2.9.1"
+    "yaml": "^2.9.1",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/validate-npm-package-name": "^4.0.2",

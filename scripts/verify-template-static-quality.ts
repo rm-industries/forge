@@ -10,7 +10,6 @@ const temporaryDirectory = await mkdtemp(join(tmpdir(), 'forge-static-quality-')
 const fixtureDirectory = join(temporaryDirectory, 'template');
 const excludedDirectories = new Set([
   '.astro',
-  '.zuke',
   '.git',
   '.lighthouseci',
   'coverage',

@@ -1,113 +1,121 @@
-# Generated project CI
+# CI providers
 
-Forge uses Zuke targets to define work and its dependencies in TypeScript. The
-same targets run locally and generate hosted validation jobs. Zuke writes the
-YAML; Forge does not rewrite the generated job definitions.
+Forge defines site work in TypeScript and renders GitHub Actions or GitLab CI.
+Everything runs with the existing Node and npm setup. The implementation is
+internal to Forge; it does not introduce another runtime or published package.
 
-The root graph in `scripts/ci/forge.ts` checks Forge and its packages, including
-content-model. The site graph in `templates/default/scripts/ci/site.ts` checks
-an instantiated website. Shared helpers live with the template so generated
-projects receive everything needed to maintain their own CI. The website uses
-that same site graph with its own directory and workflow prefix.
+## Shared work and native provider behavior
 
-The template stores the TypeScript authoring files. `create-forge` configures
-them and asks Zuke to write validation workflows during bootstrap. Generated
-projects commit their resulting YAML, as Forge does for its root and website
-workflows. This makes workflows reviewable and available to Dependabot.
+`templates/default/scripts/ci/model.ts` defines commands, dependencies, artifacts,
+and browser requirements. `defineWork` validates those pieces with small Zod
+schemas, rejects missing dependencies and cycles, and provides types for callers.
+The local command and both renderers consume that definition.
 
-## Installation and local execution
+The GitHub renderer owns permissions, actions, matrices, concurrency, environments,
+and outputs. Security and repository automation are explicit GitHub definitions.
+The GitLab renderer owns images, rules, stages, dependencies and artifact transfer.
+The schemas validate the fields Forge emits; they are not complete implementations
+of either platform's specification. Unknown fields are rejected so additions must
+extend the appropriate schema. Serialization parses and validates the resulting
+YAML before writing it.
 
-`npm ci` installs the Deno runtime through npm. No global runtime installation
-or workstation setup step is required. Zuke uses `jsr:@zuke/core@^1.70.1` through
-`imports.json`; its exact version and integrity are recorded in `deno.lock`.
-The first invocation may download dependencies into Deno's cache. Native Deno
-checks the authoring TypeScript, with the lock enforced using `--frozen`.
+GitHub Pages deployment remains in the project workflow, after the aggregate
+validation job. It uses that run's Pages artifact and preserves the environment,
+deployment output and deployed-site smoke test. No `workflow_run` trigger is used.
+Only the primary GitHub provider deploys. GitLab currently provides validation;
+it does not provision Pages, CodeQL, or GitHub repository automation. Selecting
+GitLab as primary does not manufacture an equivalent deployment integration.
+
+The repository root and Forge website retain their existing native workflows.
+They are not copied into generated projects. Migrating their authoring into
+TypeScript is separate work; this change removes the experimental runtime and
+restores their artifact-sharing behavior. Root checks run on every change and
+retain the sparse runtime compatibility matrices.
+
+## Bootstrap and regeneration
+
+The template stores TypeScript definitions and shared GitHub configuration, with
+no workflow YAML. Bootstrap renders into staging and applies the same collision,
+symlink and rollback rules as other generated files. Generated repositories commit
+the resulting YAML so platform tools and dependency updates can inspect it.
+
+Change owned jobs in the TypeScript definitions. YAML edits other than action
+pin updates are reported as drift and are replaced during regeneration.
+
+Generated projects can run:
 
 ```sh
-npm run pipeline                         # repository quality checks
-npm run pipeline -- --list               # available targets
-npm run pipeline -- quality --dry-run    # inspect dependencies
-npm run pipeline -- project              # full repository checks
-npm run pipeline --prefix website -- typecheck
-npm run ci:generate                      # write root workflows
-npm run ci:generate --prefix website     # write website workflows
-npm run ci:check                         # check both for drift
+npm run pipeline -- quality --dry-run
+npm run pipeline -- quality
+npm run pipeline -- browser-tests
+npm run ci:generate
+npm run ci:check
 ```
 
-Generated projects have the same `pipeline`, `ci:generate`, and `ci:check`
-commands. Existing individual npm scripts remain available. Local runs use the
-current Node version; they do not reproduce hosted runner images or matrices.
-Site quality includes browser tests and Lighthouse, and installs their browser
-dependencies. Running those targets may require operating system permissions.
-Execution records under `.zuke/` are ignored.
+Local execution runs dependencies once in order and stops on failure, including
+security audit findings. Hosted dependency audits remain advisory to allow
+remediation. Local execution does not emulate hosted permissions, containers,
+runtime matrices, secrets, or deployment; npm scripts remain available directly.
 
-Hosted jobs invoke these targets by name. Zuke derives job dependencies from
-target references. Each isolated runner executes the target's prerequisites too;
-this migration prioritizes sharing the work definition over minimizing repeated
-execution. All checks run on every change. Supported Node and OS matrices are
-Cartesian products; there are no change-classification or matrix-include jobs.
+Use `--ci-providers github,gitlab` and optionally `--primary-ci github` during
+bootstrap. Later, edit `scripts/ci/config.json` to select `providers`, optionally `primary`, and
+schedule minutes. Both providers may validate the same project. Removing a
+provider does not delete already committed workflows; remove those deliberately.
 
-## Paths and existing repositories
+Standalone GitHub workflow filenames are `project.yml`, `security.yml`, and
+`automation.yml`. With `--repository-root`, the project directory supplies the
+prefix automatically; `--ci-prefix` overrides it. Existing shared configuration
+is preserved and skipped files are reported. Inline setup means an existing
+repository's setup action is not a dependency of the generated workflow.
 
-A nested project derives its workflow prefix from its relative directory:
-`website` generates `website-project.yml`, `website-security.yml`, and
-`website-automation.yml`. `apps/docs` derives `apps-docs`. Use `--ci-prefix`
-to override it. Standalone projects keep unprefixed names. Prefixes allow
-lowercase letters, numbers, and separating hyphens, up to 80 characters.
-Workflow concurrency groups include the workflow path, isolating namespaces.
+Standalone GitLab output is `.gitlab-ci.yml`. Namespaced output is
+`.gitlab/ci/<prefix>.yml`, which the repository owner must invoke as a child pipeline from their
+existing root GitLab configuration. Forge does not overwrite or merge that file.
+A child pipeline keeps generated stages, rules, defaults and job identifiers
+separate from the existing root pipeline:
 
-Existing workflow collisions require confirmation. Existing shared repository
-files, including Dependabot configuration, are preserved, and completion reports
-which Forge configuration was skipped. Review that report and integrate any
-needed update rules into the repository's existing configuration.
+```yaml
+forge-site:
+  trigger:
+    include:
+      - local: .gitlab/ci/site.yml
+    strategy: depend
+```
 
-`scripts/ci/config.json` controls the project directory, repository root, prefix,
-providers, primary provider, and schedule minutes. GitHub is the bootstrap
-default. The site graph can also emit GitLab validation with Zuke by enabling
-`gitlab` in `providers`. GitLab requires a Linux runner supporting the Node
-container and browser dependency installation. GitHub action-based security and
-automation jobs do not have GitLab equivalents. The GitLab graph does not add
-schedule or duplicate-pipeline suppression rules. Primary is configuration
-metadata; it does not move deployment between providers.
-
-## Deployment exception
-
-Zuke 1.70.1 cannot emit GitHub Pages job environments or job outputs. Forge
-therefore retains an editable `deployment.yml` template alongside the TypeScript
-validation graph. Consumers can customize it after bootstrap. It waits for a
-successful main-branch push validation run from the same repository, downloads
-that run's site artifact, deploys to the `github-pages` environment, and passes
-the Pages URL to the smoke target. Pull request validation cannot trigger Pages.
-Nested projects namespace this workflow too.
-
-Provider interfaces and generated-file checks do not prove provider semantics.
-Review deployment edits and use provider linting and hosted execution for
-features beyond the graph supported here.
+Use the prefix-derived filename for `local`. The dependent trigger reports the
+child pipeline result to its parent. Generated rules accept `parent_pipeline` in
+addition to standalone push and merge-request events.
 
 ## Action pins and Dependabot
 
-`createCiPinResolver` in `templates/default/scripts/ci/pins.ts` reads parsed YAML
-`uses` nodes and preserves full commit SHAs and version comments. It rejects
-mutable action references, malformed YAML, duplicate keys, and conflicting SHAs
-or version comments. Self-repository (`$/`), workspace-relative (`./`), and
-Docker references do not enter the external pin map.
+`createCiPinResolver` reads full action SHAs and version comments from committed
+GitHub workflows. Existing workflow pins take priority over bootstrap defaults.
+Regeneration therefore preserves Dependabot updates rather than overwriting them.
+Malformed or mutable references and conflicting pins across workflows fail with
+a diagnostic. Update every occurrence of a shared action together.
 
-Each project's committed project, security, automation, and deployment workflows
-are the pin source. `scripts/ci/pins.json` provides initial defaults for actions
-not present in those files. Forge and its instantiated website maintain their
-pins independently. There is no second hard-coded action reference in the graph:
-steps request their action from the resolver.
+`npm run ci:check` detects other generated-output drift. A Dependabot action bump
+alone passes when its occurrences remain consistent. This verifies generation
+compatibility, not the behavior of the new action; the normal checks still run.
 
-Dependabot scans committed GitHub workflows as usual. A SHA or version-comment
-update is read on the next generation, so `ci:check` accepts an otherwise
-unchanged, consistent update without reverting it to the initial default. When
-occurrences disagree, update them to the intended reference together; the
-resolver does not guess which SHA is newer. If generation changes other output,
-regenerate and commit it in the same pull request. No bot pushes or merges
-updates automatically.
+When the Forge package is built, `copy-template.ts` refreshes the packaged
+`actions.json` defaults from the repository's Dependabot-maintained workflows and
+setup action. New consumers receive those pins without a second manual pin update.
+The template's source defaults support development and tests; published bootstrap
+defaults are refreshed at build time. Updating action compatibility still requires
+review and a Forge release to reach new consumers.
 
-Pin synchronization does not prove compatibility or safety of a new action
-release. Hosted checks exercise the updated actions; changes to unexercised
-paths still require review. npm updates Deno through the package lock. Zuke's
-JSR import and Deno lock must be updated together; npm Dependabot does not update
-that native JSR dependency.
+## Validation
+
+Tests cover graph validation, native deployment fields, artifact reuse, provider
+selection, serialization, action updates, drift and conflicts. Packed CLI fixtures
+exercise standalone and nested bootstrap, no-install use, regeneration and rollback.
+GitHub actionlint and zizmor remain the hosted syntax and security checks. The
+repository automation workflow renders fresh template workflows using packaged
+action defaults before scanning them, and watches the TypeScript CI sources.
+
+Provider references:
+[GitHub workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax)
+and [GitLab CI syntax](https://docs.gitlab.com/ci/yaml/).
+GitLab's server-side CI Lint remains necessary to verify an installed instance's
+feature support and runner configuration; local schema validation cannot replace it.

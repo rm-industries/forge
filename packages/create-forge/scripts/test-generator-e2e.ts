@@ -94,9 +94,13 @@ const assertGeneratedProject = async (directory: string, packageName: string, re
   }
   if (config.directory !== projectDirectory || config.prefix !== prefix)
     throw new Error('Incorrect CI project configuration');
-  const deployment = parse(await readFile(join(repositoryDirectory, workflowPath('deployment', prefix)), 'utf8'));
-  if (!deployment.on.workflow_run.workflows.includes(`${prefix ? `${prefix}: ` : ''}Project Continuous Integration`)) {
-    throw new Error('Deployment does not follow generated validation');
+  const project = parse(projectWorkflow);
+  if (
+    project.on.workflow_run ||
+    project.jobs.deploy.environment.name !== 'github-pages' ||
+    project.jobs.deploy.needs[0] !== 'project'
+  ) {
+    throw new Error('Deployment must follow validation in the same workflow');
   }
 };
 
@@ -137,6 +141,7 @@ try {
     cwd: defaultDirectory,
     maxBuffer: 10 * 1024 * 1024,
   });
+  await execute('npm', ['run', 'pipeline', '--', 'format'], { cwd: defaultDirectory, maxBuffer: 10 * 1024 * 1024 });
   await access(join(defaultDirectory, '.git', 'HEAD'));
   await access(join(defaultDirectory, '.github', 'dependabot.yml'));
   await access(join(defaultDirectory, '.github', 'workflows', 'automation.yml'));
@@ -184,6 +189,48 @@ try {
     '--no-git',
   ]);
   await assertGeneratedProject(scopedDirectory, '@example/scoped-site');
+
+  const gitlabDirectory = join(projectsDirectory, 'gitlab-site');
+  await runGenerator(executable, projectsDirectory, [
+    'gitlab-site',
+    '--yes',
+    '--ci-providers',
+    'gitlab',
+    '--no-install',
+    '--no-git',
+  ]);
+  const gitlab = parse(await readFile(join(gitlabDirectory, '.gitlab-ci.yml'), 'utf8'));
+  if (
+    gitlab['browser-tests'].needs[0].job !== 'build' ||
+    (await exists(join(gitlabDirectory, '.github/workflows/project.yml')))
+  )
+    throw new Error('GitLab bootstrap did not select the requested provider');
+
+  const sharedRepository = join(projectsDirectory, 'shared-repository');
+  await mkdir(sharedRepository);
+  await writeFile(join(sharedRepository, '.gitlab-ci.yml'), 'existing gitlab configuration\n');
+  await mkdir(join(sharedRepository, '.github'));
+  await writeFile(join(sharedRepository, '.github/dependabot.yml'), 'existing dependency configuration\n');
+  await runGenerator(executable, sharedRepository, [
+    'site',
+    '--yes',
+    '--repository-root',
+    '.',
+    '--ci-prefix',
+    'docs',
+    '--ci-providers',
+    'github,gitlab',
+    '--no-install',
+    '--no-git',
+  ]);
+  const nestedGitlab = parse(await readFile(join(sharedRepository, '.gitlab/ci/docs.yml'), 'utf8'));
+  await access(join(sharedRepository, '.github/workflows/docs-project.yml'));
+  if (
+    nestedGitlab.default.before_script[0] !== "cd 'site'" ||
+    (await readFile(join(sharedRepository, '.gitlab-ci.yml'), 'utf8')) !== 'existing gitlab configuration\n' ||
+    (await readFile(join(sharedRepository, '.github/dependabot.yml'), 'utf8')) !== 'existing dependency configuration\n'
+  )
+    throw new Error('Combined-provider bootstrap did not preserve shared repository configuration');
 
   const currentDirectory = join(projectsDirectory, 'current-directory-site');
   await mkdir(currentDirectory);
@@ -250,7 +297,7 @@ try {
   }
 
   const mode = compatibilityMode ? 'compatibility' : 'complete';
-  console.log(`Verified ${packResult.filename} across 7 isolated ${mode} generator fixtures.`);
+  console.log(`Verified ${packResult.filename} across 9 isolated ${mode} generator fixtures.`);
 } finally {
   await rm(fixtureDirectory, { recursive: true, force: true });
 }

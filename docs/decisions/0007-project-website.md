@@ -64,8 +64,8 @@ accessibility, and performance checks but never deploy to the production Pages
 environment. After those checks pass and a change reaches `main`, the Pages
 workflow deploys the static artifact already produced and validated by the
 website coverage-and-build job through a protected `github-pages` environment.
-It does not repeat that job's install or build. The deployment is selected only
-when the classifier identifies a website or shared-contract change. Production
+It does not repeat that job's install or build. The website workflow selects deployment only when its source or shared setup
+contract changes. Production
 concurrency queues a newer run instead of cancelling an in-progress deployment.
 The deployment and Pages environment must remain traceable to the merged commit.
 

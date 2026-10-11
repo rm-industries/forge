@@ -1,4 +1,0 @@
-{
-  // Native Deno checks these files and resolves their import map.
-  "ignore": ["scripts/ci/**", "scripts/pipeline.ts"],
-}

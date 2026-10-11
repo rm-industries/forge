@@ -2,6 +2,7 @@ import { cp, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { createCiPinResolver } from '../../../templates/default/scripts/ci/pins.ts';
 import { templateTokens } from '../src/template-tokens.ts';
 
 const packageDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -10,7 +11,6 @@ const sourceDirectory = join(repositoryRoot, 'templates', 'default');
 const destinationDirectory = join(packageDirectory, 'dist', 'template');
 const excludedNames = new Set([
   '.astro',
-  '.zuke',
   '.lighthouseci',
   'coverage',
   'dist',
@@ -59,22 +59,26 @@ for (const token of [
 }
 await writeFile(siteConfigPath, tokenizedSiteConfig);
 
-const deploymentPath = join(destinationDirectory, '.github', 'workflows', 'deployment.yml');
-const deployment = (await readFile(deploymentPath, 'utf8'))
-  .replace('Project Continuous Integration', templateTokens.ciWorkflowName)
-  .replace('    working-directory: .', `    working-directory: ${templateTokens.projectDirectory}`)
-  .replace(
-    'cache-dependency-path: package-lock.json',
-    `cache-dependency-path: ${templateTokens.projectDirectory}/package-lock.json`,
-  )
-  .replace('path: dist', `path: ${templateTokens.projectDirectory}/dist`)
-  .replaceAll('playwright-report', `${templateTokens.projectDirectory}/playwright-report`)
-  .replaceAll('test-results', `${templateTokens.projectDirectory}/test-results`);
-await writeFile(deploymentPath, deployment);
-
 const dependabotPath = join(destinationDirectory, '.github', 'dependabot.yml');
 const dependabot = (await readFile(dependabotPath, 'utf8')).replace(
   '  - package-ecosystem: npm\n    directory: /',
   `  - package-ecosystem: npm\n    directory: ${templateTokens.dependabotDirectory}`,
 );
 await writeFile(dependabotPath, dependabot);
+
+// Bootstrap defaults follow Dependabot-maintained repository actions at package build time.
+const actionDefaultsPath = join(destinationDirectory, 'scripts/ci/actions.json');
+const actionDefaults = JSON.parse(await readFile(actionDefaultsPath, 'utf8')) as Record<string, { ref: string }>;
+const maintained: Record<string, string> = {};
+for (const path of [
+  '.github/workflows/project.yml',
+  '.github/workflows/security.yml',
+  '.github/workflows/automation.yml',
+  '.github/workflows/website.yml',
+  '.github/actions/setup-project/action.yml',
+]) {
+  maintained[path] = await readFile(join(repositoryRoot, path), 'utf8');
+}
+const resolveAction = createCiPinResolver(maintained);
+for (const action of Object.keys(actionDefaults)) actionDefaults[action] = resolveAction(action);
+await writeFile(actionDefaultsPath, `${JSON.stringify(actionDefaults, undefined, 2)}\n`);

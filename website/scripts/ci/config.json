@@ -1,9 +1,0 @@
-{
-  "directory": "website",
-  "repositoryRoot": "..",
-  "prefix": "website",
-  "providers": ["github"],
-  "primary": "github",
-  "securityMinute": 17,
-  "automationMinute": 43
-}

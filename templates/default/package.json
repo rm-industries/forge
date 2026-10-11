@@ -35,9 +35,9 @@
     "quality:core": "npm run quality:static && npm run test:coverage && npm run build && npm run validate:build",
     "quality:static": "npm run format && npm run lint && npm run audit:unused && npm run typecheck",
     "quality:static:ci": "npm run lint:code && npm run lint:css && npm run lint:markdown && npm run audit:unused && npm run typecheck",
-    "pipeline": "deno run --check --frozen --no-config --lock=scripts/ci/deno.lock --import-map=scripts/ci/imports.json --node-modules-dir=none --allow-read --allow-env --allow-run=npm --allow-write scripts/pipeline.ts",
-    "ci:generate": "deno run --check --frozen --no-config --lock=scripts/ci/deno.lock --import-map=scripts/ci/imports.json --node-modules-dir=none --allow-read --allow-env --allow-run=npm --allow-write scripts/ci/generate.ts",
-    "ci:check": "deno run --check --frozen --no-config --lock=scripts/ci/deno.lock --import-map=scripts/ci/imports.json --node-modules-dir=none --allow-read --allow-env --allow-run=npm --allow-write scripts/ci/generate.ts --check"
+    "pipeline": "node scripts/pipeline.ts",
+    "ci:generate": "node scripts/ci/generate.ts",
+    "ci:check": "node scripts/ci/generate.ts --check"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
@@ -61,7 +61,6 @@
     "audit-ci": "7.1.0",
     "cspell": "^10.3.6",
     "daisyui": "^5.7.47",
-    "deno": "^2.9.6",
     "knip": "^6.38.0",
     "markdownlint-cli": "^0.49.0",
     "oxfmt": "^0.70.0",
@@ -70,7 +69,9 @@
     "stylelint-config-standard": "^40.0.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.3.6"
   },
   "engines": {
     "node": "^22.22.2 || ^24.0.0 || ^26.0.0",

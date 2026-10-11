@@ -27,7 +27,7 @@ configuration in the root `.github/` directory, installs dependencies inside
 `website/`, and initializes Git at the repository root when needed. Generated
 workflow execution paths, artifact paths, and Dependabot settings
 are adjusted for the nested project automatically. Workflow files are named
-`website-project.yml`, `website-security.yml`, and `website-automation.yml`, plus editable `website-deployment.yml`, for
+`website-project.yml`, `website-security.yml`, and `website-automation.yml` for
 this example, leaving existing unprefixed workflows untouched. Override the
 prefix with `--ci-prefix docs-site`. Prefixes contain lowercase letters, numbers,
 and single hyphens, with a maximum length of 80 characters. A standalone project
@@ -54,13 +54,18 @@ telemetry or promotional messages.
 
 ## CI and local work
 
-Generated projects receive a TypeScript Zuke graph and its generated validation
-workflows. `npm ci` installs the runtime through npm; no separate workstation
-setup is needed. Run `npm run pipeline -- --list` to inspect targets, or
-`npm run pipeline -- quality` for the site checks. `npm run ci:generate` writes
-validation YAML, and `npm run ci:check` detects drift. Commit that output so
-Dependabot can update action pins. Deployment stays editable YAML because Zuke
-cannot yet model the required Pages environments and outputs.
+Select providers during bootstrap with `--ci-providers github,gitlab` or
+`--ci-providers gitlab`. `--primary-ci` selects the authoritative provider;
+GitHub is primary when enabled unless overridden. GitLab currently supplies
+validation; configure its deployment separately.
+
+Generated projects receive shared TypeScript work definitions and validated
+GitHub or GitLab YAML. Use `npm run pipeline -- quality --dry-run` to inspect the
+local work order, or `npm run pipeline -- quality` to run it. No additional
+runtime setup is required. `npm run ci:generate` writes CI YAML and
+`npm run ci:check` detects drift. Commit the output so Dependabot can update action
+pins. GitHub Pages deployment stays in the project workflow after validation,
+with its native environment and outputs.
 
 See [the CI documentation](../../docs/ci-providers.md) for graph ownership,
 pin resolution, provider support, and execution limitations.
@@ -90,7 +95,8 @@ npm run test:generator:e2e
 ```
 
 This generates default, fully specified, scoped-package-name,
-current-directory, nested-project, no-install, and conflict fixtures in an OS
+current-directory, nested-project, GitLab-only, combined-provider, no-install, and
+conflict fixtures in an OS
 temporary directory. The default and nested fixtures install dependencies
 outside the Forge workspace. The nested fixture also runs the generated
 project's core quality and production-build pipeline, verifies its Pages

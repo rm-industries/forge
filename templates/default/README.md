@@ -81,37 +81,35 @@ deployment.
 
 ## Continuous integration
 
-The TypeScript Zuke graph in `scripts/ci/site.ts` defines local work and generates
-`.github/workflows/project.yml`, `security.yml`, and `automation.yml`. They run
-on every pull request targeting `main` and every push to `main`. `npm ci` installs
-the runtime through npm; no global runtime installation is needed.
+The generated `.github/workflows/project.yml` runs on pull requests targeting
+`main` and on pushes to `main`. Formatting, code/style/Markdown linting,
+spelling, unused-code analysis, Astro diagnostics, and unit coverage report
+independently. One production build follows those checks; build validation,
+browser tests, and Lighthouse download and test that same artifact. Deployment
+depends directly on every applicable check and publishes the Pages artifact
+packaged by the build job. A live Chromium smoke test then verifies the deployed
+URL, assets, and mobile layout. There is no aggregate/no-op project job.
+Deployment setup, project-site URLs, custom domains, and environment protections
+are documented in [`docs/github-pages.md`](docs/github-pages.md).
 
-```sh
-npm run pipeline -- --list
-npm run pipeline -- quality
-npm run ci:generate
-npm run ci:check
-```
+The workflow installs dependencies with `npm ci`, caches npm downloads using the
+lockfile, cancels superseded pull-request runs, serializes deployment runs, and
+grants only read access outside deployment. Pull requests receive no secrets or
+write permissions. Coverage, production builds, Lighthouse reports, and browser
+failure evidence are retained for seven days. All third-party actions use
+immutable commit pins.
 
-Commit generated validation YAML so it is reviewable and Dependabot can update
-action pins. Generation reads those pins and version comments instead of
-reverting them to bootstrap defaults. Conflicting pins fail generation.
-
-Formatting, linting, spelling, unused-code analysis, Astro diagnostics, and unit
-coverage precede the build. Build validation, browser tests, Lighthouse, and audit
-precede the `Project` aggregate. Isolated hosted jobs run their target's
-prerequisites again. Coverage, builds, Lighthouse, and browser evidence are
-retained for seven days. External actions use immutable commit pins.
-
-Pages deployment stays editable in `deployment.yml` because Zuke cannot model
-its environment or output fields. It follows successful validation of a push
-to `main` from this repository, downloads that run's build, and deploys its exact
-commit. Smoke tests verify the deployed URL. See
-[`docs/github-pages.md`](docs/github-pages.md) for setup and protections.
-
-CodeQL, dependency review, Actionlint, and Zizmor run independently of the work
-graph's local npm tasks. Security and automation workflows also run weekly.
-Review their findings before merging changes to automation or dependencies.
+Security automation is included alongside project CI. CodeQL analyzes the
+project's TypeScript and GitHub Actions on pull requests, pushes to `main`, and
+a weekly schedule. Dependency review reports introduced dependency risk without
+blocking remediation pull requests. A separate scheduled automation workflow
+validates workflow syntax with Actionlint and scans GitHub Actions with Zizmor.
+Zizmor uploads its findings to GitHub code scanning and fails `Workflow security`
+when it finds an issue. The job receives `security-events: write` only for that
+upload; all other access remains read-only. `Workflow syntax` and `Workflow
+security` run when `.github/**` changes. Because they are path-filtered, do not
+configure them as globally required status checks; require both whenever an
+automation change causes them to appear.
 
 Dependabot checks npm and GitHub Actions weekly. Minor and patch npm updates are
 grouped by production or development scope, while major updates remain separate
@@ -199,11 +197,6 @@ sites use an origin-only URL and therefore have no deployment prefix.
 The standalone source template uses `https://example.com` as a valid,
 non-production site origin. Projects created by Forge receive the values
 selected through the generator input contract.
-
-CI file generation supports GitHub Actions, GitLab CI, or both independently
-of repository hosting. See the Forge
-[CI provider guide](https://github.com/rm-industries/forge/blob/main/docs/ci-providers.md)
-for the generator API and the distinction between enabled and primary providers.
 
 ## Styling and themes
 
@@ -333,3 +326,17 @@ can replace this with its own supported OAuth configuration.
 The generated CMS configuration lives in code rather than a duplicated YAML
 file. Change content fields in the shared model, then run `npm run typecheck`
 and `npm test` to verify that Astro and Sveltia still derive the same contract.
+
+## CI authoring
+
+Work definitions and provider renderers live in `scripts/ci/`. Run
+`npm run pipeline -- quality --dry-run` to inspect local work, or
+`npm run pipeline -- quality` to execute it. `npm run ci:generate` writes the
+configured GitHub or GitLab YAML; `npm run ci:check` detects drift. Commit the
+output so Dependabot can update action pins. Regeneration preserves those pins.
+GitHub Pages runs after validation in the same project workflow.
+
+Configure providers, the primary provider and repository paths in
+`scripts/ci/config.json`. GitLab currently supports validation, with deployment
+configured separately by the repository owner. Namespaced GitLab configuration
+must be invoked as a child pipeline from the existing root `.gitlab-ci.yml`.

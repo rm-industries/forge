@@ -50,10 +50,6 @@ const createTemplate = async (fixture: string) => {
     join(template, 'scripts', 'ci', 'config.json'),
     JSON.stringify({ providers: ['github'], primary: 'github' }),
   );
-  await writeFile(
-    join(template, '.github', 'workflows', 'deployment.yml'),
-    `workflow: ${templateTokens.ciWorkflowName}\nworking-directory: ${templateTokens.projectDirectory}\n`,
-  );
   await writeFile(join(template, '.github', 'actions', 'setup-project', 'action.yml'), 'existing shared fixture\n');
   await writeFile(join(template, '.github', 'dependabot.yml'), `directory: ${templateTokens.dependabotDirectory}\n`);
   return template;
@@ -178,8 +174,8 @@ describe('template materialization', () => {
     );
     expect(result.skippedConfiguration).toContain('.github/dependabot.yml');
     expect(await readFile(shared, 'utf8')).toBe('existing updates\n');
-    expect(await readFile(join(fixture, '.github/workflows/website-deployment.yml'), 'utf8')).toContain(
-      'website: Project Continuous Integration',
+    expect(await readFile(join(fixture, '.github/workflows/website-project.yml'), 'utf8')).toContain(
+      "directory: 'website'",
     );
   });
 
