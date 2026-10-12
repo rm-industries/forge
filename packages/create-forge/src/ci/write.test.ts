@@ -28,6 +28,7 @@ test('writes validated consumer YAML from ephemeral options and immutable pins',
       '.gitlab/ci/site.yml',
     ]);
     for (const [path, content] of Object.entries(files)) {
+      expect(content).toContain('You own this');
       const formatted = await format(path, content, { singleQuote: true, printWidth: 120 });
       expect(formatted.errors).toEqual([]);
       expect(content).toBe(formatted.code);

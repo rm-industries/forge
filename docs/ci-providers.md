@@ -23,7 +23,8 @@ overwrite approval. Generation runs in staging, with rollback on failure.
 ## Validation and provider behavior
 
 Small Zod schemas validate commands, images, work relationships and provider
-fields. Dependencies must exist and cannot form cycles. Serialization formats YAML with Oxfmt using template settings, then parses and
+fields. Dependencies must exist and cannot form cycles. Serialization formats
+YAML with Oxfmt using template settings, then parses and
 validates the formatted YAML before writing. Generated workflows participate in
 normal consumer formatting checks. Tests and actionlint/zizmor verify generated
 consumer output; they do not generate or rewrite Forge's own workflows.
@@ -67,16 +68,21 @@ Consumers run one Node major in CI, selected with `--node-version 22`,
 compatibility matrices to verify the supported runtime range. Consumers do not
 receive a compatibility job.
 
-## Repository automation checks
+## Repository workflow boundaries
 
-Forge's native automation workflow tests the generator's output. It builds
-create-forge, bootstraps a disposable consumer with both providers and no install
-or Git setup, then scans the consumer's GitHub YAML alongside Forge's existing
-workflows. The fixture is discarded with the runner. Forge's own pipelines are
-not generated or replaced by these steps.
+`automation.yml` validates Forge's committed workflows and actions. `project.yml`
+runs repository and package checks. `security.yml` covers project security, and
+`website.yml` validates and deploys the website.
 
-Zod validates provider data and YAML structure inside generation. Actionlint
-checks GitHub-specific workflow syntax, and zizmor checks security patterns.
-Watching generator source, build scripts, configuration and dependency manifests
-ensures changes to emitted YAML reach these checks even when committed Forge
-workflow files do not change.
+`generator.yml` owns disposable consumer CI validation. It builds create-forge,
+bootstraps both providers without installation or Git setup, and scans only the
+consumer's GitHub YAML. Generation validates both providers with Zod; actionlint
+checks GitHub syntax and zizmor checks security patterns. Generator source,
+template, build configuration, dependency and action-pin changes trigger it.
+
+A later Forge CI refactor can move existing packed bootstrap and generator
+compatibility jobs from `project.yml` into `generator.yml`. The current change
+leaves those jobs and required-check configuration intact.
+
+Generated files include ownership comments explaining where consumers should
+edit jobs, triggers and schedules, and how action pins or runtime images evolve.

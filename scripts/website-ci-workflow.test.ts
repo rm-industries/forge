@@ -37,6 +37,7 @@ const readWorkflow = (path: string): Workflow =>
 const website = readWorkflow('../.github/workflows/website.yml');
 const project = readWorkflow('../.github/workflows/project.yml');
 const automation = readWorkflow('../.github/workflows/automation.yml');
+const generator = readWorkflow('../.github/workflows/generator.yml');
 const template = createGithubWorkflows(
   generationOptionsSchema.parse({
     directory: '.',
@@ -78,9 +79,11 @@ describe('generated website CI contract', () => {
         '.github/workflows/website.yml',
         '.github/actions/setup-project/**',
       ]);
-      expect(automation.on[event]?.paths).toEqual(
+      expect(automation.on[event]?.paths).toEqual(['.github/**']);
+      expect(generator.on[event]?.paths).toEqual(
         expect.arrayContaining([
           '.github/**',
+          'templates/default/**',
           'packages/create-forge/scripts/**',
           'packages/create-forge/src/**',
           'packages/create-forge/*.config.ts',
@@ -157,4 +160,12 @@ describe('repository template verification contract', () => {
       expect(steps(project, consumer).some((step) => step.run?.includes('npm run build'))).toBe(false);
     }
   });
+});
+
+it('keeps disposable consumer checks separate from repository automation', () => {
+  expect(commands(automation)).toEqual([]);
+  expect(commands(generator)).toHaveLength(2);
+  for (const command of commands(generator)) expect(command).toContain('--name ci-review-fixture');
+  expect(steps(automation, 'security').at(-1)?.with?.inputs).toBe('.github');
+  expect(steps(generator, 'security').at(-1)?.with?.inputs).toBe('.ci-review-fixture/.github');
 });

@@ -21,6 +21,8 @@ export async function writeCi(
   if (config.providers.includes('github'))
     for (const [name, workflow] of Object.entries(createGithubWorkflows(config, pins))) {
       const document = new Document(workflow);
+      document.commentBefore =
+        ' You own this workflow: edit jobs, paths and schedules here as your project grows.\n Dependabot updates action pins; no Forge regeneration step is required.';
       visit(document, {
         Pair(_key, pair) {
           if (
@@ -39,10 +41,10 @@ export async function writeCi(
     }
   if (config.providers.includes('gitlab')) {
     const path = config.prefix ? `.gitlab/ci/${config.prefix}.yml` : '.gitlab-ci.yml';
-    files[path] = validateCiYaml(
-      gitlabPipelineSchema,
-      new Document(createGitlabPipeline(config)).toString({ lineWidth: 0 }),
-    );
+    const document = new Document(createGitlabPipeline(config));
+    document.commentBefore =
+      ' You own this pipeline: edit jobs and rules here as your project grows.\n Review Node image versions when upgrading your project runtime.';
+    files[path] = validateCiYaml(gitlabPipelineSchema, document.toString({ lineWidth: 0 }));
   }
   for (const [path, content] of Object.entries(files)) {
     signal?.throwIfAborted();
