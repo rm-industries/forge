@@ -52,7 +52,7 @@ and Git setup ran or was skipped, and only the commands still needed to start
 development. Output remains readable when color is disabled and contains no
 telemetry or promotional messages.
 
-## CI and local work
+## CI generation
 
 Select providers during bootstrap with `--ci-providers github,gitlab` or
 `--ci-providers gitlab`. `--primary-ci` selects the authoritative provider;
@@ -60,9 +60,8 @@ GitHub is primary when enabled unless overridden. GitLab currently supplies
 validation; configure its deployment separately.
 
 Generated projects receive shared TypeScript work definitions and validated
-GitHub or GitLab YAML. Use `npm run pipeline -- quality --dry-run` to inspect the
-local work order, or `npm run pipeline -- quality` to run it. No additional
-runtime setup is required. `npm run ci:generate` writes CI YAML and
+GitHub or GitLab YAML. Use the existing npm scripts for local development.
+No additional runtime setup is required. `npm run ci:generate` writes CI YAML and
 `npm run ci:check` detects drift. Commit the output so Dependabot can update action
 pins. GitHub Pages deployment stays in the project workflow after validation,
 with its native environment and outputs.
