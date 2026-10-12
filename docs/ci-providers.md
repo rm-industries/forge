@@ -87,3 +87,16 @@ leaves those jobs and required-check configuration intact.
 
 Generated files include ownership comments explaining where consumers should
 edit jobs, triggers and schedules, and how action pins or runtime images evolve.
+
+## Consumer dependency review
+
+Generated GitHub security checks fail when a pull request introduces dependencies
+with high or critical vulnerabilities, matching the reference website's policy.
+The separate advisory npm audit remains unchanged. Require the dependency-review
+check in branch protection to enforce it before merging; deployment does not
+wait for the separate security workflow.
+
+Dependency review is available for public repositories and eligible private
+repositories with GitHub Code Security or Advanced Security enabled. Consumers
+whose repositories do not support it must disable that job in their owned YAML.
+See [GitHub's dependency review documentation](https://docs.github.com/en/code-security/concepts/supply-chain-security/dependency-review).

@@ -105,6 +105,15 @@ describe('shared work and provider rendering', () => {
       }),
     ).toThrow('must precede');
   });
+  test('fails dependency review on high severity findings instead of treating it as advisory', () => {
+    const review = createGithubWorkflows(config, pins).security.jobs['dependency-review']!;
+    expect(review.if).toBe("github.event_name == 'pull_request'");
+    const action = review.steps.find(
+      (step) => 'uses' in step && step.uses.startsWith('actions/dependency-review-action@'),
+    );
+    expect(action).toMatchObject({ with: { 'fail-on-severity': 'high' } });
+    expect(action).not.toHaveProperty('continue-on-error');
+  });
   test('bounds smoke tests and rejects a missing deployment URL before running them', () => {
     const smoke = createGithubWorkflows(config, pins).project.jobs['smoke-deployed']!;
     expect(smoke).toHaveProperty('timeout-minutes', 10);

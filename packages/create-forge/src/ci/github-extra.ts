@@ -121,7 +121,6 @@ export function createGithubExtras(
           },
           {
             name: 'Review dependency changes',
-            'continue-on-error': true,
             uses: pins('actions/dependency-review-action').ref,
             with: {
               'fail-on-severity': 'high',

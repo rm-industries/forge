@@ -32,7 +32,7 @@ and [automation workflow](https://github.com/rahul0705/rahul0705.github.io/blob/
 | Runtime setup         | Inline setup-node, npm cache/install; selected major 22/24/26                                 | Reference uses a local setup action with lts/*; Forge selects explicit versions and tests compatibility separately | Intentional single consumer runtime; no local action is required      |
 | Artifact policy       | Seven days; browser/coverage/Lighthouse evidence uploaded always                              | Reference uses fourteen days, browser evidence only on failure                                                     | Intentional diagnostics/retention choice; more successful-run uploads |
 | CodeQL                | Actions and JS/TS, no build, extended queries                                                 | Same reference and Forge security checks; current CodeQL pin matches reference v4.38.2                             | Matches                                                               |
-| Dependency review     | High-severity review with continue-on-error                                                   | Forge also makes it advisory; reference blocks the security job on findings                                        | Policy difference needing explicit acceptance                         |
+| Dependency review     | High/critical findings fail the security check                                                | Matches reference; Forge itself still makes it advisory                                                            | Matched consumer policy; branch protection decides merge enforcement  |
 | Project triggers      | All main PRs/pushes                                                                           | Reference same; Forge website is scoped to website/docs/setup inputs                                               | Intentional: standalone consumer is the entire project                |
 | Security triggers     | Main PRs/pushes and weekly deterministic schedule                                             | Reference additionally covers dev; Forge covers main                                                               | Intentional default branch scope                                      |
 | Automation triggers   | .github/** and deterministic weekly schedule                                                  | Reference additionally has manual dispatch and an automation summary gate; Forge has neither                       | Matches Forge; optional consumer convenience omitted                  |
@@ -79,8 +79,8 @@ advisory audit, diagnostics retention and distributed schedules. Forge root's
 compatibility, packaging and generator checks should not be shipped to consumers.
 
 Before calling the providers fully equivalent, resolve GitLab security/updater
-scope. Before treating reference security policy as matched, decide whether
-consumer dependency review should stay advisory. Smoke timeout and empty-URL
+scope. Consumer dependency review now matches the reference: high/critical findings
+fail the security check. Smoke timeout and empty-URL
 validation now match the reference in both generated providers. Remaining policy
 findings are documented for explicit review.
 
