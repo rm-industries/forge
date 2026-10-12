@@ -50,9 +50,14 @@ export function createGitlabPipeline(config: CiGenerationOptions, plan: WorkPlan
   jobs['smoke-deployed'] = gitlabJobSchema.parse({
     image: `node:${config.nodeVersion}`,
     stage: 'smoke',
+    timeout: '10m',
     needs: [{ job: 'deploy', artifacts: false }],
     rules: deployRules,
-    script: ['npx playwright install --with-deps chromium', 'DEPLOYMENT_URL="$CI_PAGES_URL" npm run test:smoke'],
+    script: [
+      'test -n "$CI_PAGES_URL"',
+      'npx playwright install --with-deps chromium',
+      'DEPLOYMENT_URL="$CI_PAGES_URL" npm run test:smoke',
+    ],
     artifacts: {
       paths: [`${config.directory}/playwright-report`, `${config.directory}/test-results`],
       when: 'always',

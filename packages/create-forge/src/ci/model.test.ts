@@ -105,6 +105,16 @@ describe('shared work and provider rendering', () => {
       }),
     ).toThrow('must precede');
   });
+  test('bounds smoke tests and rejects a missing deployment URL before running them', () => {
+    const smoke = createGithubWorkflows(config, pins).project.jobs['smoke-deployed']!;
+    expect(smoke).toHaveProperty('timeout-minutes', 10);
+    expect(smoke.steps.find((step) => 'run' in step && step.run.includes('npm run test:smoke'))).toMatchObject({
+      run: 'test -n "$DEPLOYMENT_URL"\nnpm run test:smoke',
+    });
+    const gitlab = createGitlabPipeline({ ...config, primary: 'gitlab' });
+    expect(gitlab['smoke-deployed']).toMatchObject({ timeout: '10m' });
+    expect(gitlab['smoke-deployed']!.script).toContain('test -n "$CI_PAGES_URL"');
+  });
   test('keeps deployment exclusive to the primary provider', () => {
     const github = createGithubWorkflows({ ...config, primary: 'gitlab' }, pins).project;
     expect(github.jobs.deploy!.if).toBe(false);

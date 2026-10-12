@@ -53,6 +53,7 @@ const matrix = z.record(
 export const githubJobSchema = z.strictObject({
   name: nonEmptyStringSchema.optional(),
   'runs-on': nonEmptyStringSchema,
+  'timeout-minutes': z.number().int().positive().max(360).optional(),
   needs: z.array(nonEmptyStringSchema).optional(),
   if: condition.optional(),
   permissions,
@@ -112,6 +113,7 @@ export const gitlabJobSchema = z.strictObject({
   stage: nonEmptyStringSchema,
   script: nonEmptyStringsSchema,
   before_script: z.array(nonEmptyStringSchema).optional(),
+  timeout: nonEmptyStringSchema.optional(),
   rules: z.array(rule).min(1).optional(),
   pages: z.strictObject({ publish: nonEmptyStringSchema }).optional(),
   environment: z.strictObject({ name: nonEmptyStringSchema, url: nonEmptyStringSchema }).optional(),
