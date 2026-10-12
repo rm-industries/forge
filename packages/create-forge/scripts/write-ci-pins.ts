@@ -15,6 +15,7 @@ const actionDefaults: Record<string, { ref: string; version?: string }> = {};
 const maintained: Record<string, string> = {};
 for (const path of [
   '.github/workflows/project.yml',
+  '.github/workflows/generator.yml',
   '.github/workflows/security.yml',
   '.github/workflows/automation.yml',
   '.github/workflows/website.yml',

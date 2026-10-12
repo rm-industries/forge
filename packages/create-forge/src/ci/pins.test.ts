@@ -44,7 +44,7 @@ test('reject conflicting pins, mutable references, malformed YAML and duplicate 
 
 test('every generated action has a tested immutable pin in maintained Forge YAML', () => {
   const maintained: Record<string, string> = {};
-  for (const path of ['project', 'security', 'automation', 'website'])
+  for (const path of ['project', 'generator', 'security', 'automation', 'website'])
     maintained[path] = readFileSync(new URL(`../../../../.github/workflows/${path}.yml`, import.meta.url), 'utf8');
   maintained.setup = readFileSync(
     new URL('../../../../.github/actions/setup-project/action.yml', import.meta.url),
