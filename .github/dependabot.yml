@@ -23,6 +23,11 @@ updates:
       github-actions:
         patterns:
           - '*'
+        applies-to: version-updates
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - '*'
 
   - package-ecosystem: github-actions
     directory: /templates/default
@@ -43,6 +48,11 @@ updates:
       - rahul0705
     groups:
       generated-project-actions:
+        patterns:
+          - '*'
+        applies-to: version-updates
+      security-updates:
+        applies-to: security-updates
         patterns:
           - '*'
 
@@ -74,11 +84,17 @@ updates:
         update-types:
           - minor
           - patch
+        applies-to: version-updates
       development-dependencies:
         dependency-type: development
         update-types:
           - minor
           - patch
+        applies-to: version-updates
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - '*'
 
   - package-ecosystem: npm
     directory: /templates/default
@@ -108,11 +124,17 @@ updates:
         update-types:
           - minor
           - patch
+        applies-to: version-updates
       generated-development-dependencies:
         dependency-type: development
         update-types:
           - minor
           - patch
+        applies-to: version-updates
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - '*'
 
   - package-ecosystem: npm
     directory: /website
@@ -140,8 +162,14 @@ updates:
         update-types:
           - minor
           - patch
+        applies-to: version-updates
       website-development-dependencies:
         dependency-type: development
         update-types:
           - minor
           - patch
+        applies-to: version-updates
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - '*'
