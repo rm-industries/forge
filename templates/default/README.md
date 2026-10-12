@@ -326,3 +326,10 @@ can replace this with its own supported OAuth configuration.
 The generated CMS configuration lives in code rather than a duplicated YAML
 file. Change content fields in the shared model, then run `npm run typecheck`
 and `npm test` to verify that Astro and Sveltia still derive the same contract.
+
+## Shared CI work definitions
+
+TypeScript work definitions in `scripts/ci/model.ts` describe CI commands,
+dependencies, browser requirements and artifacts. Zod rejects invalid commands,
+missing dependencies and cycles. Provider rendering follows in the next review.
+Use the existing npm scripts for local development.
