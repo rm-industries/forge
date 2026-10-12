@@ -116,7 +116,7 @@ const assertGeneratedProject = async (directory: string, packageName: string, re
     project.on.workflow_run ||
     project.jobs.deploy.environment.name !== 'github-pages' ||
     project.jobs.project ||
-    !project.jobs.deploy.needs.includes('compatibility') ||
+    project.jobs.compatibility ||
     !project.jobs.deploy.needs.includes('browser-tests')
   ) {
     throw new Error('Deployment must follow validation in the same workflow');
@@ -234,12 +234,16 @@ try {
     'docs',
     '--ci-providers',
     'github,gitlab',
+    '--node-version',
+    '24',
     '--no-install',
     '--no-git',
   ]);
   const nestedGitlab = parse(await readFile(join(sharedRepository, '.gitlab/ci/docs.yml'), 'utf8'));
   await access(join(sharedRepository, '.github/workflows/docs-project.yml'));
   if (
+    nestedGitlab.format.image !== 'node:24' ||
+    nestedGitlab.compatibility ||
     nestedGitlab.default.before_script[0] !== "cd 'site'" ||
     (await readFile(join(sharedRepository, '.gitlab-ci.yml'), 'utf8')) !== 'existing gitlab configuration\n' ||
     (await readFile(join(sharedRepository, '.github/dependabot.yml'), 'utf8')) !== 'existing dependency configuration\n'

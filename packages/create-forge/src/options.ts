@@ -3,6 +3,7 @@ export type GeneratorOptions = {
   repositoryRoot: string;
   ciPrefix?: string;
   ciProviders?: Array<'github' | 'gitlab'>;
+  nodeVersion?: string;
   primaryCi?: 'github' | 'gitlab';
   packageName: string;
   siteName: string;

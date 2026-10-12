@@ -1,6 +1,9 @@
+const workflowPrefixPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const nonWorkflowPrefixCharactersPattern = /[^a-z0-9]+/g;
+const boundaryHyphensPattern = /^-|-$/g;
 /** A filename namespace, never a path or provider expression. */
 export function validateCiPrefix(value: string) {
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) || value.length > 80) {
+  if (!workflowPrefixPattern.test(value) || value.length > 80) {
     throw new TypeError(
       'CI prefix must contain lowercase letters, numbers, and single hyphens (maximum 80 characters)',
     );
@@ -18,8 +21,8 @@ export function deriveCiPrefix(relativeProjectDirectory: string) {
   const prefix = relativeProjectDirectory
     .normalize('NFKD')
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
+    .replace(nonWorkflowPrefixCharactersPattern, '-')
+    .replace(boundaryHyphensPattern, '');
   if (!prefix || prefix.length > 80) {
     throw new TypeError('Project directory cannot provide a CI prefix; specify --ci-prefix');
   }

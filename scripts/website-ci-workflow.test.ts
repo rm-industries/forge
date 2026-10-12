@@ -122,14 +122,7 @@ describe('generated website CI contract', () => {
   it('deploys only after all checks and smoke-tests the live site', () => {
     expect(template.jobs).not.toHaveProperty('project');
     expect(dependencies(job(template, 'deploy'))).toEqual(
-      expect.arrayContaining([
-        ...sourceJobs,
-        'build',
-        'validate-build',
-        'browser-tests',
-        'lighthouse',
-        'compatibility',
-      ]),
+      expect.arrayContaining([...sourceJobs, 'build', 'validate-build', 'browser-tests', 'lighthouse']),
     );
     expect(dependencies(job(template, 'smoke-deployed'))).toEqual(['deploy']);
     expect(template.concurrency?.['cancel-in-progress']).toBe("${{ github.event_name == 'pull_request' }}");

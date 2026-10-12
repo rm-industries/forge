@@ -10,6 +10,14 @@ import type { GeneratorOptions } from './options';
 import { deriveScheduleMinutes } from './schedule';
 import { templateTokenPrefix, templateTokens } from './template-tokens';
 
+const rendererRollbackMessagePattern = /renderer failed.*rolled back/;
+const existingDestinationMessagePattern = /already exists/;
+const outsideRepositoryMessagePattern = /must be inside repository root/;
+const nonEmptyDestinationMessagePattern = /is not empty\. No files were changed/;
+const unsafeDestinationMessagePattern = /Unsafe destination entry/;
+const interruptedRollbackMessagePattern = /interrupted.*Recovery: changes from this invocation were rolled back/is;
+const recoveryMessagePattern = /Recovery:/;
+
 const fixtures: string[] = [];
 const binaryFixture = Uint8Array.from([0, 255, 12, 128, 64]);
 const options: GeneratorOptions = {
@@ -184,7 +192,7 @@ describe('template materialization', () => {
           throw new Error('renderer failed');
         },
       }),
-    ).rejects.toThrow(/renderer failed.*rolled back/);
+    ).rejects.toThrow(rendererRollbackMessagePattern);
     await expect(access(join(fixture, options.destination))).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
@@ -198,7 +206,7 @@ describe('template materialization', () => {
         { ...options, destination: 'website', repositoryRoot: '.', ciPrefix: 'site' },
         { templateDirectory: template, generateCi, cwd: fixture },
       ),
-    ).rejects.toThrow(/already exists/);
+    ).rejects.toThrow(existingDestinationMessagePattern);
     await expect(readFile(workflow, 'utf8')).resolves.toBe('keep me\n');
     await expect(access(join(fixture, 'website'))).rejects.toMatchObject({ code: 'ENOENT' });
   });
@@ -210,7 +218,7 @@ describe('template materialization', () => {
         { ...options, destination: 'website', repositoryRoot: 'repository' },
         { templateDirectory: template, generateCi, cwd: fixture },
       ),
-    ).rejects.toThrow(/must be inside repository root/);
+    ).rejects.toThrow(outsideRepositoryMessagePattern);
   });
 
   test('escapes generated TypeScript strings while preserving template formatting', async () => {
@@ -243,7 +251,7 @@ describe('template materialization', () => {
 
     await expect(
       materializeProject(options, { templateDirectory: template, generateCi, cwd: fixture }),
-    ).rejects.toThrow(/is not empty\. No files were changed/);
+    ).rejects.toThrow(nonEmptyDestinationMessagePattern);
     await expect(readFile(join(destination, 'existing.txt'), 'utf8')).resolves.toBe('keep me');
   });
 
@@ -278,7 +286,7 @@ describe('template materialization', () => {
         cwd: fixture,
         confirmOverwrite: async () => true,
       }),
-    ).rejects.toThrow(/Unsafe destination entry/);
+    ).rejects.toThrow(unsafeDestinationMessagePattern);
     await expect(readFile(join(external, 'site.ts'), 'utf8')).resolves.toBe('external contents');
   });
 
@@ -301,7 +309,7 @@ describe('template materialization', () => {
         signal: controller.signal,
         onFileCopied: () => controller.abort(),
       }),
-    ).rejects.toThrow(/interrupted.*Recovery: changes from this invocation were rolled back/is);
+    ).rejects.toThrow(interruptedRollbackMessagePattern);
     await expect(access(join(fixture, options.destination))).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
@@ -319,7 +327,7 @@ describe('template materialization', () => {
         cwd: fixture,
         confirmOverwrite: async () => true,
       }),
-    ).rejects.toThrow(/Recovery:/);
+    ).rejects.toThrow(recoveryMessagePattern);
     await expect(readFile(join(destination, 'package.json'), 'utf8')).resolves.toBe('original contents');
   });
 });

@@ -22,6 +22,10 @@ import { deriveScheduleMinutes } from './schedule';
 import { templateTokenPrefix, templateTokens } from './template-tokens';
 import { writeProjectCi } from './write-ci';
 
+const templateWorkflowPathPattern = /^\.github\/workflows\/(project|security|automation|deployment)\.yml$/;
+const generatedGithubWorkflowPathPattern = /^\.github[\\/]workflows[\\/][a-z0-9-]+\.yml$/;
+const generatedGitlabChildPipelinePathPattern = /^\.gitlab[\\/]ci[\\/][a-z0-9-]+\.yml$/;
+
 const pathSeparatorPattern = /[\\/]/u;
 
 export class MaterializationError extends Error {}
@@ -183,6 +187,7 @@ const customizeTemplate = async (
     directory: projectDirectory,
     repositoryRoot: relative(projectRoot, repositoryRoot).split(sep).join('/') || '.',
     providers,
+    nodeVersion: options.nodeVersion,
     primary: options.primaryCi ?? (providers.includes('github') ? 'github' : 'gitlab'),
     securityMinute: scheduleMinutes.security,
     automationMinute: scheduleMinutes.automation,
@@ -220,7 +225,7 @@ export const materializeProject = async (options: GeneratorOptions, context: Mat
   }
   let files = (await listTemplateFiles(templateDirectory)).map((file) => {
     const path = file.relativePath.split(sep).join('/');
-    const workflow = /^\.github\/workflows\/(project|security|automation|deployment)\.yml$/.exec(path);
+    const workflow = templateWorkflowPathPattern.exec(path);
     return workflow ? { ...file, relativePath: workflowPath(workflow[1]!, ciPrefix).split('/').join(sep) } : file;
   });
   const skipped = new Set<string>();
@@ -313,8 +318,8 @@ export const materializeProject = async (options: GeneratorOptions, context: Mat
     const generatedFiles = await listTemplateFiles(stagedCi);
     for (const file of generatedFiles) {
       if (
-        !/^\.github[\\/]workflows[\\/][a-z0-9-]+\.yml$/.test(file.relativePath) &&
-        !/^\.gitlab[\\/]ci[\\/][a-z0-9-]+\.yml$/.test(file.relativePath) &&
+        !generatedGithubWorkflowPathPattern.test(file.relativePath) &&
+        !generatedGitlabChildPipelinePathPattern.test(file.relativePath) &&
         file.relativePath !== '.gitlab-ci.yml'
       )
         throw new Error('Unexpected generated CI path');

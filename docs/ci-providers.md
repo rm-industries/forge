@@ -60,3 +60,8 @@ review its coverage and add the appropriate updates manually.
 explains action updates. GitLab instance and runner compatibility still require
 server-side CI Lint and a live run. Zod validates the subset Forge emits; subsequent
 consumer edits are checked by provider and workflow tools.
+
+Consumers run one Node major in CI, selected with `--node-version 22`,
+`--node-version 24`, or `--node-version 26` (the default). Forge retains its
+compatibility matrices to verify the supported runtime range. Consumers do not
+receive a compatibility job.

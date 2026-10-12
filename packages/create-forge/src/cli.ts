@@ -20,6 +20,7 @@ const parseArguments = (args: readonly string[], version: string) => {
     .option('--ci-prefix <name>', 'workflow filename prefix (defaults to the relative project directory)')
     .option('--ci-providers <providers>', 'comma-separated CI providers: github,gitlab (default: github)')
     .option('--primary-ci <provider>', 'primary CI provider (defaults to github when enabled)')
+    .option('--node-version <major>', 'Node.js major for generated CI: 22,24,26 (default: 26)')
     .option('--name <name>', 'npm package name (defaults to the directory basename)')
     .option('--site-name <name>', 'site name')
     .option('--description <text>', 'site description')
@@ -66,6 +67,7 @@ const parseArguments = (args: readonly string[], version: string) => {
     ciPrefix: raw.ciPrefix,
     ciProviders: raw.ciProviders?.split(',').map((value: string) => value.trim()),
     primaryCi: raw.primaryCi,
+    nodeVersion: raw.nodeVersion,
     packageName: raw.name,
     siteName: raw.siteName,
     description: raw.description,

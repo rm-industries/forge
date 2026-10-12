@@ -107,3 +107,8 @@ The release compatibility matrix runs the same packed fixtures with the
 generated project's core quality gate on every supported Node line on Ubuntu
 and on macOS. The complete end-to-end job adds the multi-browser and Lighthouse
 checks once on the primary Node runtime.
+
+Consumers run one Node major in CI, selected with `--node-version 22`,
+`--node-version 24`, or `--node-version 26` (the default). Forge retains its
+compatibility matrices to verify the supported runtime range. Consumers do not
+receive a compatibility job.

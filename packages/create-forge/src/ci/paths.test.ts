@@ -4,6 +4,8 @@ import { test } from 'vitest';
 
 import { deriveCiPrefix, validateCiPrefix, workflowPath } from './paths.ts';
 
+const prefixOverrideOptionPattern = /--ci-prefix/;
+
 test('derive workflow names from the relative project path, with explicit overrides', () => {
   assert.equal(deriveCiPrefix(''), undefined);
   assert.equal(deriveCiPrefix('.'), undefined);
@@ -15,5 +17,5 @@ test('derive workflow names from the relative project path, with explicit overri
     assert.throws(() => validateCiPrefix(value));
   }
   assert.throws(() => workflowPath('../outside'));
-  assert.throws(() => deriveCiPrefix('サイト'), /--ci-prefix/);
+  assert.throws(() => deriveCiPrefix('サイト'), prefixOverrideOptionPattern);
 });
