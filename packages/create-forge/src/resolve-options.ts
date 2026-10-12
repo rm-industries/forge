@@ -1,3 +1,5 @@
+import { generationOptionsSchema } from './ci/generation-options.ts';
+import { validateCiPrefix } from './ci/paths';
 import {
   defaultDescription,
   defaultUrl,
@@ -57,6 +59,13 @@ export const resolveOptions = async (
   { interactive, prompts }: ResolutionContext,
 ): Promise<GeneratorOptions> => {
   const useDefaults = provided.yes;
+  const nodeVersion = generationOptionsSchema.shape.nodeVersion.safeParse(provided.nodeVersion);
+  if (!nodeVersion.success) throw new InputError('--node-version must be a supported Node.js major: 22,24,26');
+  const providers = generationOptionsSchema.shape.providers.safeParse(provided.ciProviders ?? ['github']);
+  if (!providers.success)
+    throw new InputError('--ci-providers must be a non-empty list of unique providers: github,gitlab');
+  if (provided.primaryCi !== undefined && !providers.data.includes(provided.primaryCi))
+    throw new InputError('--primary-ci must be one of the enabled CI providers');
   if (!interactive && !useDefaults && !hasEveryExplicitValue(provided)) {
     throw new InputError(
       'Non-interactive use requires --yes or explicit values for every generator option. Run create-forge --help for details.',
@@ -144,5 +153,20 @@ export const resolveOptions = async (
   const install = provided.install ?? (useDefaults ? true : await promptConfirm(prompts, 'Install dependencies?'));
   const git = provided.git ?? (useDefaults ? true : await promptConfirm(prompts, 'Initialize a Git repository?'));
 
-  return { destination, repositoryRoot, packageName, siteName, description, author, url, repository, install, git };
+  return {
+    destination,
+    repositoryRoot,
+    packageName,
+    siteName,
+    description,
+    author,
+    url,
+    repository,
+    install,
+    git,
+    ...(provided.nodeVersion === undefined ? {} : { nodeVersion: nodeVersion.data }),
+    ...(provided.ciProviders === undefined ? {} : { ciProviders: providers.data }),
+    ...(provided.primaryCi === undefined ? {} : { primaryCi: provided.primaryCi }),
+    ...(provided.ciPrefix === undefined ? {} : { ciPrefix: validateCiPrefix(provided.ciPrefix) }),
+  };
 };

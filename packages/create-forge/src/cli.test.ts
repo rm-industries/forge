@@ -30,6 +30,14 @@ describe('CLI argument parsing', () => {
       Options:
         --repository-root <path>         repository root (defaults to the project
                                          directory)
+        --ci-prefix <name>               workflow filename prefix (defaults to the
+                                         relative project directory)
+        --ci-providers <providers>       comma-separated CI providers: github,gitlab
+                                         (default: github)
+        --primary-ci <provider>          primary CI provider (defaults to github when
+                                         enabled)
+        --node-version <major>           Node.js major for generated CI: 22,24,26
+                                         (default: 26)
         --name <name>                    npm package name (defaults to the directory
                                          basename)
         --site-name <name>               site name
@@ -51,6 +59,61 @@ describe('CLI argument parsing', () => {
     expect(prompts.text).not.toHaveBeenCalled();
   });
 
+  test('accepts a workflow prefix without another prompt', async () => {
+    const result = await runCli(['website', '--yes', '--ci-prefix', 'docs-site'], '1.0.3', { interactive: false });
+    expect(result).toMatchObject({ exitCode: 0, options: { ciPrefix: 'docs-site' } });
+  });
+
+  test.each(['../outside', 'site.yml', 'Site', '', 'a'.repeat(81)])(
+    'rejects unsafe workflow prefix %s',
+    async (prefix) => {
+      const result = await runCli(['website', '--yes', '--ci-prefix', prefix], '1.0.3', { interactive: false });
+      expect(result).toMatchObject({ exitCode: 1, output: expect.stringContaining('CI prefix') });
+    },
+  );
+
+  test('selects either or both CI providers independently of repository metadata', async () => {
+    expect(await runCli(['site', '--yes', '--ci-providers', 'gitlab'], '1.0.3')).toMatchObject({
+      exitCode: 0,
+      options: { ciProviders: ['gitlab'] },
+    });
+    expect(
+      await runCli(['site', '--yes', '--ci-providers', 'github,gitlab', '--primary-ci', 'gitlab'], '1.0.3'),
+    ).toMatchObject({ exitCode: 0, options: { ciProviders: ['github', 'gitlab'], primaryCi: 'gitlab' } });
+  });
+  test.each([
+    ['--ci-providers', ''],
+    ['--ci-providers', 'other'],
+    ['--ci-providers', 'github,github'],
+    ['--ci-providers', 'gitlab', '--primary-ci', 'github'],
+  ])('rejects invalid CI selection %s', async (...args) => {
+    expect(await runCli(['site', '--yes', ...args], '1.0.3')).toMatchObject({ exitCode: 1 });
+  });
+
+  test('accepts a hidden CI fixture directory with an explicit valid package name', async () => {
+    expect(
+      await runCli(
+        [
+          '.ci-review-fixture',
+          '--name',
+          'ci-review-fixture',
+          '--yes',
+          '--no-install',
+          '--no-git',
+          '--ci-providers',
+          'github,gitlab',
+        ],
+        '1.0.3',
+      ),
+    ).toMatchObject({ exitCode: 0, options: { packageName: 'ci-review-fixture' } });
+  });
+  test('selects one supported runtime for generated CI', async () => {
+    expect(await runCli(['site', '--yes', '--node-version', '24'], '1.0.3')).toMatchObject({
+      exitCode: 0,
+      options: { nodeVersion: '24' },
+    });
+    expect((await runCli(['site', '--yes', '--node-version', '20'], '1.0.3')).output).toContain('22,24,26');
+  });
   test('prints the installed package version', async () => {
     await expect(runCli(['--version'], '0.3.0-alpha.0')).resolves.toEqual({ output: '0.3.0-alpha.0\n', exitCode: 0 });
   });

@@ -2,6 +2,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { format } from 'oxfmt';
 import { expect, test } from 'vitest';
 
 import { generationOptionsSchema } from './generation-options.ts';
@@ -26,6 +27,12 @@ test('writes validated consumer YAML from ephemeral options and immutable pins',
       '.github/workflows/site-automation.yml',
       '.gitlab/ci/site.yml',
     ]);
+    for (const [path, content] of Object.entries(files)) {
+      expect(content).toContain('You own this');
+      const formatted = await format(path, content, { singleQuote: true, printWidth: 120 });
+      expect(formatted.errors).toEqual([]);
+      expect(content).toBe(formatted.code);
+    }
     expect(await readFile(join(root, '.github/workflows/site-project.yml'), 'utf8')).toContain('# v1');
     expect(await readFile(join(root, '.gitlab/ci/site.yml'), 'utf8')).toContain("cd 'site'");
     await expect(writeCi(config, root, (action) => ({ ref: `${action}@main` }))).rejects.toThrow(

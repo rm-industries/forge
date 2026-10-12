@@ -7,13 +7,11 @@ on: # yamllint disable-line rule:truthy
       - main
     paths:
       - '.github/**'
-      - 'templates/default/.github/**'
   push:
     branches:
       - main
     paths:
       - '.github/**'
-      - 'templates/default/.github/**'
   schedule:
     - cron: '43 5 * * 1'
 
@@ -43,6 +41,7 @@ jobs:
         with:
           advanced-security: true
           collect: all
+          inputs: .github
 
   syntax:
     name: Workflow syntax
@@ -60,4 +59,4 @@ jobs:
       - name: Validate workflows
         uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2
         with:
-          files: '.github/workflows/*.yml,templates/default/.github/workflows/*.yml'
+          files: '.github/workflows/*.yml'

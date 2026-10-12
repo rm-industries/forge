@@ -329,7 +329,8 @@ and `npm test` to verify that Astro and Sveltia still derive the same contract.
 
 ## CI ownership
 
-Consumers own and edit their generated workflow YAML directly. TypeScript CI
-builders and validation schemas stay internal to create-forge; no CI authoring
-files or dependencies are retained in this project. Dependabot updates action
-pins and npm dependencies independently after bootstrap.
+Forge generates validated YAML during bootstrap. Edit your GitHub or GitLab CI
+files directly afterward; no Forge CI authoring files or regeneration commands
+are retained. Dependabot updates GitHub action pins and npm dependencies.
+
+GitHub Pages runs after validation. GitLab provides shared validation in this review.

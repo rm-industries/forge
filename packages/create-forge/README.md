@@ -25,8 +25,15 @@ npm create @rm-industries/forge website -- --repository-root .
 Forge writes the application into `website/`, places repository-owned GitHub
 configuration in the root `.github/` directory, installs dependencies inside
 `website/`, and initializes Git at the repository root when needed. Generated
-workflow filters, working directories, artifact paths, and Dependabot settings
-are adjusted for the nested project automatically.
+workflow execution paths, artifact paths, and Dependabot settings
+are adjusted for the nested project automatically. Workflow files are named
+`website-project.yml`, `website-security.yml`, and `website-automation.yml` for
+this example, leaving existing unprefixed workflows untouched. Override the
+prefix with `--ci-prefix docs-site`. Prefixes contain lowercase letters, numbers,
+and single hyphens, with a maximum length of 80 characters. A standalone project
+keeps the unprefixed workflow names unless a prefix is explicitly provided.
+Existing shared configuration, such as Dependabot settings, is preserved. Forge
+reports the configuration it skipped so you can integrate it manually.
 
 The selected template is copied with dotfiles and file modes intact. Forge
 customizes only reviewed metadata files and refuses parent-traversal paths,
@@ -44,6 +51,23 @@ After successful creation, Forge reports the created path, whether dependency
 and Git setup ran or was skipped, and only the commands still needed to start
 development. Output remains readable when color is disabled and contains no
 telemetry or promotional messages.
+
+## CI generation
+
+Select providers during bootstrap with `--ci-providers github,gitlab` or
+`--ci-providers gitlab`. `--primary-ci` selects the authoritative provider;
+GitHub is primary when enabled unless overridden. GitHub Pages deployment follows validation; GitLab provides shared validation
+in this review. Switchable deployment follows in the next review.
+
+Generated projects receive validated YAML that they own and edit directly. CI
+builders and Zod schemas stay internal to create-forge; no CI TypeScript, retained
+configuration, regeneration commands, or authoring dependencies are delivered.
+Existing npm scripts remain the local development interface.
+
+Bootstrap action pins mirror Forge's Dependabot-maintained workflows at package
+build time. Consumer Dependabot keeps the resulting YAML up to date independently.
+See [CI generation](../../docs/ci-providers.md) for provider behavior, pin provenance
+and nested repository ownership.
 
 ## Package verification
 
@@ -70,7 +94,8 @@ npm run test:generator:e2e
 ```
 
 This generates default, fully specified, scoped-package-name,
-current-directory, nested-project, no-install, and conflict fixtures in an OS
+current-directory, nested-project, GitLab-only, combined-provider, no-install, and
+conflict fixtures in an OS
 temporary directory. The default and nested fixtures install dependencies
 outside the Forge workspace. The nested fixture also runs the generated
 project's core quality and production-build pipeline, verifies its Pages
@@ -82,3 +107,8 @@ The release compatibility matrix runs the same packed fixtures with the
 generated project's core quality gate on every supported Node line on Ubuntu
 and on macOS. The complete end-to-end job adds the multi-browser and Lighthouse
 checks once on the primary Node runtime.
+
+Consumers run one Node major in CI, selected with `--node-version 22`,
+`--node-version 24`, or `--node-version 26` (the default). Forge retains its
+compatibility matrices to verify the supported runtime range. Consumers do not
+receive a compatibility job.

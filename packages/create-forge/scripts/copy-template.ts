@@ -58,52 +58,6 @@ for (const token of [
 }
 await writeFile(siteConfigPath, tokenizedSiteConfig);
 
-const workflowScheduleTokens = [
-  {
-    path: join(destinationDirectory, '.github', 'workflows', 'security.yml'),
-    schedule: "    - cron: '17 5 * * 1'",
-    token: templateTokens.securityScheduleMinute,
-  },
-  {
-    path: join(destinationDirectory, '.github', 'workflows', 'automation.yml'),
-    schedule: "    - cron: '43 5 * * 1'",
-    token: templateTokens.automationScheduleMinute,
-  },
-];
-
-for (const workflow of workflowScheduleTokens) {
-  const source = await readFile(workflow.path, 'utf8');
-  if (!source.includes(workflow.schedule)) {
-    throw new Error(`Could not find schedule in ${workflow.path}.`);
-  }
-  await writeFile(workflow.path, source.replace(workflow.schedule, `    - cron: '${workflow.token} 5 * * 1'`));
-}
-
-const projectWorkflowPath = join(destinationDirectory, '.github', 'workflows', 'project.yml');
-const projectWorkflow = (await readFile(projectWorkflowPath, 'utf8'))
-  .replaceAll("      - '**'", `      - '${templateTokens.projectPathFilter}'`)
-  .replace('    working-directory: .', `    working-directory: ${templateTokens.projectDirectory}`)
-  .replaceAll('          path: dist', `          path: ${templateTokens.projectDirectory}/dist`)
-  .replaceAll('          path: coverage', `          path: ${templateTokens.projectDirectory}/coverage`)
-  .replaceAll('            playwright-report', `            ${templateTokens.projectDirectory}/playwright-report`)
-  .replaceAll('            test-results', `            ${templateTokens.projectDirectory}/test-results`)
-  .replaceAll('          path: .lighthouseci', `          path: ${templateTokens.projectDirectory}/.lighthouseci`);
-await writeFile(projectWorkflowPath, projectWorkflow);
-
-const securityWorkflowPath = join(destinationDirectory, '.github', 'workflows', 'security.yml');
-const securityWorkflow = (await readFile(securityWorkflowPath, 'utf8')).replaceAll(
-  "      - '**'",
-  `      - '${templateTokens.projectPathFilter}'`,
-);
-await writeFile(securityWorkflowPath, securityWorkflow);
-
-const setupActionPath = join(destinationDirectory, '.github', 'actions', 'setup-project', 'action.yml');
-const setupAction = (await readFile(setupActionPath, 'utf8')).replace(
-  '    default: .',
-  `    default: ${templateTokens.projectDirectory}`,
-);
-await writeFile(setupActionPath, setupAction);
-
 const dependabotPath = join(destinationDirectory, '.github', 'dependabot.yml');
 const dependabot = (await readFile(dependabotPath, 'utf8')).replace(
   '  - package-ecosystem: npm\n    directory: /',

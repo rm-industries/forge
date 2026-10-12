@@ -3,23 +3,31 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 
+import { generationOptionsSchema } from '../packages/create-forge/src/ci/generation-options.ts';
+import { createGithubWorkflows } from '../packages/create-forge/src/ci/github.ts';
+
 interface Step {
-  run?: string;
-  uses?: string;
-  with?: Record<string, unknown>;
+  run?: string | undefined;
+  uses?: string | undefined;
+  with?: Record<string, unknown> | undefined;
 }
 
 interface Job {
-  needs?: string | string[];
-  steps?: Step[];
-  uses?: string;
+  needs?: string | string[] | undefined;
+  steps?: Step[] | undefined;
+  uses?: string | undefined;
 }
 
 interface Workflow {
-  on: { push?: { paths?: string[] }; pull_request?: { paths?: string[] } };
-  concurrency?: {
-    'cancel-in-progress'?: string;
+  on: {
+    push?: { paths?: string[] | undefined } | null | undefined;
+    pull_request?: { paths?: string[] | undefined } | null | undefined;
   };
+  concurrency?:
+    | {
+        'cancel-in-progress'?: string | boolean | undefined;
+      }
+    | undefined;
   jobs: Record<string, Job>;
 }
 
@@ -28,7 +36,19 @@ const readWorkflow = (path: string): Workflow =>
 
 const website = readWorkflow('../.github/workflows/website.yml');
 const project = readWorkflow('../.github/workflows/project.yml');
-const template = readWorkflow('../templates/default/.github/workflows/project.yml');
+const automation = readWorkflow('../.github/workflows/automation.yml');
+const generator = readWorkflow('../.github/workflows/generator.yml');
+const template = createGithubWorkflows(
+  generationOptionsSchema.parse({
+    directory: '.',
+    repositoryRoot: '.',
+    providers: ['github'],
+    primary: 'github',
+    securityMinute: 17,
+    automationMinute: 43,
+  }),
+  (action) => ({ ref: `${action}@${'a'.repeat(40)}` }),
+).project;
 
 const dependencies = (job: Job): string[] => (Array.isArray(job.needs) ? job.needs : job.needs ? [job.needs] : []);
 
@@ -51,6 +71,32 @@ const download = (workflow: Workflow, job: string, name: string, path: string) =
 };
 
 describe('generated website CI contract', () => {
+  it('watches website content and automation build inputs without filtering required validation', () => {
+    for (const event of ['push', 'pull_request'] as const) {
+      expect(website.on[event]?.paths).toEqual([
+        'website/**',
+        'docs/**',
+        '.github/workflows/website.yml',
+        '.github/actions/setup-project/**',
+      ]);
+      expect(automation.on[event]?.paths).toEqual(['.github/**']);
+      expect(generator.on[event]?.paths).toEqual(
+        expect.arrayContaining([
+          '.github/**',
+          'templates/default/**',
+          'packages/create-forge/scripts/**',
+          'packages/create-forge/src/**',
+          'packages/create-forge/*.config.ts',
+          'packages/create-forge/tsconfig.json',
+          'tsconfig.json',
+          '**/package.json',
+          '**/package-lock.json',
+        ]),
+      );
+      expect(project.on[event]).not.toHaveProperty('paths');
+      expect(template.on[event]).not.toHaveProperty('paths');
+    }
+  });
   const sourceJobs = [
     'format',
     'lint-code',
@@ -65,22 +111,22 @@ describe('generated website CI contract', () => {
   it('runs source checks independently and builds only after they pass', () => {
     for (const name of sourceJobs) expect(dependencies(job(template, name))).toEqual([]);
     expect(dependencies(job(template, 'build')).sort()).toEqual([...sourceJobs].sort());
-    expect(commands(template).filter((command) => command.includes('npm run build'))).toEqual(['npm run build']);
+    expect(steps(template, 'build').filter((step) => step.run === 'npm run build')).toHaveLength(1);
   });
 
   it('reuses the production artifact for every build consumer', () => {
     for (const consumer of ['validate-build', 'browser-tests', 'lighthouse']) {
       expect(dependencies(job(template, consumer))).toEqual(['build']);
-      download(template, consumer, 'site-build', 'dist');
+      download(template, consumer, 'build-dist', './dist');
       expect(steps(template, consumer).some((step) => step.run?.includes('npm run build'))).toBe(false);
     }
   });
 
   it('deploys only after all checks and smoke-tests the live site', () => {
-    expect(dependencies(job(template, 'deploy')).sort()).toEqual(
-      [...sourceJobs, 'build', 'validate-build', 'browser-tests', 'lighthouse'].sort(),
+    expect(template.jobs).not.toHaveProperty('project');
+    expect(dependencies(job(template, 'deploy'))).toEqual(
+      expect.arrayContaining([...sourceJobs, 'build', 'validate-build', 'browser-tests', 'lighthouse']),
     );
-    expect(template.jobs.project).toBeUndefined();
     expect(dependencies(job(template, 'smoke-deployed'))).toEqual(['deploy']);
     expect(template.concurrency?.['cancel-in-progress']).toBe("${{ github.event_name == 'pull_request' }}");
   });
@@ -88,8 +134,7 @@ describe('generated website CI contract', () => {
 
 describe('Forge website CI contract', () => {
   it('mirrors the generated workflow graph with website-scoped paths', () => {
-    expect(Object.keys(website.jobs).sort()).toEqual(Object.keys(template.jobs).sort());
-    for (const name of Object.keys(template.jobs)) {
+    for (const name of ['build', 'validate-build', 'browser-tests', 'lighthouse']) {
       expect(dependencies(job(website, name)).sort()).toEqual(dependencies(job(template, name)).sort());
     }
     expect(commands(website).filter((command) => command.includes('npm run build'))).toEqual(['npm run build']);
@@ -117,9 +162,10 @@ describe('repository template verification contract', () => {
   });
 });
 
-it('watches the documentation published by the website', () => {
-  for (const event of ['push', 'pull_request'] as const) {
-    expect(website.on[event]?.paths).toContain('docs/**');
-    expect(project.on[event]).not.toHaveProperty('paths');
-  }
+it('keeps disposable consumer checks separate from repository automation', () => {
+  expect(commands(automation)).toEqual([]);
+  expect(commands(generator)).toHaveLength(2);
+  for (const command of commands(generator)) expect(command).toContain('--name ci-review-fixture');
+  expect(steps(automation, 'security').at(-1)?.with?.inputs).toBe('.github');
+  expect(steps(generator, 'security').at(-1)?.with?.inputs).toBe('.ci-review-fixture/.github');
 });

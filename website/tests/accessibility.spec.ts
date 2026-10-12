@@ -37,7 +37,12 @@ for (const colorScheme of ['light', 'dark'] as const) {
 for (const theme of ['frappe', 'macchiato'] as const) {
   test(`home has no serious or critical violations in ${theme} theme`, async ({ page }) => {
     await page.goto(resolvePreviewPath('/'));
-    await page.locator('html').evaluate((element, value) => element.setAttribute('data-theme', value), theme);
+    await page.locator('html').evaluate(async (element, value) => {
+      element.setAttribute('data-theme', value);
+      // Scan the final theme rather than a button's intermediate transition colors.
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      await Promise.all(document.getAnimations().map((animation) => animation.finished));
+    }, theme);
 
     expect(await analyzePage(page)).toEqual([]);
   });

@@ -41,7 +41,8 @@ CodeQL, dependency review and Dependabot alerts remain visible security signals.
 The minimum Node 22 release and the latest Node 22, 24, and 26 releases each run
 package type checks, tests, and builds. Standalone-template compatibility keeps
 the same matrix because generated projects declare those runtimes. The primary
-site quality jobs run once on Node 26. The packed generator
+site quality jobs run once on Node 26. Generated workflows use one bootstrap-selected Node major; Forge tests the
+supported runtime range in its own compatibility jobs. The packed generator
 compatibility suite runs on the four supported Linux runtimes and on the current
 macOS runner with Node 26. Each compatibility lane records its operating system,
 architecture, Node, npm, and Git versions before exercising the installed
@@ -141,3 +142,11 @@ scanning. A Lighthouse run that omits `.lighthouseci` must make its upload
 contract fail.
 Remove the deliberate defect before merging and link both workflow runs in the
 tracking issue.
+
+## Generated project CI
+
+Create-forge internally uses TypeScript builders and provider-specific rendering
+to bootstrap consumer YAML. Generated sites own that YAML and edit it directly.
+See [CI providers](ci-providers.md) for generation, dependency pins and
+GitHub/GitLab support. Repository checks run on every change; the previous change
+routing no longer skips repository jobs.
