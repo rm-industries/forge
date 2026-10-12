@@ -4,7 +4,7 @@ const directory = z
   .string()
   .min(1)
   .refine((value) => !/[\r\n]/.test(value) && !value.includes('${{'), 'Invalid CI directory');
-export const configSchema = z
+export const generationOptionsSchema = z
   .strictObject({
     directory,
     repositoryRoot: directory,
@@ -25,7 +25,7 @@ export const configSchema = z
     (config) => config.primary === undefined || config.providers.includes(config.primary),
     'Primary must be an enabled provider',
   );
-export type SiteCiConfig = z.infer<typeof configSchema>;
-export const workflowPath = (name: string, config: SiteCiConfig) =>
+export type CiGenerationOptions = z.infer<typeof generationOptionsSchema>;
+export const workflowPath = (name: string, config: CiGenerationOptions) =>
   `.github/workflows/${config.prefix ? `${config.prefix}-` : ''}${name}.yml`;
 export const shellQuote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;

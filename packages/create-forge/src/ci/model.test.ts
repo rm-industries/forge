@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'vitest';
 import { Document } from 'yaml';
 
-import { configSchema } from './config.ts';
+import { generationOptionsSchema } from './generation-options.ts';
 import { createGithubWorkflows } from './github.ts';
 import { createGitlabPipeline } from './gitlab.ts';
 import { defineWork, siteWork, nonEmptyStringSchema, nonEmptyStringsSchema, imageSchema } from './model.ts';
 import { githubJobSchema, githubWorkflowSchema, gitlabPipelineSchema, validateCiYaml } from './schema.ts';
 
-const config = configSchema.parse({
+const config = generationOptionsSchema.parse({
   directory: 'website',
   repositoryRoot: '..',
   prefix: 'website',
@@ -55,11 +55,10 @@ describe('shared work and provider rendering', () => {
   test('keeps Pages in the validated run and preserves native environments and outputs', () => {
     const { project } = createGithubWorkflows(config, pins);
     expect(project.on).not.toHaveProperty('workflow_run');
-    expect(project.jobs.deploy!.needs).toEqual(['project']);
+    expect(project.jobs).not.toHaveProperty('project');
+    expect(project.jobs.deploy!.needs).toEqual([...Object.keys(siteWork), 'compatibility']);
     expect(project.jobs.deploy!.environment!.name).toBe('github-pages');
     expect(project.jobs.deploy!.outputs!['page-url']).toBe('${{ steps.deployment.outputs.page_url }}');
-    expect(project.jobs.project!.if).toBe('always()');
-    expect(project.jobs.project!.needs).toContain('compatibility');
     expect(project.jobs['browser-tests']!.steps.some((step) => 'run' in step && step.run === 'npm run build')).toBe(
       false,
     );

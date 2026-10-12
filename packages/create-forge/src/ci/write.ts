@@ -3,13 +3,18 @@ import { dirname, join } from 'node:path';
 
 import { Document, isScalar, visit } from 'yaml';
 
-import { configSchema, workflowPath, type SiteCiConfig } from './config.ts';
+import { generationOptionsSchema, workflowPath, type CiGenerationOptions } from './generation-options.ts';
 import { createGithubWorkflows, type ActionResolver } from './github.ts';
 import { createGitlabPipeline } from './gitlab.ts';
 import { githubWorkflowSchema, gitlabPipelineSchema, validateCiYaml } from './schema.ts';
 
-export async function writeCi(config: SiteCiConfig, destination: string, pins: ActionResolver, signal?: AbortSignal) {
-  config = configSchema.parse(config);
+export async function writeCi(
+  config: CiGenerationOptions,
+  destination: string,
+  pins: ActionResolver,
+  signal?: AbortSignal,
+) {
+  config = generationOptionsSchema.parse(config);
   const files: Record<string, string> = {};
   if (config.providers.includes('github'))
     for (const [name, workflow] of Object.entries(createGithubWorkflows(config, pins))) {

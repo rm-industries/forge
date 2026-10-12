@@ -1,4 +1,4 @@
-import type { SiteCiConfig } from './config.ts';
+import type { CiGenerationOptions } from './generation-options.ts';
 import { createGithubExtras } from './github-extra.ts';
 import { planSchema, runtimeVersions, siteWork, type WorkPlan } from './model.ts';
 import {
@@ -12,7 +12,7 @@ import {
 export type ActionResolver = (action: string) => { ref: string; version?: string };
 const onMain = "github.event_name == 'push' && github.ref == 'refs/heads/main'";
 
-export function createGithubWorkflows(config: SiteCiConfig, pins: ActionResolver, plan: WorkPlan = siteWork) {
+export function createGithubWorkflows(config: CiGenerationOptions, pins: ActionResolver, plan: WorkPlan = siteWork) {
   plan = planSchema.parse(plan);
   const githubExtras = createGithubExtras(pins);
   const path = (value: string) => `${config.directory}/${value}`;
@@ -76,22 +76,6 @@ export function createGithubWorkflows(config: SiteCiConfig, pins: ActionResolver
       ),
     ],
   });
-  jobs.project = githubJobSchema.parse({
-    name: config.prefix ? `${config.prefix}: Project` : 'Project',
-    'runs-on': 'ubuntu-latest',
-    permissions: {},
-    if: 'always()',
-    needs: [...Object.keys(plan), 'compatibility'],
-    steps: [
-      {
-        run: 'test "$RESULT" = "success"',
-        env: {
-          RESULT:
-            "${{ contains(needs.*.result, 'failure') && 'failure' || contains(needs.*.result, 'cancelled') && 'cancelled' || contains(needs.*.result, 'skipped') && 'skipped' || 'success' }}",
-        },
-      },
-    ],
-  });
   // Deployment consumes this run's artifacts and never executes fork-controlled code with Pages credentials.
   if (config.primary === 'github') {
     jobs.build!.steps.push({
@@ -101,6 +85,7 @@ export function createGithubWorkflows(config: SiteCiConfig, pins: ActionResolver
     });
     for (const [id, extra] of Object.entries(githubExtras.pages)) {
       const job = structuredClone(extra);
+      if (id === 'deploy') job.needs = [...Object.keys(plan), 'compatibility'];
       for (const step of job.steps) {
         if ('with' in step && step.with && typeof step.with.path === 'string')
           step.with.path = step.with.path.split('\n').map(path).join('\n');

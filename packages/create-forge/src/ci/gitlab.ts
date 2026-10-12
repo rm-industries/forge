@@ -1,8 +1,8 @@
-import { shellQuote, type SiteCiConfig } from './config.ts';
+import { shellQuote, type CiGenerationOptions } from './generation-options.ts';
 import { planSchema, runtimeVersions, siteWork, type WorkPlan } from './model.ts';
 import { gitlabJobSchema, gitlabPipelineSchema, type GitlabJob } from './schema.ts';
 
-export function createGitlabPipeline(config: SiteCiConfig, plan: WorkPlan = siteWork) {
+export function createGitlabPipeline(config: CiGenerationOptions, plan: WorkPlan = siteWork) {
   plan = planSchema.parse(plan);
   const depth = (id: string): number => Math.max(-1, ...plan[id]!.needs.map(depth)) + 1;
   const stage = (id: string) => `check-${depth(id)}`;

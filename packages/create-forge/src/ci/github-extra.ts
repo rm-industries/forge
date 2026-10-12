@@ -9,7 +9,7 @@ export function createGithubExtras(
     pages: {
       deploy: {
         name: 'Deploy GitHub Pages',
-        needs: ['project'],
+        needs: [],
         if: "github.event_name == 'push' && github.ref == 'refs/heads/main'",
         'runs-on': 'ubuntu-latest',
         permissions: {

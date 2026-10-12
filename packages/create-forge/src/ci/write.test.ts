@@ -4,10 +4,10 @@ import { join } from 'node:path';
 
 import { expect, test } from 'vitest';
 
-import { configSchema } from './config.ts';
+import { generationOptionsSchema } from './generation-options.ts';
 import { writeCi } from './write.ts';
 
-const config = configSchema.parse({
+const config = generationOptionsSchema.parse({
   directory: 'site',
   repositoryRoot: '..',
   prefix: 'site',

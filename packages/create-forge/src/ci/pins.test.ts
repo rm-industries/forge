@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 
 import { test } from 'vitest';
 
-import { configSchema } from './config.ts';
+import { generationOptionsSchema } from './generation-options.ts';
 import { createGithubWorkflows } from './github.ts';
 import { createCiPinResolver } from './pins.ts';
 
@@ -46,7 +46,7 @@ test('every generated action has a tested immutable pin in maintained Forge YAML
   const resolve = createCiPinResolver(maintained);
   const used = new Set<string>();
   createGithubWorkflows(
-    configSchema.parse({
+    generationOptionsSchema.parse({
       directory: '.',
       repositoryRoot: '.',
       providers: ['github'],

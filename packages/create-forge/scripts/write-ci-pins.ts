@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { configSchema } from '../src/ci/config.ts';
+import { generationOptionsSchema } from '../src/ci/generation-options.ts';
 import { createGithubWorkflows } from '../src/ci/github.ts';
 import { createCiPinResolver } from '../src/ci/pins.ts';
 
@@ -23,7 +23,7 @@ for (const path of [
   maintained[path] = await readFile(join(repositoryRoot, path), 'utf8');
 }
 const resolveAction = createCiPinResolver(maintained);
-const ciConfig = configSchema.parse({
+const ciConfig = generationOptionsSchema.parse({
   directory: '.',
   repositoryRoot: '.',
   providers: ['github'],
