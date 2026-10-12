@@ -94,7 +94,7 @@ const listTextFiles = async (directory: string, root = directory): Promise<TextF
   return files;
 };
 
-const assertTemplateState = async (directory: string) => {
+export const assertStarterIsolation = async (directory: string) => {
   const packageJsonPath = join(directory, 'package.json');
   const manifest = JSON.parse(await readFile(packageJsonPath, 'utf8')) as PackageManifest;
   const localDependencies = findLocalDependencies(manifest);
@@ -114,6 +114,11 @@ const assertTemplateState = async (directory: string) => {
     throw new Error(`Personal reference identifiers found:\n${personalIdentifiers.join('\n')}`);
   }
 
+  return files;
+};
+
+const assertTemplateState = async (directory: string) => {
+  const files = await assertStarterIsolation(directory);
   for (const expected of expectedDefaults) {
     const file = files.find(({ path }) => path === expected.path);
     if (!file?.content.includes(expected.value)) {

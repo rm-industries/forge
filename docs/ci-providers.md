@@ -81,8 +81,8 @@ consumer's GitHub YAML. Generation validates both providers with Zod; actionlint
 checks GitHub syntax and zizmor checks security patterns. Generator source,
 template, build configuration, dependency and action-pin changes trigger it.
 
-Forge's native `generator.yml` now owns packed bootstrap, copied-template and
-generator compatibility jobs. Both project and generator workflows run for every
+Forge's native `generator.yml` packages once, bootstraps once per supported
+runtime and reuses the primary consumer source/build for output checks. Both project and generator workflows run for every
 pull request because their individual checks replace the root aggregate gate.
 
 Generated files include ownership comments explaining where consumers should

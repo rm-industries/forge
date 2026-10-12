@@ -1,6 +1,5 @@
 ---
 name: Project Continuous Integration
-
 on: # yamllint disable-line rule:truthy
   pull_request:
     branches:
@@ -8,165 +7,126 @@ on: # yamllint disable-line rule:truthy
   push:
     branches:
       - main
-
 permissions: {}
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 defaults:
   run:
     shell: bash
-
 jobs:
   format:
     name: Tool Format
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-
       - name: Setup project
         uses: $/.github/actions/setup-project
         with:
-          node-version: '26.x'
-
+          node-version: 26.x
       - name: Check formatting
         run: npm run format
-
   lint-code:
     name: Tool Lint code
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-
       - name: Setup project
         uses: $/.github/actions/setup-project
         with:
-          node-version: '26.x'
-
+          node-version: 26.x
       - name: Lint code
         run: npm run lint:code
-
   lint-markdown:
     name: Tool Lint Markdown
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-
       - name: Setup project
         uses: $/.github/actions/setup-project
         with:
-          node-version: '26.x'
-
+          node-version: 26.x
       - name: Lint Markdown
         run: npm run lint:markdown
-
   spellcheck:
     name: Tool Spellcheck
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-
       - name: Setup project
         uses: $/.github/actions/setup-project
         with:
-          node-version: '26.x'
-
+          node-version: 26.x
       - name: Spellcheck
         run: npm run spellcheck
-
   documentation:
     name: Tool Documentation links and commands
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-
       - name: Setup project
         uses: $/.github/actions/setup-project
         with:
-          node-version: '26.x'
-
+          node-version: 26.x
       - name: Check documentation links and commands
         run: npm run docs:validate
-
   typecheck:
     name: Tool Type-check
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-
       - name: Setup project
         uses: $/.github/actions/setup-project
         with:
-          node-version: '26.x'
-
+          node-version: 26.x
       - name: Type-check TypeScript
-        run: npm run typecheck
-
+        run: npm run typecheck:root
   test:
     name: Tool Test
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-
       - name: Setup project
         uses: $/.github/actions/setup-project
         with:
-          node-version: '26.x'
-
+          node-version: 26.x
       - name: Run tests
-        run: npm test
-
+        run: npm run test:root
   build:
     name: Tool Build
     needs:
@@ -178,105 +138,130 @@ jobs:
       - typecheck
       - test
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-
       - name: Setup project
         uses: $/.github/actions/setup-project
         with:
-          node-version: '26.x'
-
+          node-version: 26.x
       - name: Build packages
         run: npm run build
-
+      - name: Package tested candidates without repeating prepack
+        run: |-
+          mkdir -p "$RUNNER_TEMP/forge-packages"
+          npm pack --ignore-scripts --workspaces --pack-destination "$RUNNER_TEMP/forge-packages"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: project-packages
+          path: ${{ runner.temp }}/forge-packages/*.tgz
+          if-no-files-found: error
+          retention-days: 7
   pack:
     name: Tool Pack
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
-
+    needs:
+      - build
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-
-      - name: Setup project
-        uses: $/.github/actions/setup-project
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          node-version: '26.x'
-
-      - name: Inspect package contents
-        run: npm run pack
-
+          name: project-packages
+          path: ${{ runner.temp }}/forge-packages
+      - name: Inspect published package contents
+        run: |
+          for candidate in "$RUNNER_TEMP/forge-packages/"*.tgz; do
+            tar -tzf "$candidate"
+            case "$candidate" in
+              *content-model*.tgz)
+                for entry in index astro sveltia; do
+                  tar -tzf "$candidate" | grep -Fx "package/dist/$entry.js"
+                  tar -tzf "$candidate" | grep -Fx "package/dist/$entry.d.ts"
+                done
+                ;;
+              *create-forge*.tgz)
+                tar -tzf "$candidate" | grep -Fx 'package/dist/index.mjs'
+                tar -tzf "$candidate" | grep -Fx 'package/dist/template/package-lock.json'
+                ;;
+            esac
+          done
   dependency-audit:
     name: Tool Dependency audit
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-
       - name: Setup project
         uses: $/.github/actions/setup-project
         with:
-          node-version: '26.x'
-
+          node-version: 26.x
       - name: Audit root and workspace dependencies
         id: audit
         continue-on-error: true
         run: npm run audit
-
       - name: Report dependency audit
         if: steps.audit.outcome == 'failure'
         run: |
           echo '::warning title=Dependency security findings::Review Dependabot alerts and the audit output. Dependency findings are reported here but do not block pull-request remediation.'
           echo '## Dependency security findings' >> "$GITHUB_STEP_SUMMARY"
           echo 'The root dependency audit found blocking-severity advisories. Review the audit output and Dependabot alerts. Release security gates remain blocking.' >> "$GITHUB_STEP_SUMMARY"
-
   compatibility:
     name: Tool Compatibility (${{ matrix.runtime }})
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
-
     strategy:
       fail-fast: false
       matrix:
         include:
           - runtime: minimum Node 22
-            node-version: '22.22.2'
+            node-version: 22.22.2
           - runtime: latest Node 22
-            node-version: '22.x'
+            node-version: 22.x
           - runtime: latest Node 24
-            node-version: '24.x'
+            node-version: 24.x
           - runtime: latest Node 26
-            node-version: '26.x'
-
+            node-version: 26.x
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-
       - name: Setup project
         uses: $/.github/actions/setup-project
         with:
           node-version: ${{ matrix.node-version }}
-
-      - name: Validate packages on supported runtime
-        run: npm run typecheck && npm test && npm run build
+      - name: Check package types and unit tests
+        run: npm run typecheck:workspaces && npm run test:workspaces
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: project-packages
+          path: ${{ runner.temp }}/forge-packages
+      - name: Exercise candidate content-model exports
+        run: |-
+          mkdir -p "$RUNNER_TEMP/content-model-check"
+          mkdir -p "$RUNNER_TEMP/content-model-check/node_modules/@rm-industries/content-model"
+          tar -xzf "$RUNNER_TEMP/forge-packages/"*content-model*.tgz --strip-components=1 -C "$RUNNER_TEMP/content-model-check/node_modules/@rm-industries/content-model"
+          ln -s "$GITHUB_WORKSPACE/node_modules/astro" "$RUNNER_TEMP/content-model-check/node_modules/astro"
+          cd "$RUNNER_TEMP/content-model-check"
+          node --input-type=module <<'CHECK'
+          import assert from "node:assert/strict";
+          import { defineModel } from "@rm-industries/content-model";
+          import { createAstroCollection } from "@rm-industries/content-model/astro";
+          import { createSveltiaCollection } from "@rm-industries/content-model/sveltia";
+          for (const exported of [defineModel, createAstroCollection, createSveltiaCollection]) assert.equal(typeof exported, "function");
+          CHECK
+    needs:
+      - build

@@ -19,7 +19,7 @@ type PackageMetadata = { name?: string };
 const execute = promisify(execFile);
 const packageDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const fixtureDirectory = await mkdtemp(join(tmpdir(), 'create-forge-e2e-'));
-const compatibilityMode = process.argv.includes('--compatibility');
+const suppliedTarball = process.env.FORGE_CLI_TARBALL;
 
 const exists = async (path: string) => {
   try {
@@ -33,20 +33,6 @@ const exists = async (path: string) => {
 
 const runGenerator = async (executable: string, cwd: string, args: string[]) => {
   return execute(executable, args, { cwd, maxBuffer: 10 * 1024 * 1024 });
-};
-
-const runGeneratedCompatibility = async (cwd: string) => {
-  try {
-    await execute('npm', ['run', 'quality:core'], { cwd, maxBuffer: 20 * 1024 * 1024 });
-  } catch (error) {
-    const failure = error as Error & { stdout?: string; stderr?: string };
-    const output = `${failure.stdout ?? ''}\n${failure.stderr ?? ''}`.trim();
-    const diagnosticOutput =
-      output.length > 12_000
-        ? `${output.slice(0, 6_000)}\n\n... output truncated ...\n\n${output.slice(-6_000)}`
-        : output;
-    throw new Error(`Generated-project quality:core failed:\n${diagnosticOutput}`);
-  }
 };
 
 const assertGeneratedProject = async (directory: string, packageName: string, repositoryDirectory = directory) => {
@@ -135,14 +121,17 @@ try {
     `${JSON.stringify({ name: 'create-forge-e2e-runner', private: true }, undefined, 2)}\n`,
   );
 
-  const { stdout: packOutput } = await execute(
-    'npm',
-    ['pack', '--ignore-scripts', '--json', '--pack-destination', tarballDirectory],
-    { cwd: packageDirectory },
-  );
-  const [packResult] = JSON.parse(packOutput) as PackResult[];
-  if (!packResult) throw new Error('npm pack did not report a tarball.');
-  const tarball = join(tarballDirectory, packResult.filename);
+  let tarball = suppliedTarball ? resolve(suppliedTarball) : undefined;
+  if (!tarball) {
+    const { stdout: packOutput } = await execute(
+      'npm',
+      ['pack', '--ignore-scripts', '--json', '--pack-destination', tarballDirectory],
+      { cwd: packageDirectory },
+    );
+    const [packResult] = JSON.parse(packOutput) as PackResult[];
+    if (!packResult) throw new Error('npm pack did not report a tarball.');
+    tarball = join(tarballDirectory, packResult.filename);
+  }
   await execute('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', tarball], {
     cwd: runnerDirectory,
   });
@@ -161,7 +150,6 @@ try {
   await access(join(defaultDirectory, '.github', 'workflows', 'automation.yml'));
   await access(join(defaultDirectory, '.github', 'workflows', 'project.yml'));
   await access(join(defaultDirectory, '.github', 'workflows', 'security.yml'));
-  if (compatibilityMode) await runGeneratedCompatibility(defaultDirectory);
 
   const explicitDirectory = join(projectsDirectory, 'explicit-site');
   await runGenerator(executable, projectsDirectory, [
@@ -265,20 +253,19 @@ try {
   await mkdir(nestedRepository);
   await writeFile(join(nestedRepository, 'README.md'), 'Existing repository content\n');
   const nestedArguments = ['website', '--yes', '--repository-root', '.', '--no-git'];
-  if (compatibilityMode) nestedArguments.push('--no-install');
   const { stdout: nestedOutput } = await runGenerator(executable, nestedRepository, nestedArguments);
   await assertGeneratedProject(nestedDirectory, 'website', nestedRepository);
   const nestedReadme = await readFile(join(nestedRepository, 'README.md'), 'utf8');
   if (nestedReadme !== 'Existing repository content\n' || (await exists(join(nestedDirectory, '.github')))) {
     throw new Error('Nested fixture did not preserve repository content or configure repository automation.');
   }
-  if (!compatibilityMode) {
-    if (!nestedOutput.includes('Dependencies: installed')) {
-      throw new Error('Nested fixture did not install dependencies from its project root.');
-    }
-    await runGeneratedCompatibility(nestedDirectory);
-    await access(join(nestedRepository, 'website', 'dist', 'index.html'));
+  if (!nestedOutput.includes('Dependencies: installed')) {
+    throw new Error('Nested fixture did not install dependencies from its project root.');
   }
+  // The nested layout and custom base URL need their own production build contract.
+  await execute('npm', ['run', 'build'], { cwd: nestedDirectory, maxBuffer: 20 * 1024 * 1024 });
+  await execute('npm', ['run', 'validate:build'], { cwd: nestedDirectory, maxBuffer: 20 * 1024 * 1024 });
+  await access(join(nestedDirectory, 'dist', 'index.html'));
 
   const noInstallDirectory = join(projectsDirectory, 'no-install-site');
   const { stdout: noInstallOutput } = await runGenerator(executable, projectsDirectory, [
@@ -319,8 +306,7 @@ try {
     throw new Error('Conflict fixture did not fail safely with its existing filesystem state intact.');
   }
 
-  const mode = compatibilityMode ? 'compatibility' : 'complete';
-  console.log(`Verified ${packResult.filename} across 9 isolated ${mode} generator fixtures.`);
+  console.log(`Verified ${tarball} across 9 isolated generator behavior fixtures.`);
 } finally {
   await rm(fixtureDirectory, { recursive: true, force: true });
 }

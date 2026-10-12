@@ -150,6 +150,9 @@ website-lighthouse:
   stage: check-2
   script:
     - npx playwright install --with-deps chromium
+    # Container images use the browser installed by Playwright.
+    - |
+      export CHROME_PATH="$(node --input-type=module -e 'import { chromium } from "@playwright/test"; process.stdout.write(chromium.executablePath());')"
     - npm run lighthouse:ci
   needs:
     - job: website-build

@@ -96,20 +96,21 @@ To exercise the packed CLI across the complete generator fixture matrix:
 npm run test:generator:e2e
 ```
 
-This generates default, fully specified, scoped-package-name,
-current-directory, nested-project, GitLab-only, combined-provider, no-install, and
-conflict fixtures in an OS
-temporary directory. The default and nested fixtures install dependencies
-outside the Forge workspace. The nested fixture also runs the generated
-project's core quality and production-build pipeline, verifies its Pages
-artifact location, and checks its repository-level CI and Dependabot paths. The
-conflict fixture proves that a failed invocation leaves existing files
-unchanged. Every fixture is removed after the run.
+This exercises default, fully specified, scoped-name, current-directory,
+nested-project, GitLab-only, combined-provider, no-install and conflict scenarios
+in temporary directories. The default and nested scenarios verify installation;
+conflicts must preserve existing files. The nested custom-URL scenario gets one
+targeted production build and artifact validation, without repeating the full
+consumer quality suite. CI supplies the already packaged CLI
+through `FORGE_CLI_TARBALL`, so these scenarios do not rebuild or repack it.
 
-The release compatibility matrix runs the same packed fixtures with the
-generated project's core quality gate on every supported Node line on Ubuntu
-and on macOS. The complete end-to-end job adds the multi-browser and Lighthouse
-checks once on the primary Node runtime.
+Generator CI builds and packages the CLI once. Each supported Node lane installs
+that same package, bootstraps once with its selected Node major, and runs consumer
+types, unit tests and a production build. The primary Node 26 lane records coverage
+and shares its generated source and build artifacts with static quality, generated
+workflow syntax/security, build validation, browser and Lighthouse checks. macOS
+also exercises bootstrap and runtime checks. Content-model is installed from the
+consumer lockfile; candidate content-model validation belongs to project CI.
 
 Consumers run one Node major in CI, selected with `--node-version 22`,
 `--node-version 24`, or `--node-version 26` (the default). Forge retains its

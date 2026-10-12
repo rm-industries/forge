@@ -51,5 +51,20 @@ test('keeps GitHub primary and preserves website deployment safeguards', () => {
   expect(website['website-browser-tests'].needs).toEqual([{ job: 'website-build', artifacts: true }]);
   expect(website['website-build'].artifacts.paths).toEqual(['website/dist']);
   expect(project['project-compatibility'].parallel.matrix[0].NODE_VERSION).toEqual(['22.22.2', '22', '24', '26']);
-  expect(generator['generator-compatibility'].parallel.matrix[0].NODE_VERSION).toEqual(['22.22.2', '22', '24', '26']);
+  expect(generator['consumer-compatibility'].parallel.matrix).toEqual([
+    { NODE_VERSION: ['22.22.2', '22'], NODE_MAJOR: '22' },
+    { NODE_VERSION: '24', NODE_MAJOR: '24' },
+  ]);
+  expect(generator['consumer-primary'].variables.NODE_VERSION).toBe('26');
+});
+
+test('GitLab checks reuse the canonical consumer instead of regenerating it', () => {
+  for (const id of ['quality', 'dependency-audit', 'validate-build', 'browser', 'lighthouse']) {
+    const job = generator[`consumer-${id}`];
+    expect(job.needs).toEqual([{ job: 'consumer-primary', artifacts: true }]);
+    expect(job.before_script).toContain('tar -xzf .ci-consumer/consumer-source.tgz -C /tmp/forge-consumer');
+    expect(
+      job.script.some((command: string) => command.includes('create-forge') || command.includes('npm run build')),
+    ).toBe(false);
+  }
 });

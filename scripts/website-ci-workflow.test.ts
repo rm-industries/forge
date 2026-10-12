@@ -64,7 +64,10 @@ const commands = (workflow: Workflow): string[] =>
   Object.values(workflow.jobs).flatMap((job) => (job.steps ?? []).flatMap((step) => (step.run ? [step.run] : [])));
 
 const download = (workflow: Workflow, job: string, name: string, path: string) => {
-  expect(steps(workflow, job).find((step) => step.uses?.startsWith('actions/download-artifact@'))?.with).toMatchObject({
+  expect(
+    steps(workflow, job).find((step) => step.uses?.startsWith('actions/download-artifact@') && step.with?.name === name)
+      ?.with,
+  ).toMatchObject({
     name,
     path,
   });
@@ -147,29 +150,53 @@ describe('Forge website CI contract', () => {
   });
 });
 
-describe('repository template verification contract', () => {
-  it('shares one primary template build with browser and Lighthouse consumers', () => {
-    expect(dependencies(job(generator, 'template-build')).sort()).toEqual(
-      ['template-coverage', 'template-static-quality'].sort(),
-    );
-    for (const consumer of ['template-browser', 'template-lighthouse']) {
-      expect(dependencies(job(generator, consumer))).toEqual(['template-build']);
-      download(generator, consumer, 'template-build', '${{ runner.temp }}/forge-default-template/dist');
+it('keeps package correctness in project CI without repeating root checks or builds in runtime lanes', () => {
+  expect(commands(project).filter((command) => command === 'npm run build')).toHaveLength(1);
+  expect(steps(project, 'test').at(-1)?.run).toBe('npm run test:root');
+  expect(steps(project, 'typecheck').at(-1)?.run).toBe('npm run typecheck:root');
+  expect(dependencies(job(project, 'compatibility'))).toEqual(['build']);
+  expect(
+    steps(project, 'compatibility').some((step) =>
+      step.run?.includes('npm run typecheck:workspaces && npm run test:workspaces'),
+    ),
+  ).toBe(true);
+  expect(
+    steps(project, 'compatibility').some((step) => step.run?.includes('create-forge') && step.run.includes('--yes')),
+  ).toBe(false);
+});
+
+describe('generator consumer verification contract', () => {
+  it('bootstraps once per runtime and reuses the packaged CLI and primary artifacts', () => {
+    expect(dependencies(job(generator, 'consumer-compatibility'))).toEqual(['package']);
+    expect(commands(generator).filter((command) => command.includes('--node-version "$NODE_MAJOR"'))).toHaveLength(1);
+    for (const consumer of [
+      'quality',
+      'dependency-audit',
+      'validate-build',
+      'browser',
+      'lighthouse',
+      'security',
+      'syntax',
+    ]) {
+      expect(dependencies(job(generator, consumer))).toEqual(['consumer-compatibility']);
+      download(generator, consumer, 'consumer-source', '${{ runner.temp }}/consumer-artifacts');
       expect(steps(generator, consumer).some((step) => step.run?.includes('npm run build'))).toBe(false);
     }
+    for (const consumer of ['validate-build', 'browser', 'lighthouse'])
+      download(generator, consumer, 'consumer-build', '${{ runner.temp }}/forge-consumer/dist');
+    expect(commands(generator).filter((command) => command.includes('npm run build --workspace'))).toHaveLength(1);
+    expect(steps(generator, 'scenarios').find((step) => step.run?.includes('test-generator-e2e'))).toMatchObject({
+      env: { FORGE_CLI_TARBALL: '${{ runner.temp }}/forge-packages/create-forge.tgz' },
+    });
   });
 });
 
 it('keeps disposable consumer checks separate from repository automation', () => {
   expect(commands(automation)).toEqual([]);
-  for (const name of ['security', 'syntax'])
-    expect(steps(generator, name).find((step) => step.run?.includes('ci-review-fixture'))?.run).toContain(
-      '--name ci-review-fixture',
-    );
   expect(project.jobs).not.toHaveProperty('project');
   expect(Object.keys(project.jobs).some((name) => name.startsWith('template-') || name.startsWith('generator-'))).toBe(
     false,
   );
   expect(steps(automation, 'security').at(-1)?.with?.inputs).toBe('.github');
-  expect(steps(generator, 'security').at(-1)?.with?.inputs).toBe('.ci-review-fixture/.github');
+  expect(steps(generator, 'security').at(-1)?.with?.inputs).toBe('${{ runner.temp }}/forge-consumer/.github');
 });

@@ -6,7 +6,7 @@ so each required result has one stable purpose.
 ## Required checks
 
 Required checks are configured in GitHub repository settings. Use the individual
-tool, copied-template and generator job names, including each compatibility lane.
+tool, package and consumer job names, including each compatibility lane.
 Tool names are prefixed to distinguish them from website checks. Advisory audits
 and path-filtered website/automation jobs are not globally required.
 
@@ -19,9 +19,8 @@ payload or synchronization mechanism is stored in the repository.
 
 Project and generator workflows run on every pull request and push to main, so
 required results cannot disappear behind workflow path filters. Project owns tool
-quality, package inspection and runtime compatibility. Generator owns copied
-consumer templates, packed bootstrap tests, compatibility and disposable-output
-syntax/security scanning. Job graphs retain native dependencies and artifact reuse.
+quality, package inspection and package compatibility. Generator owns packaged
+CLI bootstrap, consumer compatibility and generated-output checks. Job graphs retain native dependencies and artifact reuse.
 
 Repository automation scans only committed `.github` workflows/actions and is
 path-filtered. Website validation is separately scoped to website/docs/setup
@@ -30,22 +29,30 @@ deployment waits for all project checks, then smoke-tests the deployed URL.
 
 ## Runtime and evidence strategy
 
-The minimum Node 22 release and the latest Node 22, 24, and 26 releases each run
-package type checks, tests, and builds. Standalone-template compatibility keeps
-the same matrix because generated projects declare those runtimes. The primary
-site quality jobs run once on Node 26. Generated workflows use one bootstrap-selected Node major; Forge tests the
-supported runtime range in its own compatibility jobs. The packed generator
-compatibility suite runs on the four supported Linux runtimes and on the current
-macOS runner with Node 26. Each compatibility lane records its operating system,
-architecture, Node, npm, and Git versions before exercising the installed
-generator executable.
+Project CI runs repository formatting, lint, spelling, documentation and root
+checks once on Node 26. It builds and packages candidate packages once, without
+repeating prepack hooks. The minimum Node 22 release and latest Node 22, 24 and
+26 releases run package types and unit tests and exercise the packaged
+content-model exports. Build tooling itself uses the primary development runtime.
 
-Formatting, Markdown, spelling, package inspection, coverage, Lighthouse,
-isolation, and the complete generated-project acceptance suite run once on the
-primary Node 26 runtime because repeating them does not add compatibility
-evidence. The blocking Playwright suite runs once in each of Chromium, Firefox,
-and WebKit using the browser revisions associated with the committed Playwright
-version.
+Generator CI independently packages create-forge once as fixture preparation.
+Its four Linux Node lanes and Node 26 macOS lane install the same CLI package,
+bootstrap one consumer per lane with the matching Node major, then run consumer
+types, unit tests and a build. No candidate content-model package is substituted:
+consumer npm ci uses the template lockfile, and a check verifies its content-model
+entry and declared version remain unchanged. Generated source also retains
+isolation checks for local dependencies, unresolved tokens and personal identifiers.
+
+The primary Linux Node 26 consumer provides coverage, a source archive including
+hidden configuration files, and its production artifact. Static quality,
+generated CI syntax/security, build validation, browser/accessibility and
+Lighthouse jobs restore those artifacts rather than bootstrapping or rebuilding.
+Dependencies are installed per job because jobs have isolated filesystems.
+
+Distinct CLI behavior scenarios run once with the shared package. Deliberately
+invalid static-tool fixtures remain separate to prove that quality tools reject
+bad input. Their isolated copies are intentional regression tests, not another
+canonical consumer validation path.
 
 The path-scoped `.github/workflows/website.yml` workflow intentionally mirrors
 the generated template's workflow. It runs when website source, its workflow,
@@ -66,16 +73,9 @@ post-build Markdown job would add no coverage. Source Markdown remains owned by
 the source lint job. Package and generator compatibility jobs remain separate
 because they intentionally exercise multiple supported runtimes.
 
-The repository's clean-copy template verification follows the same pattern on
-its primary Node 26 lane: `Template production build` creates one artifact for
-both template browser tests and Lighthouse. The template compatibility matrix
-still builds once per supported runtime because those builds prove a different
-contract and cannot share a Node 26 result.
-
 Coverage and Lighthouse uploads run even when their producer fails. Lighthouse
 uploads explicitly include the hidden `.lighthouseci` directory. Browser
-website evidence is uploaded even after successful runs; template browser
-evidence retains its existing failure-only policy. Playwright preserves failure
+website and generated-consumer evidence is uploaded even after successful runs. Playwright preserves failure
 traces and screenshots. Artifacts are retained for seven days.
 
 ## Security reporting and release gates
@@ -149,10 +149,11 @@ the primary provider. GitLab website deployment and smoke jobs are present but
 use `when: never`. Configure Pages and the canonical site URL before enabling them.
 
 Project includes validate the tool and its supported Node versions. Generator
-includes validate copied templates, packed bootstrap behavior and Linux runtime
-compatibility. GitHub retains the macOS generator runner, CodeQL, dependency
+includes package one CLI candidate, bootstrap per Linux runtime and reuse the
+primary consumer for quality and build-artifact checks. GitHub retains the macOS generator runner, CodeQL, dependency
 review, workflow scans, mirror synchronization and release automation. GitLab
-validation is supplemental; server-side CI Lint and a configured runner are still
+validation is supplemental and uses Linux container runners for isolated Node
+images. Server-side CI Lint and a configured runner are still
 needed to confirm it on the mirror.
 
 Website includes are scoped to website, documentation and GitLab configuration
