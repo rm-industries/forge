@@ -29,9 +29,10 @@ validates the formatted YAML before writing. Generated workflows participate in
 normal consumer formatting checks. Tests and actionlint/zizmor verify generated
 consumer output; they do not generate or rewrite Forge's own workflows.
 
-Validation jobs share build artifacts. GitHub Pages retains same-run deployment
-depending directly on all required validation jobs. GitLab validation is supported here;
-switchable Pages deployment is the next review. Namespaced GitLab output is a child pipeline:
+Validation jobs share build artifacts. Both providers retain Pages deployment
+and smoke tests; the inactive provider is disabled with native conditions. Enable
+Pages and set the canonical site URL before switching provider. GitLab Pages
+requires GitLab 17.9 or newer. Namespaced GitLab output is a child pipeline:
 
 ```yaml
 forge-site:
@@ -86,3 +87,16 @@ leaves those jobs and required-check configuration intact.
 
 Generated files include ownership comments explaining where consumers should
 edit jobs, triggers and schedules, and how action pins or runtime images evolve.
+
+## Consumer dependency review
+
+Generated GitHub security checks fail when a pull request introduces dependencies
+with high or critical vulnerabilities, matching the reference website's policy.
+The separate advisory npm audit remains unchanged. Require the dependency-review
+check in branch protection to enforce it before merging; deployment does not
+wait for the separate security workflow.
+
+Dependency review is available for public repositories and eligible private
+repositories with GitHub Code Security or Advanced Security enabled. Consumers
+whose repositories do not support it must disable that job in their owned YAML.
+See [GitHub's dependency review documentation](https://docs.github.com/en/code-security/concepts/supply-chain-security/dependency-review).

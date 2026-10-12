@@ -53,6 +53,7 @@ const matrix = z.record(
 export const githubJobSchema = z.strictObject({
   name: nonEmptyStringSchema.optional(),
   'runs-on': nonEmptyStringSchema,
+  'timeout-minutes': z.number().int().positive().max(360).optional(),
   needs: z.array(nonEmptyStringSchema).optional(),
   if: condition.optional(),
   permissions,
@@ -101,11 +102,21 @@ export const githubWorkflowSchema = z
     }
     for (const id of Object.keys(workflow.jobs)) visit(id);
   });
-const rule = z.strictObject({ if: nonEmptyStringSchema, when: z.enum(['never', 'always', 'on_success']).optional() });
+const rule = z
+  .strictObject({
+    if: nonEmptyStringSchema.optional(),
+    when: z.enum(['never', 'always', 'on_success']).optional(),
+  })
+  .refine((value) => value.if !== undefined || value.when !== undefined, 'Rule requires a condition or when');
 export const gitlabJobSchema = z.strictObject({
   image: imageSchema,
   stage: nonEmptyStringSchema,
   script: nonEmptyStringsSchema,
+  before_script: z.array(nonEmptyStringSchema).optional(),
+  timeout: nonEmptyStringSchema.optional(),
+  rules: z.array(rule).min(1).optional(),
+  pages: z.strictObject({ publish: nonEmptyStringSchema }).optional(),
+  environment: z.strictObject({ name: nonEmptyStringSchema, url: nonEmptyStringSchema }).optional(),
   allow_failure: z.boolean().optional(),
   needs: z.array(z.strictObject({ job: nonEmptyStringSchema, artifacts: z.boolean() })).optional(),
   artifacts: z

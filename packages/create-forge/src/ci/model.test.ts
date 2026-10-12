@@ -88,7 +88,7 @@ describe('shared work and provider rendering', () => {
   });
   test('renders GitLab dependencies, artifact paths and duplicate pipeline suppression', () => {
     const pipeline = createGitlabPipeline(config, Object.fromEntries(Object.entries(siteWork).reverse()));
-    expect(pipeline.stages).toEqual(['check-0', 'check-1', 'check-2']);
+    expect(pipeline.stages).toEqual(['check-0', 'check-1', 'check-2', 'deploy', 'smoke']);
     const browser = pipeline['browser-tests'];
     expect(browser).toMatchObject({
       needs: [{ job: 'build', artifacts: true }],
@@ -105,10 +105,45 @@ describe('shared work and provider rendering', () => {
       }),
     ).toThrow('must precede');
   });
+  test('fails dependency review on high severity findings instead of treating it as advisory', () => {
+    const review = createGithubWorkflows(config, pins).security.jobs['dependency-review']!;
+    expect(review.if).toBe("github.event_name == 'pull_request'");
+    const action = review.steps.find(
+      (step) => 'uses' in step && step.uses.startsWith('actions/dependency-review-action@'),
+    );
+    expect(action).toMatchObject({ with: { 'fail-on-severity': 'high' } });
+    expect(action).not.toHaveProperty('continue-on-error');
+  });
+  test('bounds smoke tests and rejects a missing deployment URL before running them', () => {
+    const smoke = createGithubWorkflows(config, pins).project.jobs['smoke-deployed']!;
+    expect(smoke).toHaveProperty('timeout-minutes', 10);
+    expect(smoke.steps.find((step) => 'run' in step && step.run.includes('npm run test:smoke'))).toMatchObject({
+      run: 'test -n "$DEPLOYMENT_URL"\nnpm run test:smoke',
+    });
+    const gitlab = createGitlabPipeline({ ...config, primary: 'gitlab' });
+    expect(gitlab['smoke-deployed']).toMatchObject({ timeout: '10m' });
+    expect(gitlab['smoke-deployed']!.script).toContain('test -n "$CI_PAGES_URL"');
+  });
   test('keeps deployment exclusive to the primary provider', () => {
-    expect(createGithubWorkflows({ ...config, primary: 'gitlab' }, pins).project.jobs).not.toHaveProperty('deploy');
+    const github = createGithubWorkflows({ ...config, primary: 'gitlab' }, pins).project;
+    expect(github.jobs.deploy!.if).toBe(false);
+    expect(github.jobs['smoke-deployed']!.if).toBe(false);
+    expect(
+      github.jobs.build!.steps.find((step) => 'uses' in step && step.uses.startsWith('actions/upload-pages-artifact@'))!
+        .if,
+    ).toBe(false);
+    const inactive = createGitlabPipeline(config);
+    expect(inactive.deploy).toMatchObject({ rules: [{ when: 'never' }], pages: { publish: 'website/dist' } });
+    expect(inactive['smoke-deployed']).toMatchObject({ rules: [{ when: 'never' }] });
+    const active = createGitlabPipeline({ ...config, primary: 'gitlab' });
+    expect(active.deploy).toMatchObject({
+      needs: Object.keys(siteWork).map((job) => ({ job, artifacts: job === 'build' })),
+    });
+    expect(active.deploy).toHaveProperty('rules.0.if');
+    expect(active['smoke-deployed']).toMatchObject({ needs: [{ job: 'deploy', artifacts: false }] });
     const { primary: _primary, ...validationOnly } = config;
-    expect(createGithubWorkflows(validationOnly, pins).project.jobs).not.toHaveProperty('deploy');
+    expect(createGithubWorkflows(validationOnly, pins).project.jobs.deploy!.if).toBe(false);
+    expect(createGitlabPipeline(validationOnly).deploy).toMatchObject({ rules: [{ when: 'never' }] });
   });
   test('rejects malformed YAML, unknown provider fields, mutable actions, and dangling job dependencies', () => {
     expect(() => validateCiYaml(githubWorkflowSchema, 'name: one\nname: two\n')).toThrow(

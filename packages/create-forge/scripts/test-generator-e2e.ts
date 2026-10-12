@@ -216,6 +216,9 @@ try {
   const gitlab = parse(await readFile(join(gitlabDirectory, '.gitlab-ci.yml'), 'utf8'));
   if (
     gitlab['browser-tests'].needs[0].job !== 'build' ||
+    !gitlab.deploy.rules[0].if ||
+    gitlab.deploy.pages.publish !== './dist' ||
+    gitlab['smoke-deployed'].needs[0].job !== 'deploy' ||
     (await exists(join(gitlabDirectory, '.github/workflows/project.yml')))
   )
     throw new Error('GitLab bootstrap did not select the requested provider');
@@ -245,6 +248,8 @@ try {
     nestedGitlab.format.image !== 'node:24' ||
     nestedGitlab.compatibility ||
     nestedGitlab.default.before_script[0] !== "cd 'site'" ||
+    nestedGitlab.deploy.rules[0].when !== 'never' ||
+    nestedGitlab.deploy.pages.publish !== 'site/dist' ||
     (await readFile(join(sharedRepository, '.gitlab-ci.yml'), 'utf8')) !== 'existing gitlab configuration\n' ||
     (await readFile(join(sharedRepository, '.github/dependabot.yml'), 'utf8')) !== 'existing dependency configuration\n'
   )

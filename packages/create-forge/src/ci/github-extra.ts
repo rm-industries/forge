@@ -33,6 +33,7 @@ export function createGithubExtras(
       },
       'smoke-deployed': {
         name: 'Verify deployed website',
+        'timeout-minutes': 10,
         needs: ['deploy'],
         if: "github.event_name == 'push' && github.ref == 'refs/heads/main'",
         'runs-on': 'ubuntu-latest',
@@ -49,7 +50,7 @@ export function createGithubExtras(
             env: {
               DEPLOYMENT_URL: '${{ needs.deploy.outputs.page-url }}',
             },
-            run: 'npm run test:smoke',
+            run: 'test -n "$DEPLOYMENT_URL"\nnpm run test:smoke',
           },
           {
             name: 'Upload deployed smoke failure evidence',
@@ -120,7 +121,6 @@ export function createGithubExtras(
           },
           {
             name: 'Review dependency changes',
-            'continue-on-error': true,
             uses: pins('actions/dependency-review-action').ref,
             with: {
               'fail-on-severity': 'high',
