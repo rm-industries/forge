@@ -1,0 +1,174 @@
+generator-package:
+  image: node:26
+  stage: check-0
+  needs: []
+  before_script:
+    - npm ci
+  script:
+    - |-
+      npm run build --workspace @rm-industries/create-forge
+      mkdir -p "$CI_PROJECT_DIR/.ci-packages"
+      npm pack --ignore-scripts --workspace @rm-industries/create-forge --pack-destination "$CI_PROJECT_DIR/.ci-packages"
+      mv "$CI_PROJECT_DIR/.ci-packages/"*.tgz "$CI_PROJECT_DIR/.ci-packages/create-forge.tgz"
+  artifacts:
+    paths:
+      - .ci-packages/create-forge.tgz
+    expire_in: 7 days
+consumer-primary:
+  image: node:$NODE_VERSION
+  stage: check-1
+  needs:
+    - job: generator-package
+      artifacts: true
+  script:
+    - |-
+      mkdir -p "/tmp/forge-cli"
+      npm install --prefix "/tmp/forge-cli" --ignore-scripts --no-audit --no-fund "$CI_PROJECT_DIR/.ci-packages/create-forge.tgz"
+      "/tmp/forge-cli/node_modules/.bin/create-forge" "/tmp/forge-consumer" --name ci-consumer --yes --no-install --no-git --ci-providers github,gitlab --node-version "$NODE_MAJOR"
+      tar -czf "/tmp/consumer-source.tgz" -C "/tmp/forge-consumer" .
+    - cd /tmp/forge-consumer
+    - npm ci
+    - node "$CI_PROJECT_DIR/scripts/verify-consumer-lock.ts" /tmp/forge-consumer
+    - npm run typecheck
+    - if [ "$PRIMARY" = true ]; then npm run test:coverage; else npm test; fi
+    - npm run build
+  before_script: []
+  variables:
+    NODE_VERSION: '26'
+    NODE_MAJOR: '26'
+    PRIMARY: 'true'
+  artifacts:
+    paths:
+      - .ci-consumer/consumer-source.tgz
+      - .ci-consumer/dist
+      - .ci-consumer/coverage
+    expire_in: 7 days
+    when: always
+  after_script:
+    - mkdir -p .ci-consumer
+    - cp /tmp/consumer-source.tgz .ci-consumer/
+    - for output in dist coverage; do if [ -d "/tmp/forge-consumer/$output" ]; then cp -R "/tmp/forge-consumer/$output" .ci-consumer/; fi; done
+consumer-compatibility:
+  image: node:$NODE_VERSION
+  stage: check-1
+  needs:
+    - job: generator-package
+      artifacts: true
+  script:
+    - |-
+      mkdir -p "/tmp/forge-cli"
+      npm install --prefix "/tmp/forge-cli" --ignore-scripts --no-audit --no-fund "$CI_PROJECT_DIR/.ci-packages/create-forge.tgz"
+      "/tmp/forge-cli/node_modules/.bin/create-forge" "/tmp/forge-consumer" --name ci-consumer --yes --no-install --no-git --ci-providers github,gitlab --node-version "$NODE_MAJOR"
+      tar -czf "/tmp/consumer-source.tgz" -C "/tmp/forge-consumer" .
+    - cd /tmp/forge-consumer
+    - npm ci
+    - node "$CI_PROJECT_DIR/scripts/verify-consumer-lock.ts" /tmp/forge-consumer
+    - npm run typecheck
+    - if [ "$PRIMARY" = true ]; then npm run test:coverage; else npm test; fi
+    - npm run build
+  before_script: []
+  variables:
+    PRIMARY: 'false'
+  parallel:
+    matrix:
+      - NODE_VERSION:
+          - 22.22.2
+          - '22'
+        NODE_MAJOR: '22'
+      - NODE_VERSION: '24'
+        NODE_MAJOR: '24'
+consumer-quality:
+  image: node:26
+  stage: check-2
+  needs:
+    - job: consumer-primary
+      artifacts: true
+  before_script:
+    - mkdir -p /tmp/forge-consumer
+    - tar -xzf .ci-consumer/consumer-source.tgz -C /tmp/forge-consumer
+    - cd /tmp/forge-consumer
+    - npm ci
+  script:
+    - npm run format && npm run lint && npm run audit:unused
+consumer-validate-build:
+  image: node:26
+  stage: check-2
+  needs:
+    - job: consumer-primary
+      artifacts: true
+  before_script:
+    - mkdir -p /tmp/forge-consumer
+    - tar -xzf .ci-consumer/consumer-source.tgz -C /tmp/forge-consumer
+    - cd /tmp/forge-consumer
+    - npm ci
+  script:
+    - cp -R "$CI_PROJECT_DIR/.ci-consumer/dist" .
+    - npm run validate:build
+consumer-browser:
+  image: node:26
+  stage: check-2
+  needs:
+    - job: consumer-primary
+      artifacts: true
+  before_script:
+    - mkdir -p /tmp/forge-consumer
+    - tar -xzf .ci-consumer/consumer-source.tgz -C /tmp/forge-consumer
+    - cd /tmp/forge-consumer
+    - npm ci
+  script:
+    - cp -R "$CI_PROJECT_DIR/.ci-consumer/dist" .
+    - npx playwright install --with-deps chromium firefox webkit
+    - npm run test:e2e
+  artifacts:
+    paths:
+      - .ci-consumer/playwright-report
+      - .ci-consumer/test-results
+    when: always
+    expire_in: 7 days
+  after_script:
+    - mkdir -p .ci-consumer
+    - for output in playwright-report test-results; do if [ -d "/tmp/forge-consumer/$output" ]; then cp -R "/tmp/forge-consumer/$output" .ci-consumer/; fi; done
+consumer-lighthouse:
+  image: node:26
+  stage: check-2
+  needs:
+    - job: consumer-primary
+      artifacts: true
+  before_script:
+    - mkdir -p /tmp/forge-consumer
+    - tar -xzf .ci-consumer/consumer-source.tgz -C /tmp/forge-consumer
+    - cd /tmp/forge-consumer
+    - npm ci
+  script:
+    - cp -R "$CI_PROJECT_DIR/.ci-consumer/dist" .
+    - npx playwright install --with-deps chromium
+    # Container images use the browser installed by Playwright.
+    - |
+      export CHROME_PATH="$(node --input-type=module -e 'import { chromium } from "@playwright/test"; process.stdout.write(chromium.executablePath());')"
+    - npm run lighthouse:ci
+  artifacts:
+    paths:
+      - .ci-consumer/.lighthouseci
+    when: always
+    expire_in: 7 days
+  after_script:
+    - mkdir -p .ci-consumer
+    - for output in .lighthouseci; do if [ -d "/tmp/forge-consumer/$output" ]; then cp -R "/tmp/forge-consumer/$output" .ci-consumer/; fi; done
+generator-scenarios:
+  image: node:26
+  stage: check-1
+  needs:
+    - job: generator-package
+      artifacts: true
+  before_script:
+    - npm ci
+  script:
+    - FORGE_CLI_TARBALL="$CI_PROJECT_DIR/.ci-packages/create-forge.tgz" node packages/create-forge/scripts/test-generator-e2e.ts
+consumer-quality-tool-regressions:
+  image: node:26
+  stage: check-0
+  needs: []
+  before_script:
+    - npm ci
+  script:
+    - npm run verify:template:static

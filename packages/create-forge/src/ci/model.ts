@@ -13,7 +13,6 @@ const workSchema = z.strictObject({
   needs: z.array(identifier).default([]),
   artifacts: z.array(nonEmptyStringSchema).default([]),
   browsers: z.array(z.enum(['chromium', 'firefox', 'webkit'])).default([]),
-  advisory: z.boolean().default(false),
 });
 export const planSchema = z.record(identifier, workSchema).superRefine((plan, context) => {
   const visiting = new Set<string>();
@@ -49,7 +48,6 @@ export const siteWork = defineWork({
   'lint-markdown': { name: 'Lint Markdown', commands: ['npm run lint:markdown'] },
   'audit-unused': { name: 'Audit unused code', commands: ['npm run audit:unused'] },
   typecheck: { name: 'Type-check', commands: ['npm run typecheck'] },
-  'dependency-audit': { name: 'Dependency audit', commands: ['npm run audit'], advisory: true },
   'unit-tests': { name: 'Unit tests and coverage', commands: ['npm run test:coverage'], artifacts: ['coverage'] },
   build: {
     name: 'Production build',

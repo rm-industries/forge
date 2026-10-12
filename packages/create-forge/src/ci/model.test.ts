@@ -96,6 +96,8 @@ describe('shared work and provider rendering', () => {
       artifacts: { paths: ['website/playwright-report', 'website/test-results'] },
     });
     expect(pipeline).not.toHaveProperty('compatibility');
+    expect(pipeline).not.toHaveProperty('dependency-audit');
+    expect(pipeline.build).toHaveProperty('artifacts.when', 'on_success');
     expect(pipeline.workflow.rules[2]).toMatchObject({ when: 'never' });
     validateCiYaml(gitlabPipelineSchema, new Document(pipeline).toString());
     expect(() =>

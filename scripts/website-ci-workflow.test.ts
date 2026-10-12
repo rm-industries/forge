@@ -64,7 +64,10 @@ const commands = (workflow: Workflow): string[] =>
   Object.values(workflow.jobs).flatMap((job) => (job.steps ?? []).flatMap((step) => (step.run ? [step.run] : [])));
 
 const download = (workflow: Workflow, job: string, name: string, path: string) => {
-  expect(steps(workflow, job).find((step) => step.uses?.startsWith('actions/download-artifact@'))?.with).toMatchObject({
+  expect(
+    steps(workflow, job).find((step) => step.uses?.startsWith('actions/download-artifact@') && step.with?.name === name)
+      ?.with,
+  ).toMatchObject({
     name,
     path,
   });
@@ -80,19 +83,7 @@ describe('generated website CI contract', () => {
         '.github/actions/setup-project/**',
       ]);
       expect(automation.on[event]?.paths).toEqual(['.github/**']);
-      expect(generator.on[event]?.paths).toEqual(
-        expect.arrayContaining([
-          '.github/**',
-          'templates/default/**',
-          'packages/create-forge/scripts/**',
-          'packages/create-forge/src/**',
-          'packages/create-forge/*.config.ts',
-          'packages/create-forge/tsconfig.json',
-          'tsconfig.json',
-          '**/package.json',
-          '**/package-lock.json',
-        ]),
-      );
+      expect(generator.on[event]).not.toHaveProperty('paths');
       expect(project.on[event]).not.toHaveProperty('paths');
       expect(template.on[event]).not.toHaveProperty('paths');
     }
@@ -141,6 +132,16 @@ describe('Forge website CI contract', () => {
     expect(website.concurrency?.['cancel-in-progress']).toBe("${{ github.event_name == 'pull_request' }}");
   });
 
+  it('matches consumer deployment gates, smoke safeguards and browser evidence policy', () => {
+    expect(dependencies(job(website, 'deploy')).sort()).toEqual(dependencies(job(template, 'deploy')).sort());
+    expect(job(website, 'smoke-deployed')).toHaveProperty('timeout-minutes', 10);
+    expect(steps(website, 'smoke-deployed').find((step) => step.run?.includes('test:smoke'))?.run).toBe(
+      'test -n "$DEPLOYMENT_URL"\nnpm run test:smoke\n',
+    );
+    const evidence = steps(website, 'browser-tests').find((step) => step.uses?.startsWith('actions/upload-artifact@'));
+    expect(evidence).toMatchObject({ if: 'always()', with: { 'if-no-files-found': 'ignore' } });
+  });
+
   it('reuses one website artifact for every build consumer', () => {
     for (const consumer of ['validate-build', 'browser-tests', 'lighthouse']) {
       download(website, consumer, 'website-build', 'website/dist');
@@ -149,23 +150,52 @@ describe('Forge website CI contract', () => {
   });
 });
 
-describe('repository template verification contract', () => {
-  it('shares one primary template build with browser and Lighthouse consumers', () => {
-    expect(dependencies(job(project, 'template-build')).sort()).toEqual(
-      ['template-coverage', 'template-static-quality'].sort(),
-    );
-    for (const consumer of ['template-browser', 'template-lighthouse']) {
-      expect(dependencies(job(project, consumer))).toEqual(['template-build']);
-      download(project, consumer, 'template-build', '${{ runner.temp }}/forge-default-template/dist');
-      expect(steps(project, consumer).some((step) => step.run?.includes('npm run build'))).toBe(false);
+it('keeps package correctness in project CI without repeating root checks or builds in runtime lanes', () => {
+  expect(commands(project).filter((command) => command === 'npm run build')).toHaveLength(1);
+  expect(steps(project, 'test').at(-1)?.run).toBe('npm run test:root');
+  expect(steps(project, 'typecheck').at(-1)?.run).toBe('npm run typecheck:root');
+  expect(dependencies(job(project, 'compatibility'))).toEqual(['build']);
+  expect(
+    steps(project, 'compatibility').some((step) =>
+      step.run?.includes('npm run typecheck:workspaces && npm run test:workspaces'),
+    ),
+  ).toBe(true);
+  expect(
+    steps(project, 'compatibility').some((step) => step.run?.includes('create-forge') && step.run.includes('--yes')),
+  ).toBe(false);
+});
+
+describe('generator consumer verification contract', () => {
+  it('bootstraps once per runtime and reuses the packaged CLI and primary artifacts', () => {
+    expect(dependencies(job(generator, 'consumer-compatibility'))).toEqual(['package']);
+    expect(commands(generator).filter((command) => command.includes('--node-version "$NODE_MAJOR"'))).toHaveLength(1);
+    for (const consumer of ['quality', 'validate-build', 'browser', 'lighthouse', 'security', 'syntax']) {
+      expect(dependencies(job(generator, consumer))).toEqual(['consumer-compatibility']);
+      download(generator, consumer, 'consumer-source', '${{ runner.temp }}/consumer-artifacts');
+      expect(steps(generator, consumer).some((step) => step.run?.includes('npm run build'))).toBe(false);
     }
+    for (const consumer of ['validate-build', 'browser', 'lighthouse'])
+      download(generator, consumer, 'consumer-build', '${{ runner.temp }}/forge-consumer/dist');
+    expect(commands(generator).filter((command) => command.includes('npm run build --workspace'))).toHaveLength(1);
+    expect(steps(generator, 'scenarios').find((step) => step.run?.includes('test-generator-e2e'))).toMatchObject({
+      env: { FORGE_CLI_TARBALL: '${{ runner.temp }}/forge-packages/create-forge.tgz' },
+    });
   });
 });
 
 it('keeps disposable consumer checks separate from repository automation', () => {
   expect(commands(automation)).toEqual([]);
-  expect(commands(generator)).toHaveLength(2);
-  for (const command of commands(generator)) expect(command).toContain('--name ci-review-fixture');
+  expect(project.jobs).not.toHaveProperty('project');
+  expect(Object.keys(project.jobs).some((name) => name.startsWith('template-') || name.startsWith('generator-'))).toBe(
+    false,
+  );
   expect(steps(automation, 'security').at(-1)?.with?.inputs).toBe('.github');
-  expect(steps(generator, 'security').at(-1)?.with?.inputs).toBe('.ci-review-fixture/.github');
+  expect(steps(generator, 'security').at(-1)?.with?.inputs).toBe('.ci-consumer/.github');
+});
+
+it('restores generated scan inputs inside the workspace mounted by the Docker scanner', () => {
+  const restore = steps(generator, 'security').find((step) => step.run?.includes('tar -xzf'));
+  expect(restore?.run).toContain('mkdir -p .ci-consumer');
+  expect(restore?.run).toContain('-C .ci-consumer');
+  expect(steps(generator, 'security').at(-1)?.with?.inputs).toBe('.ci-consumer/.github');
 });

@@ -16,12 +16,11 @@ export function createGitlabPipeline(config: CiGenerationOptions, plan: WorkPlan
         ...(work.browsers.length ? [`npx playwright install --with-deps ${work.browsers.join(' ')}`] : []),
         ...work.commands,
       ],
-      ...(work.advisory ? { allow_failure: true } : {}),
       ...(work.artifacts.length
         ? {
             artifacts: {
               paths: work.artifacts.map((path) => `${config.directory}/${path}`),
-              when: 'always',
+              when: id === 'build' ? 'on_success' : 'always',
               expire_in: '7 days',
             },
           }

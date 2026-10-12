@@ -1,0 +1,140 @@
+project-format:
+  image: node:26
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - npm run format
+project-lint-code:
+  image: node:26
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - npm run lint:code
+project-lint-markdown:
+  image: node:26
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - npm run lint:markdown
+project-spellcheck:
+  image: node:26
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - npm run spellcheck
+project-documentation:
+  image: node:26
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - npm run docs:validate
+project-typecheck:
+  image: node:26
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - npm run typecheck:root
+project-test:
+  image: node:26
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - npm run test:root
+project-build:
+  image: node:26
+  stage: check-1
+  before_script:
+    - npm ci
+  needs:
+    - job: project-format
+      artifacts: false
+    - job: project-lint-code
+      artifacts: false
+    - job: project-lint-markdown
+      artifacts: false
+    - job: project-spellcheck
+      artifacts: false
+    - job: project-documentation
+      artifacts: false
+    - job: project-typecheck
+      artifacts: false
+    - job: project-test
+      artifacts: false
+  script:
+    - npm run build
+    - mkdir -p .ci-packages
+    - npm pack --ignore-scripts --workspaces --pack-destination .ci-packages
+  artifacts:
+    paths:
+      - packages/content-model/dist
+      - packages/create-forge/dist
+      - .ci-packages
+    expire_in: 7 days
+project-pack:
+  image: node:26
+  stage: check-2
+  before_script: []
+  needs:
+    - job: project-build
+      artifacts: true
+  script:
+    - |
+      for candidate in .ci-packages/*.tgz; do
+        tar -tzf "$candidate"
+        case "$candidate" in
+          *content-model*.tgz)
+            for entry in index astro sveltia; do
+              tar -tzf "$candidate" | grep -Fx "package/dist/$entry.js"
+              tar -tzf "$candidate" | grep -Fx "package/dist/$entry.d.ts"
+            done
+            ;;
+          *create-forge*.tgz)
+            tar -tzf "$candidate" | grep -Fx 'package/dist/index.mjs'
+            tar -tzf "$candidate" | grep -Fx 'package/dist/template/package-lock.json'
+            ;;
+        esac
+      done
+project-compatibility:
+  image: node:$NODE_VERSION
+  stage: check-2
+  before_script:
+    - npm ci
+  needs:
+    - job: project-build
+      artifacts: true
+  script:
+    - npm run typecheck:workspaces && npm run test:workspaces
+    - |-
+      mkdir -p "/tmp/content-model-check"
+      mkdir -p "/tmp/content-model-check/node_modules/@rm-industries/content-model"
+      tar -xzf "$CI_PROJECT_DIR/.ci-packages/"*content-model*.tgz --strip-components=1 -C "/tmp/content-model-check/node_modules/@rm-industries/content-model"
+      ln -s "$CI_PROJECT_DIR/node_modules/astro" "/tmp/content-model-check/node_modules/astro"
+      cd "/tmp/content-model-check"
+      node --input-type=module <<'CHECK'
+      import assert from "node:assert/strict";
+      import { defineModel } from "@rm-industries/content-model";
+      import { createAstroCollection } from "@rm-industries/content-model/astro";
+      import { createSveltiaCollection } from "@rm-industries/content-model/sveltia";
+      for (const exported of [defineModel, createAstroCollection, createSveltiaCollection]) assert.equal(typeof exported, "function");
+      CHECK
+  parallel:
+    matrix:
+      - NODE_VERSION:
+          - 22.22.2
+          - '22'
+          - '24'
+          - '26'

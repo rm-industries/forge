@@ -81,9 +81,9 @@ consumer's GitHub YAML. Generation validates both providers with Zod; actionlint
 checks GitHub syntax and zizmor checks security patterns. Generator source,
 template, build configuration, dependency and action-pin changes trigger it.
 
-A later Forge CI refactor can move existing packed bootstrap and generator
-compatibility jobs from `project.yml` into `generator.yml`. The current change
-leaves those jobs and required-check configuration intact.
+Forge's native `generator.yml` packages once, bootstraps once per supported
+runtime and reuses the primary consumer source/build for output checks. Both project and generator workflows run for every
+pull request because their individual checks replace the root aggregate gate.
 
 Generated files include ownership comments explaining where consumers should
 edit jobs, triggers and schedules, and how action pins or runtime images evolve.
@@ -92,7 +92,7 @@ edit jobs, triggers and schedules, and how action pins or runtime images evolve.
 
 Generated GitHub security checks fail when a pull request introduces dependencies
 with high or critical vulnerabilities, matching the reference website's policy.
-The separate advisory npm audit remains unchanged. Require the dependency-review
+Routine dependency-audit jobs are omitted. Require the dependency-review
 check in branch protection to enforce it before merging; deployment does not
 wait for the separate security workflow.
 
