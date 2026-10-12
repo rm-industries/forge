@@ -1,6 +1,6 @@
 project-format:
   image: node:26
-  stage: check-0
+  stage: validate
   before_script:
     - npm ci
   needs: []
@@ -8,15 +8,23 @@ project-format:
     - npm run format
 project-lint-code:
   image: node:26
-  stage: check-0
+  stage: validate
   before_script:
     - npm ci
   needs: []
   script:
-    - npm run lint:code
+    - mkdir -p test-results
+    - npm run lint:code --silent -- --format gitlab > test-results/code-quality.json
+  artifacts:
+    paths:
+      - test-results/code-quality.json
+    when: always
+    expire_in: 7 days
+    reports:
+      codequality: test-results/code-quality.json
 project-lint-markdown:
   image: node:26
-  stage: check-0
+  stage: validate
   before_script:
     - npm ci
   needs: []
@@ -24,7 +32,7 @@ project-lint-markdown:
     - npm run lint:markdown
 project-spellcheck:
   image: node:26
-  stage: check-0
+  stage: validate
   before_script:
     - npm ci
   needs: []
@@ -32,7 +40,7 @@ project-spellcheck:
     - npm run spellcheck
 project-documentation:
   image: node:26
-  stage: check-0
+  stage: validate
   before_script:
     - npm ci
   needs: []
@@ -40,7 +48,7 @@ project-documentation:
     - npm run docs:validate
 project-typecheck:
   image: node:26
-  stage: check-0
+  stage: validate
   before_script:
     - npm ci
   needs: []
@@ -48,15 +56,22 @@ project-typecheck:
     - npm run typecheck:root
 project-test:
   image: node:26
-  stage: check-0
+  stage: validate
   before_script:
     - npm ci
   needs: []
   script:
     - npm run test:root
+  artifacts:
+    paths:
+      - test-results/unit.xml
+    when: always
+    expire_in: 7 days
+    reports:
+      junit: test-results/unit.xml
 project-build:
   image: node:26
-  stage: check-1
+  stage: build
   before_script:
     - npm ci
   needs:
@@ -86,7 +101,7 @@ project-build:
     expire_in: 7 days
 project-pack:
   image: node:26
-  stage: check-2
+  stage: verify
   before_script: []
   needs:
     - job: project-build
@@ -110,7 +125,7 @@ project-pack:
       done
 project-compatibility:
   image: node:$NODE_VERSION
-  stage: check-2
+  stage: verify
   before_script:
     - npm ci
   needs:
@@ -138,3 +153,12 @@ project-compatibility:
           - '22'
           - '24'
           - '26'
+  artifacts:
+    paths:
+      - packages/*/test-results/unit.xml
+    when: always
+    expire_in: 7 days
+    reports:
+      junit:
+        - packages/content-model/test-results/unit.xml
+        - packages/create-forge/test-results/unit.xml

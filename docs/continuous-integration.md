@@ -160,3 +160,30 @@ Website includes are scoped to website, documentation and GitLab configuration
 changes. Generator includes watch templates, package/scripts/configuration and
 CI inputs. Root project checks run for every accepted pipeline. GitLab uses
 [native includes and needs](https://docs.gitlab.com/ci/yaml/) for composition.
+
+GitLab stage names describe their purpose: `prepare` packages the generator
+candidate, `validate` covers source checks, `build` produces artifacts, and
+`verify` checks packages or built consumers. Deployment and live verification
+use `deploy` and `smoke`. Native needs relationships preserve independent job
+flows across these stages. Generated consumer pipelines start at `validate`.
+
+### Native CI reporting
+
+GitLab receives JUnit results from Vitest and Playwright, including failed runs.
+Node compatibility lanes add the runtime to Vitest case identifiers so results
+remain distinct. Website unit coverage uses Cobertura for merge request coverage
+annotations, and Oxlint emits Code Quality JSON with repository-relative paths.
+Generated GitLab CI includes the same reports for consumer projects. HTML coverage,
+browser reports and traces remain downloadable artifacts.
+
+Disposable generator consumers publish JUnit results but do not publish coverage
+annotations or Code Quality findings against Forge source: their files belong to
+the bootstrapped project rather than this repository. Their coverage remains a
+downloadable artifact. Formatting, CSS/Markdown linting and Lighthouse still report
+through job logs and their existing artifacts.
+
+GitHub uses the built-in Vitest GitHub Actions reporter for failure annotations and
+test summaries, explicit Oxlint GitHub annotations, and Playwright's GitHub
+reporter. Coverage HTML remains an artifact; GitHub does not consume GitLab's
+Cobertura report declarations. No additional reporting action, service or write
+permission is required.

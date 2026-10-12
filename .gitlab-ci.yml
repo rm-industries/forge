@@ -8,9 +8,10 @@ workflow:
 default:
   interruptible: true
 stages:
-  - check-0
-  - check-1
-  - check-2
+  - prepare
+  - validate
+  - build
+  - verify
   - deploy
   - smoke
 include:

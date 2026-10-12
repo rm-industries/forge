@@ -11,6 +11,26 @@ const project = read('../.gitlab/ci/project.yml');
 const generator = read('../.gitlab/ci/generator.yml');
 const website = read('../.gitlab/ci/website.yml');
 
+test('publishes native test and quality reports without mapping disposable coverage onto Forge', () => {
+  expect(project['project-test'].artifacts.reports.junit).toBe('test-results/unit.xml');
+  expect(project['project-compatibility'].artifacts.reports.junit).toEqual([
+    'packages/content-model/test-results/unit.xml',
+    'packages/create-forge/test-results/unit.xml',
+  ]);
+  expect(project['project-lint-code'].artifacts.reports.codequality).toBe('test-results/code-quality.json');
+  expect(website['website-unit-tests'].artifacts.reports.coverage_report).toEqual({
+    coverage_format: 'cobertura',
+    path: 'website/coverage/cobertura-coverage.xml',
+  });
+  expect(website['website-lint-code'].script.join('\n')).toContain('"website/" + finding.location.path');
+  for (const id of ['consumer-primary', 'consumer-compatibility', 'consumer-browser']) {
+    expect(generator[id].artifacts.when).toBe('always');
+    expect(generator[id].artifacts.reports).toHaveProperty('junit');
+    expect(generator[id].artifacts.reports).not.toHaveProperty('coverage_report');
+    expect(generator[id].after_script.join('\n')).toContain('test-results');
+  }
+});
+
 test('composes native GitLab includes with valid dependency graphs', () => {
   expect(entry.include.map((include: { local: string }) => include.local)).toEqual([
     '.gitlab/ci/project.yml',
@@ -89,7 +109,7 @@ test('mirrors project and website job coverage and dependency gates across provi
       expect(dependencyNames(gitlab[`${prefix}${id}`], prefix)).toEqual(dependencyNames(job as { needs?: string[] }));
       const commands = (job as { steps: { run?: string }[] }).steps
         .filter((step) => step.run?.startsWith('npm run ') || step.run === 'npm test')
-        .map((step) => step.run);
+        .map((step) => step.run?.replace(' -- --format github', ''));
       for (const command of commands) expect(gitlab[`${prefix}${id}`].script.join('\n')).toContain(command);
     }
   }

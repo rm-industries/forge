@@ -3,6 +3,20 @@ import { getViteConfig } from 'astro/config';
 
 export default getViteConfig({
   test: {
+    reporters: process.env.GITLAB_CI
+      ? [
+          'default',
+          [
+            'junit',
+            {
+              outputFile: 'test-results/unit.xml',
+              classnameTemplate: `{filename}:node-${process.env.NODE_VERSION ?? 'primary'}`,
+            },
+          ],
+        ]
+      : process.env.GITHUB_ACTIONS === 'true'
+        ? ['default', 'github-actions']
+        : ['default'],
     include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
     coverage: {
       include: [
@@ -13,7 +27,9 @@ export default getViteConfig({
         'src/themes/site-theme.ts',
       ],
       provider: 'v8',
-      reporter: ['text', 'html'],
+      reporter: process.env.GITLAB_CI
+        ? ['text', 'html', ['cobertura', { projectRoot: process.env.CI_PROJECT_DIR ?? process.cwd() }]]
+        : ['text', 'html'],
       thresholds: {
         branches: 100,
         functions: 100,

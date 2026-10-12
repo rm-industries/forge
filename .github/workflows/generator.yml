@@ -153,7 +153,7 @@ jobs:
         run: npm ci
         working-directory: ${{ runner.temp }}/forge-consumer
       - name: Check consumer source quality
-        run: npm run format && npm run lint && npm run audit:unused
+        run: npm run format && npm run lint:code -- --format github && npm run lint:css && npm run lint:markdown && npm run spellcheck && npm run audit:unused
         working-directory: ${{ runner.temp }}/forge-consumer
   validate-build:
     name: Consumer build validation

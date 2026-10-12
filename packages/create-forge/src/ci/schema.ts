@@ -124,6 +124,15 @@ export const gitlabJobSchema = z.strictObject({
       paths: nonEmptyStringsSchema,
       when: z.enum(['always', 'on_success']),
       expire_in: nonEmptyStringSchema,
+      reports: z
+        .strictObject({
+          junit: z.union([nonEmptyStringSchema, nonEmptyStringsSchema]).optional(),
+          codequality: nonEmptyStringSchema.optional(),
+          coverage_report: z
+            .strictObject({ coverage_format: z.literal('cobertura'), path: nonEmptyStringSchema })
+            .optional(),
+        })
+        .optional(),
     })
     .optional(),
 });
