@@ -1,14 +1,14 @@
 import { z } from 'zod';
 
-export const scriptSchema = z.string().trim().min(1);
-export const scriptsSchema = z.array(scriptSchema).min(1);
+export const nonEmptyStringSchema = z.string().trim().min(1);
+export const nonEmptyStringsSchema = z.array(nonEmptyStringSchema).min(1);
 export const imageSchema = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9/_.:@$-]*$/);
 const identifier = z.string().regex(/^[a-z][a-z0-9-]*$/);
 const workSchema = z.strictObject({
-  name: scriptSchema,
-  commands: scriptsSchema,
+  name: nonEmptyStringSchema,
+  commands: nonEmptyStringsSchema,
   needs: z.array(identifier).default([]),
-  artifacts: z.array(scriptSchema).default([]),
+  artifacts: z.array(nonEmptyStringSchema).default([]),
   browsers: z.array(z.enum(['chromium', 'firefox', 'webkit'])).default([]),
   advisory: z.boolean().default(false),
 });
