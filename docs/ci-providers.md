@@ -23,8 +23,9 @@ overwrite approval. Generation runs in staging, with rollback on failure.
 ## Validation and provider behavior
 
 Small Zod schemas validate commands, images, work relationships and provider
-fields. Dependencies must exist and cannot form cycles. Serialization parses and
-validates YAML before writing. Tests and actionlint/zizmor verify generated
+fields. Dependencies must exist and cannot form cycles. Serialization formats YAML with Oxfmt using template settings, then parses and
+validates the formatted YAML before writing. Generated workflows participate in
+normal consumer formatting checks. Tests and actionlint/zizmor verify generated
 consumer output; they do not generate or rewrite Forge's own workflows.
 
 Validation jobs share build artifacts. GitHub Pages retains same-run deployment
@@ -65,3 +66,17 @@ Consumers run one Node major in CI, selected with `--node-version 22`,
 `--node-version 24`, or `--node-version 26` (the default). Forge retains its
 compatibility matrices to verify the supported runtime range. Consumers do not
 receive a compatibility job.
+
+## Repository automation checks
+
+Forge's native automation workflow tests the generator's output. It builds
+create-forge, bootstraps a disposable consumer with both providers and no install
+or Git setup, then scans the consumer's GitHub YAML alongside Forge's existing
+workflows. The fixture is discarded with the runner. Forge's own pipelines are
+not generated or replaced by these steps.
+
+Zod validates provider data and YAML structure inside generation. Actionlint
+checks GitHub-specific workflow syntax, and zizmor checks security patterns.
+Watching generator source, build scripts, configuration and dependency manifests
+ensures changes to emitted YAML reach these checks even when committed Forge
+workflow files do not change.
