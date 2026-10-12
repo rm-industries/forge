@@ -33,15 +33,15 @@ describe('shared work and provider rendering', () => {
     expect(gitlab).not.toHaveProperty('compatibility');
     expect(gitlab.format).toMatchObject({ image: 'node:24' });
     expect(generationOptionsSchema.parse(config).nodeVersion).toBe('26');
-    expect(() => generationOptionsSchema.parse({ ...config, nodeVersion: '20' })).toThrow();
+    expect(() => generationOptionsSchema.parse({ ...config, nodeVersion: '20' })).toThrow('Invalid option');
   });
   test('validates reusable strings, command lists and image references', () => {
     expect(nonEmptyStringSchema.parse('  npm run build  ')).toBe('npm run build');
-    expect(() => nonEmptyStringSchema.parse('  ')).toThrow();
-    expect(() => nonEmptyStringsSchema.parse([])).toThrow();
-    expect(() => nonEmptyStringsSchema.parse(['true', ' '])).toThrow();
+    expect(() => nonEmptyStringSchema.parse('  ')).toThrow('Too small');
+    expect(() => nonEmptyStringsSchema.parse([])).toThrow('Too small');
+    expect(() => nonEmptyStringsSchema.parse(['true', ' '])).toThrow('Too small');
     expect(imageSchema.parse('node:26')).toBe('node:26');
-    expect(() => imageSchema.parse('node:26; echo unsafe')).toThrow();
+    expect(() => imageSchema.parse('node:26; echo unsafe')).toThrow('Invalid string: must match pattern');
   });
   test('requires build artifacts before running site build consumers', () => {
     expect(siteWork.build!.artifacts).toContain('dist');

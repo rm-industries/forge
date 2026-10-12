@@ -28,7 +28,9 @@ test('writes validated consumer YAML from ephemeral options and immutable pins',
     ]);
     expect(await readFile(join(root, '.github/workflows/site-project.yml'), 'utf8')).toContain('# v1');
     expect(await readFile(join(root, '.gitlab/ci/site.yml'), 'utf8')).toContain("cd 'site'");
-    await expect(writeCi(config, root, (action) => ({ ref: `${action}@main` }))).rejects.toThrow();
+    await expect(writeCi(config, root, (action) => ({ ref: `${action}@main` }))).rejects.toThrow(
+      'Invalid string: must match pattern',
+    );
     const gitlab = await writeCi({ ...config, providers: ['gitlab'], primary: 'gitlab' }, root, () => {
       throw new Error('GitLab does not need action pins');
     });
