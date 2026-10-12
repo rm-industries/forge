@@ -58,7 +58,8 @@ Select providers during bootstrap with `--ci-providers github,gitlab` or
 `--ci-providers gitlab`. `--primary-ci` selects the authoritative provider;
 GitHub is primary when enabled unless overridden. Both providers include Pages
 deployment and deployed-site smoke tests; the inactive provider retains these
-jobs with native disabled conditions. Edit the native deployment conditions to enable the selected provider. Enable Pages on that host and update the canonical site
+jobs with native disabled conditions. Edit the native deployment conditions to
+enable the selected provider. Enable Pages on that host and update the canonical site
 URL before switching. GitLab Pages requires GitLab 17.9 or newer.
 
 Generated projects receive validated YAML that they own and edit directly. CI
