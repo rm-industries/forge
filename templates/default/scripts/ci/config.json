@@ -1,0 +1,8 @@
+{
+  "directory": ".",
+  "repositoryRoot": ".",
+  "providers": ["github"],
+  "primary": "github",
+  "securityMinute": 17,
+  "automationMinute": 43
+}
