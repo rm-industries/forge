@@ -25,9 +25,11 @@ export const derivePackageName = (destination: string) => {
 export const humanizePackageName = (packageName: string) => {
   const unscopedName = packageName.split('/').at(-1) ?? packageName;
   return unscopedName
-    .split(/[-_\s]+/u)
+    .split(packageNameWordSeparatorPattern)
     .filter(Boolean)
     .map((word) => `${word.charAt(0).toUpperCase()}${word.slice(1)}`)
     .join(' ');
 };
 import { basename, resolve } from 'node:path';
+
+const packageNameWordSeparatorPattern = /[-_\s]+/u;

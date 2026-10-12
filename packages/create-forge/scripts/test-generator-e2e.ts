@@ -8,6 +8,8 @@ import { promisify } from 'node:util';
 import { deriveScheduleMinutes } from '../src/schedule.ts';
 import { templateTokenPrefix } from '../src/template-tokens.ts';
 
+const lineEndingPattern = /\r?\n/u;
+
 type PackResult = { filename: string };
 type PackageMetadata = { name?: string };
 
@@ -67,7 +69,7 @@ const assertGeneratedProject = async (directory: string, packageName: string, re
     throw new Error(`Expected ${directory} to use package name ${packageName}.`);
   }
   for (const path of ['.lighthouseci/', 'playwright-report/', 'test-results/']) {
-    if (!gitignore.split(/\r?\n/u).includes(path)) {
+    if (!gitignore.split(lineEndingPattern).includes(path)) {
       throw new Error(`Generated fixture ${directory} does not ignore ${path}.`);
     }
   }

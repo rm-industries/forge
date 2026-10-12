@@ -19,6 +19,8 @@ import type { GeneratorOptions } from './options';
 import { deriveScheduleMinutes } from './schedule';
 import { templateTokenPrefix, templateTokens } from './template-tokens';
 
+const pathSeparatorPattern = /[\\/]/u;
+
 export class MaterializationError extends Error {}
 
 type MaterializationContext = {
@@ -58,7 +60,7 @@ const resolveTemplateDirectory = (directory: string | URL) =>
   directory instanceof URL ? fileURLToPath(directory) : resolve(directory);
 
 const resolveDestination = (destination: string, cwd: string) => {
-  const segments = destination.split(/[\\/]/u);
+  const segments = destination.split(pathSeparatorPattern);
   if (segments.includes('..')) {
     throw new MaterializationError(
       `Unsafe destination ${JSON.stringify(destination)}: parent traversal is not allowed.`,

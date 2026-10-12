@@ -40,7 +40,7 @@
     "tag": "latest"
   },
   "scripts": {
-    "build": "tsdown && node scripts/copy-template.ts",
+    "build": "tsdown && node scripts/write-ci-pins.ts && node scripts/copy-template.ts",
     "prepack": "npm run typecheck && npm test && npm run build",
     "test": "vitest run",
     "test:compatibility": "npm run build && node scripts/test-generator-e2e.ts --compatibility",
@@ -51,10 +51,13 @@
   "dependencies": {
     "@clack/prompts": "^1.8.1",
     "commander": "^15.0.0",
-    "validate-npm-package-name": "^8.0.0"
+    "validate-npm-package-name": "^8.0.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/validate-npm-package-name": "^4.0.2"
+    "@types/validate-npm-package-name": "^4.0.2",
+    "typescript": "^6.0.3"
   },
   "engines": {
     "node": "^22.22.2 || ^24.0.0 || ^26.0.0",

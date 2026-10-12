@@ -2,6 +2,8 @@ import { isAbsolute, relative } from 'node:path';
 
 import type { GeneratorOptions } from './options';
 
+const unquotedShellPathPattern = /^[\w./@-]+$/u;
+
 type CompletionContext = {
   destination: string;
   cwd?: string;
@@ -14,7 +16,7 @@ const ansi = {
 };
 
 const commandPath = (path: string) => {
-  if (/^[\w./@-]+$/u.test(path)) return path;
+  if (unquotedShellPathPattern.test(path)) return path;
   return `"${path.replaceAll('"', '\\"')}"`;
 };
 
