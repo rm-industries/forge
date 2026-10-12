@@ -8,12 +8,26 @@ on: # yamllint disable-line rule:truthy
     paths:
       - '.github/**'
       - 'templates/default/.github/**'
+      - 'packages/create-forge/scripts/**'
+      - 'packages/create-forge/src/**'
+      - 'packages/create-forge/*.config.ts'
+      - 'packages/create-forge/tsconfig.json'
+      - 'tsconfig.json'
+      - '**/package.json'
+      - '**/package-lock.json'
   push:
     branches:
       - main
     paths:
       - '.github/**'
       - 'templates/default/.github/**'
+      - 'packages/create-forge/scripts/**'
+      - 'packages/create-forge/src/**'
+      - 'packages/create-forge/*.config.ts'
+      - 'packages/create-forge/tsconfig.json'
+      - 'tsconfig.json'
+      - '**/package.json'
+      - '**/package-lock.json'
   schedule:
     - cron: '43 5 * * 1'
 
@@ -38,11 +52,22 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Setup project
+        uses: $/.github/actions/setup-project
+        with:
+          node-version: '26.x'
+
+      - name: Generate consumer workflows for validation
+        run: |
+          npm run build --workspace @rm-industries/create-forge
+          node packages/create-forge/dist/index.mjs .ci-review-fixture --yes --no-install --no-git --ci-providers github,gitlab
+
       - name: Scan workflows
         uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
         with:
           advanced-security: true
           collect: all
+          inputs: .github .ci-review-fixture/.github
 
   syntax:
     name: Workflow syntax
@@ -57,7 +82,17 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Setup project
+        uses: $/.github/actions/setup-project
+        with:
+          node-version: '26.x'
+
+      - name: Generate consumer workflows for validation
+        run: |
+          npm run build --workspace @rm-industries/create-forge
+          node packages/create-forge/dist/index.mjs .ci-review-fixture --yes --no-install --no-git --ci-providers github,gitlab
+
       - name: Validate workflows
         uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2
         with:
-          files: '.github/workflows/*.yml,templates/default/.github/workflows/*.yml'
+          files: '.github/workflows/*.yml,.ci-review-fixture/.github/workflows/*.yml'

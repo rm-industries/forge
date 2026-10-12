@@ -4,7 +4,6 @@
     "allowImportingTsExtensions": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "rootDir": ".",
     "skipLibCheck": true,
     "types": ["node"]
   },

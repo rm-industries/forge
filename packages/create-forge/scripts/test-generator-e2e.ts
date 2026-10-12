@@ -5,6 +5,9 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
+import { parse } from 'yaml';
+
+import { deriveCiPrefix, workflowPath } from '../src/ci/paths.ts';
 import { deriveScheduleMinutes } from '../src/schedule.ts';
 import { templateTokenPrefix } from '../src/template-tokens.ts';
 
@@ -51,19 +54,12 @@ const assertGeneratedProject = async (directory: string, packageName: string, re
   const lockfile = await readFile(join(directory, 'package-lock.json'), 'utf8');
   const gitignore = await readFile(join(directory, '.gitignore'), 'utf8');
   const siteConfig = await readFile(join(directory, 'src', 'config', 'site.ts'), 'utf8');
-  const securityWorkflow = await readFile(join(repositoryDirectory, '.github', 'workflows', 'security.yml'), 'utf8');
-  const automationWorkflow = await readFile(
-    join(repositoryDirectory, '.github', 'workflows', 'automation.yml'),
-    'utf8',
-  );
-  const projectWorkflow = await readFile(join(repositoryDirectory, '.github', 'workflows', 'project.yml'), 'utf8');
-  const setupAction = await readFile(
-    join(repositoryDirectory, '.github', 'actions', 'setup-project', 'action.yml'),
-    'utf8',
-  );
+  const prefix = deriveCiPrefix(relative(repositoryDirectory, directory));
+  const securityWorkflow = await readFile(join(repositoryDirectory, workflowPath('security', prefix)), 'utf8');
+  const automationWorkflow = await readFile(join(repositoryDirectory, workflowPath('automation', prefix)), 'utf8');
+  const projectWorkflow = await readFile(join(repositoryDirectory, workflowPath('project', prefix)), 'utf8');
   const dependabot = await readFile(join(repositoryDirectory, '.github', 'dependabot.yml'), 'utf8');
   const projectDirectory = relative(repositoryDirectory, directory).split(sep).join('/') || '.';
-  const projectPathFilter = projectDirectory === '.' ? '**' : `${projectDirectory}/**`;
   const dependabotDirectory = projectDirectory === '.' ? '/' : `/${projectDirectory}`;
   if (metadata.name !== packageName) {
     throw new Error(`Expected ${directory} to use package name ${packageName}.`);
@@ -77,8 +73,6 @@ const assertGeneratedProject = async (directory: string, packageName: string, re
     throw new Error(`Generated fixture ${directory} contains an unresolved template token.`);
   }
   for (const expected of [
-    `- '${projectPathFilter}'`,
-    `working-directory: ${projectDirectory}`,
     `path: ${projectDirectory}/coverage`,
     `path: ${projectDirectory}/dist`,
     `${projectDirectory}/playwright-report`,
@@ -89,19 +83,41 @@ const assertGeneratedProject = async (directory: string, packageName: string, re
       throw new Error(`Generated fixture ${directory} is missing project workflow value ${JSON.stringify(expected)}.`);
     }
   }
-  if (
-    !securityWorkflow.includes(`- '${projectPathFilter}'`) ||
-    !setupAction.includes(`default: ${projectDirectory}`) ||
-    !dependabot.includes(`- package-ecosystem: npm\n    directory: ${dependabotDirectory}`)
-  ) {
-    throw new Error(`Generated fixture ${directory} does not configure repository automation for its project root.`);
+  if (!dependabot.includes(`directory: ${dependabotDirectory}`)) {
+    throw new Error(`Generated fixture ${directory} has the wrong Dependabot directory.`);
   }
-  const scheduleMinutes = deriveScheduleMinutes(packageName);
+  if (await exists(join(directory, 'scripts/ci')))
+    throw new Error('CI authoring files must not be delivered to consumers');
+  const consumer = JSON.parse(await readFile(join(directory, 'package.json'), 'utf8'));
   if (
-    !securityWorkflow.includes(`cron: '${scheduleMinutes.security} 5 * * 1'`) ||
-    !automationWorkflow.includes(`cron: '${scheduleMinutes.automation} 5 * * 1'`)
+    consumer.scripts['ci:generate'] ||
+    consumer.scripts['ci:check'] ||
+    consumer.devDependencies.yaml ||
+    consumer.devDependencies.zod
+  )
+    throw new Error('CI authoring dependencies or commands leaked into consumer');
+  const updates = parse(dependabot).updates;
+  if (
+    !updates.some(
+      (update: { 'package-ecosystem': string; directory: string }) =>
+        update['package-ecosystem'] === 'github-actions' && update.directory === '/',
+    )
+  )
+    throw new Error('Dependabot must scan root workflows including prefixed nested workflows');
+  const scheduleMinutes = deriveScheduleMinutes(packageName);
+  for (const [workflow, minute] of [
+    [securityWorkflow, scheduleMinutes.security],
+    [automationWorkflow, scheduleMinutes.automation],
+  ] as const) {
+    if (parse(workflow).on.schedule[0].cron !== `${minute} 5 * * 1`) throw new Error('Incorrect generated schedule');
+  }
+  const project = parse(projectWorkflow);
+  if (
+    project.on.workflow_run ||
+    project.jobs.deploy.environment.name !== 'github-pages' ||
+    project.jobs.deploy.needs[0] !== 'project'
   ) {
-    throw new Error(`Generated fixture ${directory} does not use its derived workflow schedules.`);
+    throw new Error('Deployment must follow validation in the same workflow');
   }
 };
 
@@ -137,8 +153,8 @@ try {
   }
   await assertGeneratedProject(defaultDirectory, 'default-site');
   await access(join(defaultDirectory, 'node_modules'));
+  await execute('npm', ['run', 'format'], { cwd: defaultDirectory, maxBuffer: 10 * 1024 * 1024 });
   await access(join(defaultDirectory, '.git', 'HEAD'));
-  await access(join(defaultDirectory, '.github', 'actions', 'setup-project', 'action.yml'));
   await access(join(defaultDirectory, '.github', 'dependabot.yml'));
   await access(join(defaultDirectory, '.github', 'workflows', 'automation.yml'));
   await access(join(defaultDirectory, '.github', 'workflows', 'project.yml'));
@@ -185,6 +201,48 @@ try {
     '--no-git',
   ]);
   await assertGeneratedProject(scopedDirectory, '@example/scoped-site');
+
+  const gitlabDirectory = join(projectsDirectory, 'gitlab-site');
+  await runGenerator(executable, projectsDirectory, [
+    'gitlab-site',
+    '--yes',
+    '--ci-providers',
+    'gitlab',
+    '--no-install',
+    '--no-git',
+  ]);
+  const gitlab = parse(await readFile(join(gitlabDirectory, '.gitlab-ci.yml'), 'utf8'));
+  if (
+    gitlab['browser-tests'].needs[0].job !== 'build' ||
+    (await exists(join(gitlabDirectory, '.github/workflows/project.yml')))
+  )
+    throw new Error('GitLab bootstrap did not select the requested provider');
+
+  const sharedRepository = join(projectsDirectory, 'shared-repository');
+  await mkdir(sharedRepository);
+  await writeFile(join(sharedRepository, '.gitlab-ci.yml'), 'existing gitlab configuration\n');
+  await mkdir(join(sharedRepository, '.github'));
+  await writeFile(join(sharedRepository, '.github/dependabot.yml'), 'existing dependency configuration\n');
+  await runGenerator(executable, sharedRepository, [
+    'site',
+    '--yes',
+    '--repository-root',
+    '.',
+    '--ci-prefix',
+    'docs',
+    '--ci-providers',
+    'github,gitlab',
+    '--no-install',
+    '--no-git',
+  ]);
+  const nestedGitlab = parse(await readFile(join(sharedRepository, '.gitlab/ci/docs.yml'), 'utf8'));
+  await access(join(sharedRepository, '.github/workflows/docs-project.yml'));
+  if (
+    nestedGitlab.default.before_script[0] !== "cd 'site'" ||
+    (await readFile(join(sharedRepository, '.gitlab-ci.yml'), 'utf8')) !== 'existing gitlab configuration\n' ||
+    (await readFile(join(sharedRepository, '.github/dependabot.yml'), 'utf8')) !== 'existing dependency configuration\n'
+  )
+    throw new Error('Combined-provider bootstrap did not preserve shared repository configuration');
 
   const currentDirectory = join(projectsDirectory, 'current-directory-site');
   await mkdir(currentDirectory);
@@ -251,7 +309,7 @@ try {
   }
 
   const mode = compatibilityMode ? 'compatibility' : 'complete';
-  console.log(`Verified ${packResult.filename} across 7 isolated ${mode} generator fixtures.`);
+  console.log(`Verified ${packResult.filename} across 9 isolated ${mode} generator fixtures.`);
 } finally {
   await rm(fixtureDirectory, { recursive: true, force: true });
 }
