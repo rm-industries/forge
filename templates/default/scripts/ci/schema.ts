@@ -1,7 +1,7 @@
 import { parseDocument } from 'yaml';
 import { z } from 'zod';
 
-import { imageSchema, scriptSchema, scriptsSchema } from './model.ts';
+import { imageSchema, nonEmptyStringSchema, nonEmptyStringsSchema } from './model.ts';
 
 const values = z.record(z.string(), z.union([z.string(), z.number(), z.boolean()]));
 const condition = z.union([z.string(), z.boolean()]);
@@ -25,8 +25,8 @@ const permissions = z.partialRecord(
   z.enum(['read', 'write', 'none']),
 );
 const stepFields = {
-  name: scriptSchema.optional(),
-  id: scriptSchema.optional(),
+  name: nonEmptyStringSchema.optional(),
+  id: nonEmptyStringSchema.optional(),
   if: condition.optional(),
   env: values.optional(),
   'continue-on-error': z.boolean().optional(),
@@ -34,9 +34,9 @@ const stepFields = {
 const githubStepSchema = z.union([
   z.strictObject({
     ...stepFields,
-    run: scriptSchema,
-    shell: scriptSchema.optional(),
-    'working-directory': scriptSchema.optional(),
+    run: nonEmptyStringSchema,
+    shell: nonEmptyStringSchema.optional(),
+    'working-directory': nonEmptyStringSchema.optional(),
   }),
   z.strictObject({
     ...stepFields,
@@ -49,32 +49,32 @@ const matrix = z.record(
   z.union([z.array(z.union([z.string(), z.number(), z.boolean()])), z.array(values)]),
 );
 export const githubJobSchema = z.strictObject({
-  name: scriptSchema.optional(),
-  'runs-on': scriptSchema,
-  needs: z.array(scriptSchema).optional(),
+  name: nonEmptyStringSchema.optional(),
+  'runs-on': nonEmptyStringSchema,
+  needs: z.array(nonEmptyStringSchema).optional(),
   if: condition.optional(),
   permissions,
   steps: z.array(githubStepSchema).min(1),
   strategy: z.strictObject({ 'fail-fast': z.boolean().optional(), matrix }).optional(),
-  environment: z.strictObject({ name: scriptSchema, url: scriptSchema.optional() }).optional(),
-  outputs: z.record(z.string(), scriptSchema).optional(),
+  environment: z.strictObject({ name: nonEmptyStringSchema, url: nonEmptyStringSchema.optional() }).optional(),
+  outputs: z.record(z.string(), nonEmptyStringSchema).optional(),
 });
 const event = z
-  .strictObject({ branches: z.array(scriptSchema).optional(), paths: z.array(scriptSchema).optional() })
+  .strictObject({ branches: z.array(nonEmptyStringSchema).optional(), paths: z.array(nonEmptyStringSchema).optional() })
   .nullable();
 export const githubWorkflowSchema = z
   .strictObject({
-    name: scriptSchema,
+    name: nonEmptyStringSchema,
     on: z.strictObject({
       push: event.optional(),
       pull_request: event.optional(),
-      schedule: z.array(z.strictObject({ cron: scriptSchema })).optional(),
+      schedule: z.array(z.strictObject({ cron: nonEmptyStringSchema })).optional(),
       workflow_dispatch: z.null().optional(),
     }),
     permissions,
-    concurrency: z.strictObject({ group: scriptSchema, 'cancel-in-progress': condition }).optional(),
+    concurrency: z.strictObject({ group: nonEmptyStringSchema, 'cancel-in-progress': condition }).optional(),
     defaults: z
-      .strictObject({ run: z.strictObject({ shell: scriptSchema, 'working-directory': scriptSchema }) })
+      .strictObject({ run: z.strictObject({ shell: nonEmptyStringSchema, 'working-directory': nonEmptyStringSchema }) })
       .optional(),
     jobs: z.record(z.string(), githubJobSchema),
   })
@@ -99,23 +99,27 @@ export const githubWorkflowSchema = z
     }
     for (const id of Object.keys(workflow.jobs)) visit(id);
   });
-const rule = z.strictObject({ if: scriptSchema, when: z.enum(['never', 'always', 'on_success']).optional() });
+const rule = z.strictObject({ if: nonEmptyStringSchema, when: z.enum(['never', 'always', 'on_success']).optional() });
 export const gitlabJobSchema = z.strictObject({
   image: imageSchema,
-  stage: scriptSchema,
-  script: scriptsSchema,
+  stage: nonEmptyStringSchema,
+  script: nonEmptyStringsSchema,
   allow_failure: z.boolean().optional(),
-  needs: z.array(z.strictObject({ job: scriptSchema, artifacts: z.boolean() })).optional(),
-  parallel: z.strictObject({ matrix: z.array(z.record(z.string(), z.array(scriptSchema))).min(1) }).optional(),
+  needs: z.array(z.strictObject({ job: nonEmptyStringSchema, artifacts: z.boolean() })).optional(),
+  parallel: z.strictObject({ matrix: z.array(z.record(z.string(), z.array(nonEmptyStringSchema))).min(1) }).optional(),
   artifacts: z
-    .strictObject({ paths: scriptsSchema, when: z.enum(['always', 'on_success']), expire_in: scriptSchema })
+    .strictObject({
+      paths: nonEmptyStringsSchema,
+      when: z.enum(['always', 'on_success']),
+      expire_in: nonEmptyStringSchema,
+    })
     .optional(),
 });
 export const gitlabPipelineSchema = z
   .object({
     workflow: z.strictObject({ rules: z.array(rule).min(1) }),
-    stages: scriptsSchema,
-    default: z.strictObject({ interruptible: z.boolean(), before_script: scriptsSchema }),
+    stages: nonEmptyStringsSchema,
+    default: z.strictObject({ interruptible: z.boolean(), before_script: nonEmptyStringsSchema }),
   })
   .catchall(gitlabJobSchema)
   .superRefine((pipeline, context) => {
