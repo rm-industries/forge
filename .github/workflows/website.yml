@@ -7,6 +7,7 @@ on: # yamllint disable-line rule:truthy
       - main
     paths:
       - 'website/**'
+      - 'docs/**'
       - '.github/workflows/website.yml'
       - '.github/actions/setup-project/**'
   push:
@@ -14,6 +15,7 @@ on: # yamllint disable-line rule:truthy
       - main
     paths:
       - 'website/**'
+      - 'docs/**'
       - '.github/workflows/website.yml'
       - '.github/actions/setup-project/**'
 
