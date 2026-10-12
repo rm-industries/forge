@@ -327,9 +327,9 @@ The generated CMS configuration lives in code rather than a duplicated YAML
 file. Change content fields in the shared model, then run `npm run typecheck`
 and `npm test` to verify that Astro and Sveltia still derive the same contract.
 
-## Local work definitions
+## Shared CI work definitions
 
-`npm run pipeline -- quality --dry-run` lists shared TypeScript work in dependency
-order. Run it without `--dry-run` to execute each prerequisite once, or select an
-individual target. The local runner uses Node and npm; it does not emulate hosted
-permissions, secrets, runtime matrices, or deployment.
+TypeScript work definitions in `scripts/ci/model.ts` describe CI commands,
+dependencies, browser requirements and artifacts. Zod rejects invalid commands,
+missing dependencies and cycles. Provider rendering follows in the next review.
+Use the existing npm scripts for local development.

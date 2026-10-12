@@ -79,17 +79,3 @@ export const siteWork = defineWork({
     artifacts: ['.lighthouseci'],
   },
 });
-
-/** One dependency order for local execution; hosted runners transfer artifacts instead of rerunning prerequisites. */
-export function workOrder(plan: WorkPlan, targets: string[]) {
-  planSchema.parse(plan);
-  const ordered = new Set<string>();
-  function visit(id: string) {
-    if (!plan[id]) throw new TypeError(`Unknown target: ${id}`);
-    if (ordered.has(id)) return;
-    for (const dependency of plan[id].needs) visit(dependency);
-    ordered.add(id);
-  }
-  for (const target of targets) visit(target);
-  return [...ordered];
-}
