@@ -1,0 +1,231 @@
+# GitHub is primary. Configure Pages/site URL before replacing the deployment never rules.
+website-format:
+  image: node:26
+  stage: check-0
+  script:
+    - npm run format
+  needs: []
+  before_script:
+    - cd 'website'
+    - npm ci
+website-spellcheck:
+  image: node:26
+  stage: check-0
+  script:
+    - npm run spellcheck
+  needs: []
+  before_script:
+    - cd 'website'
+    - npm ci
+website-lint-code:
+  image: node:26
+  stage: check-0
+  script:
+    - npm run lint:code
+  needs: []
+  before_script:
+    - cd 'website'
+    - npm ci
+website-lint-styles:
+  image: node:26
+  stage: check-0
+  script:
+    - npm run lint:css
+  needs: []
+  before_script:
+    - cd 'website'
+    - npm ci
+website-lint-markdown:
+  image: node:26
+  stage: check-0
+  script:
+    - npm run lint:markdown
+  needs: []
+  before_script:
+    - cd 'website'
+    - npm ci
+website-audit-unused:
+  image: node:26
+  stage: check-0
+  script:
+    - npm run audit:unused
+  needs: []
+  before_script:
+    - cd 'website'
+    - npm ci
+website-typecheck:
+  image: node:26
+  stage: check-0
+  script:
+    - npm run typecheck
+  needs: []
+  before_script:
+    - cd 'website'
+    - npm ci
+website-dependency-audit:
+  image: node:26
+  stage: check-0
+  script:
+    - npm run audit
+  allow_failure: true
+  needs: []
+  before_script:
+    - cd 'website'
+    - npm ci
+website-unit-tests:
+  image: node:26
+  stage: check-0
+  script:
+    - npm run test:coverage
+  needs: []
+  artifacts:
+    paths:
+      - website/coverage
+    when: always
+    expire_in: 7 days
+  before_script:
+    - cd 'website'
+    - npm ci
+website-build:
+  image: node:26
+  stage: check-1
+  script:
+    - npm run build
+  needs:
+    - job: website-format
+      artifacts: true
+    - job: website-spellcheck
+      artifacts: true
+    - job: website-lint-code
+      artifacts: true
+    - job: website-lint-styles
+      artifacts: true
+    - job: website-lint-markdown
+      artifacts: true
+    - job: website-audit-unused
+      artifacts: true
+    - job: website-typecheck
+      artifacts: true
+    - job: website-unit-tests
+      artifacts: true
+  artifacts:
+    paths:
+      - website/dist
+    when: always
+    expire_in: 7 days
+  before_script:
+    - cd 'website'
+    - npm ci
+website-validate-build:
+  image: node:26
+  stage: check-2
+  script:
+    - npm run validate:build
+  needs:
+    - job: website-build
+      artifacts: true
+  before_script:
+    - cd 'website'
+    - npm ci
+website-browser-tests:
+  image: node:26
+  stage: check-2
+  script:
+    - npx playwright install --with-deps chromium firefox webkit
+    - npm run test:e2e
+  needs:
+    - job: website-build
+      artifacts: true
+  artifacts:
+    paths:
+      - website/playwright-report
+      - website/test-results
+    when: always
+    expire_in: 7 days
+  before_script:
+    - cd 'website'
+    - npm ci
+website-lighthouse:
+  image: node:26
+  stage: check-2
+  script:
+    - npx playwright install --with-deps chromium
+    - npm run lighthouse:ci
+  needs:
+    - job: website-build
+      artifacts: true
+  artifacts:
+    paths:
+      - website/.lighthouseci
+    when: always
+    expire_in: 7 days
+  before_script:
+    - cd 'website'
+    - npm ci
+website-deploy:
+  image: node:26
+  stage: deploy
+  script:
+    - test -f 'website/dist/index.html'
+  before_script: []
+  rules:
+    - when: never
+  pages:
+    publish: website/dist
+  environment:
+    name: gitlab-pages
+    url: $CI_PAGES_URL
+  needs:
+    - job: website-format
+      artifacts: false
+    - job: website-spellcheck
+      artifacts: false
+    - job: website-lint-code
+      artifacts: false
+    - job: website-lint-styles
+      artifacts: false
+    - job: website-lint-markdown
+      artifacts: false
+    - job: website-audit-unused
+      artifacts: false
+    - job: website-typecheck
+      artifacts: false
+    - job: website-dependency-audit
+      artifacts: false
+    - job: website-unit-tests
+      artifacts: false
+    - job: website-build
+      artifacts: true
+    - job: website-validate-build
+      artifacts: false
+    - job: website-browser-tests
+      artifacts: false
+    - job: website-lighthouse
+      artifacts: false
+  artifacts:
+    paths:
+      - website/dist
+    when: on_success
+    expire_in: 7 days
+website-smoke-deployed:
+  image: node:26
+  stage: smoke
+  script:
+    - test -n "$CI_PAGES_URL"
+    - npx playwright install --with-deps chromium
+    - DEPLOYMENT_URL="$CI_PAGES_URL" npm run test:smoke
+  timeout: 10m
+  rules:
+    - when: never
+  needs:
+    - job: website-deploy
+      artifacts: false
+  artifacts:
+    paths:
+      - website/playwright-report
+      - website/test-results
+    when: always
+    expire_in: 7 days
+  before_script:
+    - cd 'website'
+    - npm ci

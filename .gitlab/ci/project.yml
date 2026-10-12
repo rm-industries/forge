@@ -1,0 +1,117 @@
+project-format:
+  image: node:26
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - npm run format
+project-lint-code:
+  image: node:26
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - npm run lint:code
+project-lint-markdown:
+  image: node:26
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - npm run lint:markdown
+project-spellcheck:
+  image: node:26
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - npm run spellcheck
+project-documentation:
+  image: node:26
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - npm run docs:validate
+project-typecheck:
+  image: node:26
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - npm run typecheck
+project-test:
+  image: node:26
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - npm test
+project-build:
+  image: node:26
+  stage: check-1
+  before_script:
+    - npm ci
+  needs:
+    - job: project-format
+      artifacts: false
+    - job: project-lint-code
+      artifacts: false
+    - job: project-lint-markdown
+      artifacts: false
+    - job: project-spellcheck
+      artifacts: false
+    - job: project-documentation
+      artifacts: false
+    - job: project-typecheck
+      artifacts: false
+    - job: project-test
+      artifacts: false
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - packages/content-model/dist
+      - packages/create-forge/dist
+    expire_in: 7 days
+project-pack:
+  image: node:26
+  stage: check-2
+  before_script:
+    - npm ci
+  needs:
+    - job: project-build
+      artifacts: true
+  script:
+    - npm run pack
+project-dependency-audit:
+  image: node:26
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - npm run audit
+  allow_failure: true
+project-compatibility:
+  image: node:$NODE_VERSION
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - npm run typecheck && npm test && npm run build
+  parallel:
+    matrix:
+      - NODE_VERSION:
+          - 22.22.2
+          - '22'
+          - '24'
+          - '26'

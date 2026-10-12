@@ -5,36 +5,31 @@ so each required result has one stable purpose.
 
 ## Required checks
 
-Repository rulesets should require these check names on `main`:
+The proposed required checks are listed in
+[required-status-checks.json](../.github/required-status-checks.json). They cover
+individual tool, copied-template and generator checks, including compatibility
+lanes. Tool job names are prefixed to distinguish them from website checks.
+Advisory audits and path-filtered website/automation jobs are not globally required.
 
-- `Project` — aggregate repository, package, template, and generator
-  correctness and quality.
-
-`Project` runs on every pull request. Individual jobs remain visible for
-diagnosis, but only the aggregate needs to be named in branch protection. If a
-job is added to or removed from a required workflow, update its aggregate
-`needs` list in the same pull request.
+Main currently requires `Project`. This PR removes that aggregate and prepares
+its replacement policy. Before merging, apply the reviewed individual checks
+through the repository branch-protection settings, after they have reported on
+the PR head. Do not leave the removed `Project` context required. The JSON is a
+reviewable payload for the required-status-checks API, not an automatic settings
+change. Existing branch-protection settings outside required checks stay intact.
 
 ## Check execution
 
-Every repository check runs on each pull request and push to `main`. There is no
-change-classification job. The `Project` aggregate uses `always()` and requires
-every prerequisite to succeed; a failure, cancellation or skipped prerequisite
-fails the aggregate. The build retains its static-check dependencies.
+Project and generator workflows run on every pull request and push to main, so
+required results cannot disappear behind workflow path filters. Project owns tool
+quality, package inspection and runtime compatibility. Generator owns copied
+consumer templates, packed bootstrap tests, compatibility and disposable-output
+syntax/security scanning. Job graphs retain native dependencies and artifact reuse.
 
-`Workflow syntax` runs Actionlint and `Workflow security` runs Zizmor. Both run
-only when workflow files change, and both must pass before merging an automation
-change. Zizmor also uploads its findings to GitHub code scanning. Do not
-configure either check as globally required: unrelated pull requests would wait
-for a path-filtered workflow that never started. Treat them as conditional
-required review signals for automation changes. The repository workflow watches
-both `.github/**` and the generated template's workflow source under
-`templates/default/.github/**`.
-
-Generated GitHub projects also expose a `Project` aggregate. It includes source
-checks, build consumers and runtime compatibility, and runs after failed jobs so
-the required result cannot disappear. Deployment depends on that aggregate.
-CodeQL, dependency review and Dependabot alerts remain visible security signals.
+Repository automation scans only committed `.github` workflows/actions and is
+path-filtered. Website validation is separately scoped to website/docs/setup
+changes. Consumer projects also use direct job dependencies without an aggregate;
+deployment waits for all project checks, then smoke-tests the deployed URL.
 
 ## Runtime and evidence strategy
 
@@ -54,9 +49,6 @@ primary Node 26 runtime because repeating them does not add compatibility
 evidence. The blocking Playwright suite runs once in each of Chromium, Firefox,
 and WebKit using the browser revisions associated with the committed Playwright
 version.
-
-The `Project` aggregate depends on all required jobs. A failure retains its
-specific job name while preventing the aggregate from succeeding. Its log reports prerequisite results for diagnosis.
 
 The path-scoped `.github/workflows/website.yml` workflow intentionally mirrors
 the generated template's workflow. It runs when website source, its workflow,
@@ -85,21 +77,21 @@ contract and cannot share a Node 26 result.
 
 Coverage and Lighthouse uploads run even when their producer fails. Lighthouse
 uploads explicitly include the hidden `.lighthouseci` directory. Browser
-evidence is uploaded on failure, when Playwright retains its report and trace
-directories. Artifacts are retained for seven days.
+website evidence is uploaded even after successful runs; template browser
+evidence retains its existing failure-only policy. Playwright preserves failure
+traces and screenshots. Artifacts are retained for seven days.
 
 ## Security reporting and release gates
 
-Dependency and source-code security analysis reports findings without joining
-the stable `Project` check or the conditional workflow checks:
+Security analysis stays separate from project correctness checks:
 
 - CodeQL uploads source analysis results to GitHub code scanning;
 - Zizmor uploads workflow analysis results to code scanning and fails `Workflow
 security` when it finds an insecure workflow;
 - Dependabot alerts use the repository dependency graph as the canonical view of
   vulnerable npm dependencies;
-- dependency review annotates introduced dependency risk without blocking a
-  remediation pull request; and
+- dependency review fails on newly introduced high or critical vulnerabilities,
+  matching generated consumer CI; branch protection controls merge enforcement; and
 - root, template, and website dependency-audit jobs retain audit output and job
   summaries but tolerate findings during pull-request sequencing.
 
@@ -135,7 +127,7 @@ regenerating owned website source.
 
 ## Negative verification
 
-When changing aggregate or artifact behavior, use a temporary review branch to
+When changing job dependencies or artifact behavior, use a temporary review branch to
 prove the failure path. An intentionally invalid workflow must fail `Workflow
 syntax`; a Zizmor finding must fail `Workflow security` and upload to code
 scanning. A Lighthouse run that omits `.lighthouseci` must make its upload
@@ -150,3 +142,23 @@ to bootstrap consumer YAML. Generated sites own that YAML and edit it directly.
 See [CI providers](ci-providers.md) for generation, dependency pins and
 GitHub/GitLab support. Repository checks run on every change; the previous change
 routing no longer skips repository jobs.
+
+## Native GitLab validation
+
+Forge maintains `.gitlab-ci.yml` and its project, generator and website includes
+as native YAML. These files are edited directly, without a TypeScript generation
+step. The website graph matches consumer checks and artifact reuse; GitHub remains
+the primary provider. GitLab website deployment and smoke jobs are present but
+use `when: never`. Configure Pages and the canonical site URL before enabling them.
+
+Project includes validate the tool and its supported Node versions. Generator
+includes validate copied templates, packed bootstrap behavior and Linux runtime
+compatibility. GitHub retains the macOS generator runner, CodeQL, dependency
+review, workflow scans, mirror synchronization and release automation. GitLab
+validation is supplemental; server-side CI Lint and a configured runner are still
+needed to confirm it on the mirror.
+
+Website includes are scoped to website, documentation and GitLab configuration
+changes. Generator includes watch templates, package/scripts/configuration and
+CI inputs. Root project checks run for every accepted pipeline. GitLab uses
+[native includes and needs](https://docs.gitlab.com/ci/yaml/) for composition.

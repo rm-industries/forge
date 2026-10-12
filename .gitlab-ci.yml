@@ -1,0 +1,35 @@
+# Native Forge validation. GitHub owns production deployments and release automation.
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS && $CI_PIPELINE_SOURCE == "push"
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
+default:
+  interruptible: true
+stages:
+  - check-0
+  - check-1
+  - check-2
+  - deploy
+  - smoke
+include:
+  - local: .gitlab/ci/project.yml
+  - local: .gitlab/ci/generator.yml
+    rules:
+      - changes:
+          - .github/**/*
+          - .gitlab/**/*
+          - .gitlab-ci.yml
+          - templates/default/**/*
+          - packages/**/*
+          - scripts/**/*
+          - '*.json'
+          - '*.ts'
+  - local: .gitlab/ci/website.yml
+    rules:
+      - changes:
+          - website/**/*
+          - docs/**/*
+          - .gitlab/ci/website.yml
+          - .gitlab-ci.yml

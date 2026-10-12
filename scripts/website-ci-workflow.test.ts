@@ -80,19 +80,7 @@ describe('generated website CI contract', () => {
         '.github/actions/setup-project/**',
       ]);
       expect(automation.on[event]?.paths).toEqual(['.github/**']);
-      expect(generator.on[event]?.paths).toEqual(
-        expect.arrayContaining([
-          '.github/**',
-          'templates/default/**',
-          'packages/create-forge/scripts/**',
-          'packages/create-forge/src/**',
-          'packages/create-forge/*.config.ts',
-          'packages/create-forge/tsconfig.json',
-          'tsconfig.json',
-          '**/package.json',
-          '**/package-lock.json',
-        ]),
-      );
+      expect(generator.on[event]).not.toHaveProperty('paths');
       expect(project.on[event]).not.toHaveProperty('paths');
       expect(template.on[event]).not.toHaveProperty('paths');
     }
@@ -141,6 +129,16 @@ describe('Forge website CI contract', () => {
     expect(website.concurrency?.['cancel-in-progress']).toBe("${{ github.event_name == 'pull_request' }}");
   });
 
+  it('matches consumer deployment gates, smoke safeguards and browser evidence policy', () => {
+    expect(dependencies(job(website, 'deploy')).sort()).toEqual(dependencies(job(template, 'deploy')).sort());
+    expect(job(website, 'smoke-deployed')).toHaveProperty('timeout-minutes', 10);
+    expect(steps(website, 'smoke-deployed').find((step) => step.run?.includes('test:smoke'))?.run).toBe(
+      'test -n "$DEPLOYMENT_URL"\nnpm run test:smoke\n',
+    );
+    const evidence = steps(website, 'browser-tests').find((step) => step.uses?.startsWith('actions/upload-artifact@'));
+    expect(evidence).toMatchObject({ if: 'always()', with: { 'if-no-files-found': 'ignore' } });
+  });
+
   it('reuses one website artifact for every build consumer', () => {
     for (const consumer of ['validate-build', 'browser-tests', 'lighthouse']) {
       download(website, consumer, 'website-build', 'website/dist');
@@ -151,21 +149,46 @@ describe('Forge website CI contract', () => {
 
 describe('repository template verification contract', () => {
   it('shares one primary template build with browser and Lighthouse consumers', () => {
-    expect(dependencies(job(project, 'template-build')).sort()).toEqual(
+    expect(dependencies(job(generator, 'template-build')).sort()).toEqual(
       ['template-coverage', 'template-static-quality'].sort(),
     );
     for (const consumer of ['template-browser', 'template-lighthouse']) {
-      expect(dependencies(job(project, consumer))).toEqual(['template-build']);
-      download(project, consumer, 'template-build', '${{ runner.temp }}/forge-default-template/dist');
-      expect(steps(project, consumer).some((step) => step.run?.includes('npm run build'))).toBe(false);
+      expect(dependencies(job(generator, consumer))).toEqual(['template-build']);
+      download(generator, consumer, 'template-build', '${{ runner.temp }}/forge-default-template/dist');
+      expect(steps(generator, consumer).some((step) => step.run?.includes('npm run build'))).toBe(false);
     }
   });
 });
 
 it('keeps disposable consumer checks separate from repository automation', () => {
   expect(commands(automation)).toEqual([]);
-  expect(commands(generator)).toHaveLength(2);
-  for (const command of commands(generator)) expect(command).toContain('--name ci-review-fixture');
+  for (const name of ['security', 'syntax'])
+    expect(steps(generator, name).find((step) => step.run?.includes('ci-review-fixture'))?.run).toContain(
+      '--name ci-review-fixture',
+    );
+  expect(project.jobs).not.toHaveProperty('project');
+  expect(Object.keys(project.jobs).some((name) => name.startsWith('template-') || name.startsWith('generator-'))).toBe(
+    false,
+  );
   expect(steps(automation, 'security').at(-1)?.with?.inputs).toBe('.github');
   expect(steps(generator, 'security').at(-1)?.with?.inputs).toBe('.ci-review-fixture/.github');
+});
+
+it('prepares unique individual required checks without path-filtered website checks', () => {
+  const policy = JSON.parse(readFileSync(new URL('../.github/required-status-checks.json', import.meta.url), 'utf8'));
+  const contexts = policy.checks.map((check: { context: string }) => check.context);
+  const expected = [project, generator].flatMap((workflow) =>
+    Object.values(workflow.jobs).flatMap((job) => {
+      const definition = job as Job & { name: string; strategy?: { matrix: { include: { runtime: string }[] } } };
+      if (definition.name.includes('Dependency audit') || definition.name.includes('dependency audit')) return [];
+      return definition.strategy
+        ? definition.strategy.matrix.include.map((lane) =>
+            definition.name.replace('${{ matrix.runtime }}', lane.runtime),
+          )
+        : [definition.name];
+    }),
+  );
+  expect(contexts.sort()).toEqual(expected.sort());
+  expect(new Set(contexts).size).toBe(contexts.length);
+  expect(contexts).not.toContain('Project');
 });

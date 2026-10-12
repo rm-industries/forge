@@ -1,0 +1,151 @@
+template-compatibility:
+  image: node:$NODE_VERSION
+  stage: check-0
+  before_script:
+    - mkdir -p .ci-results/forge-default-template
+    - cp -R templates/default/. .ci-results/forge-default-template/
+    - cd .ci-results/forge-default-template
+    - npm ci
+  needs: []
+  script:
+    - npm run typecheck
+    - npm test
+    - npm run build
+  parallel:
+    matrix:
+      - NODE_VERSION:
+          - 22.22.2
+          - '22'
+          - '24'
+          - '26'
+template-coverage:
+  image: node:26
+  stage: check-0
+  before_script:
+    - mkdir -p .ci-results/forge-default-template
+    - cp -R templates/default/. .ci-results/forge-default-template/
+    - cd .ci-results/forge-default-template
+    - npm ci
+  needs: []
+  script:
+    - npm run test:coverage
+  artifacts:
+    paths:
+      - .ci-results/forge-default-template/coverage
+    when: always
+    expire_in: 7 days
+template-static-quality:
+  image: node:26
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - npm run verify:template:static
+template-build:
+  image: node:26
+  stage: check-1
+  before_script:
+    - mkdir -p .ci-results/forge-default-template
+    - cp -R templates/default/. .ci-results/forge-default-template/
+    - cd .ci-results/forge-default-template
+    - npm ci
+  needs:
+    - job: template-coverage
+      artifacts: false
+    - job: template-static-quality
+      artifacts: false
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - .ci-results/forge-default-template/dist
+    when: on_success
+    expire_in: 7 days
+template-dependency-audit:
+  image: node:26
+  stage: check-0
+  before_script:
+    - mkdir -p .ci-results/forge-default-template
+    - cp -R templates/default/. .ci-results/forge-default-template/
+    - cd .ci-results/forge-default-template
+    - npm ci
+  needs: []
+  script:
+    - npm run audit
+  allow_failure: true
+template-browser:
+  image: node:26
+  stage: check-2
+  before_script:
+    - mkdir -p .ci-results/forge-default-template
+    - cp -R templates/default/. .ci-results/forge-default-template/
+    - cd .ci-results/forge-default-template
+    - npm ci
+  needs:
+    - job: template-build
+      artifacts: true
+  script:
+    - npx playwright install --with-deps chromium firefox webkit
+    - npm run test:e2e
+  artifacts:
+    paths:
+      - .ci-results/forge-default-template/playwright-report
+      - .ci-results/forge-default-template/test-results
+    when: always
+    expire_in: 7 days
+template-lighthouse:
+  image: node:26
+  stage: check-2
+  before_script:
+    - mkdir -p .ci-results/forge-default-template
+    - cp -R templates/default/. .ci-results/forge-default-template/
+    - cd .ci-results/forge-default-template
+    - npm ci
+  needs:
+    - job: template-build
+      artifacts: true
+  script:
+    - npx playwright install --with-deps chromium
+    - npm run lighthouse:ci
+  artifacts:
+    paths:
+      - .ci-results/forge-default-template/.lighthouseci
+    when: always
+    expire_in: 7 days
+template-isolation:
+  image: node:26
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - npm run verify:template
+generator-e2e:
+  image: node:26
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - npm run test:generator:e2e
+generator-compatibility:
+  image: node:$NODE_VERSION
+  stage: check-0
+  before_script:
+    - npm ci
+  needs: []
+  script:
+    - |
+      uname -a
+      node --version
+      npm --version
+      git --version
+    - npm run test:generator:compatibility
+  parallel:
+    matrix:
+      - NODE_VERSION:
+          - 22.22.2
+          - '22'
+          - '24'
+          - '26'
