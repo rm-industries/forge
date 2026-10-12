@@ -16,6 +16,7 @@ interface Job {
 }
 
 interface Workflow {
+  on: { push?: { paths?: string[] }; pull_request?: { paths?: string[] } };
   concurrency?: {
     'cancel-in-progress'?: string;
   };
@@ -106,7 +107,7 @@ describe('Forge website CI contract', () => {
 describe('repository template verification contract', () => {
   it('shares one primary template build with browser and Lighthouse consumers', () => {
     expect(dependencies(job(project, 'template-build')).sort()).toEqual(
-      ['classify', 'template-coverage', 'template-static-quality'].sort(),
+      ['template-coverage', 'template-static-quality'].sort(),
     );
     for (const consumer of ['template-browser', 'template-lighthouse']) {
       expect(dependencies(job(project, consumer))).toEqual(['template-build']);
@@ -114,4 +115,11 @@ describe('repository template verification contract', () => {
       expect(steps(project, consumer).some((step) => step.run?.includes('npm run build'))).toBe(false);
     }
   });
+});
+
+it('watches the documentation published by the website', () => {
+  for (const event of ['push', 'pull_request'] as const) {
+    expect(website.on[event]?.paths).toContain('docs/**');
+    expect(project.on[event]).not.toHaveProperty('paths');
+  }
 });

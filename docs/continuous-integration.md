@@ -15,43 +15,12 @@ diagnosis, but only the aggregate needs to be named in branch protection. If a
 job is added to or removed from a required workflow, update its aggregate
 `needs` list in the same pull request.
 
-## Change routing
+## Check execution
 
-The `Classify changes` job compares the complete pull-request or push range and
-emits only reviewed boolean outputs. Changed filenames are passed to the typed
-classifier as NUL-delimited data; filenames never become workflow commands or
-shell expressions. The classifier selects these job groups:
-
-| Change class        | Selected validation                                                       |
-| ------------------- | ------------------------------------------------------------------------- |
-| Documentation only  | Format, Markdown lint, spelling, and documentation links and commands     |
-| Content model       | Repository/package checks and supported-runtime compatibility             |
-| Create Forge        | Repository/package checks, compatibility, and packed generator end-to-end |
-| Default template    | Package build/pack, every template check, and packed generator end-to-end |
-| Area dependency     | The affected area above plus informational dependency auditing            |
-| Shared or ambiguous | Every repository, package, template, compatibility, and generator check   |
-
-Documentation inside the bundled default template follows the template route,
-because it becomes part of generated projects. Root manifests and lockfiles,
-`.github/**`, shared `scripts/**`, root tooling, mixed unclassified paths, and an
-empty or unavailable comparison deliberately select the full suite. Changes in
-`website/**` are ignored by this classifier because the path-scoped website
-workflow owns them. A newly
-introduced path is therefore expensive until its ownership is reviewed and
-added to the classifier. Security analysis remains independent and broad.
-
-Every job remains in the `Project` aggregate's `needs` graph. The aggregate uses
-`always()` so jobs intentionally skipped by routing cannot leave the required
-check pending. It accepts only `success` and `skipped`; any selected failure or
-cancellation fails `Project`. The build retains its static-check dependency and
-runs only when package work is selected and every prerequisite succeeded or was
-intentionally skipped.
-
-For a documentation-only pull request, expect `Classify changes`, `Format`,
-`Lint Markdown`, `Spellcheck`, `Documentation links and commands`, and `Project`
-to run. Package, compatibility, template, browser, Lighthouse, and generator
-jobs should appear as skipped. This provides a quick review checklist for the
-lightweight route without weakening the required aggregate.
+Every repository check runs on each pull request and push to `main`. There is no
+change-classification job. The `Project` aggregate uses `always()` and requires
+every prerequisite to succeed; a failure, cancellation or skipped prerequisite
+fails the aggregate. The build retains its static-check dependencies.
 
 `Workflow syntax` runs Actionlint and `Workflow security` runs Zizmor. Both run
 only when workflow files change, and both must pass before merging an automation
@@ -62,20 +31,17 @@ required review signals for automation changes. The repository workflow watches
 both `.github/**` and the generated template's workflow source under
 `templates/default/.github/**`.
 
-The generated template intentionally has no aggregate/no-op project job. Its
-ruleset should require every source check, `Production build`, `Validate build`,
-`Browser and accessibility tests`, and `Lighthouse budgets`. It should also
-require both workflow checks whenever they appear. CodeQL, dependency review,
-and Dependabot alerts remain visible security signals rather than required merge
-checks.
+Generated GitHub projects also expose a `Project` aggregate. It includes source
+checks, build consumers and runtime compatibility, and runs after failed jobs so
+the required result cannot disappear. Deployment depends on that aggregate.
+CodeQL, dependency review and Dependabot alerts remain visible security signals.
 
 ## Runtime and evidence strategy
 
 The minimum Node 22 release and the latest Node 22, 24, and 26 releases each run
 package type checks, tests, and builds. Standalone-template compatibility keeps
-the same matrix because generated projects declare those runtimes. The template
-CI shipped to users and the Forge project website are deployed applications, so
-their primary pipelines each run once on Node 26. The packed generator
+the same matrix because generated projects declare those runtimes. The primary
+site quality jobs run once on Node 26. The packed generator
 compatibility suite runs on the four supported Linux runtimes and on the current
 macOS runner with Node 26. Each compatibility lane records its operating system,
 architecture, Node, npm, and Git versions before exercising the installed
@@ -89,9 +55,7 @@ and WebKit using the browser revisions associated with the committed Playwright
 version.
 
 The `Project` aggregate depends on all required jobs. A failure retains its
-specific job name while preventing the aggregate from succeeding. Its log also
-records the classifier's selected groups so unexpected routing can be audited
-without opening every skipped job.
+specific job name while preventing the aggregate from succeeding. Its log reports prerequisite results for diagnosis.
 
 The path-scoped `.github/workflows/website.yml` workflow intentionally mirrors
 the generated template's workflow. It runs when website source, its workflow,
