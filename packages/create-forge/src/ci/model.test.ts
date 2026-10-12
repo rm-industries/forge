@@ -7,6 +7,9 @@ import { createGitlabPipeline } from './gitlab.ts';
 import { defineWork, siteWork, nonEmptyStringSchema, nonEmptyStringsSchema, imageSchema } from './model.ts';
 import { githubJobSchema, githubWorkflowSchema, gitlabPipelineSchema, validateCiYaml } from './schema.ts';
 
+const duplicateYamlKeyMessagePattern = /unique/i;
+const invalidProviderDefinitionMessagePattern = /duplicate|Unrecognized|Invalid/i;
+
 const config = generationOptionsSchema.parse({
   directory: 'website',
   repositoryRoot: '..',
@@ -19,6 +22,19 @@ const config = generationOptionsSchema.parse({
 const pins = (action: string) => ({ ref: `${action}@${'a'.repeat(40)}` });
 
 describe('shared work and provider rendering', () => {
+  test('generates one selected runtime without consumer compatibility jobs', () => {
+    const selected = generationOptionsSchema.parse({ ...config, nodeVersion: '24' });
+    const github = createGithubWorkflows(selected, pins).project;
+    expect(github.jobs).not.toHaveProperty('compatibility');
+    expect(
+      github.jobs.format!.steps.find((step) => 'uses' in step && step.uses.startsWith('actions/setup-node@')),
+    ).toMatchObject({ with: { 'node-version': '24' } });
+    const gitlab = createGitlabPipeline(selected);
+    expect(gitlab).not.toHaveProperty('compatibility');
+    expect(gitlab.format).toMatchObject({ image: 'node:24' });
+    expect(generationOptionsSchema.parse(config).nodeVersion).toBe('26');
+    expect(() => generationOptionsSchema.parse({ ...config, nodeVersion: '20' })).toThrow();
+  });
   test('validates reusable strings, command lists and image references', () => {
     expect(nonEmptyStringSchema.parse('  npm run build  ')).toBe('npm run build');
     expect(() => nonEmptyStringSchema.parse('  ')).toThrow();
@@ -56,7 +72,7 @@ describe('shared work and provider rendering', () => {
     const { project } = createGithubWorkflows(config, pins);
     expect(project.on).not.toHaveProperty('workflow_run');
     expect(project.jobs).not.toHaveProperty('project');
-    expect(project.jobs.deploy!.needs).toEqual([...Object.keys(siteWork), 'compatibility']);
+    expect(project.jobs.deploy!.needs).toEqual(Object.keys(siteWork));
     expect(project.jobs.deploy!.environment!.name).toBe('github-pages');
     expect(project.jobs.deploy!.outputs!['page-url']).toBe('${{ steps.deployment.outputs.page_url }}');
     expect(project.jobs['browser-tests']!.steps.some((step) => 'run' in step && step.run === 'npm run build')).toBe(
@@ -70,7 +86,7 @@ describe('shared work and provider rendering', () => {
     expect(project.defaults!.run['working-directory']).toBe('website');
     expect(validateCiYaml(githubWorkflowSchema, new Document(project).toString())).toContain('github-pages');
   });
-  test('renders GitLab dependencies, artifact paths, compatibility and duplicate pipeline suppression', () => {
+  test('renders GitLab dependencies, artifact paths and duplicate pipeline suppression', () => {
     const pipeline = createGitlabPipeline(config, Object.fromEntries(Object.entries(siteWork).reverse()));
     expect(pipeline.stages).toEqual(['check-0', 'check-1', 'check-2']);
     const browser = pipeline['browser-tests'];
@@ -79,10 +95,7 @@ describe('shared work and provider rendering', () => {
       stage: 'check-2',
       artifacts: { paths: ['website/playwright-report', 'website/test-results'] },
     });
-    expect(pipeline.compatibility).toMatchObject({
-      image: 'node:$NODE_VERSION',
-      parallel: { matrix: [{ NODE_VERSION: ['22.22.2', '22', '24', '26'] }] },
-    });
+    expect(pipeline).not.toHaveProperty('compatibility');
     expect(pipeline.workflow.rules[2]).toMatchObject({ when: 'never' });
     validateCiYaml(gitlabPipelineSchema, new Document(pipeline).toString());
     expect(() =>
@@ -98,14 +111,16 @@ describe('shared work and provider rendering', () => {
     expect(createGithubWorkflows(validationOnly, pins).project.jobs).not.toHaveProperty('deploy');
   });
   test('rejects malformed YAML, unknown provider fields, mutable actions, and dangling job dependencies', () => {
-    expect(() => validateCiYaml(githubWorkflowSchema, 'name: one\nname: two\n')).toThrow(/unique/i);
+    expect(() => validateCiYaml(githubWorkflowSchema, 'name: one\nname: two\n')).toThrow(
+      duplicateYamlKeyMessagePattern,
+    );
     const workflow = createGithubWorkflows(config, pins).project;
     expect(() => githubWorkflowSchema.parse({ ...workflow, unexpected: true })).toThrow(
-      /duplicate|Unrecognized|Invalid/i,
+      invalidProviderDefinitionMessagePattern,
     );
     expect(() =>
       githubJobSchema.parse({ ...workflow.jobs.format, steps: [{ uses: 'actions/checkout@main' }] }),
-    ).toThrow(/duplicate|Unrecognized|Invalid/i);
+    ).toThrow(invalidProviderDefinitionMessagePattern);
     expect(() =>
       githubWorkflowSchema.parse({
         ...workflow,

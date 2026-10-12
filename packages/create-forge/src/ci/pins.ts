@@ -1,5 +1,7 @@
 import { isScalar, parseDocument, visit } from 'yaml';
 
+const immutableActionReferencePattern = /^([^@\s]+)@([a-f0-9]{40})$/;
+
 /** Read immutable action references and their version comments from committed workflows. */
 export function createCiPinResolver(workflows: Record<string, string>) {
   const pins = new Map<string, { ref: string; version?: string }>();
@@ -12,7 +14,7 @@ export function createCiPinResolver(workflows: Record<string, string>) {
         const ref = pair.value.value;
         if (typeof ref !== 'string') throw new TypeError(`Invalid action reference in ${path}`);
         if (ref.startsWith('$/') || ref.startsWith('./') || ref.startsWith('docker://')) return;
-        const match = /^([^@\s]+)@([a-f0-9]{40})$/.exec(ref);
+        const match = immutableActionReferencePattern.exec(ref);
         if (!match) throw new TypeError(`Action must use a full commit SHA in ${path}: ${ref}`);
         const action = match[1]!;
         const version = pair.value.comment?.trim();

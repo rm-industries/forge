@@ -1,5 +1,5 @@
 import { shellQuote, type CiGenerationOptions } from './generation-options.ts';
-import { planSchema, runtimeVersions, siteWork, type WorkPlan } from './model.ts';
+import { planSchema, siteWork, type WorkPlan } from './model.ts';
 import { gitlabJobSchema, gitlabPipelineSchema, type GitlabJob } from './schema.ts';
 
 export function createGitlabPipeline(config: CiGenerationOptions, plan: WorkPlan = siteWork) {
@@ -9,7 +9,7 @@ export function createGitlabPipeline(config: CiGenerationOptions, plan: WorkPlan
   const jobs: Record<string, GitlabJob> = {};
   for (const [id, work] of Object.entries(plan)) {
     jobs[id] = gitlabJobSchema.parse({
-      image: 'node:26',
+      image: `node:${config.nodeVersion}`,
       stage: stage(id),
       needs: work.needs.map((job) => ({ job, artifacts: true })),
       script: [
@@ -28,13 +28,7 @@ export function createGitlabPipeline(config: CiGenerationOptions, plan: WorkPlan
         : {}),
     });
   }
-  jobs.compatibility = gitlabJobSchema.parse({
-    image: 'node:$NODE_VERSION',
-    stage: 'check-0',
-    needs: [],
-    parallel: { matrix: [{ NODE_VERSION: runtimeVersions }] },
-    script: ['typecheck', 'unit-tests', 'build', 'validate-build'].flatMap((id) => plan[id]!.commands),
-  });
+
   return gitlabPipelineSchema.parse({
     workflow: {
       rules: [

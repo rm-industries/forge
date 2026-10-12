@@ -3,6 +3,8 @@ import { z } from 'zod';
 
 import { imageSchema, nonEmptyStringSchema, nonEmptyStringsSchema } from './model.ts';
 
+const githubActionReferencePattern = /^(?:\$\/|\.\/)[^\s]+$|^[^@\s]+@[a-f0-9]{40}$/;
+
 const values = z.record(z.string(), z.union([z.string(), z.number(), z.boolean()]));
 const condition = z.union([z.string(), z.boolean()]);
 const permissions = z.partialRecord(
@@ -40,7 +42,7 @@ const githubStepSchema = z.union([
   }),
   z.strictObject({
     ...stepFields,
-    uses: z.string().regex(/^(?:\$\/|\.\/)[^\s]+$|^[^@\s]+@[a-f0-9]{40}$/),
+    uses: z.string().regex(githubActionReferencePattern),
     with: values.optional(),
   }),
 ]);
@@ -106,7 +108,6 @@ export const gitlabJobSchema = z.strictObject({
   script: nonEmptyStringsSchema,
   allow_failure: z.boolean().optional(),
   needs: z.array(z.strictObject({ job: nonEmptyStringSchema, artifacts: z.boolean() })).optional(),
-  parallel: z.strictObject({ matrix: z.array(z.record(z.string(), z.array(nonEmptyStringSchema))).min(1) }).optional(),
   artifacts: z
     .strictObject({
       paths: nonEmptyStringsSchema,

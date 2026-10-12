@@ -1,9 +1,12 @@
 import { z } from 'zod';
 
+const containerImageReferencePattern = /^[a-zA-Z0-9][a-zA-Z0-9/_.:@$-]*$/;
+const workIdentifierPattern = /^[a-z][a-z0-9-]*$/;
+
 export const nonEmptyStringSchema = z.string().trim().min(1);
 export const nonEmptyStringsSchema = z.array(nonEmptyStringSchema).min(1);
-export const imageSchema = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9/_.:@$-]*$/);
-const identifier = z.string().regex(/^[a-z][a-z0-9-]*$/);
+export const imageSchema = z.string().regex(containerImageReferencePattern);
+const identifier = z.string().regex(workIdentifierPattern);
 const workSchema = z.strictObject({
   name: nonEmptyStringSchema,
   commands: nonEmptyStringsSchema,
@@ -31,7 +34,6 @@ export const planSchema = z.record(identifier, workSchema).superRefine((plan, co
   }
   for (const id of Object.keys(plan)) visit(id);
 });
-export const runtimeVersions = ['22.22.2', '22', '24', '26'];
 
 export type WorkPlan = z.infer<typeof planSchema>;
 

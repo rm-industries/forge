@@ -1,6 +1,6 @@
 import type { CiGenerationOptions } from './generation-options.ts';
 import { createGithubExtras } from './github-extra.ts';
-import { planSchema, runtimeVersions, siteWork, type WorkPlan } from './model.ts';
+import { planSchema, siteWork, type WorkPlan } from './model.ts';
 import {
   githubJobSchema,
   githubWorkflowSchema,
@@ -38,7 +38,7 @@ export function createGithubWorkflows(config: CiGenerationOptions, pins: ActionR
   });
   const jobs: Record<string, GithubJob> = {};
   for (const [id, work] of Object.entries(plan)) {
-    const steps = setup('26');
+    const steps = setup(config.nodeVersion);
     if (work.browsers.length) steps.push({ run: `npx playwright install --with-deps ${work.browsers.join(' ')}` });
     for (const need of work.needs) {
       for (const output of plan[need]!.artifacts)
@@ -64,18 +64,7 @@ export function createGithubWorkflows(config: CiGenerationOptions, pins: ActionR
       steps,
     });
   }
-  jobs.compatibility = githubJobSchema.parse({
-    name: 'Runtime compatibility (${{ matrix.node }})',
-    'runs-on': 'ubuntu-latest',
-    permissions: { contents: 'read' },
-    strategy: { 'fail-fast': false, matrix: { node: runtimeVersions } },
-    steps: [
-      ...setup('${{ matrix.node }}'),
-      ...['typecheck', 'unit-tests', 'build', 'validate-build'].flatMap((id) =>
-        plan[id]!.commands.map((run) => ({ run })),
-      ),
-    ],
-  });
+
   // Deployment consumes this run's artifacts and never executes fork-controlled code with Pages credentials.
   if (config.primary === 'github') {
     jobs.build!.steps.push({
@@ -85,12 +74,12 @@ export function createGithubWorkflows(config: CiGenerationOptions, pins: ActionR
     });
     for (const [id, extra] of Object.entries(githubExtras.pages)) {
       const job = structuredClone(extra);
-      if (id === 'deploy') job.needs = [...Object.keys(plan), 'compatibility'];
+      if (id === 'deploy') job.needs = Object.keys(plan);
       for (const step of job.steps) {
         if ('with' in step && step.with && typeof step.with.path === 'string')
           step.with.path = step.with.path.split('\n').map(path).join('\n');
       }
-      if (id === 'smoke-deployed') job.steps = [...setup('26'), ...job.steps];
+      if (id === 'smoke-deployed') job.steps = [...setup(config.nodeVersion), ...job.steps];
       jobs[id] = githubJobSchema.parse(job);
     }
   }

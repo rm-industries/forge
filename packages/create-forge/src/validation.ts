@@ -1,5 +1,8 @@
 import validateNpmPackageName from 'validate-npm-package-name';
 
+const controlCharacterPattern = /\p{Cc}/u;
+const githubRepositorySlugPattern = /^[\w.-]+\/[\w.-]+$/u;
+
 export class InputError extends Error {}
 
 const invalid = (option: string, value: string, reason: string): never => {
@@ -26,7 +29,7 @@ export const validatePackageName = (value: string) => {
 export const validatePlainText = (option: string, value: string, required = false) => {
   const text = value.trim();
   if (required && !text) invalid(option, value, 'provide non-empty text');
-  if (/\p{Cc}/u.test(text)) invalid(option, value, 'control characters are not allowed');
+  if (controlCharacterPattern.test(text)) invalid(option, value, 'control characters are not allowed');
   return text;
 };
 
@@ -46,7 +49,7 @@ export const validateUrl = (value: string) => {
 export const validateRepository = (value: string) => {
   const repository = value.trim();
   if (!repository) return repository;
-  if (!/^[\w.-]+\/[\w.-]+$/u.test(repository)) {
+  if (!githubRepositorySlugPattern.test(repository)) {
     invalid('--repository', value, 'use the GitHub owner/repository format or leave it empty');
   }
   return repository;

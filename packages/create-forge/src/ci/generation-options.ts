@@ -1,18 +1,18 @@
 import { z } from 'zod';
 
+const lineBreakPattern = /[\r\n]/;
+const workflowPrefixPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
 const directory = z
   .string()
   .min(1)
-  .refine((value) => !/[\r\n]/.test(value) && !value.includes('${{'), 'Invalid CI directory');
+  .refine((value) => !lineBreakPattern.test(value) && !value.includes('${{'), 'Invalid CI directory');
 export const generationOptionsSchema = z
   .strictObject({
     directory,
+    nodeVersion: z.enum(['22', '24', '26']).default('26'),
     repositoryRoot: directory,
-    prefix: z
-      .string()
-      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
-      .max(80)
-      .optional(),
+    prefix: z.string().regex(workflowPrefixPattern).max(80).optional(),
     providers: z
       .array(z.enum(['github', 'gitlab']))
       .min(1)
