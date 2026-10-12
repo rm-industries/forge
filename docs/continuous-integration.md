@@ -5,18 +5,15 @@ so each required result has one stable purpose.
 
 ## Required checks
 
-The proposed required checks are listed in
-[required-status-checks.json](../.github/required-status-checks.json). They cover
-individual tool, copied-template and generator checks, including compatibility
-lanes. Tool job names are prefixed to distinguish them from website checks.
-Advisory audits and path-filtered website/automation jobs are not globally required.
+Required checks are configured in GitHub repository settings. Use the individual
+tool, copied-template and generator job names, including each compatibility lane.
+Tool names are prefixed to distinguish them from website checks. Advisory audits
+and path-filtered website/automation jobs are not globally required.
 
-Main currently requires `Project`. This PR removes that aggregate and prepares
-its replacement policy. Before merging, apply the reviewed individual checks
-through the repository branch-protection settings, after they have reported on
-the PR head. Do not leave the removed `Project` context required. The JSON is a
-reviewable payload for the required-status-checks API, not an automatic settings
-change. Existing branch-protection settings outside required checks stay intact.
+After the CI refactor merges, replace the legacy `Project` requirement with those
+individual checks as a one-time repository administration step. Derive the names
+from the workflows and their reported GitHub check runs. No branch-protection
+payload or synchronization mechanism is stored in the repository.
 
 ## Check execution
 

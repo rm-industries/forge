@@ -173,22 +173,3 @@ it('keeps disposable consumer checks separate from repository automation', () =>
   expect(steps(automation, 'security').at(-1)?.with?.inputs).toBe('.github');
   expect(steps(generator, 'security').at(-1)?.with?.inputs).toBe('.ci-review-fixture/.github');
 });
-
-it('prepares unique individual required checks without path-filtered website checks', () => {
-  const policy = JSON.parse(readFileSync(new URL('../.github/required-status-checks.json', import.meta.url), 'utf8'));
-  const contexts = policy.checks.map((check: { context: string }) => check.context);
-  const expected = [project, generator].flatMap((workflow) =>
-    Object.values(workflow.jobs).flatMap((job) => {
-      const definition = job as Job & { name: string; strategy?: { matrix: { include: { runtime: string }[] } } };
-      if (definition.name.includes('Dependency audit') || definition.name.includes('dependency audit')) return [];
-      return definition.strategy
-        ? definition.strategy.matrix.include.map((lane) =>
-            definition.name.replace('${{ matrix.runtime }}', lane.runtime),
-          )
-        : [definition.name];
-    }),
-  );
-  expect(contexts.sort()).toEqual(expected.sort());
-  expect(new Set(contexts).size).toBe(contexts.length);
-  expect(contexts).not.toContain('Project');
-});
