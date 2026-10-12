@@ -93,21 +93,20 @@ export function createGithubWorkflows(config: SiteCiConfig, pins: ActionResolver
     ],
   });
   // Deployment consumes this run's artifacts and never executes fork-controlled code with Pages credentials.
-  if (config.primary === 'github') {
-    jobs.build!.steps.push({
-      uses: pins('actions/upload-pages-artifact').ref,
-      if: onMain,
-      with: { path: path('dist') },
-    });
-    for (const [id, extra] of Object.entries(githubExtras.pages)) {
-      const job = structuredClone(extra);
-      for (const step of job.steps) {
-        if ('with' in step && step.with && typeof step.with.path === 'string')
-          step.with.path = step.with.path.split('\n').map(path).join('\n');
-      }
-      if (id === 'smoke-deployed') job.steps = [...setup('26'), ...job.steps];
-      jobs[id] = githubJobSchema.parse(job);
+  jobs.build!.steps.push({
+    uses: pins('actions/upload-pages-artifact').ref,
+    if: config.primary === 'github' ? onMain : false,
+    with: { path: path('dist') },
+  });
+  for (const [id, extra] of Object.entries(githubExtras.pages)) {
+    const job = structuredClone(extra);
+    if (config.primary !== 'github') job.if = false;
+    for (const step of job.steps) {
+      if ('with' in step && step.with && typeof step.with.path === 'string')
+        step.with.path = step.with.path.split('\n').map(path).join('\n');
     }
+    if (id === 'smoke-deployed') job.steps = [...setup('26'), ...job.steps];
+    jobs[id] = githubJobSchema.parse(job);
   }
   const base = (name: string): Omit<GithubWorkflow, 'jobs'> => ({
     name: `${config.prefix ? `${config.prefix}: ` : ''}${name}`,

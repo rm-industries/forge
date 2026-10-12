@@ -56,8 +56,11 @@ telemetry or promotional messages.
 
 Select providers during bootstrap with `--ci-providers github,gitlab` or
 `--ci-providers gitlab`. `--primary-ci` selects the authoritative provider;
-GitHub is primary when enabled unless overridden. GitLab currently supplies
-validation; configure its deployment separately.
+GitHub is primary when enabled unless overridden. Both providers include Pages
+deployment and deployed-site smoke tests; the inactive provider retains these
+jobs with native disabled conditions. Change the primary provider and regenerate
+to enable its deployment. Enable Pages on that host and update the canonical site
+URL before switching. GitLab Pages requires GitLab 17.9 or newer.
 
 Generated projects receive shared TypeScript work definitions and validated
 GitHub or GitLab YAML. Use the existing npm scripts for local development.
