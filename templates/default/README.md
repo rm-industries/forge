@@ -327,9 +327,15 @@ The generated CMS configuration lives in code rather than a duplicated YAML
 file. Change content fields in the shared model, then run `npm run typecheck`
 and `npm test` to verify that Astro and Sveltia still derive the same contract.
 
-## Shared CI work definitions
+## CI authoring
 
-TypeScript work definitions in `scripts/ci/model.ts` describe CI commands,
-dependencies, browser requirements and artifacts. Zod rejects invalid commands,
-missing dependencies and cycles. Provider rendering follows in the next review.
-Use the existing npm scripts for local development.
+Work definitions and provider renderers live in `scripts/ci/`. Run
+`npm run ci:generate` writes the
+configured GitHub or GitLab YAML; `npm run ci:check` detects drift. Commit the
+output so Dependabot can update action pins. Regeneration preserves those pins.
+GitHub Pages runs after validation in the same project workflow.
+
+Configure providers, the primary provider and repository paths in
+`scripts/ci/config.json`. GitLab currently supports validation, with deployment
+configured separately by the repository owner. Namespaced GitLab configuration
+must be invoked as a child pipeline from the existing root `.gitlab-ci.yml`.

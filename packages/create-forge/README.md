@@ -25,8 +25,15 @@ npm create @rm-industries/forge website -- --repository-root .
 Forge writes the application into `website/`, places repository-owned GitHub
 configuration in the root `.github/` directory, installs dependencies inside
 `website/`, and initializes Git at the repository root when needed. Generated
-workflow filters, working directories, artifact paths, and Dependabot settings
-are adjusted for the nested project automatically.
+workflow execution paths, artifact paths, and Dependabot settings
+are adjusted for the nested project automatically. Workflow files are named
+`website-project.yml`, `website-security.yml`, and `website-automation.yml` for
+this example, leaving existing unprefixed workflows untouched. Override the
+prefix with `--ci-prefix docs-site`. Prefixes contain lowercase letters, numbers,
+and single hyphens, with a maximum length of 80 characters. A standalone project
+keeps the unprefixed workflow names unless a prefix is explicitly provided.
+Existing shared configuration, such as Dependabot settings, is preserved. Forge
+reports the configuration it skipped so you can integrate it manually.
 
 The selected template is copied with dotfiles and file modes intact. Forge
 customizes only reviewed metadata files and refuses parent-traversal paths,
@@ -44,6 +51,24 @@ After successful creation, Forge reports the created path, whether dependency
 and Git setup ran or was skipped, and only the commands still needed to start
 development. Output remains readable when color is disabled and contains no
 telemetry or promotional messages.
+
+## CI and local work
+
+Select providers during bootstrap with `--ci-providers github,gitlab` or
+`--ci-providers gitlab`. `--primary-ci` selects the authoritative provider;
+GitHub is primary when enabled unless overridden. GitLab currently supplies
+validation; configure its deployment separately.
+
+Generated projects receive shared TypeScript work definitions and validated
+GitHub or GitLab YAML. Use `npm run pipeline -- quality --dry-run` to inspect the
+local work order, or `npm run pipeline -- quality` to run it. No additional
+runtime setup is required. `npm run ci:generate` writes CI YAML and
+`npm run ci:check` detects drift. Commit the output so Dependabot can update action
+pins. GitHub Pages deployment stays in the project workflow after validation,
+with its native environment and outputs.
+
+See [the CI documentation](../../docs/ci-providers.md) for graph ownership,
+pin resolution, provider support, and execution limitations.
 
 ## Package verification
 
@@ -70,7 +95,8 @@ npm run test:generator:e2e
 ```
 
 This generates default, fully specified, scoped-package-name,
-current-directory, nested-project, no-install, and conflict fixtures in an OS
+current-directory, nested-project, GitLab-only, combined-provider, no-install, and
+conflict fixtures in an OS
 temporary directory. The default and nested fixtures install dependencies
 outside the Forge workspace. The nested fixture also runs the generated
 project's core quality and production-build pipeline, verifies its Pages

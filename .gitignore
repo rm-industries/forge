@@ -227,6 +227,9 @@ tags
 # Local History for Visual Studio Code
 .history/
 
+# CI bootstrap pins are derived from maintained workflows during packaging.
+/templates/default/scripts/ci/actions.json
+
 # Built Visual Studio Code Extensions
 *.vsix
 

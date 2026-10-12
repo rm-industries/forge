@@ -52,7 +52,10 @@ if (result.options) {
       repositoryRoot: materialized.repositoryRoot,
       signal: controller.signal,
     });
-    result.output = formatCompletion(result.options, { destination: materialized.projectRoot });
+    result.output = formatCompletion(result.options, {
+      destination: materialized.projectRoot,
+      skippedConfiguration: materialized.skippedConfiguration,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     result.output = `error: ${message}\n`;
