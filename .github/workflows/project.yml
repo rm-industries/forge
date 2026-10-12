@@ -46,7 +46,7 @@ jobs:
         with:
           node-version: 26.x
       - name: Lint code
-        run: npm run lint:code
+        run: npm run lint:code -- --format github
   lint-markdown:
     name: Tool Lint Markdown
     runs-on: ubuntu-latest

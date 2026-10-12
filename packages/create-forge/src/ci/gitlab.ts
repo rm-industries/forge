@@ -10,20 +10,44 @@ export function createGitlabPipeline(config: CiGenerationOptions, plan: WorkPlan
   const stage = (id: string) => stageName(depth(id));
   const jobs: Record<string, GitlabJob> = {};
   for (const [id, work] of Object.entries(plan)) {
+    const reports =
+      id === 'unit-tests'
+        ? {
+            junit: `${config.directory}/test-results/unit.xml`,
+            coverage_report: {
+              coverage_format: 'cobertura',
+              path: `${config.directory}/coverage/cobertura-coverage.xml`,
+            },
+          }
+        : id === 'browser-tests'
+          ? { junit: `${config.directory}/test-results/browser.xml` }
+          : id === 'lint-code'
+            ? { codequality: `${config.directory}/test-results/code-quality.json` }
+            : undefined;
+    const commands =
+      id === 'lint-code'
+        ? [
+            'mkdir -p test-results',
+            `status=0\nnpm run lint:code --silent -- --format gitlab > test-results/code-quality.json || status=$?\nnode --input-type=module -e ${shellQuote(`import { readFileSync, writeFileSync } from 'node:fs'; import { join } from 'node:path'; const file = 'test-results/code-quality.json'; const report = JSON.parse(readFileSync(file, 'utf8')); for (const finding of report) finding.location.path = join(${JSON.stringify(config.directory)}, finding.location.path); writeFileSync(file, JSON.stringify(report));`)}\nexit "$status"`,
+          ]
+        : work.commands;
     jobs[id] = gitlabJobSchema.parse({
       image: `node:${config.nodeVersion}`,
       stage: stage(id),
       needs: work.needs.map((job) => ({ job, artifacts: true })),
       script: [
         ...(work.browsers.length ? [`npx playwright install --with-deps ${work.browsers.join(' ')}`] : []),
-        ...work.commands,
+        ...commands,
       ],
-      ...(work.artifacts.length
+      ...(work.artifacts.length || reports
         ? {
             artifacts: {
-              paths: work.artifacts.map((path) => `${config.directory}/${path}`),
+              paths: [...new Set([...work.artifacts, ...(reports ? ['test-results'] : [])])].map(
+                (path) => `${config.directory}/${path}`,
+              ),
               when: id === 'build' ? 'on_success' : 'always',
               expire_in: '7 days',
+              ...(reports ? { reports } : {}),
             },
           }
         : {}),
@@ -63,6 +87,7 @@ export function createGitlabPipeline(config: CiGenerationOptions, plan: WorkPlan
       paths: [`${config.directory}/playwright-report`, `${config.directory}/test-results`],
       when: 'always',
       expire_in: '7 days',
+      reports: { junit: `${config.directory}/test-results/smoke.xml` },
     },
   });
   return gitlabPipelineSchema.parse({

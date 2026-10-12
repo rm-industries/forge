@@ -42,12 +42,15 @@ consumer-primary:
       - .ci-consumer/consumer-source.tgz
       - .ci-consumer/dist
       - .ci-consumer/coverage
+      - .ci-consumer/test-results/unit.xml
     expire_in: 7 days
     when: always
+    reports:
+      junit: .ci-consumer/test-results/unit.xml
   after_script:
     - mkdir -p .ci-consumer
     - cp /tmp/consumer-source.tgz .ci-consumer/
-    - for output in dist coverage; do if [ -d "/tmp/forge-consumer/$output" ]; then cp -R "/tmp/forge-consumer/$output" .ci-consumer/; fi; done
+    - for output in dist coverage test-results; do if [ -d "/tmp/forge-consumer/$output" ]; then cp -R "/tmp/forge-consumer/$output" .ci-consumer/; fi; done
 consumer-compatibility:
   image: node:$NODE_VERSION
   stage: build
@@ -77,6 +80,16 @@ consumer-compatibility:
         NODE_MAJOR: '22'
       - NODE_VERSION: '24'
         NODE_MAJOR: '24'
+  after_script:
+    - mkdir -p .ci-consumer
+    - if [ -d /tmp/forge-consumer/test-results ]; then cp -R /tmp/forge-consumer/test-results .ci-consumer/; fi
+  artifacts:
+    paths:
+      - .ci-consumer/test-results/unit.xml
+    when: always
+    expire_in: 7 days
+    reports:
+      junit: .ci-consumer/test-results/unit.xml
 consumer-quality:
   image: node:26
   stage: verify
@@ -125,6 +138,8 @@ consumer-browser:
       - .ci-consumer/test-results
     when: always
     expire_in: 7 days
+    reports:
+      junit: .ci-consumer/test-results/browser.xml
   after_script:
     - mkdir -p .ci-consumer
     - for output in playwright-report test-results; do if [ -d "/tmp/forge-consumer/$output" ]; then cp -R "/tmp/forge-consumer/$output" .ci-consumer/; fi; done

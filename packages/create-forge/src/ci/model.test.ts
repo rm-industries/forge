@@ -1,3 +1,8 @@
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { describe, expect, test } from 'vitest';
 import { Document } from 'yaml';
 
@@ -106,6 +111,51 @@ describe('shared work and provider rendering', () => {
         build: { ...pipeline.build, needs: [{ job: 'browser-tests', artifacts: true }] },
       }),
     ).toThrow('must precede');
+  });
+  test('publishes GitLab reports with project-relative paths, including nested projects', () => {
+    const pipeline = createGitlabPipeline(config);
+    expect(pipeline['unit-tests']).toHaveProperty('artifacts.reports', {
+      junit: 'website/test-results/unit.xml',
+      coverage_report: { coverage_format: 'cobertura', path: 'website/coverage/cobertura-coverage.xml' },
+    });
+    expect(pipeline['browser-tests']).toHaveProperty('artifacts.reports.junit', 'website/test-results/browser.xml');
+    expect(pipeline['smoke-deployed']).toHaveProperty('artifacts.reports.junit', 'website/test-results/smoke.xml');
+    expect(pipeline['lint-code']).toHaveProperty(
+      'artifacts.reports.codequality',
+      'website/test-results/code-quality.json',
+    );
+    for (const id of ['unit-tests', 'browser-tests', 'smoke-deployed', 'lint-code']) {
+      expect(pipeline[id]).toHaveProperty('artifacts.when', 'always');
+    }
+    const lint = pipeline['lint-code'] as { script: string[] };
+    expect(lint.script.join('\n')).toContain('exit "$status"');
+    expect(lint.script.join('\n')).toContain('--format gitlab');
+    expect(createGithubWorkflows(config, pins).project.jobs['lint-code']!.steps).toContainEqual({
+      run: 'npm run lint:code -- --format github',
+    });
+  });
+  test('retains failed lint findings and their exit status while rebasing nested project paths', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'forge-lint-report-'));
+    try {
+      mkdirSync(join(directory, 'bin'));
+      writeFileSync(
+        join(directory, 'bin', 'npm'),
+        '#!/bin/sh\nprintf \'[{"location":{"path":"src/example.ts"}}]\\n\'\nexit 1\n',
+        { mode: 0o755 },
+      );
+      const lint = createGitlabPipeline(config)['lint-code'] as { script: string[] };
+      const result = spawnSync('bash', ['-ec', lint.script.join('\n')], {
+        cwd: directory,
+        env: { ...process.env, PATH: `${join(directory, 'bin')}:${process.env.PATH}` },
+        encoding: 'utf8',
+      });
+      expect(result.status).toBe(1);
+      expect(JSON.parse(readFileSync(join(directory, 'test-results/code-quality.json'), 'utf8'))).toEqual([
+        { location: { path: 'website/src/example.ts' } },
+      ]);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
   test('fails dependency review on high severity findings instead of treating it as advisory', () => {
     const review = createGithubWorkflows(config, pins).security.jobs['dependency-review']!;

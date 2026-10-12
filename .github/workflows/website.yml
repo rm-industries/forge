@@ -98,7 +98,7 @@ jobs:
           working-directory: website
 
       - name: Lint code
-        run: npm run lint:code
+        run: npm run lint:code -- --format github
 
   lint-styles:
     name: Lint styles
