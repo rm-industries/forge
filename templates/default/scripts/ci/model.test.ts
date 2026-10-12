@@ -51,7 +51,6 @@ describe('shared work and provider rendering', () => {
         b: { name: 'B', commands: ['true'], needs: ['a'] },
       }),
     ).toThrow('cycle');
-
   });
   test('keeps Pages in the validated run and preserves native environments and outputs', () => {
     const { project } = createGithubWorkflows(config, pins);
