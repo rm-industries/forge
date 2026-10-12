@@ -333,4 +333,6 @@ Forge generates validated YAML during bootstrap. Edit your GitHub or GitLab CI
 files directly afterward; no Forge CI authoring files or regeneration commands
 are retained. Dependabot updates GitHub action pins and npm dependencies.
 
-GitHub Pages runs after validation. GitLab provides shared validation in this review.
+Both providers include Pages deployment and smoke tests, with the inactive
+provider disabled through native CI conditions. Configure Pages and the canonical
+site URL before enabling deployment on another provider.

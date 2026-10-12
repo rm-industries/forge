@@ -29,9 +29,10 @@ validates the formatted YAML before writing. Generated workflows participate in
 normal consumer formatting checks. Tests and actionlint/zizmor verify generated
 consumer output; they do not generate or rewrite Forge's own workflows.
 
-Validation jobs share build artifacts. GitHub Pages retains same-run deployment
-depending directly on all required validation jobs. GitLab validation is supported here;
-switchable Pages deployment is the next review. Namespaced GitLab output is a child pipeline:
+Validation jobs share build artifacts. Both providers retain Pages deployment
+and smoke tests; the inactive provider is disabled with native conditions. Enable
+Pages and set the canonical site URL before switching provider. GitLab Pages
+requires GitLab 17.9 or newer. Namespaced GitLab output is a child pipeline:
 
 ```yaml
 forge-site:
