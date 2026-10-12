@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 
-import { configSchema } from '../packages/create-forge/src/ci/config.ts';
+import { generationOptionsSchema } from '../packages/create-forge/src/ci/generation-options.ts';
 import { createGithubWorkflows } from '../packages/create-forge/src/ci/github.ts';
 
 interface Step {
@@ -38,7 +38,7 @@ const website = readWorkflow('../.github/workflows/website.yml');
 const project = readWorkflow('../.github/workflows/project.yml');
 const automation = readWorkflow('../.github/workflows/automation.yml');
 const template = createGithubWorkflows(
-  configSchema.parse({
+  generationOptionsSchema.parse({
     directory: '.',
     repositoryRoot: '.',
     providers: ['github'],
@@ -120,8 +120,8 @@ describe('generated website CI contract', () => {
   });
 
   it('deploys only after all checks and smoke-tests the live site', () => {
-    expect(dependencies(job(template, 'deploy'))).toEqual(['project']);
-    expect(dependencies(job(template, 'project'))).toEqual(
+    expect(template.jobs).not.toHaveProperty('project');
+    expect(dependencies(job(template, 'deploy'))).toEqual(
       expect.arrayContaining([
         ...sourceJobs,
         'build',

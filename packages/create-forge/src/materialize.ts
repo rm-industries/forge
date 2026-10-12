@@ -15,7 +15,7 @@ import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, parse, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { configSchema } from './ci/config.ts';
+import { generationOptionsSchema } from './ci/generation-options.ts';
 import { deriveCiPrefix, validateCiPrefix, workflowPath } from './ci/paths';
 import type { GeneratorOptions } from './options';
 import { deriveScheduleMinutes } from './schedule';
@@ -201,7 +201,7 @@ const customizeTemplate = async (
       ),
     );
   }
-  return configSchema.parse(ciConfig);
+  return generationOptionsSchema.parse(ciConfig);
 };
 
 export const materializeProject = async (options: GeneratorOptions, context: MaterializationContext) => {

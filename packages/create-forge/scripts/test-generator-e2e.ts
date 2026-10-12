@@ -115,7 +115,9 @@ const assertGeneratedProject = async (directory: string, packageName: string, re
   if (
     project.on.workflow_run ||
     project.jobs.deploy.environment.name !== 'github-pages' ||
-    project.jobs.deploy.needs[0] !== 'project'
+    project.jobs.project ||
+    !project.jobs.deploy.needs.includes('compatibility') ||
+    !project.jobs.deploy.needs.includes('browser-tests')
   ) {
     throw new Error('Deployment must follow validation in the same workflow');
   }

@@ -28,7 +28,7 @@ validates YAML before writing. Tests and actionlint/zizmor verify generated
 consumer output; they do not generate or rewrite Forge's own workflows.
 
 Validation jobs share build artifacts. GitHub Pages retains same-run deployment
-following the aggregate validation gate. GitLab validation is supported here;
+depending directly on all required validation jobs. GitLab validation is supported here;
 switchable Pages deployment is the next review. Namespaced GitLab output is a child pipeline:
 
 ```yaml

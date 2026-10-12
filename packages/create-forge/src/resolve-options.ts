@@ -1,4 +1,4 @@
-import { configSchema } from './ci/config.ts';
+import { generationOptionsSchema } from './ci/generation-options.ts';
 import { validateCiPrefix } from './ci/paths';
 import {
   defaultDescription,
@@ -59,7 +59,7 @@ export const resolveOptions = async (
   { interactive, prompts }: ResolutionContext,
 ): Promise<GeneratorOptions> => {
   const useDefaults = provided.yes;
-  const providers = configSchema.shape.providers.safeParse(provided.ciProviders ?? ['github']);
+  const providers = generationOptionsSchema.shape.providers.safeParse(provided.ciProviders ?? ['github']);
   if (!providers.success)
     throw new InputError('--ci-providers must be a non-empty list of unique providers: github,gitlab');
   if (provided.primaryCi !== undefined && !providers.data.includes(provided.primaryCi))
