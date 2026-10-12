@@ -1,6 +1,6 @@
 generator-package:
   image: node:26
-  stage: check-0
+  stage: prepare
   needs: []
   before_script:
     - npm ci
@@ -16,7 +16,7 @@ generator-package:
     expire_in: 7 days
 consumer-primary:
   image: node:$NODE_VERSION
-  stage: check-1
+  stage: build
   needs:
     - job: generator-package
       artifacts: true
@@ -50,7 +50,7 @@ consumer-primary:
     - for output in dist coverage; do if [ -d "/tmp/forge-consumer/$output" ]; then cp -R "/tmp/forge-consumer/$output" .ci-consumer/; fi; done
 consumer-compatibility:
   image: node:$NODE_VERSION
-  stage: check-1
+  stage: build
   needs:
     - job: generator-package
       artifacts: true
@@ -79,7 +79,7 @@ consumer-compatibility:
         NODE_MAJOR: '24'
 consumer-quality:
   image: node:26
-  stage: check-2
+  stage: verify
   needs:
     - job: consumer-primary
       artifacts: true
@@ -92,7 +92,7 @@ consumer-quality:
     - npm run format && npm run lint && npm run audit:unused
 consumer-validate-build:
   image: node:26
-  stage: check-2
+  stage: verify
   needs:
     - job: consumer-primary
       artifacts: true
@@ -106,7 +106,7 @@ consumer-validate-build:
     - npm run validate:build
 consumer-browser:
   image: node:26
-  stage: check-2
+  stage: verify
   needs:
     - job: consumer-primary
       artifacts: true
@@ -130,7 +130,7 @@ consumer-browser:
     - for output in playwright-report test-results; do if [ -d "/tmp/forge-consumer/$output" ]; then cp -R "/tmp/forge-consumer/$output" .ci-consumer/; fi; done
 consumer-lighthouse:
   image: node:26
-  stage: check-2
+  stage: verify
   needs:
     - job: consumer-primary
       artifacts: true
@@ -156,7 +156,7 @@ consumer-lighthouse:
     - for output in .lighthouseci; do if [ -d "/tmp/forge-consumer/$output" ]; then cp -R "/tmp/forge-consumer/$output" .ci-consumer/; fi; done
 generator-scenarios:
   image: node:26
-  stage: check-1
+  stage: build
   needs:
     - job: generator-package
       artifacts: true
@@ -166,7 +166,7 @@ generator-scenarios:
     - FORGE_CLI_TARBALL="$CI_PROJECT_DIR/.ci-packages/create-forge.tgz" node packages/create-forge/scripts/test-generator-e2e.ts
 consumer-quality-tool-regressions:
   image: node:26
-  stage: check-0
+  stage: validate
   needs: []
   before_script:
     - npm ci

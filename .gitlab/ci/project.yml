@@ -1,6 +1,6 @@
 project-format:
   image: node:26
-  stage: check-0
+  stage: validate
   before_script:
     - npm ci
   needs: []
@@ -8,7 +8,7 @@ project-format:
     - npm run format
 project-lint-code:
   image: node:26
-  stage: check-0
+  stage: validate
   before_script:
     - npm ci
   needs: []
@@ -16,7 +16,7 @@ project-lint-code:
     - npm run lint:code
 project-lint-markdown:
   image: node:26
-  stage: check-0
+  stage: validate
   before_script:
     - npm ci
   needs: []
@@ -24,7 +24,7 @@ project-lint-markdown:
     - npm run lint:markdown
 project-spellcheck:
   image: node:26
-  stage: check-0
+  stage: validate
   before_script:
     - npm ci
   needs: []
@@ -32,7 +32,7 @@ project-spellcheck:
     - npm run spellcheck
 project-documentation:
   image: node:26
-  stage: check-0
+  stage: validate
   before_script:
     - npm ci
   needs: []
@@ -40,7 +40,7 @@ project-documentation:
     - npm run docs:validate
 project-typecheck:
   image: node:26
-  stage: check-0
+  stage: validate
   before_script:
     - npm ci
   needs: []
@@ -48,7 +48,7 @@ project-typecheck:
     - npm run typecheck:root
 project-test:
   image: node:26
-  stage: check-0
+  stage: validate
   before_script:
     - npm ci
   needs: []
@@ -56,7 +56,7 @@ project-test:
     - npm run test:root
 project-build:
   image: node:26
-  stage: check-1
+  stage: build
   before_script:
     - npm ci
   needs:
@@ -86,7 +86,7 @@ project-build:
     expire_in: 7 days
 project-pack:
   image: node:26
-  stage: check-2
+  stage: verify
   before_script: []
   needs:
     - job: project-build
@@ -110,7 +110,7 @@ project-pack:
       done
 project-compatibility:
   image: node:$NODE_VERSION
-  stage: check-2
+  stage: verify
   before_script:
     - npm ci
   needs:

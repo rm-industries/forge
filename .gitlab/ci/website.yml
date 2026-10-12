@@ -1,7 +1,7 @@
 # GitHub is primary. Configure Pages/site URL before replacing the deployment never rules.
 website-format:
   image: node:26
-  stage: check-0
+  stage: validate
   script:
     - npm run format
   needs: []
@@ -10,7 +10,7 @@ website-format:
     - npm ci
 website-spellcheck:
   image: node:26
-  stage: check-0
+  stage: validate
   script:
     - npm run spellcheck
   needs: []
@@ -19,7 +19,7 @@ website-spellcheck:
     - npm ci
 website-lint-code:
   image: node:26
-  stage: check-0
+  stage: validate
   script:
     - npm run lint:code
   needs: []
@@ -28,7 +28,7 @@ website-lint-code:
     - npm ci
 website-lint-styles:
   image: node:26
-  stage: check-0
+  stage: validate
   script:
     - npm run lint:css
   needs: []
@@ -37,7 +37,7 @@ website-lint-styles:
     - npm ci
 website-lint-markdown:
   image: node:26
-  stage: check-0
+  stage: validate
   script:
     - npm run lint:markdown
   needs: []
@@ -46,7 +46,7 @@ website-lint-markdown:
     - npm ci
 website-audit-unused:
   image: node:26
-  stage: check-0
+  stage: validate
   script:
     - npm run audit:unused
   needs: []
@@ -55,7 +55,7 @@ website-audit-unused:
     - npm ci
 website-typecheck:
   image: node:26
-  stage: check-0
+  stage: validate
   script:
     - npm run typecheck
   needs: []
@@ -64,7 +64,7 @@ website-typecheck:
     - npm ci
 website-unit-tests:
   image: node:26
-  stage: check-0
+  stage: validate
   script:
     - npm run test:coverage
   needs: []
@@ -78,7 +78,7 @@ website-unit-tests:
     - npm ci
 website-build:
   image: node:26
-  stage: check-1
+  stage: build
   script:
     - npm run build
   needs:
@@ -108,7 +108,7 @@ website-build:
     - npm ci
 website-validate-build:
   image: node:26
-  stage: check-2
+  stage: verify
   script:
     - npm run validate:build
   needs:
@@ -119,7 +119,7 @@ website-validate-build:
     - npm ci
 website-browser-tests:
   image: node:26
-  stage: check-2
+  stage: verify
   script:
     - npx playwright install --with-deps chromium firefox webkit
     - npm run test:e2e
@@ -137,7 +137,7 @@ website-browser-tests:
     - npm ci
 website-lighthouse:
   image: node:26
-  stage: check-2
+  stage: verify
   script:
     - npx playwright install --with-deps chromium
     # Container images use the browser installed by Playwright.

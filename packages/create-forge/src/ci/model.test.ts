@@ -88,11 +88,11 @@ describe('shared work and provider rendering', () => {
   });
   test('renders GitLab dependencies, artifact paths and duplicate pipeline suppression', () => {
     const pipeline = createGitlabPipeline(config, Object.fromEntries(Object.entries(siteWork).reverse()));
-    expect(pipeline.stages).toEqual(['check-0', 'check-1', 'check-2', 'deploy', 'smoke']);
+    expect(pipeline.stages).toEqual(['validate', 'build', 'verify', 'deploy', 'smoke']);
     const browser = pipeline['browser-tests'];
     expect(browser).toMatchObject({
       needs: [{ job: 'build', artifacts: true }],
-      stage: 'check-2',
+      stage: 'verify',
       artifacts: { paths: ['website/playwright-report', 'website/test-results'] },
     });
     expect(pipeline).not.toHaveProperty('compatibility');

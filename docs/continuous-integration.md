@@ -160,3 +160,9 @@ Website includes are scoped to website, documentation and GitLab configuration
 changes. Generator includes watch templates, package/scripts/configuration and
 CI inputs. Root project checks run for every accepted pipeline. GitLab uses
 [native includes and needs](https://docs.gitlab.com/ci/yaml/) for composition.
+
+GitLab stage names describe their purpose: `prepare` packages the generator
+candidate, `validate` covers source checks, `build` produces artifacts, and
+`verify` checks packages or built consumers. Deployment and live verification
+use `deploy` and `smoke`. Native needs relationships preserve independent job
+flows across these stages. Generated consumer pipelines start at `validate`.

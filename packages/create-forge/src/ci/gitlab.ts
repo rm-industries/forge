@@ -5,7 +5,9 @@ import { gitlabJobSchema, gitlabPipelineSchema, type GitlabJob } from './schema.
 export function createGitlabPipeline(config: CiGenerationOptions, plan: WorkPlan = siteWork) {
   plan = planSchema.parse(plan);
   const depth = (id: string): number => Math.max(-1, ...plan[id]!.needs.map(depth)) + 1;
-  const stage = (id: string) => `check-${depth(id)}`;
+  const workStageNames = ['validate', 'build', 'verify'];
+  const stageName = (level: number) => workStageNames[level] ?? `verify-${level - 1}`;
+  const stage = (id: string) => stageName(depth(id));
   const jobs: Record<string, GitlabJob> = {};
   for (const [id, work] of Object.entries(plan)) {
     jobs[id] = gitlabJobSchema.parse({
@@ -74,7 +76,7 @@ export function createGitlabPipeline(config: CiGenerationOptions, plan: WorkPlan
     },
     stages: [...new Set(Object.keys(plan).map(depth))]
       .sort((left, right) => left - right)
-      .map((level) => `check-${level}`)
+      .map(stageName)
       .concat(['deploy', 'smoke']),
     default: { interruptible: true, before_script: [`cd ${shellQuote(config.directory)}`, 'npm ci'] },
     ...jobs,
