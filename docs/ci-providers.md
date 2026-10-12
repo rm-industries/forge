@@ -22,9 +22,17 @@ YAML before writing it.
 GitHub Pages deployment remains in the project workflow, after the aggregate
 validation job. It uses that run's Pages artifact and preserves the environment,
 deployment output and deployed-site smoke test. No `workflow_run` trigger is used.
-Only the primary GitHub provider deploys. GitLab currently provides validation;
-it does not provision Pages, CodeQL, or GitHub repository automation. Selecting
-GitLab as primary does not manufacture an equivalent deployment integration.
+Both providers retain Pages deployment and deployed-site smoke jobs. Only the
+primary provider enables them: GitHub uses `if: false` when inactive, and GitLab
+uses `rules: [{ when: never }]`. Changing `primary` and regenerating flips those
+conditions. With no primary, both deployments remain disabled.
+
+GitLab Pages publishes the validated build artifact after all checks pass, using
+`pages.publish` (GitLab 17.9 or newer). Deployment runs only on default-branch
+pushes, including their child pipelines. Enable Pages in the selected host and
+update `src/config/site.ts` with its canonical URL before switching; that URL
+controls the build's origin and base path. The pipelines do not provision host
+settings. CodeQL and workflow scanning remain GitHub-specific.
 
 The repository root and Forge website retain their existing native workflows.
 They are not copied into generated projects. Migrating their authoring into
@@ -98,11 +106,13 @@ a diagnostic. Update every occurrence of a shared action together.
 alone passes when its occurrences remain consistent. This verifies generation
 compatibility, not the behavior of the new action; the normal checks still run.
 
-When the Forge package is built, `copy-template.ts` refreshes the packaged
+When the Forge package is built, `copy-template.ts` generates the packaged
 `actions.json` defaults from the repository's Dependabot-maintained workflows and
 setup action. New consumers receive those pins without a second manual pin update.
-The template's source defaults support development and tests; published bootstrap
-defaults are refreshed at build time. Updating action compatibility still requires
+There is no committed pin-default file. The renderer identifies the actions it
+needs and packaging resolves each from maintained workflows, failing on missing
+or conflicting pins. Existing consumers can regenerate from their workflows
+without the bootstrap defaults. Updating action compatibility still requires
 review and a Forge release to reach new consumers.
 
 ## Change filters

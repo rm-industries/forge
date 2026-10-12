@@ -11,7 +11,8 @@ import { createCiPinResolver } from './pins.ts';
 import { githubWorkflowSchema, gitlabPipelineSchema, validateCiYaml } from './schema.ts';
 
 function resolveActions(projectRoot: string, repositoryRoot: string, prefix?: string): ActionResolver {
-  const defaults = JSON.parse(readFileSync(join(projectRoot, 'scripts/ci/actions.json'), 'utf8')) as Record<
+  const defaultsPath = join(projectRoot, 'scripts/ci/actions.json');
+  const defaults = (existsSync(defaultsPath) ? JSON.parse(readFileSync(defaultsPath, 'utf8')) : {}) as Record<
     string,
     { ref: string }
   >;

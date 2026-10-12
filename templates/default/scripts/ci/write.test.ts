@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 
 import { expect, test } from 'vitest';
 
+import { configSchema } from './config.ts';
+import { createGithubWorkflows } from './github.ts';
 import { writeCi } from './write.ts';
 
 const source = fileURLToPath(new URL('./', import.meta.url));
@@ -12,6 +14,12 @@ test('preserves Dependabot action pins, checks drift, and rejects conflicting up
   const root = await mkdtemp(join(tmpdir(), 'forge-ci-test-'));
   try {
     await cp(source, join(root, 'scripts/ci'), { recursive: true });
+    const defaults: Record<string, { ref: string }> = {};
+    createGithubWorkflows(
+      configSchema.parse(JSON.parse(await readFile(join(root, 'scripts/ci/config.json'), 'utf8'))),
+      (action) => (defaults[action] = { ref: `${action}@${'a'.repeat(40)}` }),
+    );
+    await writeFile(join(root, 'scripts/ci/actions.json'), JSON.stringify(defaults));
     // Consumer configuration may be nested or use a different provider. Isolate the fixture.
     await writeFile(
       join(root, 'scripts/ci/config.json'),
@@ -27,7 +35,8 @@ test('preserves Dependabot action pins, checks drift, and rejects conflicting up
     const files = await writeCi(root);
     const path = join(root, '.github/workflows/project.yml');
     const initial = await readFile(path, 'utf8');
-    const ref = JSON.parse(await readFile(join(root, 'scripts/ci/actions.json'), 'utf8'))['actions/setup-node'].ref;
+    await rm(join(root, 'scripts/ci/actions.json'));
+    const ref = defaults['actions/setup-node']!.ref;
     const updatedRef = `actions/setup-node@${'b'.repeat(40)}`;
     await writeFile(path, initial.replaceAll(ref, updatedRef));
     await writeCi(root);

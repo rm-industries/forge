@@ -35,6 +35,47 @@ export function createGitlabPipeline(config: SiteCiConfig, plan: WorkPlan = site
     parallel: { matrix: [{ NODE_VERSION: runtimeVersions }] },
     script: ['typecheck', 'unit-tests', 'build', 'validate-build'].flatMap((id) => plan[id]!.commands),
   });
+  const deployRules =
+    config.primary === 'gitlab'
+      ? [
+          {
+            if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "parent_pipeline")',
+          },
+        ]
+      : [{ when: 'never' as const }];
+  jobs.project = gitlabJobSchema.parse({
+    image: 'node:26',
+    stage: 'project',
+    before_script: [],
+    script: ['true'],
+    needs: [...Object.keys(plan), 'compatibility'].map((job) => ({ job, artifacts: false })),
+  });
+  jobs.deploy = gitlabJobSchema.parse({
+    image: 'node:26',
+    stage: 'deploy',
+    before_script: [],
+    needs: [
+      { job: 'project', artifacts: false },
+      { job: 'build', artifacts: true },
+    ],
+    script: [`test -f ${shellQuote(`${config.directory}/dist/index.html`)}`],
+    rules: deployRules,
+    pages: { publish: `${config.directory}/dist` },
+    environment: { name: 'gitlab-pages', url: '$CI_PAGES_URL' },
+    artifacts: { paths: [`${config.directory}/dist`], when: 'on_success', expire_in: '7 days' },
+  });
+  jobs['smoke-deployed'] = gitlabJobSchema.parse({
+    image: 'node:26',
+    stage: 'smoke',
+    needs: [{ job: 'deploy', artifacts: false }],
+    rules: deployRules,
+    script: ['npx playwright install --with-deps chromium', 'DEPLOYMENT_URL="$CI_PAGES_URL" npm run test:smoke'],
+    artifacts: {
+      paths: [`${config.directory}/playwright-report`, `${config.directory}/test-results`],
+      when: 'always',
+      expire_in: '7 days',
+    },
+  });
   return gitlabPipelineSchema.parse({
     workflow: {
       rules: [
@@ -46,7 +87,8 @@ export function createGitlabPipeline(config: SiteCiConfig, plan: WorkPlan = site
     },
     stages: [...new Set(Object.keys(plan).map(depth))]
       .sort((left, right) => left - right)
-      .map((level) => `check-${level}`),
+      .map((level) => `check-${level}`)
+      .concat(['project', 'deploy', 'smoke']),
     default: { interruptible: true, before_script: [`cd ${shellQuote(config.directory)}`, 'npm ci'] },
     ...jobs,
   });

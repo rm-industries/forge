@@ -99,11 +99,20 @@ export const githubWorkflowSchema = z
     }
     for (const id of Object.keys(workflow.jobs)) visit(id);
   });
-const rule = z.strictObject({ if: scriptSchema, when: z.enum(['never', 'always', 'on_success']).optional() });
+const rule = z
+  .strictObject({
+    if: scriptSchema.optional(),
+    when: z.enum(['never', 'always', 'on_success']).optional(),
+  })
+  .refine((value) => value.if !== undefined || value.when !== undefined, 'Rule requires a condition or when');
 export const gitlabJobSchema = z.strictObject({
   image: imageSchema,
   stage: scriptSchema,
   script: scriptsSchema,
+  before_script: z.array(scriptSchema).optional(),
+  rules: z.array(rule).min(1).optional(),
+  pages: z.strictObject({ publish: scriptSchema }).optional(),
+  environment: z.strictObject({ name: scriptSchema, url: scriptSchema }).optional(),
   allow_failure: z.boolean().optional(),
   needs: z.array(z.strictObject({ job: scriptSchema, artifacts: z.boolean() })).optional(),
   parallel: z.strictObject({ matrix: z.array(z.record(z.string(), z.array(scriptSchema))).min(1) }).optional(),

@@ -2,6 +2,8 @@ import { cp, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { configSchema } from '../../../templates/default/scripts/ci/config.ts';
+import { createGithubWorkflows } from '../../../templates/default/scripts/ci/github.ts';
 import { createCiPinResolver } from '../../../templates/default/scripts/ci/pins.ts';
 import { templateTokens } from '../src/template-tokens.ts';
 
@@ -68,7 +70,7 @@ await writeFile(dependabotPath, dependabot);
 
 // Bootstrap defaults follow Dependabot-maintained repository actions at package build time.
 const actionDefaultsPath = join(destinationDirectory, 'scripts/ci/actions.json');
-const actionDefaults = JSON.parse(await readFile(actionDefaultsPath, 'utf8')) as Record<string, { ref: string }>;
+const actionDefaults: Record<string, { ref: string; version?: string }> = {};
 const maintained: Record<string, string> = {};
 for (const path of [
   '.github/workflows/project.yml',
@@ -80,5 +82,8 @@ for (const path of [
   maintained[path] = await readFile(join(repositoryRoot, path), 'utf8');
 }
 const resolveAction = createCiPinResolver(maintained);
-for (const action of Object.keys(actionDefaults)) actionDefaults[action] = resolveAction(action);
+const ciConfig = configSchema.parse(
+  JSON.parse(await readFile(join(destinationDirectory, 'scripts/ci/config.json'), 'utf8')),
+);
+createGithubWorkflows(ciConfig, (action) => (actionDefaults[action] = resolveAction(action)));
 await writeFile(actionDefaultsPath, `${JSON.stringify(actionDefaults, undefined, 2)}\n`);

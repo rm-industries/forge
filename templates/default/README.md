@@ -337,6 +337,9 @@ output so Dependabot can update action pins. Regeneration preserves those pins.
 GitHub Pages runs after validation in the same project workflow.
 
 Configure providers, the primary provider and repository paths in
-`scripts/ci/config.json`. GitLab currently supports validation, with deployment
-configured separately by the repository owner. Namespaced GitLab configuration
+`scripts/ci/config.json`. Both providers retain Pages deployment and smoke tests;
+the inactive provider disables them with native conditions. Switching the primary
+provider and regenerating enables its deployment. Enable Pages on the selected
+host and update the canonical site URL before switching. GitLab Pages requires
+GitLab 17.9 or newer. Namespaced GitLab configuration
 must be invoked as a child pipeline from the existing root `.gitlab-ci.yml`.
