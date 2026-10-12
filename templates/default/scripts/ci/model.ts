@@ -32,7 +32,6 @@ export const planSchema = z.record(identifier, workSchema).superRefine((plan, co
   for (const id of Object.keys(plan)) visit(id);
 });
 export type WorkPlan = z.infer<typeof planSchema>;
-export const runtimeVersions = ['22.22.2', '22', '24', '26'];
 
 export function defineWork(input: z.input<typeof planSchema>): WorkPlan {
   return planSchema.parse(input);
