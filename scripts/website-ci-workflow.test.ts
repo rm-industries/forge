@@ -198,5 +198,12 @@ it('keeps disposable consumer checks separate from repository automation', () =>
     false,
   );
   expect(steps(automation, 'security').at(-1)?.with?.inputs).toBe('.github');
-  expect(steps(generator, 'security').at(-1)?.with?.inputs).toBe('${{ runner.temp }}/forge-consumer/.github');
+  expect(steps(generator, 'security').at(-1)?.with?.inputs).toBe('.ci-consumer/.github');
+});
+
+it('restores generated scan inputs inside the workspace mounted by the Docker scanner', () => {
+  const restore = steps(generator, 'security').find((step) => step.run?.includes('tar -xzf'));
+  expect(restore?.run).toContain('mkdir -p .ci-consumer');
+  expect(restore?.run).toContain('-C .ci-consumer');
+  expect(steps(generator, 'security').at(-1)?.with?.inputs).toBe('.ci-consumer/.github');
 });
