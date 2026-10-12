@@ -90,6 +90,23 @@ describe('CLI argument parsing', () => {
     expect(await runCli(['site', '--yes', ...args], '1.0.3')).toMatchObject({ exitCode: 1 });
   });
 
+  test('accepts a hidden CI fixture directory with an explicit valid package name', async () => {
+    expect(
+      await runCli(
+        [
+          '.ci-review-fixture',
+          '--name',
+          'ci-review-fixture',
+          '--yes',
+          '--no-install',
+          '--no-git',
+          '--ci-providers',
+          'github,gitlab',
+        ],
+        '1.0.3',
+      ),
+    ).toMatchObject({ exitCode: 0, options: { packageName: 'ci-review-fixture' } });
+  });
   test('selects one supported runtime for generated CI', async () => {
     expect(await runCli(['site', '--yes', '--node-version', '24'], '1.0.3')).toMatchObject({
       exitCode: 0,
