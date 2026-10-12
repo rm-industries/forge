@@ -34,7 +34,8 @@
     "quality": "npm run quality:core && npm run test:e2e && npm run lighthouse:ci",
     "quality:core": "npm run quality:static && npm run test:coverage && npm run build && npm run validate:build",
     "quality:static": "npm run format && npm run lint && npm run audit:unused && npm run typecheck",
-    "quality:static:ci": "npm run lint:code && npm run lint:css && npm run lint:markdown && npm run audit:unused && npm run typecheck"
+    "quality:static:ci": "npm run lint:code && npm run lint:css && npm run lint:markdown && npm run audit:unused && npm run typecheck",
+    "pipeline": "node scripts/pipeline.ts"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
@@ -66,7 +67,9 @@
     "stylelint-config-standard": "^40.0.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.3.6"
   },
   "engines": {
     "node": "^22.22.2 || ^24.0.0 || ^26.0.0",

@@ -326,3 +326,10 @@ can replace this with its own supported OAuth configuration.
 The generated CMS configuration lives in code rather than a duplicated YAML
 file. Change content fields in the shared model, then run `npm run typecheck`
 and `npm test` to verify that Astro and Sveltia still derive the same contract.
+
+## Local work definitions
+
+`npm run pipeline -- quality --dry-run` lists shared TypeScript work in dependency
+order. Run it without `--dry-run` to execute each prerequisite once, or select an
+individual target. The local runner uses Node and npm; it does not emulate hosted
+permissions, secrets, runtime matrices, or deployment.
