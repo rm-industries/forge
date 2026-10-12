@@ -47,7 +47,7 @@ export function createGithubWorkflows(config: CiGenerationOptions, pins: ActionR
           with: { name: `${need}-${output.replaceAll('/', '-')}`, path: path(output) },
         });
     }
-    steps.push(...work.commands.map((run) => ({ run, ...(work.advisory ? { 'continue-on-error': true } : {}) })));
+    steps.push(...work.commands.map((run) => ({ run })));
     for (const output of work.artifacts) {
       const upload = artifact([output], `${id}-${output.replaceAll('/', '-')}`);
       if (id === 'build' && 'uses' in upload) {

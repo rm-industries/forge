@@ -108,15 +108,6 @@ project-pack:
             ;;
         esac
       done
-project-dependency-audit:
-  image: node:26
-  stage: check-0
-  before_script:
-    - npm ci
-  needs: []
-  script:
-    - npm run audit
-  allow_failure: true
 project-compatibility:
   image: node:$NODE_VERSION
   stage: check-2

@@ -92,7 +92,7 @@ edit jobs, triggers and schedules, and how action pins or runtime images evolve.
 
 Generated GitHub security checks fail when a pull request introduces dependencies
 with high or critical vulnerabilities, matching the reference website's policy.
-The separate advisory npm audit remains unchanged. Require the dependency-review
+Routine dependency-audit jobs are omitted. Require the dependency-review
 check in branch protection to enforce it before merging; deployment does not
 wait for the separate security workflow.
 

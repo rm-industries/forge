@@ -169,15 +169,7 @@ describe('generator consumer verification contract', () => {
   it('bootstraps once per runtime and reuses the packaged CLI and primary artifacts', () => {
     expect(dependencies(job(generator, 'consumer-compatibility'))).toEqual(['package']);
     expect(commands(generator).filter((command) => command.includes('--node-version "$NODE_MAJOR"'))).toHaveLength(1);
-    for (const consumer of [
-      'quality',
-      'dependency-audit',
-      'validate-build',
-      'browser',
-      'lighthouse',
-      'security',
-      'syntax',
-    ]) {
+    for (const consumer of ['quality', 'validate-build', 'browser', 'lighthouse', 'security', 'syntax']) {
       expect(dependencies(job(generator, consumer))).toEqual(['consumer-compatibility']);
       download(generator, consumer, 'consumer-source', '${{ runner.temp }}/consumer-artifacts');
       expect(steps(generator, consumer).some((step) => step.run?.includes('npm run build'))).toBe(false);

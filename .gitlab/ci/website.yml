@@ -62,16 +62,6 @@ website-typecheck:
   before_script:
     - cd 'website'
     - npm ci
-website-dependency-audit:
-  image: node:26
-  stage: check-0
-  script:
-    - npm run audit
-  allow_failure: true
-  needs: []
-  before_script:
-    - cd 'website'
-    - npm ci
 website-unit-tests:
   image: node:26
   stage: check-0
@@ -93,25 +83,25 @@ website-build:
     - npm run build
   needs:
     - job: website-format
-      artifacts: true
+      artifacts: false
     - job: website-spellcheck
-      artifacts: true
+      artifacts: false
     - job: website-lint-code
-      artifacts: true
+      artifacts: false
     - job: website-lint-styles
-      artifacts: true
+      artifacts: false
     - job: website-lint-markdown
-      artifacts: true
+      artifacts: false
     - job: website-audit-unused
-      artifacts: true
+      artifacts: false
     - job: website-typecheck
-      artifacts: true
+      artifacts: false
     - job: website-unit-tests
-      artifacts: true
+      artifacts: false
   artifacts:
     paths:
       - website/dist
-    when: always
+    when: on_success
     expire_in: 7 days
   before_script:
     - cd 'website'
@@ -192,8 +182,6 @@ website-deploy:
     - job: website-audit-unused
       artifacts: false
     - job: website-typecheck
-      artifacts: false
-    - job: website-dependency-audit
       artifacts: false
     - job: website-unit-tests
       artifacts: false

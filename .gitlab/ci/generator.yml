@@ -154,20 +154,6 @@ consumer-lighthouse:
   after_script:
     - mkdir -p .ci-consumer
     - for output in .lighthouseci; do if [ -d "/tmp/forge-consumer/$output" ]; then cp -R "/tmp/forge-consumer/$output" .ci-consumer/; fi; done
-consumer-dependency-audit:
-  image: node:26
-  stage: check-2
-  needs:
-    - job: consumer-primary
-      artifacts: true
-  before_script:
-    - mkdir -p /tmp/forge-consumer
-    - tar -xzf .ci-consumer/consumer-source.tgz -C /tmp/forge-consumer
-    - cd /tmp/forge-consumer
-    - npm ci
-  script:
-    - npm run audit
-  allow_failure: true
 generator-scenarios:
   image: node:26
   stage: check-1

@@ -7,8 +7,8 @@ so each required result has one stable purpose.
 
 Required checks are configured in GitHub repository settings. Use the individual
 tool, package and consumer job names, including each compatibility lane.
-Tool names are prefixed to distinguish them from website checks. Advisory audits
-and path-filtered website/automation jobs are not globally required.
+Tool names are prefixed to distinguish them from website checks. Path-filtered
+website/automation jobs are not globally required.
 
 After the CI refactor merges, replace the legacy `Project` requirement with those
 individual checks as a one-time repository administration step. Derive the names
@@ -88,12 +88,12 @@ security` when it finds an insecure workflow;
 - Dependabot alerts use the repository dependency graph as the canonical view of
   vulnerable npm dependencies;
 - dependency review fails on newly introduced high or critical vulnerabilities,
-  matching generated consumer CI; branch protection controls merge enforcement; and
-- root, template, and website dependency-audit jobs retain audit output and job
-  summaries but tolerate findings during pull-request sequencing.
+  matching generated consumer CI; branch protection controls merge enforcement.
 
-This separation allows two independently owned lockfiles or dependency paths to
-be remediated in sequence. It does not waive release security policy. Package
+Normal project, generator, website and generated consumer CI do not run dependency
+vulnerability audit jobs. The unused-code audit remains a correctness check.
+
+This separation does not waive release security policy. Package
 publication runs the root audit explicitly and also runs the standalone template
 audit before publishing `create-forge`. Repository checkpoint releases require
 the documented root, template, and website audits to pass.

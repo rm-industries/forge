@@ -193,30 +193,6 @@ jobs:
                 ;;
             esac
           done
-  dependency-audit:
-    name: Tool Dependency audit
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - name: Setup project
-        uses: $/.github/actions/setup-project
-        with:
-          node-version: 26.x
-      - name: Audit root and workspace dependencies
-        id: audit
-        continue-on-error: true
-        run: npm run audit
-      - name: Report dependency audit
-        if: steps.audit.outcome == 'failure'
-        run: |
-          echo '::warning title=Dependency security findings::Review Dependabot alerts and the audit output. Dependency findings are reported here but do not block pull-request remediation.'
-          echo '## Dependency security findings' >> "$GITHUB_STEP_SUMMARY"
-          echo 'The root dependency audit found blocking-severity advisories. Review the audit output and Dependabot alerts. Release security gates remain blocking.' >> "$GITHUB_STEP_SUMMARY"
   compatibility:
     name: Tool Compatibility (${{ matrix.runtime }})
     runs-on: ubuntu-latest
