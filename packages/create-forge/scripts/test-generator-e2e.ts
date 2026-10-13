@@ -300,6 +300,9 @@ try {
       url: 'https://example-site.pages.dev',
     }),
   ]);
+  const generatorMetadata = JSON.parse(await readFile(join(packageDirectory, 'package.json'), 'utf8')) as {
+    devDependencies: Record<string, string>;
+  };
   const cloudflareMetadata = JSON.parse(await readFile(join(cloudflareDirectory, 'package.json'), 'utf8')) as {
     devDependencies: Record<string, string>;
   };
@@ -309,6 +312,7 @@ try {
   const wrangler = cloudflareLock.packages['node_modules/wrangler'];
   if (
     !cloudflareMetadata.devDependencies.wrangler ||
+    cloudflareMetadata.devDependencies.wrangler !== generatorMetadata.devDependencies.wrangler ||
     cloudflareLock.packages['']?.devDependencies?.wrangler !== cloudflareMetadata.devDependencies.wrangler ||
     !wrangler?.version ||
     !wrangler.integrity ||

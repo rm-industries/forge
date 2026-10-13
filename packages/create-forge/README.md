@@ -114,6 +114,9 @@ its branch restrictions. On GitLab, use masked, protected, environment-scoped va
 for the deployment environment and protect its source branch. Do not expose the
 token to pull/merge requests or validation jobs. The smoke job needs no token.
 
+Wrangler's bootstrap version range comes from create-forge's development dependencies,
+maintained by Forge's existing Dependabot configuration and captured during packaging.
+
 When Cloudflare is selected, Forge adds Wrangler to the site's development dependencies
 and asks npm to resolve the site's lockfile. This requires registry access even with
 `--no-install`; that flag skips dependency installation, not lockfile resolution.
