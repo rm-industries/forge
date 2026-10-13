@@ -55,3 +55,11 @@ test('synchronizes and releases a generator patch behind normal required checks'
     'prerelease(process.env.CONTENT_MODEL)',
   );
 });
+
+test('packs the planned release instead of inferring a package from the triggering branch', () => {
+  const pack = release.jobs.prepare.steps.find((step: { name: string }) => step.name === 'Pack release artifact');
+  expect(pack.env.RELEASE_TAG).toBe('${{ steps.plan.outputs.release-tag }}');
+  expect(pack.run).toContain('--tag "$RELEASE_TAG"');
+  expect(pack.run).not.toContain('GITHUB_REF_NAME');
+  expect(pack.env).not.toHaveProperty('INPUT_PACKAGE');
+});
