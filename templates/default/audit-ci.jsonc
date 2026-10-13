@@ -3,6 +3,13 @@
   "high": true,
   "allowlist": [
     {
+      "GHSA-vfj7-8cjw-p6xm": {
+        "active": true,
+        "expiry": "2026-11-12",
+        "notes": "Development-only lint/glob tools use repository-controlled patterns; no published fix exists. Do not expose these tools to untrusted pattern input. Reassess or remove this exception by expiry.",
+      },
+    },
+    {
       "GHSA-jmr9-qjv8-65gv": {
         "active": true,
         "expiry": "2026-11-30",
