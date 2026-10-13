@@ -3,6 +3,7 @@ import { Command, CommanderError, Option } from 'commander';
 import type { GeneratorOptions, ProvidedOptions } from './options';
 import { clackPrompts, type PromptAdapter } from './prompts';
 import { CancellationError, resolveOptions } from './resolve-options';
+import { InputError } from './validation';
 
 export type CliResult = { output: string; exitCode: number; options?: GeneratorOptions };
 export type CliContext = { interactive?: boolean; prompts?: PromptAdapter };
@@ -20,6 +21,18 @@ const parseArguments = (args: readonly string[], version: string) => {
     .option('--ci-prefix <name>', 'workflow filename prefix (defaults to the relative project directory)')
     .option('--ci-providers <providers>', 'comma-separated CI providers: github,gitlab (default: github)')
     .option('--primary-ci <provider>', 'primary CI provider (defaults to github when enabled)')
+    .option(
+      '--deployment <json>',
+      'deployment environment JSON (repeatable; native Pages only)',
+      (value: string, previous: unknown[]) => {
+        try {
+          return [...previous, JSON.parse(value) as unknown];
+        } catch {
+          throw new InputError('--deployment requires a valid JSON object');
+        }
+      },
+      [],
+    )
     .option('--node-version <major>', 'Node.js major for generated CI: 22,24,26 (default: 26)')
     .option('--name <name>', 'npm package name (defaults to the directory basename)')
     .option('--site-name <name>', 'site name')
@@ -49,6 +62,7 @@ const parseArguments = (args: readonly string[], version: string) => {
   try {
     program.parse(args, { from: 'user' });
   } catch (error) {
+    if (error instanceof InputError) return { output: `error: ${error.message}\n`, exitCode: 1 } as const;
     if (error instanceof CommanderError) return { output, exitCode: error.exitCode } as const;
     throw error;
   }
@@ -67,6 +81,7 @@ const parseArguments = (args: readonly string[], version: string) => {
     ciPrefix: raw.ciPrefix,
     ciProviders: raw.ciProviders?.split(',').map((value: string) => value.trim()),
     primaryCi: raw.primaryCi,
+    deployments: raw.deployment.length ? raw.deployment : undefined,
     nodeVersion: raw.nodeVersion,
     packageName: raw.name,
     siteName: raw.siteName,

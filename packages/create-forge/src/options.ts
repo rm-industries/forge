@@ -1,9 +1,11 @@
+import type { DeploymentEnvironment } from './ci/deployment.ts';
 export type GeneratorOptions = {
   destination: string;
   repositoryRoot: string;
   ciPrefix?: string;
   ciProviders?: Array<'github' | 'gitlab'>;
   nodeVersion?: string;
+  deployments?: DeploymentEnvironment[];
   primaryCi?: 'github' | 'gitlab';
   packageName: string;
   siteName: string;
@@ -16,8 +18,8 @@ export type GeneratorOptions = {
 };
 
 export type ProvidedOptions = {
-  [Key in keyof GeneratorOptions]?: GeneratorOptions[Key] | undefined;
-} & { yes: boolean };
+  [Key in keyof Omit<GeneratorOptions, 'deployments'>]?: GeneratorOptions[Key] | undefined;
+} & { yes: boolean; deployments?: unknown[] };
 
 export const defaultDescription = 'A content-driven website built with Forge';
 export const defaultUrl = 'https://example.com';

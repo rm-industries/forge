@@ -1,3 +1,4 @@
+import { resolveDeployments } from './ci/deployment.ts';
 import { generationOptionsSchema } from './ci/generation-options.ts';
 import { validateCiPrefix } from './ci/paths';
 import {
@@ -66,6 +67,8 @@ export const resolveOptions = async (
     throw new InputError('--ci-providers must be a non-empty list of unique providers: github,gitlab');
   if (provided.primaryCi !== undefined && !providers.data.includes(provided.primaryCi))
     throw new InputError('--primary-ci must be one of the enabled CI providers');
+  const primary = provided.primaryCi ?? (providers.data.includes('github') ? 'github' : 'gitlab');
+  const deployments = resolveDeployments(provided.deployments, primary);
   if (!interactive && !useDefaults && !hasEveryExplicitValue(provided)) {
     throw new InputError(
       'Non-interactive use requires --yes or explicit values for every generator option. Run create-forge --help for details.',
@@ -156,6 +159,7 @@ export const resolveOptions = async (
   return {
     destination,
     repositoryRoot,
+    ...(provided.deployments === undefined ? {} : { deployments }),
     packageName,
     siteName,
     description,

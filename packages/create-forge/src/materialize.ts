@@ -15,6 +15,7 @@ import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, parse, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { resolveDeployments } from './ci/deployment.ts';
 import { generationOptionsSchema } from './ci/generation-options.ts';
 import { deriveCiPrefix, validateCiPrefix, workflowPath } from './ci/paths';
 import type { GeneratorOptions } from './options';
@@ -188,6 +189,7 @@ const customizeTemplate = async (
     repositoryRoot: relative(projectRoot, repositoryRoot).split(sep).join('/') || '.',
     providers,
     nodeVersion: options.nodeVersion,
+    deployments: options.deployments,
     primary: options.primaryCi ?? (providers.includes('github') ? 'github' : 'gitlab'),
     securityMinute: scheduleMinutes.security,
     automationMinute: scheduleMinutes.automation,
@@ -210,6 +212,8 @@ const customizeTemplate = async (
 };
 
 export const materializeProject = async (options: GeneratorOptions, context: MaterializationContext) => {
+  const providers = options.ciProviders ?? ['github'];
+  resolveDeployments(options.deployments, options.primaryCi ?? (providers.includes('github') ? 'github' : 'gitlab'));
   const cwd = context.cwd ?? process.cwd();
   const projectRoot = resolveDestination(options.destination, cwd);
   const repositoryRoot = resolveDestination(options.repositoryRoot, cwd);
