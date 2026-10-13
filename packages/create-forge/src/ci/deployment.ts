@@ -37,16 +37,28 @@ const deploymentUrlSchema = z
     );
   }, 'Invalid deployment URL');
 
-export const deploymentEnvironmentSchema = z.strictObject({
+const environmentFields = {
   name: z.string().regex(environmentNamePattern, 'Invalid deployment environment name').max(80),
   sourceBranch: sourceBranchSchema,
-  target: z.enum(['github-pages', 'gitlab-pages']),
-  url: deploymentUrlSchema.optional(),
-});
+};
+const cloudflareProjectNamePattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const deploymentEnvironmentSchema = z.discriminatedUnion('target', [
+  z.strictObject({
+    ...environmentFields,
+    target: z.enum(['github-pages', 'gitlab-pages']),
+    url: deploymentUrlSchema.optional(),
+  }),
+  z.strictObject({
+    ...environmentFields,
+    target: z.literal('cloudflare-pages'),
+    project: z.string().regex(cloudflareProjectNamePattern, 'Invalid Cloudflare deployment project').max(58),
+    url: deploymentUrlSchema,
+  }),
+]);
 export type DeploymentEnvironment = z.infer<typeof deploymentEnvironmentSchema>;
 export const deploymentPlanSchema = z
   .array(deploymentEnvironmentSchema)
-  .max(1, 'Native Pages supports one deployment environment in this iteration');
+  .max(1, 'This iteration supports one deployment environment');
 
 export function resolveDeployments(
   input: unknown[] | undefined,
@@ -57,7 +69,10 @@ export function resolveDeployments(
   const result = deploymentPlanSchema.safeParse(input);
   if (!result.success)
     throw new Error(`Invalid deployment: ${result.error.issues.map((issue) => issue.message).join('; ')}`);
-  if (result.data.length && (!primary || result.data[0]!.target !== `${primary}-pages`))
+  if (
+    result.data.length &&
+    (!primary || (result.data[0]!.target !== 'cloudflare-pages' && result.data[0]!.target !== `${primary}-pages`))
+  )
     throw new Error('Deployment target requires the matching primary CI provider');
   return result.data;
 }

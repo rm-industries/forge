@@ -1,3 +1,9 @@
+import {
+  cloudflareDeployCommand,
+  cloudflareProjectCheckCommand,
+  installCloudflareTool,
+  verifyCloudflareArtifact,
+} from './cloudflare.ts';
 import { resolveDeployments } from './deployment.ts';
 import type { CiGenerationOptions } from './generation-options.ts';
 import { createGithubExtras } from './github-extra.ts';
@@ -34,7 +40,7 @@ export function createGithubWorkflows(config: CiGenerationOptions, pins: ActionR
       with: {
         'node-version': node,
         // Additional deployment branches need independent installs rather than shared publishing caches.
-        ...(deployment && deployment.sourceBranch !== 'main'
+        ...(deployment && (deployment.target === 'cloudflare-pages' || deployment.sourceBranch !== 'main')
           ? { 'package-manager-cache': false }
           : { cache: 'npm', 'cache-dependency-path': path('package-lock.json') }),
       },
@@ -101,6 +107,53 @@ export function createGithubWorkflows(config: CiGenerationOptions, pins: ActionR
     }
     if (id === 'smoke-deployed') job.steps = [...setup(config.nodeVersion), ...job.steps];
     jobs[id] = githubJobSchema.parse(job);
+  }
+  if (deployment?.target === 'cloudflare-pages') {
+    const enabled = config.primary === 'github' ? deployCondition : false;
+    jobs.deploy = githubJobSchema.parse({
+      name: 'Deploy Cloudflare Pages',
+      needs: Object.keys(plan),
+      if: enabled,
+      'runs-on': 'ubuntu-latest',
+      permissions: { contents: 'read' },
+      environment: { name: deployment.name, url: deployment.url },
+      steps: [
+        checkout,
+        {
+          uses: pins('actions/setup-node').ref,
+          with: { 'node-version': config.nodeVersion, 'package-manager-cache': false },
+        },
+        { uses: pins('actions/download-artifact').ref, with: { name: 'build-dist', path: path('dist') } },
+        { name: 'Verify validated artifact', run: verifyCloudflareArtifact },
+        { name: 'Install locked project dependencies', run: installCloudflareTool },
+        {
+          name: 'Verify existing Cloudflare project',
+          env: {
+            CLOUDFLARE_ACCOUNT_ID: '${{ secrets.CLOUDFLARE_ACCOUNT_ID }}',
+            CLOUDFLARE_API_TOKEN: '${{ secrets.CLOUDFLARE_API_TOKEN }}',
+          },
+          run: cloudflareProjectCheckCommand(deployment),
+        },
+        {
+          name: 'Deploy Cloudflare Pages',
+          env: {
+            CLOUDFLARE_ACCOUNT_ID: '${{ secrets.CLOUDFLARE_ACCOUNT_ID }}',
+            CLOUDFLARE_API_TOKEN: '${{ secrets.CLOUDFLARE_API_TOKEN }}',
+            WRANGLER_SEND_METRICS: 'false',
+          },
+          run: cloudflareDeployCommand(deployment),
+        },
+      ],
+    });
+    const smoke = structuredClone(githubExtras.pages['smoke-deployed']!);
+    smoke.if = enabled;
+    smoke.steps = [...setup(config.nodeVersion), ...smoke.steps];
+    for (const step of smoke.steps) {
+      if (step.env?.DEPLOYMENT_URL) step.env.DEPLOYMENT_URL = deployment.url;
+      if ('with' in step && typeof step.with?.path === 'string')
+        step.with.path = step.with.path.split('\n').map(path).join('\n');
+    }
+    jobs['smoke-deployed'] = githubJobSchema.parse(smoke);
   }
   const base = (name: string): Omit<GithubWorkflow, 'jobs'> => ({
     name: `${config.prefix ? `${config.prefix}: ` : ''}${name}`,

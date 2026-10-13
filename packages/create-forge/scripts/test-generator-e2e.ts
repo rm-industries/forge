@@ -283,6 +283,62 @@ try {
     throw new Error('No-install fixture did not preserve its requested setup state or next steps.');
   }
 
+  const cloudflareDirectory = join(projectsDirectory, 'cloudflare-site');
+  await runGenerator(executable, projectsDirectory, [
+    'cloudflare-site',
+    '--yes',
+    '--no-install',
+    '--no-git',
+    '--ci-providers',
+    'github,gitlab',
+    '--deployment',
+    JSON.stringify({
+      name: 'production',
+      sourceBranch: 'main',
+      target: 'cloudflare-pages',
+      project: 'example-site',
+      url: 'https://example-site.pages.dev',
+    }),
+  ]);
+  const generatorMetadata = JSON.parse(await readFile(join(packageDirectory, 'package.json'), 'utf8')) as {
+    devDependencies: Record<string, string>;
+  };
+  const cloudflareMetadata = JSON.parse(await readFile(join(cloudflareDirectory, 'package.json'), 'utf8')) as {
+    devDependencies: Record<string, string>;
+  };
+  const cloudflareLock = JSON.parse(await readFile(join(cloudflareDirectory, 'package-lock.json'), 'utf8')) as {
+    packages: Record<string, { version?: string; integrity?: string; devDependencies?: Record<string, string> }>;
+  };
+  const wrangler = cloudflareLock.packages['node_modules/wrangler'];
+  if (
+    !cloudflareMetadata.devDependencies.wrangler ||
+    cloudflareMetadata.devDependencies.wrangler !== generatorMetadata.devDependencies.wrangler ||
+    cloudflareLock.packages['']?.devDependencies?.wrangler !== cloudflareMetadata.devDependencies.wrangler ||
+    !wrangler?.version ||
+    !wrangler.integrity ||
+    (await exists(join(cloudflareDirectory, 'node_modules'))) ||
+    (await exists(join(cloudflareDirectory, 'tools', 'cloudflare')))
+  ) {
+    throw new Error('Cloudflare bootstrap must resolve Wrangler in the site lockfile without installing dependencies.');
+  }
+  await runGenerator('npm', cloudflareDirectory, ['ci', '--ignore-scripts', '--no-audit', '--no-fund']);
+  await runGenerator('npm', cloudflareDirectory, ['run', 'audit:unused']);
+  const { stdout: wranglerVersion } = await execute(
+    process.execPath,
+    [join(cloudflareDirectory, 'node_modules', 'wrangler', 'bin', 'wrangler.js'), '--version'],
+    {
+      cwd: cloudflareDirectory,
+      env: {
+        ...process.env,
+        WRANGLER_SEND_METRICS: 'false',
+        WRANGLER_LOG_PATH: join(fixtureDirectory, 'wrangler.log'),
+      },
+    },
+  );
+  if (!wranglerVersion.includes(wrangler.version)) {
+    throw new Error('The installed deployment CLI must match the resolved Wrangler version.');
+  }
+
   const conflictDirectory = join(projectsDirectory, 'conflict-site');
   await mkdir(conflictDirectory);
   await writeFile(join(conflictDirectory, 'existing.txt'), 'preserve me\n');
@@ -306,7 +362,7 @@ try {
     throw new Error('Conflict fixture did not fail safely with its existing filesystem state intact.');
   }
 
-  console.log(`Verified ${tarball} across 9 isolated generator behavior fixtures.`);
+  console.log(`Verified ${tarball} across 10 isolated generator behavior fixtures.`);
 } finally {
   await rm(fixtureDirectory, { recursive: true, force: true });
 }

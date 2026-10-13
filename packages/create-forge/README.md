@@ -77,7 +77,7 @@ URL for smoke tests. Configure custom domains on the hosting provider before
 using them. GitHub environment approval and branch restrictions are configured
 in repository settings separately; use a name that matches those settings.
 
-This first iteration accepts one native Pages environment with a matching primary
+This iteration accepts one deployment environment. Native Pages requires a matching primary
 CI: `github-pages` with GitHub or `gitlab-pages` with GitLab. Explicit deployments
 omit incompatible secondary-provider deployment jobs and explain why in generated
 comments. The default without `--deployment` retains both native Pages standby
@@ -87,9 +87,56 @@ GitLab deployments serialize using an environment/target resource group. GitHub
 project workflows for a custom source branch disable npm caching to keep
 artifact-producing installs independent.
 
-The flag is repeatable, but multiple environments, Cloudflare Pages and parallel
-GitLab Pages are rejected until their subsequent implementation reviews. A friendlier
+The flag is repeatable, but multiple environments and parallel GitLab Pages remain
+rejected until their subsequent implementation reviews. A friendlier
 input syntax can replace JSON later without introducing a retained Forge config.
+
+### Cloudflare Pages
+
+Cloudflare Pages can use either GitHub or GitLab as primary CI:
+
+```sh
+npm create @rm-industries/forge website -- \
+  --ci-providers github,gitlab --primary-ci github \
+  --deployment '{"name":"production","sourceBranch":"main","target":"cloudflare-pages","project":"example-site","url":"https://example-site.pages.dev"}'
+```
+
+Create the Direct Upload project in Cloudflare first. Set its production branch to
+match `sourceBranch`; otherwise Wrangler creates a preview deployment instead of
+updating the project's production URL. Configure a custom domain before using it
+as `url`. An explicit public URL is required for Cloudflare in this iteration and
+sets the site's canonical build path as well as the smoke-test URL.
+
+Configure `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` in the primary CI. Use a
+token with Cloudflare Pages Edit permission scoped to the intended account. On
+GitHub, store these as secrets on the generated deployment environment and configure
+its branch restrictions. On GitLab, use masked, protected, environment-scoped variables
+for the deployment environment and protect its source branch. Do not expose the
+token to pull/merge requests or validation jobs. The smoke job needs no token.
+
+Wrangler's bootstrap version range comes from create-forge's development dependencies,
+maintained by Forge's existing Dependabot configuration and captured during packaging.
+
+When Cloudflare is selected, Forge adds Wrangler to the site's development dependencies
+and asks npm to resolve the site's lockfile. This requires registry access even with
+`--no-install`; that flag skips dependency installation, not lockfile resolution.
+If resolution fails, Forge restores the files it changed. The existing npm Dependabot
+entry covers Wrangler along with the site's other dependencies. A Wrangler-only Knip
+exclusion accounts for the deployment job invoking its locked executable by path.
+
+Deployment installs the locked site dependencies with lifecycle scripts disabled,
+then uses Wrangler to upload the validated build artifact without rebuilding.
+
+Both generated CIs contain the Cloudflare deploy and smoke jobs; the secondary CI
+keeps them disabled with native conditions. To switch, enable its branch conditions
+and disable the previous primary's deployment conditions. GitHub's publishing
+workflow disables npm caching; GitLab serializes deployments per environment/project.
+Wrangler metrics are disabled. The deploy job checks that the Pages project already exists as Direct Upload and
+its production branch matches before uploading. Forge does not create or reconfigure projects.
+
+See [Cloudflare Direct Upload](https://developers.cloudflare.com/pages/get-started/direct-upload/)
+for project setup and [Direct Upload from CI](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/)
+for credentials.
 
 Generated projects receive validated YAML that they own and edit directly. CI
 builders and Zod schemas stay internal to create-forge; no CI TypeScript, retained
@@ -126,8 +173,10 @@ npm run test:generator:e2e
 ```
 
 This exercises default, fully specified, scoped-name, current-directory,
-nested-project, GitLab-only, combined-provider, no-install and conflict scenarios
-in temporary directories. The default and nested scenarios verify installation;
+nested-project, GitLab-only, combined-provider, no-install, Cloudflare and conflict scenarios
+in temporary directories. The Cloudflare scenario resolves dependencies through the registry,
+verifies a locked install and unused-dependency checks, and runs the installed Wrangler
+version command without accessing Cloudflare. The default and nested scenarios verify installation;
 conflicts must preserve existing files. The nested custom-URL scenario gets one
 targeted production build and artifact validation, without repeating the full
 consumer quality suite. CI supplies the already packaged CLI

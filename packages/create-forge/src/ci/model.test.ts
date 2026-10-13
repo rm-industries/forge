@@ -293,3 +293,48 @@ test('disables shared npm caches when project artifacts run on a custom deployme
     expect(options).not.toHaveProperty('cache');
   }
 });
+
+test.each(['github', 'gitlab'] as const)(
+  'generates Cloudflare deploy and smoke jobs with %s as sole publisher',
+  (primary) => {
+    const selected = generationOptionsSchema.parse({
+      ...config,
+      primary,
+      deployments: [
+        {
+          name: 'production',
+          sourceBranch: 'main',
+          target: 'cloudflare-pages',
+          project: 'example-site',
+          url: 'https://example.com',
+        },
+      ],
+    });
+    const github = createGithubWorkflows(selected, pins).project;
+    const gitlab = createGitlabPipeline(selected);
+    expect(github.jobs.deploy).toBeDefined();
+    expect(gitlab.deploy).toBeDefined();
+    expect(github.jobs.deploy!.if).toBe(
+      primary === 'github' ? "github.event_name == 'push' && github.ref == 'refs/heads/main'" : false,
+    );
+    expect(gitlab.deploy).toHaveProperty(
+      primary === 'gitlab' ? 'rules.0.if' : 'rules.0.when',
+      primary === 'gitlab'
+        ? '$CI_COMMIT_BRANCH == "main" && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "parent_pipeline")'
+        : 'never',
+    );
+    expect(github.jobs.deploy!.permissions).toEqual({ contents: 'read' });
+    expect(github.jobs.deploy!.needs).toEqual(Object.keys(siteWork));
+    expect(
+      github.jobs.deploy!.steps.some((step) => 'uses' in step && step.uses.startsWith('actions/download-artifact@')),
+    ).toBe(true);
+    const commands = github.jobs.deploy!.steps.flatMap((step) => ('run' in step ? [step.run] : [])).join('\n');
+    expect(commands).toContain("--project-name 'example-site'");
+    expect(commands).toContain('node_modules/wrangler/bin/wrangler.js');
+    expect(commands).not.toContain('npm run build');
+    expect(gitlab.deploy).not.toHaveProperty('pages');
+    expect(gitlab.deploy).toHaveProperty('resource_group', 'production-example-site');
+    expect(gitlab['smoke-deployed']).toHaveProperty('variables.DEPLOYMENT_URL', 'https://example.com');
+    expect(github.jobs['smoke-deployed']!.steps.some((step) => step.env?.CLOUDFLARE_API_TOKEN)).toBe(false);
+  },
+);
