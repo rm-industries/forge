@@ -128,3 +128,11 @@ by source branch (or pull/merge-request target branch). Named deployment and smo
 jobs consume that branch's validated artifact and remain gated by primary CI.
 Explicit URLs and unique names, branches and destinations prevent overwrites.
 See [multiple environments](../packages/create-forge/README.md#multiple-deployment-environments).
+
+## Consumer deployment guide
+
+Bootstrap fills `docs/deployment.md` with the selected plan and links to the generated
+CI definitions, including repository-level paths for nested sites. Only selected
+providers get setup instructions. The guide explains environment protection, secret
+scope, Cloudflare Direct Upload prerequisites and GitLab parallel Pages requirements.
+It is documentation to edit alongside the YAML, not configuration for future regeneration.

@@ -26,8 +26,10 @@ The generated documentation is organized by task:
 - [Quality checks, dependency updates, and troubleshooting](docs/guides/quality-and-troubleshooting.md)
   explains the validation layers, common failures, Dependabot review, and safe
   support requests.
-- [GitHub Pages deployment](docs/github-pages.md) covers project sites, custom
-  domains, environment protection, and deployment diagnosis.
+- [Deployment setup](docs/deployment.md) records the selected environments, primary
+  CI, hosting prerequisites, credential scope, and how to edit deployment behavior.
+- [GitHub Pages details](docs/github-pages.md) covers project sites, custom domains,
+  environment protection, and deployment diagnosis for GitHub Pages users.
 - [Accessibility review](docs/accessibility-checklist.md) and the
   [Lighthouse performance budget](docs/performance-budget.md) record the
   generated baseline and the manual checks projects must maintain.
