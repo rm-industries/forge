@@ -62,6 +62,9 @@ export async function writeCi(
     if (config.deployments?.some((deployment) => deployment.target === 'cloudflare-pages'))
       document.commentBefore +=
         '\n Cloudflare uses the locked site Wrangler dependency and environment-scoped CI variables; only the primary CI deploys.\n To switch CI, enable the selected deployment rules and disable the previous primary jobs.';
+    if (config.deployments?.some((deployment) => deployment.target === 'gitlab-pages' && deployment.pathPrefix))
+      document.commentBefore +=
+        '\n Prefixed Pages requires GitLab Premium/Ultimate and an available parallel deployment slot.\n Pages expiry is disabled for this persistent environment; avoid prefixes that shadow existing site routes.';
     files[path] = validateCiYaml(gitlabPipelineSchema, document.toString({ lineWidth: 0 }));
   }
   for (const [path, content] of Object.entries(files)) {

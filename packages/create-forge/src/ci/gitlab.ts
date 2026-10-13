@@ -90,7 +90,12 @@ export function createGitlabPipeline(config: CiGenerationOptions, plan: WorkPlan
       needs: Object.keys(plan).map((job) => ({ job, artifacts: job === 'build' })),
       script: [`test -f ${shellQuote(`${config.directory}/dist/index.html`)}`],
       rules: deployRules,
-      pages: { publish: `${config.directory}/dist` },
+      pages: {
+        publish: `${config.directory}/dist`,
+        ...(deployment?.target === 'gitlab-pages' && deployment.pathPrefix
+          ? { path_prefix: deployment.pathPrefix, expire_in: 'never' }
+          : {}),
+      },
       environment: {
         name: config.deployments === undefined ? 'gitlab-pages' : deployment!.name,
         url: deployment?.url ?? '$CI_PAGES_URL',

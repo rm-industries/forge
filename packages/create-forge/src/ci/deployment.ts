@@ -41,13 +41,29 @@ const environmentFields = {
   name: z.string().regex(environmentNamePattern, 'Invalid deployment environment name').max(80),
   sourceBranch: sourceBranchSchema,
 };
+const pagesPathPrefixPattern = /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/;
 const cloudflareProjectNamePattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const deploymentEnvironmentSchema = z.discriminatedUnion('target', [
   z.strictObject({
     ...environmentFields,
-    target: z.enum(['github-pages', 'gitlab-pages']),
+    target: z.literal('github-pages'),
     url: deploymentUrlSchema.optional(),
   }),
+  z
+    .strictObject({
+      ...environmentFields,
+      target: z.literal('gitlab-pages'),
+      pathPrefix: z.string().regex(pagesPathPrefixPattern, 'Invalid GitLab Pages path prefix').max(63).optional(),
+      url: deploymentUrlSchema.optional(),
+    })
+    .refine(
+      (deployment) =>
+        !deployment.pathPrefix ||
+        (deployment.url !== undefined &&
+          URL.canParse(deployment.url) &&
+          new URL(deployment.url).pathname.split('/').filter(Boolean).at(-1) === deployment.pathPrefix),
+      'Prefixed GitLab Pages deployment requires a public URL ending with its path prefix',
+    ),
   z.strictObject({
     ...environmentFields,
     target: z.literal('cloudflare-pages'),

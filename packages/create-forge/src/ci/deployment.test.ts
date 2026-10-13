@@ -87,3 +87,33 @@ test('supports a configured Cloudflare project from either primary CI', () => {
     expect(() => resolveDeployments([invalid], 'github')).toThrow(invalidDeploymentMessagePattern);
   expect(() => resolveDeployments([deployment], undefined)).toThrow(invalidDeploymentMessagePattern);
 });
+
+test('accepts an explicit persistent GitLab Pages prefix with its public URL', () => {
+  const deployment = {
+    name: 'staging',
+    sourceBranch: 'dev',
+    target: 'gitlab-pages',
+    pathPrefix: 'staging',
+    url: 'https://example.gitlab.io/site/staging/',
+  };
+  expect(resolveDeployments([deployment], 'gitlab')).toEqual([deployment]);
+  for (const pathPrefix of ['', 'Staging', '.stage', 'stage.', 'a/b', '$BRANCH', 'a'.repeat(64)])
+    expect(() => resolveDeployments([{ ...deployment, pathPrefix }], 'gitlab')).toThrow(
+      invalidDeploymentMessagePattern,
+    );
+  expect(() => resolveDeployments([{ ...deployment, url: undefined }], 'gitlab')).toThrow(
+    invalidDeploymentMessagePattern,
+  );
+  expect(() => resolveDeployments([{ ...deployment, url: 'https://example.gitlab.io/site/' }], 'gitlab')).toThrow(
+    invalidDeploymentMessagePattern,
+  );
+});
+
+test('reports malformed prefixed Pages URLs as deployment validation errors', () => {
+  expect(() =>
+    resolveDeployments(
+      [{ name: 'staging', sourceBranch: 'dev', target: 'gitlab-pages', pathPrefix: 'staging', url: 'not-a-url' }],
+      'gitlab',
+    ),
+  ).toThrow(invalidDeploymentMessagePattern);
+});
