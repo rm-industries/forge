@@ -173,3 +173,43 @@ updates:
         applies-to: security-updates
         patterns:
           - '*'
+
+  - package-ecosystem: npm
+    directory: /templates/cloudflare/tools/cloudflare
+    schedule:
+      interval: weekly
+      day: monday
+      time: '05:50'
+      timezone: UTC
+    cooldown:
+      default-days: 7
+      semver-major-days: 21
+      semver-minor-days: 7
+      semver-patch-days: 3
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+    labels:
+      - dependencies
+      - npm
+    assignees:
+      - rahul0705
+    groups:
+      production-dependencies:
+        dependency-type: production
+        exclude-patterns:
+          - '@sveltia/cms'
+        update-types:
+          - minor
+          - patch
+        applies-to: version-updates
+      development-dependencies:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+        applies-to: version-updates
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - '*'

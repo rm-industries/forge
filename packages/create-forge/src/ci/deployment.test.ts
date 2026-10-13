@@ -67,3 +67,23 @@ test('rejects invalid refs, expressions and URLs at the input boundary', () => {
   ])
     expect(() => resolveDeployments([{ ...deployment, url }], 'github')).toThrow(invalidDeploymentMessagePattern);
 });
+
+test('supports a configured Cloudflare project from either primary CI', () => {
+  const deployment = {
+    name: 'production',
+    sourceBranch: 'main',
+    target: 'cloudflare-pages',
+    project: 'example-site',
+    url: 'https://example.com',
+  };
+  for (const primary of ['github', 'gitlab'] as const)
+    expect(resolveDeployments([deployment], primary)).toEqual([deployment]);
+  for (const invalid of [
+    { ...deployment, project: '' },
+    { ...deployment, project: '--option' },
+    { ...deployment, url: undefined },
+    { ...deployment, token: 'not-a-bootstrap-option' },
+  ])
+    expect(() => resolveDeployments([invalid], 'github')).toThrow(invalidDeploymentMessagePattern);
+  expect(() => resolveDeployments([deployment], undefined)).toThrow(invalidDeploymentMessagePattern);
+});

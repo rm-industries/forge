@@ -64,3 +64,11 @@ const dependabot = (await readFile(dependabotPath, 'utf8')).replace(
   `  - package-ecosystem: npm\n    directory: ${templateTokens.dependabotDirectory}`,
 );
 await writeFile(dependabotPath, dependabot);
+
+const cloudflareDirectory = join(packageDirectory, 'dist', 'cloudflare', 'tools', 'cloudflare');
+await mkdir(cloudflareDirectory, { recursive: true });
+for (const filename of ['package.json', 'package-lock.json'])
+  await cp(
+    join(repositoryRoot, 'templates', 'cloudflare', 'tools', 'cloudflare', filename),
+    join(cloudflareDirectory, filename),
+  );

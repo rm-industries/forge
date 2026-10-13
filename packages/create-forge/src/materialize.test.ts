@@ -381,3 +381,39 @@ test('rejects an invalid programmatic deployment before creating a destination',
   ).rejects.toThrow('Invalid deployment');
   await expect(access(join(fixture, options.destination))).rejects.toHaveProperty('code', 'ENOENT');
 });
+
+test('copies locked Cloudflare tooling without changing the site dependency lockfile', async () => {
+  const { fixture, template } = await createFixture();
+  const tool = join(fixture, 'cloudflare/tools/cloudflare');
+  await mkdir(tool, { recursive: true });
+  const toolManifest = { name: 'cloudflare-tool', private: true, devDependencies: { wrangler: '^4.150.0' } };
+  await writeFile(join(tool, 'package.json'), JSON.stringify(toolManifest));
+  await writeFile(
+    join(tool, 'package-lock.json'),
+    JSON.stringify({ lockfileVersion: 3, packages: { '': toolManifest } }),
+  );
+  await writeFile(
+    join(template, '.github/dependabot.yml'),
+    `version: 2\nupdates:\n  - package-ecosystem: npm\n    directory: ${templateTokens.dependabotDirectory}\n    schedule:\n      interval: weekly\n`,
+  );
+  const deployment = {
+    name: 'production',
+    sourceBranch: 'main',
+    target: 'cloudflare-pages' as const,
+    project: 'example',
+    url: 'https://example.com',
+  };
+  await materializeProject(
+    { ...options, deployments: [deployment] },
+    { cwd: fixture, templateDirectory: template, generateCi },
+  );
+  const destination = join(fixture, options.destination);
+  expect(JSON.parse(await readFile(join(destination, 'tools/cloudflare/package.json'), 'utf8'))).toEqual(toolManifest);
+  expect(JSON.parse(await readFile(join(destination, 'package.json'), 'utf8'))).not.toHaveProperty(
+    'devDependencies.wrangler',
+  );
+  expect(JSON.parse(await readFile(join(destination, 'package-lock.json'), 'utf8'))).not.toHaveProperty(
+    'packages.node_modules/wrangler',
+  );
+  expect(await readFile(join(destination, '.github/dependabot.yml'), 'utf8')).toContain('/tools/cloudflare');
+});

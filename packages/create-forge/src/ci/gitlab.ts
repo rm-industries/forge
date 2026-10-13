@@ -1,3 +1,9 @@
+import {
+  cloudflareDeployCommand,
+  cloudflareProjectCheckCommand,
+  installCloudflareTool,
+  verifyCloudflareArtifact,
+} from './cloudflare.ts';
 import { resolveDeployments } from './deployment.ts';
 import { shellQuote, type CiGenerationOptions } from './generation-options.ts';
 import { planSchema, siteWork, type WorkPlan } from './model.ts';
@@ -111,6 +117,39 @@ export function createGitlabPipeline(config: CiGenerationOptions, plan: WorkPlan
       },
     });
   }
+  if (deployment?.target === 'cloudflare-pages') {
+    jobs.deploy = gitlabJobSchema.parse({
+      image: `node:${config.nodeVersion}`,
+      stage: 'deploy',
+      resource_group: `${deployment.name}-${deployment.project}`,
+      before_script: [`cd ${shellQuote(config.directory)}`],
+      needs: Object.keys(plan).map((job) => ({ job, artifacts: job === 'build' })),
+      rules: deployRules,
+      environment: { name: deployment.name, url: deployment.url },
+      variables: { WRANGLER_SEND_METRICS: 'false' },
+      script: [
+        verifyCloudflareArtifact,
+        installCloudflareTool,
+        cloudflareProjectCheckCommand(deployment),
+        cloudflareDeployCommand(deployment),
+      ],
+    });
+    jobs['smoke-deployed'] = gitlabJobSchema.parse({
+      image: `node:${config.nodeVersion}`,
+      stage: 'smoke',
+      timeout: '10m',
+      needs: [{ job: 'deploy', artifacts: false }],
+      rules: deployRules,
+      variables: { DEPLOYMENT_URL: deployment.url },
+      script: ['test -n "$DEPLOYMENT_URL"', 'npx playwright install --with-deps chromium', 'npm run test:smoke'],
+      artifacts: {
+        paths: [`${config.directory}/playwright-report`, `${config.directory}/test-results`],
+        when: 'always',
+        expire_in: '7 days',
+        reports: { junit: `${config.directory}/test-results/smoke.xml` },
+      },
+    });
+  }
   return gitlabPipelineSchema.parse({
     workflow: {
       rules: [
@@ -123,7 +162,7 @@ export function createGitlabPipeline(config: CiGenerationOptions, plan: WorkPlan
     stages: [...new Set(Object.keys(plan).map(depth))]
       .sort((left, right) => left - right)
       .map(stageName)
-      .concat(nativePages ? ['deploy', 'smoke'] : []),
+      .concat(nativePages || deployment?.target === 'cloudflare-pages' ? ['deploy', 'smoke'] : []),
     default: { interruptible: true, before_script: [`cd ${shellQuote(config.directory)}`, 'npm ci'] },
     ...jobs,
   });

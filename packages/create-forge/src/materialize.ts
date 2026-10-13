@@ -15,6 +15,8 @@ import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, parse, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
+
 import { resolveDeployments } from './ci/deployment.ts';
 import { generationOptionsSchema } from './ci/generation-options.ts';
 import { deriveCiPrefix, validateCiPrefix, workflowPath } from './ci/paths';
@@ -198,15 +200,24 @@ const customizeTemplate = async (
 
   const dependabot = join(repositoryRoot, '.github', 'dependabot.yml');
   if (!skipped.has(dependabot)) {
-    await writeFile(
-      dependabot,
-      replaceRawToken(
-        await readFile(dependabot, 'utf8'),
-        templateTokens.dependabotDirectory,
-        dependabotDirectory,
-        'Dependabot directory',
-      ),
+    let content = replaceRawToken(
+      await readFile(dependabot, 'utf8'),
+      templateTokens.dependabotDirectory,
+      dependabotDirectory,
+      'Dependabot directory',
     );
+    if (options.deployments?.some((deployment) => deployment.target === 'cloudflare-pages')) {
+      const configuration = parseYaml(content) as { updates: Array<Record<string, unknown>> };
+      const npmUpdate = configuration.updates?.find((update) => update['package-ecosystem'] === 'npm');
+      if (!npmUpdate)
+        throw new MaterializationError('Packaged Dependabot configuration is missing its npm update entry.');
+      configuration.updates.push({
+        ...structuredClone(npmUpdate),
+        directory: `${dependabotDirectory === '/' ? '' : dependabotDirectory}/tools/cloudflare`,
+      });
+      content = stringifyYaml(configuration);
+    }
+    await writeFile(dependabot, content);
   }
   return generationOptionsSchema.parse(ciConfig);
 };
@@ -236,6 +247,16 @@ export const materializeProject = async (options: GeneratorOptions, context: Mat
     const workflow = templateWorkflowPathPattern.exec(path);
     return workflow ? { ...file, relativePath: workflowPath(workflow[1]!, ciPrefix).split('/').join(sep) } : file;
   });
+  if (options.deployments?.some((deployment) => deployment.target === 'cloudflare-pages')) {
+    for (const filename of ['package.json', 'package-lock.json']) {
+      const relativePath = join('tools', 'cloudflare', filename);
+      const source = resolve(templateDirectory, '..', 'cloudflare', relativePath);
+      const metadata = await lstat(source);
+      if (!metadata.isFile())
+        throw new MaterializationError(`Cloudflare tooling entry ${source} is not a regular file.`);
+      files.push({ source, relativePath, mode: metadata.mode });
+    }
+  }
   const skipped = new Set<string>();
   const retained: TemplateFile[] = [];
   for (const file of files) {
