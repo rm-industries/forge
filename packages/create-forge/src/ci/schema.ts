@@ -113,6 +113,7 @@ export const gitlabJobSchema = z.strictObject({
   stage: nonEmptyStringSchema,
   script: nonEmptyStringsSchema,
   before_script: z.array(nonEmptyStringSchema).optional(),
+  variables: z.record(z.string(), z.string()).optional(),
   timeout: nonEmptyStringSchema.optional(),
   rules: z.array(rule).min(1).optional(),
   pages: z.strictObject({ publish: nonEmptyStringSchema }).optional(),

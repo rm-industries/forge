@@ -187,3 +187,8 @@ test summaries, explicit Oxlint GitHub annotations, and Playwright's GitHub
 reporter. Coverage HTML remains an artifact; GitHub does not consume GitLab's
 Cobertura report declarations. No additional reporting action, service or write
 permission is required.
+
+GitLab Lighthouse jobs select Playwright Chromium with `CHROME_PATH` and set
+`LHCI_COLLECT__SETTINGS__CHROME_FLAGS=--no-sandbox` for the root user in Node
+containers. These settings are scoped to the audit jobs, including generated
+consumer pipelines.

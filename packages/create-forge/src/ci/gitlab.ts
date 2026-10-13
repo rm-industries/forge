@@ -35,8 +35,15 @@ export function createGitlabPipeline(config: CiGenerationOptions, plan: WorkPlan
       image: `node:${config.nodeVersion}`,
       stage: stage(id),
       needs: work.needs.map((job) => ({ job, artifacts: true })),
+      // Node containers run as root; scope Chrome's flag to GitLab Lighthouse jobs.
+      ...(id === 'lighthouse' ? { variables: { LHCI_COLLECT__SETTINGS__CHROME_FLAGS: '--no-sandbox' } } : {}),
       script: [
         ...(work.browsers.length ? [`npx playwright install --with-deps ${work.browsers.join(' ')}`] : []),
+        ...(id === 'lighthouse'
+          ? [
+              `export CHROME_PATH="$(node --input-type=module -e 'import { chromium } from "@playwright/test"; process.stdout.write(chromium.executablePath());')"`,
+            ]
+          : []),
         ...commands,
       ],
       ...(work.artifacts.length || reports

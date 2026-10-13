@@ -169,6 +169,9 @@ consumer-lighthouse:
   after_script:
     - mkdir -p .ci-consumer
     - for output in .lighthouseci; do if [ -d "/tmp/forge-consumer/$output" ]; then cp -R "/tmp/forge-consumer/$output" .ci-consumer/; fi; done
+  # Node containers run Chrome as root.
+  variables:
+    LHCI_COLLECT__SETTINGS__CHROME_FLAGS: --no-sandbox
 generator-scenarios:
   image: node:26
   stage: build
