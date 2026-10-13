@@ -93,9 +93,8 @@ Security analysis stays separate from project correctness checks:
 Normal project, generator, website and generated consumer CI do not run dependency
 vulnerability audit jobs. The unused-code audit remains a correctness check.
 
-This separation does not waive release security policy. Package
-publication runs the root audit explicitly and also runs the standalone template
-audit before publishing `create-forge`. Repository checkpoint releases require
+Package publication does not run dependency vulnerability audits; Dependabot
+and dependency review handle dependency findings. Repository checkpoint releases require
 the documented root, template, and website audits to pass.
 
 Both policies reject high and critical vulnerabilities. An exception must name

@@ -184,13 +184,12 @@ test('mirrors supported Linux Node versions without multiplying one-time quality
   for (const dependency of website['website-build'].needs) expect(dependency.artifacts).toBe(false);
 });
 
-test('retains blocking publication audits while normal mirrored workflows omit vulnerability audit jobs', () => {
+test('omits dependency vulnerability audits from publication and normal mirrored workflows', () => {
   const release = read('../.github/workflows/package-release.yml');
   const commands = Object.values(release.jobs)
     .flatMap((job) => (job as { steps: { run?: string }[] }).steps.flatMap((step) => (step.run ? [step.run] : [])))
     .join('\n');
-  expect(commands).toContain('npm run audit');
-  expect(commands).toContain('npm run audit --prefix templates/default');
+  expect(commands).not.toContain('npm run audit');
   for (const workflow of [githubProject, githubGenerator, githubWebsite])
     expect(workflow.jobs).not.toHaveProperty('dependency-audit');
 });

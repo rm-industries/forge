@@ -33,11 +33,8 @@ test('keeps manual publication gated while reviewed automatic patches use their 
   const tag = steps.find((step) => step.name === 'Ensure immutable package tag')!;
   expect(tag.run).toContain('test "$existing_sha" = "$GITHUB_SHA"');
   expect(tag.run).not.toContain('--force');
-  const security = release.jobs.prepare.steps.find(
-    (step: { name: string }) => step.name === 'Run release security gate',
-  );
-  expect(security.run).toContain('[[ "$WORKSPACE" == \'packages/create-forge\' ]]');
-  expect(security.run).toContain('npm run audit --prefix templates/default');
+  const preparation = release.jobs.prepare.steps as { run?: string }[];
+  expect(preparation.some((step) => step.run?.includes('npm run audit'))).toBe(false);
 });
 
 test('synchronizes and releases a generator patch behind normal required checks', () => {

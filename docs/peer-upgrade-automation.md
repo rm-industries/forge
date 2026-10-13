@@ -107,7 +107,7 @@ baseline release. Reviewed dependency updates, including action pins mirrored
 from Forge workflows at build time, may accompany these patches; the workflow
 job definitions themselves are not shipped to consumers. Stable generator
 publication excludes prerelease template
-pins. Every publication retains the quality, audit, tarball identity, registry
+pins. Every publication retains the quality, tarball identity, registry
 integrity and provenance gates. Existing tags are verified rather than replaced.
 
 The first create-forge baseline is prepared separately as 1.1.0 to account for the
@@ -140,7 +140,7 @@ See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/).
 Review the weekly compatibility PR and merge it after its checks pass. The
 publication, stable template PR auto-merge and generator publication then proceed
 without further publication approvals. An incompatible peer, failed consumer
-check, failing audit, missing baseline or registry mismatch stops the chain and
+check, missing baseline or registry mismatch stops the chain and
 leaves the relevant workflow/PR for investigation. Retry failed workflow jobs for
 an approved commit; immutable tags and registry integrity checks make publication
 retries safe.
