@@ -36,7 +36,9 @@ export function createGitlabPipeline(config: CiGenerationOptions, plan: WorkPlan
       stage: stage(id),
       needs: work.needs.map((job) => ({ job, artifacts: true })),
       // Node containers run as root; scope Chrome's flag to GitLab Lighthouse jobs.
-      ...(id === 'lighthouse' ? { variables: { LHCI_COLLECT__SETTINGS__CHROME_FLAGS: '--no-sandbox' } } : {}),
+      ...(id === 'lighthouse'
+        ? { variables: { LHCI_COLLECT__SETTINGS__CHROME_FLAGS: '--no-sandbox --disable-dev-shm-usage --disable-gpu' } }
+        : {}),
       script: [
         ...(work.browsers.length ? [`npx playwright install --with-deps ${work.browsers.join(' ')}`] : []),
         ...(id === 'lighthouse'
