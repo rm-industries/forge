@@ -53,15 +53,15 @@
     "verify:template:static": "node scripts/verify-template-static-quality.ts"
   },
   "devDependencies": {
-    "@sveltia/cms": "^0.228.0",
+    "@sveltia/cms": "^0.229.0",
     "@types/node": "^22.20.1",
     "@types/semver": "^7.8.0",
-    "astro": "^7.3.5",
+    "astro": "^7.3.8",
     "audit-ci": "7.1.0",
     "cspell": "^10.3.6",
     "markdownlint-cli": "^0.49.0",
     "oxfmt": "^0.72.0",
-    "oxlint": "^1.85.0",
+    "oxlint": "^1.87.0",
     "semver": "^7.8.5",
     "tsdown": "^0.23.0",
     "typescript": "^7.0.2",
