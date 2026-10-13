@@ -91,7 +91,32 @@ The flag is repeatable, but multiple environments and parallel GitLab Pages rema
 rejected until their subsequent implementation reviews. A friendlier
 input syntax can replace JSON later without introducing a retained Forge config.
 
-### Cloudflare Pages
+### Prefixed GitLab Pages
+
+GitLab Premium or Ultimate projects with an available parallel deployment slot can
+opt in to a persistent prefixed deployment:
+
+```sh
+npm create @rm-industries/forge website -- \
+  --ci-providers github,gitlab --primary-ci gitlab \
+  --deployment '{"name":"staging","sourceBranch":"dev","target":"gitlab-pages","pathPrefix":"staging","url":"https://example.gitlab.io/site/staging/"}'
+```
+
+Use the actual Pages URL, including the project path when applicable and the final
+prefix. Forge uses this URL for the site's build paths and smoke tests. Prefixes
+must be lowercase, at most 63 characters, and start/end with a letter or digit;
+internal hyphens and periods are allowed. Forge rejects values GitLab would silently
+normalize. Avoid prefixes that shadow existing routes in the main site.
+
+The generated job uses `pages.path_prefix` and `pages.expire_in: never`, so it can
+remain deployed alongside the root site. Selecting a prefix explicitly asserts that
+your GitLab plan supports parallel Pages. Ordinary Pages remains unchanged and
+requires no paid parallel deployment feature. This increment still accepts one
+bootstrap deployment; generating several environments follows separately.
+See [GitLab parallel Pages](https://docs.gitlab.com/user/project/pages/parallel_deployments/)
+for plan requirements, namespace slots, and route conflicts.
+
+## Cloudflare Pages
 
 Cloudflare Pages can use either GitHub or GitLab as primary CI:
 

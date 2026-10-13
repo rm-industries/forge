@@ -117,7 +117,13 @@ export const gitlabJobSchema = z.strictObject({
   variables: z.record(z.string(), z.string()).optional(),
   timeout: nonEmptyStringSchema.optional(),
   rules: z.array(rule).min(1).optional(),
-  pages: z.strictObject({ publish: nonEmptyStringSchema }).optional(),
+  pages: z
+    .strictObject({
+      publish: nonEmptyStringSchema,
+      path_prefix: nonEmptyStringSchema.optional(),
+      expire_in: nonEmptyStringSchema.optional(),
+    })
+    .optional(),
   environment: z.strictObject({ name: nonEmptyStringSchema, url: nonEmptyStringSchema }).optional(),
   allow_failure: z.boolean().optional(),
   needs: z.array(z.strictObject({ job: nonEmptyStringSchema, artifacts: z.boolean() })).optional(),

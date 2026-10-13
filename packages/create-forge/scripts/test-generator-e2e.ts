@@ -283,6 +283,39 @@ try {
     throw new Error('No-install fixture did not preserve its requested setup state or next steps.');
   }
 
+  const prefixedPagesDirectory = join(projectsDirectory, 'prefixed-pages');
+  const prefixedPagesUrl = 'https://example.gitlab.io/site/staging/';
+  await runGenerator(executable, projectsDirectory, [
+    'prefixed-pages',
+    '--yes',
+    '--no-install',
+    '--no-git',
+    '--ci-providers',
+    'github,gitlab',
+    '--primary-ci',
+    'gitlab',
+    '--deployment',
+    JSON.stringify({
+      name: 'staging',
+      sourceBranch: 'dev',
+      target: 'gitlab-pages',
+      pathPrefix: 'staging',
+      url: prefixedPagesUrl,
+    }),
+  ]);
+  const prefixedPipeline = parse(await readFile(join(prefixedPagesDirectory, '.gitlab-ci.yml'), 'utf8')) as {
+    deploy: { pages: { path_prefix?: string; expire_in?: string }; environment: { url: string } };
+  };
+  const prefixedSiteConfig = await readFile(join(prefixedPagesDirectory, 'src', 'config', 'site.ts'), 'utf8');
+  if (
+    prefixedPipeline.deploy.pages.path_prefix !== 'staging' ||
+    prefixedPipeline.deploy.pages.expire_in !== 'never' ||
+    prefixedPipeline.deploy.environment.url !== prefixedPagesUrl ||
+    !prefixedSiteConfig.includes(prefixedPagesUrl)
+  ) {
+    throw new Error('Prefixed Pages must preserve the persistent prefix and matching site/deployment URL.');
+  }
+
   const cloudflareDirectory = join(projectsDirectory, 'cloudflare-site');
   await runGenerator(executable, projectsDirectory, [
     'cloudflare-site',
@@ -362,7 +395,7 @@ try {
     throw new Error('Conflict fixture did not fail safely with its existing filesystem state intact.');
   }
 
-  console.log(`Verified ${tarball} across 10 isolated generator behavior fixtures.`);
+  console.log(`Verified ${tarball} across 11 isolated generator behavior fixtures.`);
 } finally {
   await rm(fixtureDirectory, { recursive: true, force: true });
 }

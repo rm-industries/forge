@@ -338,3 +338,30 @@ test.each(['github', 'gitlab'] as const)(
     expect(github.jobs['smoke-deployed']!.steps.some((step) => step.env?.CLOUDFLARE_API_TOKEN)).toBe(false);
   },
 );
+
+test('renders persistent prefixed GitLab Pages with matching smoke URL and branch gate', () => {
+  const selected = generationOptionsSchema.parse({
+    ...config,
+    primary: 'gitlab',
+    deployments: [
+      {
+        name: 'staging',
+        sourceBranch: 'dev',
+        target: 'gitlab-pages',
+        pathPrefix: 'staging',
+        url: 'https://example.gitlab.io/site/staging/',
+      },
+    ],
+  });
+  const pipeline = createGitlabPipeline(selected);
+  expect(pipeline.deploy).toHaveProperty('pages.path_prefix', 'staging');
+  expect(pipeline.deploy).toHaveProperty('pages.expire_in', 'never');
+  expect(pipeline['smoke-deployed']).toHaveProperty(
+    'variables.DEPLOYMENT_URL',
+    'https://example.gitlab.io/site/staging/',
+  );
+  expect(pipeline.deploy).toHaveProperty(
+    'rules.0.if',
+    '$CI_COMMIT_BRANCH == "dev" && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "parent_pipeline")',
+  );
+});

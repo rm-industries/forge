@@ -111,3 +111,12 @@ The deploy job installs those locked dependencies with lifecycle scripts disable
 Both providers retain native disabled deployment jobs when secondary.
 See [Cloudflare bootstrap options](../packages/create-forge/README.md#cloudflare-pages)
 for setup and switching guidance. Multiple environments remain a separate follow-up.
+
+## Persistent GitLab Pages prefixes
+
+An explicit GitLab Pages deployment can set `pathPrefix` with a matching public URL.
+This opts in to Premium/Ultimate parallel Pages and emits `pages.expire_in: never`.
+The prefix can coexist with the root site; it must not shadow a route in that site.
+The URL includes the prefix so build paths and smoke checks target the same deployment.
+Standard unprefixed Pages remains unchanged. See
+[prefixed Pages setup](../packages/create-forge/README.md#prefixed-gitlab-pages).
