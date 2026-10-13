@@ -100,3 +100,39 @@ Dependency review is available for public repositories and eligible private
 repositories with GitHub Code Security or Advanced Security enabled. Consumers
 whose repositories do not support it must disable that job in their owned YAML.
 See [GitHub's dependency review documentation](https://docs.github.com/en/code-security/concepts/supply-chain-security/dependency-review).
+
+## Native GitLab validation
+
+Forge's committed `.gitlab-ci.yml` admits merge-request pipelines and
+pushes to the default branch. Branch pushes with an open merge request are
+suppressed to avoid duplicate validation. Tags, schedules and manual pipelines
+are not admitted by this native entrypoint. Each active project, generator and
+website job has explicit admission rules: GitLab otherwise excludes jobs without
+rules from merge-request pipelines. These job rules do not broaden the entrypoint's
+allowed events.
+
+The project include always runs. Generator and website includes use their existing
+change filters. The website include watches website sources, imported documentation
+and native GitLab CI configuration; it does not watch GitHub workflow or setup-action
+changes. The generator include also watches GitHub YAML because it validates the
+consumer workflows and derives bundled action pins from those files. That is a
+generator input, not a coupling between website deployment providers.
+
+GitLab uses Linux containers for root package and generated-consumer validation.
+GitHub retains the additional platform qualification in its consumer matrix.
+Both providers reuse their own tested build artifacts for downstream checks;
+GitLab retains native test, coverage and quality reports for seven days.
+GitHub owns CodeQL, dependency review, Dependabot, actionlint and zizmor scanning.
+Those GitHub checks are not equivalent to native GitLab configuration validation;
+GitLab source scanning and dependency update automation are not added here.
+GitHub also owns website Pages deployment and package publication. Native GitLab
+Pages and deployed smoke jobs remain disabled. Deployment-provider and environment
+expansion is tracked separately in [issue #272](https://github.com/rm-industries/forge/issues/272).
+
+Before relying on a GitLab mirror, use the destination server's CI Lint with
+expanded local includes and a real Linux runner. Verify merge-request and
+default-branch push admission, duplicate-push suppression, documentation-only and
+CI-only changes, artifact reuse and inactive deployment. Forge's local schema and
+existing CI tests verify the supported configuration structure; they do not prove
+server, runner or protected-environment settings. GitHub workflow trigger filters
+and deployment permissions remain unchanged.
