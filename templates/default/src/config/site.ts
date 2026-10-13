@@ -75,8 +75,9 @@ export const defineSiteConfig = (config: SiteConfig): Readonly<SiteConfig> =>
   });
 
 // CI selects a public canonical URL; local development keeps the configured default.
-const deploymentUrl =
-  import.meta.env?.PUBLIC_SITE_URL ?? (typeof process !== 'undefined' ? process.env.PUBLIC_SITE_URL : undefined);
+export const getDeploymentUrl = (publicUrl?: string): string | undefined =>
+  publicUrl ?? (typeof process !== 'undefined' ? process.env.PUBLIC_SITE_URL : undefined);
+const deploymentUrl = getDeploymentUrl(import.meta.env?.PUBLIC_SITE_URL);
 
 export const site = defineSiteConfig({
   name: 'Forge',
