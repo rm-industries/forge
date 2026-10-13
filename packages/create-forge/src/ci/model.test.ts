@@ -232,3 +232,64 @@ describe('shared work and provider rendering', () => {
     ).toThrow('Unknown job dependency');
   });
 });
+
+test('renders an explicit native deployment environment without enabling the mirrored target', () => {
+  const githubConfig = generationOptionsSchema.parse({
+    ...config,
+    deployments: [{ name: 'staging', sourceBranch: 'dev', target: 'github-pages', url: 'https://staging.example.com' }],
+  });
+  const github = createGithubWorkflows(githubConfig, pins).project;
+  expect(github.on.push).toEqual({ branches: ['main', 'dev'] });
+  expect(github.jobs.deploy!.environment?.name).toBe('staging');
+  expect(github.jobs.deploy!.if).toContain('refs/heads/dev');
+  expect(github.jobs.deploy!.if).toContain("github.event_name == 'push'");
+  expect(createGitlabPipeline(githubConfig)).not.toHaveProperty('deploy');
+  const gitlabConfig = generationOptionsSchema.parse({
+    ...config,
+    primary: 'gitlab',
+    deployments: [{ name: 'staging', sourceBranch: 'dev', target: 'gitlab-pages', url: 'https://staging.example.com' }],
+  });
+  const gitlab = createGitlabPipeline(gitlabConfig);
+  expect(gitlab.deploy).toHaveProperty('environment.name', 'staging');
+  expect(gitlab.deploy).toHaveProperty('environment.url', 'https://staging.example.com');
+  expect(gitlab.deploy).toHaveProperty(
+    'rules.0.if',
+    '$CI_COMMIT_BRANCH == "dev" && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "parent_pipeline")',
+  );
+  expect(createGithubWorkflows(gitlabConfig, pins).project.jobs).not.toHaveProperty('deploy');
+});
+
+test('an empty explicit deployment plan generates validation only', () => {
+  const selected = generationOptionsSchema.parse({ ...config, deployments: [] });
+  expect(createGithubWorkflows(selected, pins).project.jobs).not.toHaveProperty('deploy');
+  expect(createGitlabPipeline(selected)).not.toHaveProperty('deploy');
+});
+
+test.each([
+  ['!dev', '\\!dev'],
+  ['release+site', 'release\\+site'],
+])('escapes the exact branch %s in GitHub trigger filters', (sourceBranch, filter) => {
+  const selected = generationOptionsSchema.parse({
+    ...config,
+    deployments: [{ name: 'staging', sourceBranch, target: 'github-pages' }],
+  });
+  const workflow = createGithubWorkflows(selected, pins).project;
+  expect(workflow.on.push).toEqual({ branches: ['main', filter] });
+  expect(workflow.jobs.deploy!.if).toContain(`refs/heads/${sourceBranch}`);
+});
+
+test('disables shared npm caches when project artifacts run on a custom deployment branch', () => {
+  const selected = generationOptionsSchema.parse({
+    ...config,
+    deployments: [{ name: 'staging', sourceBranch: 'dev', target: 'github-pages' }],
+  });
+  const setupOptions = Object.values(createGithubWorkflows(selected, pins).project.jobs)
+    .flatMap((job) => job.steps)
+    .filter((step) => 'uses' in step && step.uses.startsWith('actions/setup-node@'))
+    .map((step) => ('with' in step ? step.with : undefined));
+  expect(setupOptions.length).toBeGreaterThan(0);
+  for (const options of setupOptions) {
+    expect(options).toHaveProperty('package-manager-cache', false);
+    expect(options).not.toHaveProperty('cache');
+  }
+});

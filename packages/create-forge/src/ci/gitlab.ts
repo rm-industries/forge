@@ -1,3 +1,4 @@
+import { resolveDeployments } from './deployment.ts';
 import { shellQuote, type CiGenerationOptions } from './generation-options.ts';
 import { planSchema, siteWork, type WorkPlan } from './model.ts';
 import { gitlabJobSchema, gitlabPipelineSchema, type GitlabJob } from './schema.ts';
@@ -62,43 +63,54 @@ export function createGitlabPipeline(config: CiGenerationOptions, plan: WorkPlan
         : {}),
     });
   }
+  const deployment = resolveDeployments(config.deployments, config.primary)[0];
+  const nativePages = config.deployments === undefined || deployment?.target === 'gitlab-pages';
+  const sourceBranch =
+    config.deployments === undefined ? '$CI_DEFAULT_BRANCH' : JSON.stringify(deployment?.sourceBranch ?? 'main');
   const deployRules =
-    config.primary === 'gitlab'
+    config.primary === 'gitlab' && deployment
       ? [
           {
-            if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "parent_pipeline")',
+            if: `$CI_COMMIT_BRANCH == ${sourceBranch} && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "parent_pipeline")`,
           },
         ]
       : [{ when: 'never' as const }];
-  jobs.deploy = gitlabJobSchema.parse({
-    image: `node:${config.nodeVersion}`,
-    stage: 'deploy',
-    before_script: [],
-    needs: Object.keys(plan).map((job) => ({ job, artifacts: job === 'build' })),
-    script: [`test -f ${shellQuote(`${config.directory}/dist/index.html`)}`],
-    rules: deployRules,
-    pages: { publish: `${config.directory}/dist` },
-    environment: { name: 'gitlab-pages', url: '$CI_PAGES_URL' },
-    artifacts: { paths: [`${config.directory}/dist`], when: 'on_success', expire_in: '7 days' },
-  });
-  jobs['smoke-deployed'] = gitlabJobSchema.parse({
-    image: `node:${config.nodeVersion}`,
-    stage: 'smoke',
-    timeout: '10m',
-    needs: [{ job: 'deploy', artifacts: false }],
-    rules: deployRules,
-    script: [
-      'test -n "$CI_PAGES_URL"',
-      'npx playwright install --with-deps chromium',
-      'DEPLOYMENT_URL="$CI_PAGES_URL" npm run test:smoke',
-    ],
-    artifacts: {
-      paths: [`${config.directory}/playwright-report`, `${config.directory}/test-results`],
-      when: 'always',
-      expire_in: '7 days',
-      reports: { junit: `${config.directory}/test-results/smoke.xml` },
-    },
-  });
+  if (nativePages) {
+    jobs.deploy = gitlabJobSchema.parse({
+      image: `node:${config.nodeVersion}`,
+      stage: 'deploy',
+      ...(deployment ? { resource_group: `${deployment.name}-${deployment.target}` } : {}),
+      before_script: [],
+      needs: Object.keys(plan).map((job) => ({ job, artifacts: job === 'build' })),
+      script: [`test -f ${shellQuote(`${config.directory}/dist/index.html`)}`],
+      rules: deployRules,
+      pages: { publish: `${config.directory}/dist` },
+      environment: {
+        name: config.deployments === undefined ? 'gitlab-pages' : deployment!.name,
+        url: deployment?.url ?? '$CI_PAGES_URL',
+      },
+      artifacts: { paths: [`${config.directory}/dist`], when: 'on_success', expire_in: '7 days' },
+    });
+    jobs['smoke-deployed'] = gitlabJobSchema.parse({
+      image: `node:${config.nodeVersion}`,
+      stage: 'smoke',
+      timeout: '10m',
+      needs: [{ job: 'deploy', artifacts: false }],
+      rules: deployRules,
+      ...(deployment?.url ? { variables: { DEPLOYMENT_URL: deployment.url } } : {}),
+      script: [
+        deployment?.url ? 'test -n "$DEPLOYMENT_URL"' : 'test -n "$CI_PAGES_URL"',
+        'npx playwright install --with-deps chromium',
+        deployment?.url ? 'npm run test:smoke' : 'DEPLOYMENT_URL="$CI_PAGES_URL" npm run test:smoke',
+      ],
+      artifacts: {
+        paths: [`${config.directory}/playwright-report`, `${config.directory}/test-results`],
+        when: 'always',
+        expire_in: '7 days',
+        reports: { junit: `${config.directory}/test-results/smoke.xml` },
+      },
+    });
+  }
   return gitlabPipelineSchema.parse({
     workflow: {
       rules: [
@@ -111,7 +123,7 @@ export function createGitlabPipeline(config: CiGenerationOptions, plan: WorkPlan
     stages: [...new Set(Object.keys(plan).map(depth))]
       .sort((left, right) => left - right)
       .map(stageName)
-      .concat(['deploy', 'smoke']),
+      .concat(nativePages ? ['deploy', 'smoke'] : []),
     default: { interruptible: true, before_script: [`cd ${shellQuote(config.directory)}`, 'npm ci'] },
     ...jobs,
   });

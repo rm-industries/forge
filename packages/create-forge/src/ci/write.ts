@@ -23,6 +23,12 @@ export async function writeCi(
       const document = new Document(workflow);
       document.commentBefore =
         ' You own this workflow: edit jobs, paths and schedules here as your project grows.\n Dependabot updates action pins; no Forge regeneration step is required.';
+      if (name === 'project' && config.deployments !== undefined)
+        document.commentBefore +=
+          '\n Deployment environments come from bootstrap inputs; edit their branches, URLs and jobs here.';
+      if (name === 'project' && config.deployments?.some((deployment) => deployment.target !== 'github-pages'))
+        document.commentBefore +=
+          '\n Deployment is owned by the primary GitLab CI. GitHub cannot deploy the selected GitLab Pages target.';
       visit(document, {
         Pair(_key, pair) {
           if (
@@ -44,6 +50,12 @@ export async function writeCi(
     const document = new Document(createGitlabPipeline(config));
     document.commentBefore =
       ' You own this pipeline: edit jobs and rules here as your project grows.\n Review Node image versions when upgrading your project runtime.';
+    if (config.deployments !== undefined)
+      document.commentBefore +=
+        '\n Deployment environments come from bootstrap inputs; edit their branches, URLs and jobs here.';
+    if (config.deployments?.some((deployment) => deployment.target !== 'gitlab-pages'))
+      document.commentBefore +=
+        '\n Deployment is owned by the primary GitHub CI. GitLab cannot deploy the selected GitHub Pages target.';
     files[path] = validateCiYaml(gitlabPipelineSchema, document.toString({ lineWidth: 0 }));
   }
   for (const [path, content] of Object.entries(files)) {

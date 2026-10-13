@@ -109,6 +109,7 @@ const rule = z
   })
   .refine((value) => value.if !== undefined || value.when !== undefined, 'Rule requires a condition or when');
 export const gitlabJobSchema = z.strictObject({
+  resource_group: nonEmptyStringSchema.optional(),
   image: imageSchema,
   stage: nonEmptyStringSchema,
   script: nonEmptyStringsSchema,
