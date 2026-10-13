@@ -2,12 +2,13 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { maxSatisfying, satisfies, valid } from 'semver';
+import { inc, maxSatisfying, prerelease, satisfies, valid } from 'semver';
 
 const contentModelName = '@rm-industries/content-model';
 const integrationName = '@sveltia/cms';
 
 type PackageManifest = {
+  version?: string;
   dependencies?: Record<string, string>;
 };
 
@@ -86,7 +87,7 @@ export const createTemplateSyncPlan = ({
     throw new Error(`Unsupported registry provenance predicate ${provenancePredicate}.`);
   }
   const selectedIntegration = maxSatisfying(
-    integrationVersions.filter((candidate) => Boolean(valid(candidate))),
+    integrationVersions.filter((candidate) => Boolean(valid(candidate)) && !prerelease(candidate)),
     peerRange,
     { includePrerelease: true },
   );
@@ -140,6 +141,20 @@ export const applyTemplateSync = (manifest: PackageManifest, plan: TemplateSyncP
   },
 });
 
+export function prepareGeneratorPatch(manifest: PackageManifest, changelog: string, plan: TemplateSyncPlan) {
+  if (!plan.changed) return { manifest, changelog };
+  const previous = requireVersion(manifest.version, 'Generator package version');
+  const version = inc(previous, 'patch');
+  if (!version) throw new Error('Could not calculate the generator patch version.');
+  const firstRelease = changelog.indexOf('\n## ');
+  if (firstRelease < 0) throw new Error('Generator changelog has no release sections.');
+  const notes = `## ${version}\n\n- Bootstrap projects with content-model ${plan.contentModel.version} and Sveltia CMS ${plan.integration.version}.\n\n`;
+  return {
+    manifest: { ...manifest, version },
+    changelog: `${changelog.slice(0, firstRelease + 1)}${notes}${changelog.slice(firstRelease + 1)}`,
+  };
+}
+
 const argumentAfter = (args: string[], flag: string) => {
   const index = args.indexOf(flag);
   return index < 0 ? undefined : args[index + 1];
@@ -167,7 +182,16 @@ const run = async () => {
   });
 
   if (args.includes('--write') && plan.changed) {
+    const generatorPath = resolve(cwd, 'packages/create-forge/package.json');
+    const changelogPath = resolve(cwd, 'packages/create-forge/CHANGELOG.md');
+    const release = prepareGeneratorPatch(
+      JSON.parse(await readFile(generatorPath, 'utf8')) as PackageManifest,
+      await readFile(changelogPath, 'utf8'),
+      plan,
+    );
     await writeFile(manifestPath, `${JSON.stringify(applyTemplateSync(templateManifest, plan), undefined, 2)}\n`);
+    await writeFile(generatorPath, `${JSON.stringify(release.manifest, undefined, 2)}\n`);
+    await writeFile(changelogPath, release.changelog);
   }
 
   const output = `${JSON.stringify(plan, undefined, 2)}\n`;
