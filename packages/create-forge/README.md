@@ -62,6 +62,35 @@ jobs with native disabled conditions. Edit the native deployment conditions to
 enable the selected provider. Enable Pages on that host and update the canonical site
 URL before switching. GitLab Pages requires GitLab 17.9 or newer.
 
+For an explicit native Pages environment, pass `--deployment` with a JSON object:
+
+```sh
+npm create @rm-industries/forge website -- \
+  --ci-providers github,gitlab --primary-ci github \
+  --deployment '{"name":"staging","sourceBranch":"dev","target":"github-pages","url":"https://example.com/site"}'
+```
+
+The environment name and source branch are independent. The optional deployment URL
+also sets the generated site's canonical URL and build base path, then becomes the
+smoke-test URL. Omit it to use `--url` for the site and the provider's deployment
+URL for smoke tests. Configure custom domains on the hosting provider before
+using them. GitHub environment approval and branch restrictions are configured
+in repository settings separately; use a name that matches those settings.
+
+This first iteration accepts one native Pages environment with a matching primary
+CI: `github-pages` with GitHub or `gitlab-pages` with GitLab. Explicit deployments
+omit incompatible secondary-provider deployment jobs and explain why in generated
+comments. The default without `--deployment` retains both native Pages standby
+jobs. Validation includes main and the selected source branch; deployment only
+runs for the selected branch after the project checks pass, never for pull requests.
+GitLab deployments serialize using an environment/target resource group. GitHub
+project workflows for a custom source branch disable npm caching to keep
+artifact-producing installs independent.
+
+The flag is repeatable, but multiple environments, Cloudflare Pages and parallel
+GitLab Pages are rejected until their subsequent implementation reviews. A friendlier
+input syntax can replace JSON later without introducing a retained Forge config.
+
 Generated projects receive validated YAML that they own and edit directly. CI
 builders and Zod schemas stay internal to create-forge; no CI TypeScript, retained
 configuration, regeneration commands, or authoring dependencies are delivered.

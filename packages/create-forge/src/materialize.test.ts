@@ -3,8 +3,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { afterEach, describe, expect, test } from 'vitest';
+import { parse } from 'yaml';
 
 import type { CiGenerationOptions } from './ci/generation-options.ts';
+import { writeCi } from './ci/write.ts';
 import { MaterializationError, materializeProject } from './materialize';
 import type { GeneratorOptions } from './options';
 import { deriveScheduleMinutes } from './schedule';
@@ -330,4 +332,52 @@ describe('template materialization', () => {
     ).rejects.toThrow(recoveryMessagePattern);
     await expect(readFile(join(destination, 'package.json'), 'utf8')).resolves.toBe('original contents');
   });
+});
+
+test.each(['github', 'gitlab'] as const)('bootstraps nested %s deployments as consumer-owned YAML', async (primary) => {
+  const { fixture, template } = await createFixture();
+  await mkdir(join(fixture, 'existing'), { recursive: true });
+  await writeFile(join(fixture, 'existing', 'keep.txt'), 'preserve me');
+  const deployment = {
+    name: 'staging',
+    sourceBranch: 'dev',
+    target: primary === 'github' ? ('github-pages' as const) : ('gitlab-pages' as const),
+    url: 'https://staging.example.com',
+  };
+  const root = join(fixture, 'existing');
+  await materializeProject(
+    {
+      ...options,
+      destination: join('existing', 'site'),
+      repositoryRoot: 'existing',
+      ciProviders: ['github', 'gitlab'],
+      primaryCi: primary,
+      deployments: [deployment],
+    },
+    {
+      cwd: fixture,
+      templateDirectory: template,
+      generateCi: async (config, destination) => {
+        await writeCi(config, destination, (action) => ({ ref: `${action}@${'a'.repeat(40)}` }));
+      },
+    },
+  );
+  expect(await readFile(join(root, 'keep.txt'), 'utf8')).toBe('preserve me');
+  const github = parse(await readFile(join(root, '.github/workflows/site-project.yml'), 'utf8'));
+  const gitlab = parse(await readFile(join(root, '.gitlab/ci/site.yml'), 'utf8'));
+  expect((primary === 'github' ? github.jobs : gitlab).deploy.environment.name).toBe('staging');
+  expect(primary === 'github' ? gitlab : github.jobs).not.toHaveProperty('deploy');
+  expect(await readFile(join(root, 'site/src/config/site.ts'), 'utf8')).toContain('https://staging.example.com');
+  await expect(access(join(root, 'site/.forge/config.json'))).rejects.toHaveProperty('code', 'ENOENT');
+});
+
+test('rejects an invalid programmatic deployment before creating a destination', async () => {
+  const { fixture, template } = await createFixture();
+  await expect(
+    materializeProject(
+      { ...options, deployments: [{ name: 'production', sourceBranch: 'main*', target: 'github-pages' }] },
+      { cwd: fixture, templateDirectory: template, generateCi },
+    ),
+  ).rejects.toThrow('Invalid deployment');
+  await expect(access(join(fixture, options.destination))).rejects.toHaveProperty('code', 'ENOENT');
 });

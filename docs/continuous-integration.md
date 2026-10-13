@@ -195,3 +195,13 @@ LHCI_COLLECT__SETTINGS__CHROME_FLAGS: --no-sandbox --disable-dev-shm-usage --dis
 ```
 
 These settings are scoped to the audit jobs, including generated consumer pipelines.
+
+## Consumer deployment environments
+
+Create-forge accepts bootstrap-only deployment inputs for a named native Pages
+environment and source branch. Validation runs on the configured branches;
+deployment is owned by the primary CI. Consumers edit the resulting native YAML
+without keeping Forge configuration. See the
+[initializer's deployment options](../packages/create-forge/README.md#ci-generation)
+for the JSON input and target limitations. This does not change Forge's own website
+deployment or internal workflow ownership.
