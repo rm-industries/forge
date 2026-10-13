@@ -136,14 +136,19 @@ describe('shared work and provider rendering', () => {
   });
   test('configures the installed Chromium for GitLab Lighthouse root containers only', () => {
     const gitlab = createGitlabPipeline(config);
-    expect(gitlab.lighthouse).toHaveProperty('variables.LHCI_COLLECT__SETTINGS__CHROME_FLAGS', '--no-sandbox');
+    expect(gitlab.lighthouse).toHaveProperty(
+      'variables.LHCI_COLLECT__SETTINGS__CHROME_FLAGS',
+      '--no-sandbox --disable-dev-shm-usage --disable-gpu',
+    );
     const script = (gitlab.lighthouse as { script: string[] }).script;
     expect(script[0]).toBe('npx playwright install --with-deps chromium');
     expect(script[1]).toContain('export CHROME_PATH=');
     expect(script[1]).toContain('chromium.executablePath()');
     expect(script[2]).toBe('npm run lighthouse:ci');
     expect(gitlab['browser-tests']).not.toHaveProperty('variables');
-    expect(JSON.stringify(createGithubWorkflows(config, pins))).not.toContain('--no-sandbox');
+    expect(JSON.stringify(createGithubWorkflows(config, pins))).not.toContain(
+      '--no-sandbox --disable-dev-shm-usage --disable-gpu',
+    );
   });
   test('retains failed lint findings and their exit status while rebasing nested project paths', () => {
     const directory = mkdtempSync(join(tmpdir(), 'forge-lint-report-'));

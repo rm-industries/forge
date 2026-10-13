@@ -13,7 +13,9 @@ const website = read('../.gitlab/ci/website.yml');
 
 test('scopes Lighthouse Chrome root flags to the native GitLab audit jobs', () => {
   for (const job of [website['website-lighthouse'], generator['consumer-lighthouse']]) {
-    expect(job.variables).toEqual({ LHCI_COLLECT__SETTINGS__CHROME_FLAGS: '--no-sandbox' });
+    expect(job.variables).toEqual({
+      LHCI_COLLECT__SETTINGS__CHROME_FLAGS: '--no-sandbox --disable-dev-shm-usage --disable-gpu',
+    });
     expect(job.script.join('\n')).toContain('export CHROME_PATH=');
   }
   expect(website['website-browser-tests']).not.toHaveProperty('variables');
