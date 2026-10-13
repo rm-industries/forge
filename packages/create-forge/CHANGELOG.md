@@ -2,6 +2,17 @@
 
 All notable changes to `@rm-industries/create-forge` are documented here.
 
+## 1.1.0
+
+- Bootstrap validated GitHub and GitLab CI with matching project checks, deployment,
+  smoke tests and provider-specific reporting.
+- Select the primary CI and Node version through CLI options; the secondary
+  provider retains disabled deployment jobs for a later migration.
+- Bootstrap within an existing repository with derived workflow prefixes and an
+  explicit override, preserving existing shared GitHub configuration.
+- Generate formatted, consumer-owned YAML with current action pins and
+  deterministic security schedules, without retaining CI configuration files.
+
 ## 1.0.3
 
 - Add `--repository-root` so Forge can generate a site inside an existing
