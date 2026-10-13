@@ -46,7 +46,8 @@ test('deploys only the artifact even when the source contains Functions and Wran
         encoding: 'utf8',
       },
     );
-    expect(result.status, result.stderr).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.status).toBe(0);
     const record = JSON.parse(await readFile(recordPath, 'utf8'));
     expect(record.cwd).not.toBe(fixture);
     expect(record.functions).toBe(false);
