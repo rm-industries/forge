@@ -283,12 +283,13 @@ test('disables shared npm caches when project artifacts run on a custom deployme
     ...config,
     deployments: [{ name: 'staging', sourceBranch: 'dev', target: 'github-pages' }],
   });
-  for (const job of Object.values(createGithubWorkflows(selected, pins).project.jobs)) {
-    for (const step of job.steps) {
-      if ('uses' in step && step.uses.startsWith('actions/setup-node@')) {
-        expect(step.with).toHaveProperty('package-manager-cache', false);
-        expect(step.with).not.toHaveProperty('cache');
-      }
-    }
+  const setupOptions = Object.values(createGithubWorkflows(selected, pins).project.jobs)
+    .flatMap((job) => job.steps)
+    .filter((step) => 'uses' in step && step.uses.startsWith('actions/setup-node@'))
+    .map((step) => ('with' in step ? step.with : undefined));
+  expect(setupOptions.length).toBeGreaterThan(0);
+  for (const options of setupOptions) {
+    expect(options).toHaveProperty('package-manager-cache', false);
+    expect(options).not.toHaveProperty('cache');
   }
 });

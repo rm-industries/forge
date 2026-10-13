@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 const environmentNamePattern = /^[a-z][a-z0-9-]*$/;
-const invalidBranchCharacterPattern = /[\u0000-\u0020\u007f~^:?*$[\]\\]/u;
-const invalidDeploymentUrlCharacterPattern = /[\u0000-\u0020\u007f$]/u;
+const invalidBranchCharacterPattern = /[~^:?*$[\]\\]/u;
+const hasControlOrSpace = (value: string) => [...value].some((character) => character <= ' ' || character === '\u007f');
 const expressionMarkerPattern = /\$\{\{|\$\{/;
 
 const sourceBranchSchema = z
@@ -10,6 +10,7 @@ const sourceBranchSchema = z
   .min(1)
   .refine(
     (branch) =>
+      !hasControlOrSpace(branch) &&
       !invalidBranchCharacterPattern.test(branch) &&
       !expressionMarkerPattern.test(branch) &&
       !branch.startsWith('-') &&
@@ -24,7 +25,7 @@ const sourceBranchSchema = z
   );
 const deploymentUrlSchema = z
   .string()
-  .refine((value) => !invalidDeploymentUrlCharacterPattern.test(value), 'Invalid deployment URL')
+  .refine((value) => !hasControlOrSpace(value) && !value.includes('$'), 'Invalid deployment URL')
   .pipe(z.url())
   .refine((value) => {
     const url = new URL(value);
