@@ -84,7 +84,7 @@ Security analysis stays separate from project correctness checks:
 
 - CodeQL uploads source analysis results to GitHub code scanning;
 - Zizmor uploads workflow analysis results to code scanning and fails `Workflow
-security` when it finds an insecure workflow;
+  security` when it finds an insecure workflow;
 - Dependabot alerts use the repository dependency graph as the canonical view of
   vulnerable npm dependencies;
 - dependency review fails on newly introduced high or critical vulnerabilities,
