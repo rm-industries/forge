@@ -11,7 +11,7 @@ import {
 } from './schema.ts';
 
 export type ActionResolver = (action: string) => { ref: string; version?: string };
-const githubBranchFilterSpecialCharacterPattern = /[!+]/g;
+const githubBranchFilterSpecialCharacterPattern = /[!+\\]/g;
 const onMain = "github.event_name == 'push' && github.ref == 'refs/heads/main'";
 
 export function createGithubWorkflows(config: CiGenerationOptions, pins: ActionResolver, plan: WorkPlan = siteWork) {
