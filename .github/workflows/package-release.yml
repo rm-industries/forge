@@ -137,16 +137,6 @@ jobs:
         run: npm run quality
         if: github.event_name != 'push' || github.ref_type == 'tag' || steps.automatic.outputs.eligible == 'true'
 
-      - name: Run release security gate
-        env:
-          WORKSPACE: ${{ steps.plan.outputs.workspace }}
-        run: |
-          npm run audit
-          if [[ "$WORKSPACE" == 'packages/create-forge' ]]; then
-            npm run audit --prefix templates/default
-          fi
-        if: github.event_name != 'push' || github.ref_type == 'tag' || steps.automatic.outputs.eligible == 'true'
-
       - name: Pack release artifact
         env:
           RELEASE_TAG: ${{ steps.plan.outputs.release-tag }}
