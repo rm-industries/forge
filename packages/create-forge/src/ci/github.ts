@@ -125,7 +125,7 @@ export function createGithubWorkflows(config: CiGenerationOptions, pins: ActionR
         },
         { uses: pins('actions/download-artifact').ref, with: { name: 'build-dist', path: path('dist') } },
         { name: 'Verify validated artifact', run: verifyCloudflareArtifact },
-        { name: 'Install locked deployment tooling', run: installCloudflareTool },
+        { name: 'Install locked project dependencies', run: installCloudflareTool },
         {
           name: 'Verify existing Cloudflare project',
           env: {

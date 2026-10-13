@@ -2,13 +2,13 @@ import type { DeploymentEnvironment } from './deployment.ts';
 import { shellQuote } from './generation-options.ts';
 
 export type CloudflareDeployment = Extract<DeploymentEnvironment, { target: 'cloudflare-pages' }>;
-export const installCloudflareTool = 'npm ci --prefix tools/cloudflare';
+export const installCloudflareTool = 'npm ci --ignore-scripts';
 export const verifyCloudflareArtifact = 'test -f dist/index.html';
 export function cloudflareDeployCommand(deployment: CloudflareDeployment) {
   return [
     'test -n "$CLOUDFLARE_ACCOUNT_ID"',
     'test -n "$CLOUDFLARE_API_TOKEN"',
-    'deploymentTool="$(pwd)/tools/cloudflare/node_modules/wrangler/bin/wrangler.js"',
+    'deploymentTool="$(pwd)/node_modules/wrangler/bin/wrangler.js"',
     'deploymentDirectory="$(mktemp -d)"',
     `trap 'rm -rf "$deploymentDirectory"' EXIT`,
     'mkdir "$deploymentDirectory/public"',

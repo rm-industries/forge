@@ -114,12 +114,15 @@ its branch restrictions. On GitLab, use masked, protected, environment-scoped va
 for the deployment environment and protect its source branch. Do not expose the
 token to pull/merge requests or validation jobs. The smoke job needs no token.
 
-Generated projects get `tools/cloudflare/package.json` and its own lockfile only
-when Cloudflare is selected. Deployment uses `npm ci --prefix tools/cloudflare` and
-the installed Wrangler CLI; it uploads the build artifact after validation without
-rebuilding. The site package and lockfile are unchanged. Dependabot receives a
-separate npm directory entry when Forge creates the repository configuration. If
-existing shared Dependabot configuration is preserved, add that entry yourself.
+When Cloudflare is selected, Forge adds Wrangler to the site's development dependencies
+and asks npm to resolve the site's lockfile. This requires registry access even with
+`--no-install`; that flag skips dependency installation, not lockfile resolution.
+If resolution fails, Forge restores the files it changed. The existing npm Dependabot
+entry covers Wrangler along with the site's other dependencies. A Wrangler-only Knip
+exclusion accounts for the deployment job invoking its locked executable by path.
+
+Deployment installs the locked site dependencies with lifecycle scripts disabled,
+then uses Wrangler to upload the validated build artifact without rebuilding.
 
 Both generated CIs contain the Cloudflare deploy and smoke jobs; the secondary CI
 keeps them disabled with native conditions. To switch, enable its branch conditions
@@ -167,8 +170,10 @@ npm run test:generator:e2e
 ```
 
 This exercises default, fully specified, scoped-name, current-directory,
-nested-project, GitLab-only, combined-provider, no-install and conflict scenarios
-in temporary directories. The default and nested scenarios verify installation;
+nested-project, GitLab-only, combined-provider, no-install, Cloudflare and conflict scenarios
+in temporary directories. The Cloudflare scenario resolves dependencies through the registry,
+verifies a locked install and unused-dependency checks, and runs the installed Wrangler
+version command without accessing Cloudflare. The default and nested scenarios verify installation;
 conflicts must preserve existing files. The nested custom-URL scenario gets one
 targeted production build and artifact validation, without repeating the full
 consumer quality suite. CI supplies the already packaged CLI

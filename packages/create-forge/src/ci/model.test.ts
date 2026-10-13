@@ -330,7 +330,7 @@ test.each(['github', 'gitlab'] as const)(
     ).toBe(true);
     const commands = github.jobs.deploy!.steps.flatMap((step) => ('run' in step ? [step.run] : [])).join('\n');
     expect(commands).toContain("--project-name 'example-site'");
-    expect(commands).toContain('tools/cloudflare/node_modules/wrangler/bin/wrangler.js');
+    expect(commands).toContain('node_modules/wrangler/bin/wrangler.js');
     expect(commands).not.toContain('npm run build');
     expect(gitlab.deploy).not.toHaveProperty('pages');
     expect(gitlab.deploy).toHaveProperty('resource_group', 'production-example-site');

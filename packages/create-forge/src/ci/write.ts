@@ -31,7 +31,7 @@ export async function writeCi(
           '\n Deployment is owned by the primary GitLab CI. GitHub cannot deploy the selected GitLab Pages target.';
       if (name === 'project' && config.deployments?.some((deployment) => deployment.target === 'cloudflare-pages'))
         document.commentBefore +=
-          '\n Cloudflare uses tools/cloudflare and CI environment secrets; only the primary CI deploys.\n To switch CI, enable the selected deployment conditions and disable the previous primary jobs.';
+          '\n Cloudflare uses the locked site Wrangler dependency and CI environment secrets; only the primary CI deploys.\n To switch CI, enable the selected deployment conditions and disable the previous primary jobs.';
       visit(document, {
         Pair(_key, pair) {
           if (
@@ -61,7 +61,7 @@ export async function writeCi(
         '\n Deployment is owned by the primary GitHub CI. GitLab cannot deploy the selected GitHub Pages target.';
     if (config.deployments?.some((deployment) => deployment.target === 'cloudflare-pages'))
       document.commentBefore +=
-        '\n Cloudflare uses tools/cloudflare and environment-scoped CI variables; only the primary CI deploys.\n To switch CI, enable the selected deployment rules and disable the previous primary jobs.';
+        '\n Cloudflare uses the locked site Wrangler dependency and environment-scoped CI variables; only the primary CI deploys.\n To switch CI, enable the selected deployment rules and disable the previous primary jobs.';
     files[path] = validateCiYaml(gitlabPipelineSchema, document.toString({ lineWidth: 0 }));
   }
   for (const [path, content] of Object.entries(files)) {

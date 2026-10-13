@@ -15,7 +15,7 @@ test('deploys only the artifact even when the source contains Functions and Wran
     await writeFile(join(fixture, 'dist/index.html'), 'validated artifact');
     await writeFile(join(fixture, 'functions/unchecked.js'), 'unchecked source');
     await writeFile(join(fixture, 'wrangler.json'), '{"unchecked":"source config"}');
-    const toolDirectory = join(fixture, 'tools/cloudflare/node_modules/wrangler/bin');
+    const toolDirectory = join(fixture, 'node_modules/wrangler/bin');
     await mkdir(toolDirectory, { recursive: true });
     await writeFile(
       join(toolDirectory, 'wrangler.js'),

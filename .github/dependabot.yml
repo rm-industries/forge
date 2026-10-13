@@ -175,7 +175,7 @@ updates:
           - '*'
 
   - package-ecosystem: npm
-    directory: /templates/cloudflare/tools/cloudflare
+    directory: /templates/cloudflare
     schedule:
       interval: weekly
       day: monday
