@@ -11,6 +11,14 @@ const project = read('../.gitlab/ci/project.yml');
 const generator = read('../.gitlab/ci/generator.yml');
 const website = read('../.gitlab/ci/website.yml');
 
+test('scopes Lighthouse Chrome root flags to the native GitLab audit jobs', () => {
+  for (const job of [website['website-lighthouse'], generator['consumer-lighthouse']]) {
+    expect(job.variables).toEqual({ LHCI_COLLECT__SETTINGS__CHROME_FLAGS: '--no-sandbox' });
+    expect(job.script.join('\n')).toContain('export CHROME_PATH=');
+  }
+  expect(website['website-browser-tests']).not.toHaveProperty('variables');
+});
+
 test('publishes native test and quality reports without mapping disposable coverage onto Forge', () => {
   expect(project['project-test'].artifacts.reports.junit).toBe('test-results/unit.xml');
   expect(project['project-compatibility'].artifacts.reports.junit).toEqual([
