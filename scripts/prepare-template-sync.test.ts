@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { applyTemplateSync, createTemplateSyncPlan } from './prepare-template-sync.ts';
+import { applyTemplateSync, createTemplateSyncPlan, prepareGeneratorPatch } from './prepare-template-sync.ts';
 
 const templateManifest = {
   dependencies: {
@@ -28,11 +28,26 @@ const publication = {
 };
 
 describe('template publication synchronization', () => {
+  test('prepares a generator patch only when the shipped template changes', () => {
+    const plan = createTemplateSyncPlan({
+      templateManifest,
+      registryMetadata,
+      integrationVersions: ['0.203.2'],
+      publication,
+    });
+    const manifest = { version: '1.0.3' };
+    const changelog = '# Changelog\n\n## 1.0.3\n\n- Previous release.\n';
+    const release = prepareGeneratorPatch(manifest, changelog, plan);
+    expect(release.manifest.version).toBe('1.0.4');
+    expect(release.changelog).toContain('content-model 0.2.0-alpha.0 and Sveltia CMS 0.203.2');
+    expect(prepareGeneratorPatch(manifest, changelog, { ...plan, changed: false })).toEqual({ manifest, changelog });
+    expect(() => prepareGeneratorPatch(manifest, '# Empty changelog', plan)).toThrow('no release sections');
+  });
   test('selects the latest published integration inside the declared peer range', () => {
     const plan = createTemplateSyncPlan({
       templateManifest,
       registryMetadata,
-      integrationVersions: ['0.203.2', '0.203.5', '0.204.0'],
+      integrationVersions: ['0.203.2', '0.203.5', '0.204.0-rc.1', '0.204.0'],
       publication,
     });
 

@@ -1,7 +1,7 @@
 # Peer upgrade automation
 
 Forge treats integration peer ranges as tested compatibility claims. The
-`Peer Compatibility Updates` workflow checks the npm registry weekly and can be
+`Peer Compatibility Updates` workflow checks the npm registry each Friday at 06:07 UTC and can be
 dispatched manually for an exact package version. When a version falls outside
 the current content-model peer range, it prepares one focused pull request that
 updates the root test dependency, extends the bounded peer range through the
@@ -15,10 +15,17 @@ that lower bound and moves the upper bound to the minor immediately following
 the newly validated Sveltia version. This produces one continuous range rather
 than an ever-growing list of individual minor ranges.
 
-The workflow never updates the standalone template or publishes a package. A
-merged compatibility pull request proceeds through the protected publication
-tracked by issue #33. The post-publication synchronization tracked by issue #95
-then updates the template using the public registry artifact.
+Friday preparation runs roughly three days before Monday's normal Dependabot
+updates. No routine dependency schedules or cooldown settings change.
+
+After a reviewed compatibility PR merges, the package release workflow publishes
+the content-model patch, verifies npm integrity and provenance, and triggers
+published template synchronization. That synchronization pins the published
+content model and newest stable supported Sveltia version, prepares a create-forge
+patch and changelog, and enables auto-merge behind the required project and
+consumer checks. Its merge then publishes create-forge through the same release
+workflow. If Sveltia is already supported, the weekly workflow synchronizes the
+currently published content model without creating an unnecessary model release.
 
 ## GitHub App setup
 
@@ -43,7 +50,9 @@ line without writing to the lockfile.
 
 Pull requests created with the App token trigger the repository's normal checks.
 Branch protection and human review remain responsible for deciding whether the
-tested peer range should become a published compatibility claim.
+tested peer range should become a published compatibility claim. Preparation
+reinstalls the proposed lockfile before testing so the target integration is
+actually installed.
 
 ## Local and manual operation
 
@@ -58,6 +67,7 @@ Add `--write` to update the two manifests, then regenerate the root lockfile:
 ```sh
 npm run peer:prepare -- @sveltia/cms --version 0.197.1 --write
 npm install --package-lock-only --ignore-scripts
+npm ci
 ```
 
 The local command requires an exact `--version` and performs no network access.
@@ -85,3 +95,52 @@ remains authoritative. Never widen the range merely to make dependency
 installation succeed. If adopting the peer requires a public API change or a
 consumer migration, close the generated patch pull request and prepare the
 appropriate minor or major release manually.
+
+## Automatic publication boundary
+
+Only merged, same-repository PRs from the configured GitHub App and the existing
+peer/template automation branches qualify. Automatic publication requires a
+stable, consecutive patch version, the expected metadata/lockfile/changelog file
+set, and an already published predecessor. Unreleased package implementation or
+shipped template changes since that predecessor require a separate manual
+baseline release. Reviewed dependency updates, including action pins mirrored
+from Forge workflows at build time, may accompany these patches; the workflow
+job definitions themselves are not shipped to consumers. Stable generator
+publication excludes prerelease template
+pins. Every publication retains the quality, audit, tarball identity, registry
+integrity and provenance gates. Existing tags are verified rather than replaced.
+
+The first create-forge baseline is prepared separately as 1.1.0 to account for the
+new CI features. Publish that reviewed release through the existing manual tag
+and approval process before relying on unattended generator patches.
+
+Manual package tags retain the `npm-release` environment and its reviewer gate.
+Automatic main-branch patches use `npm-release-auto`, restricted to the `main`
+branch without a publication reviewer. A manual package workflow dispatch remains
+a preparation-only operation.
+
+## One-time trusted publisher setup
+
+Keep the existing npm publisher connection for manual releases. For both
+`@rm-industries/content-model` and `@rm-industries/create-forge`, add another GitHub
+trusted publisher connection with these values:
+
+- Organization: `rm-industries`.
+- Repository: `forge`.
+- Workflow filename: `package-release.yml`.
+- Environment: `npm-release-auto`.
+- Allow direct `npm publish`.
+
+npm supports multiple connections, so the manual identity remains intact. New
+connections must complete their first publish within two days; add them close to
+the first approved compatibility merge, after the workflow changes and baseline
+release are ready. No long-lived npm token is required.
+See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/).
+
+Review the weekly compatibility PR and merge it after its checks pass. The
+publication, stable template PR auto-merge and generator publication then proceed
+without further publication approvals. An incompatible peer, failed consumer
+check, failing audit, missing baseline or registry mismatch stops the chain and
+leaves the relevant workflow/PR for investigation. Retry failed workflow jobs for
+an approved commit; immutable tags and registry integrity checks make publication
+retries safe.

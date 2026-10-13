@@ -6,6 +6,11 @@ on: # yamllint disable-line rule:truthy
     tags:
       - 'content-model-v*'
       - 'create-forge-v*'
+    branches:
+      - main
+    paths:
+      - packages/content-model/package.json
+      - packages/create-forge/package.json
   workflow_dispatch:
     inputs:
       package:
@@ -33,6 +38,7 @@ jobs:
 
     permissions:
       contents: read
+      pull-requests: read
 
     outputs:
       artifact-name: ${{ steps.plan.outputs.artifact-name }}
@@ -43,17 +49,37 @@ jobs:
       release-tag: ${{ steps.plan.outputs.release-tag }}
       version: ${{ steps.plan.outputs.version }}
       workspace: ${{ steps.plan.outputs.workspace }}
+      publish: ${{ github.event_name == 'push' && (github.ref_type == 'tag' || steps.automatic.outputs.eligible == 'true') }}
+      release-environment: ${{ steps.automatic.outputs.eligible == 'true' && 'npm-release-auto' || 'npm-release' }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+          fetch-depth: 2
 
       - name: Setup project dependencies
         uses: $/.github/actions/setup-project
         with:
-          node-version: '26.8.1'
+          node-version: 26.8.1
+
+      - name: Identify configured automation App
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: automation-app
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.PEER_UPGRADE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.PEER_UPGRADE_APP_PRIVATE_KEY }}
+          permission-contents: read
+
+      - name: Select reviewed automatic patch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: automatic
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APP_SLUG: ${{ steps.automation-app.outputs.app-slug }}
+        run: node scripts/select-automatic-release.ts >> "$GITHUB_OUTPUT"
 
       - name: Verify release npm version
         run: |
@@ -63,17 +89,19 @@ jobs:
             echo "::error title=npm version mismatch::Expected npm ${expected_npm}, but Node supplied ${actual_npm}."
             exit 1
           fi
+        if: github.event_name != 'push' || github.ref_type == 'tag' || steps.automatic.outputs.eligible == 'true'
 
       - name: Plan package release
         id: plan
         env:
           EVENT_NAME: ${{ github.event_name }}
-          INPUT_PACKAGE: ${{ inputs.package }}
+          INPUT_PACKAGE: ${{ steps.automatic.outputs.package || inputs.package }}
           RELEASE_TAG: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
         run: |
           release_sha=$(git rev-parse HEAD)
           arguments=(--sha "$release_sha")
-          if [[ "$EVENT_NAME" == 'push' ]]; then
+          if [[ "$EVENT_NAME" == 'push' && "$REF_TYPE" == 'tag' ]]; then
             arguments+=(--tag "$RELEASE_TAG")
           else
             arguments+=(--package "$INPUT_PACKAGE")
@@ -103,18 +131,21 @@ jobs:
             echo "| npm tag | $(jq -r .npmTag <<< "$plan") |"
             echo "| Commit | \`$release_sha\` |"
           } >> "$GITHUB_STEP_SUMMARY"
+        if: github.event_name != 'push' || github.ref_type == 'tag' || steps.automatic.outputs.eligible == 'true'
 
       - name: Run release quality gate
         run: npm run quality
+        if: github.event_name != 'push' || github.ref_type == 'tag' || steps.automatic.outputs.eligible == 'true'
 
       - name: Run release security gate
         env:
           WORKSPACE: ${{ steps.plan.outputs.workspace }}
         run: |
           npm run audit
-          if [[ "$WORKSPACE" == '@rm-industries/create-forge' ]]; then
+          if [[ "$WORKSPACE" == 'packages/create-forge' ]]; then
             npm run audit --prefix templates/default
           fi
+        if: github.event_name != 'push' || github.ref_type == 'tag' || steps.automatic.outputs.eligible == 'true'
 
       - name: Pack release artifact
         env:
@@ -132,6 +163,7 @@ jobs:
           npm run --silent release:prepare -- "${arguments[@]}"
           release=$(<.release/release.json)
           echo "- ✅ Packed \`$(jq -r .tarball.filename <<< "$release")\` with integrity \`$(jq -r .tarball.integrity <<< "$release")\`." >> "$GITHUB_STEP_SUMMARY"
+        if: github.event_name != 'push' || github.ref_type == 'tag' || steps.automatic.outputs.eligible == 'true'
 
       - name: Upload inspected package
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -141,13 +173,14 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
+        if: github.event_name != 'push' || github.ref_type == 'tag' || steps.automatic.outputs.eligible == 'true'
 
   publish:
     name: Publish package
-    if: github.event_name == 'push'
+    if: needs.prepare.outputs.publish == 'true'
     needs: prepare
     runs-on: ubuntu-latest
-    environment: npm-release
+    environment: ${{ needs.prepare.outputs.release-environment }}
 
     permissions:
       contents: write
@@ -162,7 +195,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: '26.8.1'
+          node-version: 26.8.1
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
 
@@ -171,6 +204,17 @@ jobs:
         with:
           name: ${{ needs.prepare.outputs.artifact-name }}
           path: .release
+
+      - name: Ensure immutable package tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.release-tag }}
+        run: |-
+          if existing_sha=$(gh api "repos/$GITHUB_REPOSITORY/commits/$RELEASE_TAG" --jq .sha 2>/dev/null); then
+            test "$existing_sha" = "$GITHUB_SHA" || { echo 'Release tag points to a different commit.'; exit 1; }
+          else
+            jq -n --arg ref "refs/tags/$RELEASE_TAG" --arg sha "$GITHUB_SHA" '{ref: $ref, sha: $sha}' | gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" --input -
+          fi
 
       - name: Publish with provenance
         id: publish
