@@ -45,7 +45,7 @@ const tokenizedSiteConfig = (await readFile(siteConfigPath, 'utf8'))
     `description: '${templateTokens.description}',`,
   )
   .replace("author: 'Site Author',", `author: '${templateTokens.author}',`)
-  .replace("url: 'https://example.com',", `url: '${templateTokens.url}',`)
+  .replace("'https://example.com'", `'${templateTokens.url}'`)
   .replace("repository: '',", `repository: '${templateTokens.repository}',`);
 for (const token of [
   templateTokens.siteName,

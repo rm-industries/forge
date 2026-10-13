@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 
-import { cmsBranding, defineSiteConfig, site, type SiteConfig } from './site.ts';
+import { cmsBranding, defineSiteConfig, getDeploymentUrl, site, type SiteConfig } from './site.ts';
 
 const validConfig = {
   name: 'Example site',
@@ -47,4 +47,29 @@ test('rejects control characters in optional text and invalid links', () => {
 
 test('derives CMS branding from the site name', () => {
   expect(cmsBranding.appTitle).toBe(`${site.name} Content Manager`);
+});
+
+test('prefers the public build URL and falls back to the Node environment', () => {
+  const originalUrl = process.env.PUBLIC_SITE_URL;
+  try {
+    process.env.PUBLIC_SITE_URL = 'https://node.example.test/';
+    expect(getDeploymentUrl('https://build.example.test/')).toBe('https://build.example.test/');
+    expect(getDeploymentUrl()).toBe('https://node.example.test/');
+  } finally {
+    if (originalUrl === undefined) delete process.env.PUBLIC_SITE_URL;
+    else process.env.PUBLIC_SITE_URL = originalUrl;
+  }
+});
+
+test('allows browser execution without a Node process global', () => {
+  const processDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'process')!;
+  let deploymentUrl: string | undefined;
+  try {
+    Object.defineProperty(globalThis, 'process', { value: undefined, configurable: true });
+    deploymentUrl = getDeploymentUrl();
+  } finally {
+    // Restore synchronously before returning control to the test runner.
+    Object.defineProperty(globalThis, 'process', processDescriptor);
+  }
+  expect(deploymentUrl).toBeUndefined();
 });

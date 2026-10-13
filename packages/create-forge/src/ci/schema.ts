@@ -57,6 +57,7 @@ export const githubJobSchema = z.strictObject({
   needs: z.array(nonEmptyStringSchema).optional(),
   if: condition.optional(),
   permissions,
+  env: values.optional(),
   steps: z.array(githubStepSchema).min(1),
   strategy: z.strictObject({ 'fail-fast': z.boolean().optional(), matrix }).optional(),
   environment: z.strictObject({ name: nonEmptyStringSchema, url: nonEmptyStringSchema.optional() }).optional(),
@@ -104,6 +105,7 @@ export const githubWorkflowSchema = z
   });
 const rule = z
   .strictObject({
+    variables: values.optional(),
     if: nonEmptyStringSchema.optional(),
     when: z.enum(['never', 'always', 'on_success']).optional(),
   })

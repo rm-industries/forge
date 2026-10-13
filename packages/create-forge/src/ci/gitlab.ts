@@ -1,3 +1,5 @@
+import type { z } from 'zod';
+
 import {
   cloudflareDeployCommand,
   cloudflareProjectCheckCommand,
@@ -9,8 +11,40 @@ import { shellQuote, type CiGenerationOptions } from './generation-options.ts';
 import { planSchema, siteWork, type WorkPlan } from './model.ts';
 import { gitlabJobSchema, gitlabPipelineSchema, type GitlabJob } from './schema.ts';
 
-export function createGitlabPipeline(config: CiGenerationOptions, plan: WorkPlan = siteWork) {
+export function createGitlabPipeline(
+  config: CiGenerationOptions,
+  plan: WorkPlan = siteWork,
+): z.infer<typeof gitlabPipelineSchema> {
   plan = planSchema.parse(plan);
+  const deployments = resolveDeployments(config.deployments, config.primary);
+  if (deployments.length > 1) {
+    const result = createGitlabPipeline({ ...config, deployments: [deployments[0]!] }, plan);
+    delete result.deploy;
+    delete result['smoke-deployed'];
+    for (const id of Object.keys(plan)) {
+      const job = gitlabJobSchema.parse(result[id]);
+      job.rules = [
+        ...deployments.map((deployment) => ({
+          if: `$CI_COMMIT_BRANCH == ${JSON.stringify(deployment.sourceBranch)} || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == ${JSON.stringify(deployment.sourceBranch)}`,
+          variables: { PUBLIC_SITE_URL: deployment.url! },
+        })),
+        { when: 'on_success' as const, variables: { PUBLIC_SITE_URL: deployments[0]!.url! } },
+      ];
+      result[id] = job;
+    }
+    for (const deployment of deployments) {
+      const rendered = createGitlabPipeline({ ...config, deployments: [deployment] }, plan);
+      if (rendered.deploy) {
+        result[`deploy-${deployment.name}`] = rendered.deploy;
+        const smoke = gitlabJobSchema.parse(rendered['smoke-deployed']);
+        smoke.needs = [{ job: `deploy-${deployment.name}`, artifacts: false }];
+        smoke.variables = { ...smoke.variables, PUBLIC_SITE_URL: deployment.url! };
+        result[`smoke-${deployment.name}`] = smoke;
+      }
+    }
+    result.stages = [...new Set([...result.stages, 'deploy', 'smoke'])];
+    return gitlabPipelineSchema.parse(result);
+  }
   const depth = (id: string): number => Math.max(-1, ...plan[id]!.needs.map(depth)) + 1;
   const workStageNames = ['validate', 'build', 'verify'];
   const stageName = (level: number) => workStageNames[level] ?? `verify-${level - 1}`;
