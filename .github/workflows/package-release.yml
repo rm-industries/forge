@@ -149,17 +149,12 @@ jobs:
 
       - name: Pack release artifact
         env:
-          INPUT_PACKAGE: ${{ inputs.package }}
+          RELEASE_TAG: ${{ steps.plan.outputs.release-tag }}
           WORKSPACE: ${{ steps.plan.outputs.workspace }}
         run: |
           npm pack --workspace "$WORKSPACE" --ignore-scripts --json --pack-destination .release > .release/pack.json
           release_sha=$(git rev-parse HEAD)
-          arguments=(--sha "$release_sha" --pack-result .release/pack.json --output .release/release.json)
-          if [[ "$GITHUB_EVENT_NAME" == 'push' ]]; then
-            arguments+=(--tag "$GITHUB_REF_NAME")
-          else
-            arguments+=(--package "$INPUT_PACKAGE")
-          fi
+          arguments=(--sha "$release_sha" --tag "$RELEASE_TAG" --pack-result .release/pack.json --output .release/release.json)
           npm run --silent release:prepare -- "${arguments[@]}"
           release=$(<.release/release.json)
           echo "- ✅ Packed \`$(jq -r .tarball.filename <<< "$release")\` with integrity \`$(jq -r .tarball.integrity <<< "$release")\`." >> "$GITHUB_STEP_SUMMARY"
