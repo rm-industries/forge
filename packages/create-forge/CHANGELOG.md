@@ -2,6 +2,10 @@
 
 All notable changes to `@rm-industries/create-forge` are documented here.
 
+## 1.1.1
+
+- Bootstrap projects with content-model 1.1.6 and Sveltia CMS 0.235.1.
+
 ## 1.1.0
 
 - Bootstrap validated GitHub and GitLab CI with matching project checks, deployment,
