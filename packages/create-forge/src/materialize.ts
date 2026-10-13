@@ -19,6 +19,7 @@ import { resolveDeployments } from './ci/deployment.ts';
 import { generationOptionsSchema } from './ci/generation-options.ts';
 import { deriveCiPrefix, validateCiPrefix, workflowPath } from './ci/paths';
 import type { GeneratorOptions } from './options';
+import { executeCommand, type CommandExecutor } from './process';
 import { deriveScheduleMinutes } from './schedule';
 import { templateTokenPrefix, templateTokens } from './template-tokens';
 import { writeProjectCi } from './write-ci';
@@ -38,6 +39,7 @@ type MaterializationContext = {
   confirmOverwrite?: (destination: string) => Promise<boolean>;
   onFileCopied?: (path: string) => void;
   generateCi?: typeof writeProjectCi;
+  execute?: CommandExecutor;
 };
 
 type TemplateFile = { source: string; relativePath: string; mode: number };
@@ -144,6 +146,9 @@ const customizeTemplate = async (
   options: GeneratorOptions,
   ciPrefix?: string,
   skipped: Set<string> = new Set(),
+  cloudflareVersion?: string,
+  execute: CommandExecutor = executeCommand,
+  signal?: AbortSignal,
 ) => {
   const relativeProjectDirectory = relative(repositoryRoot, projectRoot);
   const projectDirectory = relativeProjectDirectory.split(sep).join('/') || '.';
@@ -169,6 +174,18 @@ const customizeTemplate = async (
   if (!packageLock.packages?.['']) throw new Error('Packaged template lockfile is missing its root package metadata.');
   packageLock.packages[''].name = options.packageName;
   packageLock.packages[''].version = '0.0.0';
+  if (cloudflareVersion) {
+    // Deployment invokes the locked executable by path, outside Knip's module graph.
+    const knip = (packageMetadata.knip ?? {}) as { ignoreDependencies?: string[] };
+    packageMetadata.knip = {
+      ...knip,
+      ignoreDependencies: [...new Set([...(knip.ignoreDependencies ?? []), 'wrangler'])],
+    };
+    packageMetadata.devDependencies = {
+      ...(packageMetadata.devDependencies as Record<string, string> | undefined),
+      wrangler: cloudflareVersion,
+    };
+  }
   await writeFile(packagePath, `${JSON.stringify(packageMetadata, undefined, 2)}\n`);
   await writeFile(packageLockPath, `${JSON.stringify(packageLock, undefined, 2)}\n`);
 
@@ -198,15 +215,34 @@ const customizeTemplate = async (
 
   const dependabot = join(repositoryRoot, '.github', 'dependabot.yml');
   if (!skipped.has(dependabot)) {
-    await writeFile(
-      dependabot,
-      replaceRawToken(
-        await readFile(dependabot, 'utf8'),
-        templateTokens.dependabotDirectory,
-        dependabotDirectory,
-        'Dependabot directory',
-      ),
+    const content = replaceRawToken(
+      await readFile(dependabot, 'utf8'),
+      templateTokens.dependabotDirectory,
+      dependabotDirectory,
+      'Dependabot directory',
     );
+    await writeFile(dependabot, content);
+  }
+  if (cloudflareVersion) {
+    try {
+      await execute({
+        executable: 'npm',
+        arguments: [
+          'install',
+          '--package-lock-only',
+          '--ignore-scripts',
+          '--no-audit',
+          '--no-fund',
+          '--workspaces=false',
+        ],
+        cwd: projectRoot,
+        ...(signal ? { signal } : {}),
+      });
+    } catch (error) {
+      throw new Error('Cloudflare dependency resolution failed; check network access and npm configuration.', {
+        cause: error,
+      });
+    }
   }
   return generationOptionsSchema.parse(ciConfig);
 };
@@ -236,6 +272,14 @@ export const materializeProject = async (options: GeneratorOptions, context: Mat
     const workflow = templateWorkflowPathPattern.exec(path);
     return workflow ? { ...file, relativePath: workflowPath(workflow[1]!, ciPrefix).split('/').join(sep) } : file;
   });
+  let cloudflareVersion: string | undefined;
+  if (options.deployments?.some((deployment) => deployment.target === 'cloudflare-pages')) {
+    const defaults = JSON.parse(
+      await readFile(resolve(templateDirectory, '..', 'cloudflare', 'package.json'), 'utf8'),
+    ) as { devDependencies?: Record<string, string> };
+    cloudflareVersion = defaults.devDependencies?.wrangler;
+    if (!cloudflareVersion) throw new MaterializationError('Packaged Cloudflare defaults are missing Wrangler.');
+  }
   const skipped = new Set<string>();
   const retained: TemplateFile[] = [];
   for (const file of files) {
@@ -319,7 +363,16 @@ export const materializeProject = async (options: GeneratorOptions, context: Mat
       context.onFileCopied?.(target);
     }
     assertNotAborted(context.signal);
-    const ciConfig = await customizeTemplate(projectRoot, repositoryRoot, options, ciPrefix, skipped);
+    const ciConfig = await customizeTemplate(
+      projectRoot,
+      repositoryRoot,
+      options,
+      ciPrefix,
+      skipped,
+      cloudflareVersion,
+      context.execute,
+      context.signal,
+    );
     const stagedCi = join(backupDirectory, 'generated-ci');
     await mkdir(stagedCi);
     await (context.generateCi ?? writeProjectCi)(ciConfig, stagedCi, context.signal);

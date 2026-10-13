@@ -64,3 +64,15 @@ const dependabot = (await readFile(dependabotPath, 'utf8')).replace(
   `  - package-ecosystem: npm\n    directory: ${templateTokens.dependabotDirectory}`,
 );
 await writeFile(dependabotPath, dependabot);
+
+const cloudflareDirectory = join(packageDirectory, 'dist', 'cloudflare');
+await mkdir(cloudflareDirectory, { recursive: true });
+const packageMetadata = JSON.parse(await readFile(join(packageDirectory, 'package.json'), 'utf8')) as {
+  devDependencies: Record<string, string>;
+};
+const wrangler = packageMetadata.devDependencies.wrangler;
+if (!wrangler) throw new Error('Create-forge development dependencies are missing Wrangler.');
+await writeFile(
+  join(cloudflareDirectory, 'package.json'),
+  `${JSON.stringify({ devDependencies: { wrangler } }, undefined, 2)}\n`,
+);

@@ -100,3 +100,14 @@ Dependency review is available for public repositories and eligible private
 repositories with GitHub Code Security or Advanced Security enabled. Consumers
 whose repositories do not support it must disable that job in their owned YAML.
 See [GitHub's dependency review documentation](https://docs.github.com/en/code-security/concepts/supply-chain-security/dependency-review).
+
+## Cloudflare Pages deployment
+
+A `cloudflare-pages` deployment can use either primary CI. It requires an existing
+Direct Upload project, an explicit public URL, and credentials configured on that
+CI's deployment environment. Forge adds Wrangler to the site's development dependencies
+and resolves its lockfile through npm, requiring registry access even with `--no-install`.
+The deploy job installs those locked dependencies with lifecycle scripts disabled.
+Both providers retain native disabled deployment jobs when secondary.
+See [Cloudflare bootstrap options](../packages/create-forge/README.md#cloudflare-pages)
+for setup and switching guidance. Multiple environments remain a separate follow-up.

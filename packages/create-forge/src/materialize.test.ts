@@ -381,3 +381,88 @@ test('rejects an invalid programmatic deployment before creating a destination',
   ).rejects.toThrow('Invalid deployment');
   await expect(access(join(fixture, options.destination))).rejects.toHaveProperty('code', 'ENOENT');
 });
+
+test('resolves Cloudflare in the site lockfile without copying a tools package', async () => {
+  const { fixture, template } = await createFixture();
+  const defaults = join(fixture, 'cloudflare');
+  await mkdir(defaults);
+  await writeFile(join(defaults, 'package.json'), JSON.stringify({ devDependencies: { wrangler: '^4.150.0' } }));
+  const deployment = {
+    name: 'production',
+    sourceBranch: 'main',
+    target: 'cloudflare-pages' as const,
+    project: 'example',
+    url: 'https://example.com',
+  };
+  const commands: Array<{ executable: string; arguments: readonly string[]; cwd: string }> = [];
+  await materializeProject(
+    { ...options, deployments: [deployment] },
+    {
+      cwd: fixture,
+      templateDirectory: template,
+      generateCi,
+      execute: async (command) => {
+        commands.push(command);
+      },
+    },
+  );
+  const destination = join(fixture, options.destination);
+  expect(JSON.parse(await readFile(join(destination, 'package.json'), 'utf8'))).toHaveProperty(
+    'devDependencies.wrangler',
+    '^4.150.0',
+  );
+  expect(commands).toEqual([
+    {
+      executable: 'npm',
+      arguments: [
+        'install',
+        '--package-lock-only',
+        '--ignore-scripts',
+        '--no-audit',
+        '--no-fund',
+        '--workspaces=false',
+      ],
+      cwd: destination,
+    },
+  ]);
+  await expect(access(join(destination, 'tools'))).rejects.toHaveProperty('code', 'ENOENT');
+});
+
+test('rolls back existing files when Cloudflare dependency resolution fails', async () => {
+  const { fixture, template } = await createFixture();
+  await mkdir(join(fixture, 'cloudflare'));
+  await writeFile(
+    join(fixture, 'cloudflare/package.json'),
+    JSON.stringify({ devDependencies: { wrangler: '^4.150.0' } }),
+  );
+  const destination = join(fixture, options.destination);
+  await mkdir(destination);
+  await writeFile(join(destination, 'package.json'), 'existing package');
+  await expect(
+    materializeProject(
+      {
+        ...options,
+        deployments: [
+          {
+            name: 'production',
+            sourceBranch: 'main',
+            target: 'cloudflare-pages',
+            project: 'example',
+            url: 'https://example.com',
+          },
+        ],
+      },
+      {
+        cwd: fixture,
+        templateDirectory: template,
+        generateCi,
+        confirmOverwrite: async () => true,
+        execute: async () => {
+          throw new Error('network failure');
+        },
+      },
+    ),
+  ).rejects.toThrow('Cloudflare dependency resolution failed');
+  expect(await readFile(join(destination, 'package.json'), 'utf8')).toBe('existing package');
+  await expect(access(join(destination, 'package-lock.json'))).rejects.toHaveProperty('code', 'ENOENT');
+});
