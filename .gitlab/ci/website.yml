@@ -177,7 +177,7 @@ website-lighthouse:
     - npm ci
   # Node containers run Chrome as root.
   variables:
-    LHCI_COLLECT__SETTINGS__CHROME_FLAGS: --no-sandbox
+    LHCI_COLLECT__SETTINGS__CHROME_FLAGS: --no-sandbox --disable-dev-shm-usage --disable-gpu
 website-deploy:
   image: node:26
   stage: deploy

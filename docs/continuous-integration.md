@@ -189,6 +189,6 @@ Cobertura report declarations. No additional reporting action, service or write
 permission is required.
 
 GitLab Lighthouse jobs select Playwright Chromium with `CHROME_PATH` and set
-`LHCI_COLLECT__SETTINGS__CHROME_FLAGS=--no-sandbox` for the root user in Node
+`LHCI_COLLECT__SETTINGS__CHROME_FLAGS=--no-sandbox --disable-dev-shm-usage --disable-gpu` to support root execution and limited shared memory in Node
 containers. These settings are scoped to the audit jobs, including generated
 consumer pipelines.
