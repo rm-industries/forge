@@ -37,7 +37,7 @@ describe('CLI argument parsing', () => {
         --primary-ci <provider>          primary CI provider (defaults to github when
                                          enabled)
         --deployment <json>              deployment environment JSON (repeatable; one
-                                         environment supported) (default: [])
+                                         environment per branch) (default: [])
         --node-version <major>           Node.js major for generated CI: 22,24,26
                                          (default: 26)
         --name <name>                    npm package name (defaults to the directory

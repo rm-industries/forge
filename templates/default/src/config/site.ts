@@ -74,11 +74,15 @@ export const defineSiteConfig = (config: SiteConfig): Readonly<SiteConfig> =>
     socialLinks: requireLinks(config.socialLinks, 'socialLinks'),
   });
 
+// CI selects a public canonical URL; local development keeps the configured default.
+const deploymentUrl =
+  import.meta.env?.PUBLIC_SITE_URL ?? (typeof process !== 'undefined' ? process.env.PUBLIC_SITE_URL : undefined);
+
 export const site = defineSiteConfig({
   name: 'Forge',
   description: 'A content-driven website created with Forge.',
   author: 'Site Author',
-  url: 'https://example.com',
+  url: deploymentUrl ?? 'https://example.com',
   repository: '',
   language: 'en',
   socialImage: '/social-card.svg',

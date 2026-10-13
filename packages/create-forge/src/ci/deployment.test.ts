@@ -117,3 +117,28 @@ test('reports malformed prefixed Pages URLs as deployment validation errors', ()
     ),
   ).toThrow(invalidDeploymentMessagePattern);
 });
+
+test('accepts separate branch environments and rejects destination collisions', () => {
+  const production = {
+    name: 'production',
+    sourceBranch: 'main',
+    target: 'cloudflare-pages',
+    project: 'production-site',
+    url: 'https://example.com',
+  };
+  const staging = {
+    ...production,
+    name: 'staging',
+    sourceBranch: 'dev',
+    project: 'staging-site',
+    url: 'https://staging.example.com',
+  };
+  expect(resolveDeployments([production, staging], 'github')).toEqual([production, staging]);
+  for (const invalid of [
+    { ...staging, name: 'production' },
+    { ...staging, sourceBranch: 'main' },
+    { ...staging, project: 'production-site' },
+    { ...staging, url: undefined },
+  ])
+    expect(() => resolveDeployments([production, invalid], 'github')).toThrow(invalidDeploymentMessagePattern);
+});

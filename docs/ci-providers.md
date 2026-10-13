@@ -110,7 +110,7 @@ and resolves its lockfile through npm, requiring registry access even with `--no
 The deploy job installs those locked dependencies with lifecycle scripts disabled.
 Both providers retain native disabled deployment jobs when secondary.
 See [Cloudflare bootstrap options](../packages/create-forge/README.md#cloudflare-pages)
-for setup and switching guidance. Multiple environments remain a separate follow-up.
+for setup and switching guidance. Multiple environments use separate branches and destinations.
 
 ## Persistent GitLab Pages prefixes
 
@@ -120,3 +120,11 @@ The prefix can coexist with the root site; it must not shadow a route in that si
 The URL includes the prefix so build paths and smoke checks target the same deployment.
 Standard unprefixed Pages remains unchanged. See
 [prefixed Pages setup](../packages/create-forge/README.md#prefixed-gitlab-pages).
+
+## Branch-specific environments
+
+Multiple deployment inputs share one validation graph and select `PUBLIC_SITE_URL`
+by source branch (or pull/merge-request target branch). Named deployment and smoke
+jobs consume that branch's validated artifact and remain gated by primary CI.
+Explicit URLs and unique names, branches and destinations prevent overwrites.
+See [multiple environments](../packages/create-forge/README.md#multiple-deployment-environments).
