@@ -1,4 +1,6 @@
 project-format:
+  rules:
+    - when: on_success
   image: node:26
   stage: validate
   before_script:
@@ -7,6 +9,8 @@ project-format:
   script:
     - npm run format
 project-lint-code:
+  rules:
+    - when: on_success
   image: node:26
   stage: validate
   before_script:
@@ -23,6 +27,8 @@ project-lint-code:
     reports:
       codequality: test-results/code-quality.json
 project-lint-markdown:
+  rules:
+    - when: on_success
   image: node:26
   stage: validate
   before_script:
@@ -31,6 +37,8 @@ project-lint-markdown:
   script:
     - npm run lint:markdown
 project-spellcheck:
+  rules:
+    - when: on_success
   image: node:26
   stage: validate
   before_script:
@@ -39,6 +47,8 @@ project-spellcheck:
   script:
     - npm run spellcheck
 project-documentation:
+  rules:
+    - when: on_success
   image: node:26
   stage: validate
   before_script:
@@ -47,6 +57,8 @@ project-documentation:
   script:
     - npm run docs:validate
 project-typecheck:
+  rules:
+    - when: on_success
   image: node:26
   stage: validate
   before_script:
@@ -55,6 +67,8 @@ project-typecheck:
   script:
     - npm run typecheck:root
 project-test:
+  rules:
+    - when: on_success
   image: node:26
   stage: validate
   before_script:
@@ -70,6 +84,8 @@ project-test:
     reports:
       junit: test-results/unit.xml
 project-build:
+  rules:
+    - when: on_success
   image: node:26
   stage: build
   before_script:
@@ -100,6 +116,8 @@ project-build:
       - .ci-packages
     expire_in: 7 days
 project-pack:
+  rules:
+    - when: on_success
   image: node:26
   stage: verify
   before_script: []
@@ -124,6 +142,8 @@ project-pack:
         esac
       done
 project-compatibility:
+  rules:
+    - when: on_success
   image: node:$NODE_VERSION
   stage: verify
   before_script:

@@ -193,3 +193,21 @@ test('omits dependency vulnerability audits from publication and normal mirrored
   for (const workflow of [githubProject, githubGenerator, githubWebsite])
     expect(workflow.jobs).not.toHaveProperty('dependency-audit');
 });
+
+test('admits native validation jobs in merge-request and default-branch push pipelines', () => {
+  expect(entry.workflow.rules).toEqual([
+    { if: '$CI_PIPELINE_SOURCE == "merge_request_event"' },
+    {
+      if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS && $CI_PIPELINE_SOURCE == "push"',
+      when: 'never',
+    },
+    { if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"' },
+  ]);
+  for (const pipeline of [project, generator, website]) {
+    for (const [id, job] of Object.entries(pipeline)) {
+      if (['website-deploy', 'website-smoke-deployed'].includes(id)) continue;
+      // Jobs without rules default to excluding merge-request pipelines.
+      expect(job).toMatchObject({ rules: [{ when: 'on_success' }] });
+    }
+  }
+});
