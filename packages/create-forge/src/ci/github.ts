@@ -1,3 +1,4 @@
+import { resolveDeployments } from './deployment.ts';
 import type { CiGenerationOptions } from './generation-options.ts';
 import { createGithubExtras } from './github-extra.ts';
 import { planSchema, siteWork, type WorkPlan } from './model.ts';
@@ -10,18 +11,33 @@ import {
 } from './schema.ts';
 
 export type ActionResolver = (action: string) => { ref: string; version?: string };
+const githubBranchFilterSpecialCharacterPattern = /[!+]/g;
 const onMain = "github.event_name == 'push' && github.ref == 'refs/heads/main'";
 
 export function createGithubWorkflows(config: CiGenerationOptions, pins: ActionResolver, plan: WorkPlan = siteWork) {
   plan = planSchema.parse(plan);
+  const deployment = resolveDeployments(config.deployments, config.primary)[0];
+  const nativePages = config.deployments === undefined || deployment?.target === 'github-pages';
+  const deployCondition = deployment
+    ? `github.event_name == 'push' && github.ref == 'refs/heads/${deployment.sourceBranch.replaceAll("'", "''")}'`
+    : onMain;
   const githubExtras = createGithubExtras(pins);
+  const validationBranches = [...new Set(['main', ...(deployment ? [deployment.sourceBranch] : [])])].map((branch) =>
+    branch.replace(githubBranchFilterSpecialCharacterPattern, '\\$&'),
+  );
   const path = (value: string) => `${config.directory}/${value}`;
   const checkout: GithubStep = { uses: pins('actions/checkout').ref, with: { 'persist-credentials': false } };
   const setup = (node: string): GithubStep[] => [
     checkout,
     {
       uses: pins('actions/setup-node').ref,
-      with: { 'node-version': node, cache: 'npm', 'cache-dependency-path': path('package-lock.json') },
+      with: {
+        'node-version': node,
+        // Additional deployment branches need independent installs rather than shared publishing caches.
+        ...(deployment && deployment.sourceBranch !== 'main'
+          ? { 'package-manager-cache': false }
+          : { cache: 'npm', 'cache-dependency-path': path('package-lock.json') }),
+      },
     },
     { run: 'npm ci' },
   ];
@@ -65,15 +81,20 @@ export function createGithubWorkflows(config: CiGenerationOptions, pins: ActionR
     });
   }
   // Deployment consumes this run's artifacts and never executes fork-controlled code with Pages credentials.
-  jobs.build!.steps.push({
-    uses: pins('actions/upload-pages-artifact').ref,
-    if: config.primary === 'github' ? onMain : false,
-    with: { path: path('dist') },
-  });
-  for (const [id, extra] of Object.entries(githubExtras.pages)) {
+  if (nativePages)
+    jobs.build!.steps.push({
+      uses: pins('actions/upload-pages-artifact').ref,
+      if: config.primary === 'github' && deployment ? deployCondition : false,
+      with: { path: path('dist') },
+    });
+  for (const [id, extra] of Object.entries(nativePages ? githubExtras.pages : {})) {
     const job = structuredClone(extra);
     if (id === 'deploy') job.needs = Object.keys(plan);
-    if (config.primary !== 'github') job.if = false;
+    job.if = config.primary === 'github' && deployment ? deployCondition : false;
+    if (id === 'deploy' && config.deployments !== undefined && deployment) job.environment!.name = deployment.name;
+    if (id === 'deploy' && deployment?.url) job.environment!.url = deployment.url;
+    if (id === 'smoke-deployed' && deployment?.url)
+      for (const step of job.steps) if (step.env?.DEPLOYMENT_URL) step.env.DEPLOYMENT_URL = deployment.url;
     for (const step of job.steps) {
       if ('with' in step && step.with && typeof step.with.path === 'string')
         step.with.path = step.with.path.split('\n').map(path).join('\n');
@@ -83,7 +104,10 @@ export function createGithubWorkflows(config: CiGenerationOptions, pins: ActionR
   }
   const base = (name: string): Omit<GithubWorkflow, 'jobs'> => ({
     name: `${config.prefix ? `${config.prefix}: ` : ''}${name}`,
-    on: { push: { branches: ['main'] }, pull_request: { branches: ['main'] } },
+    on: {
+      push: { branches: validationBranches },
+      pull_request: { branches: validationBranches },
+    },
     permissions: {},
     concurrency: {
       group: '${{ github.workflow_ref }}-${{ github.ref }}',

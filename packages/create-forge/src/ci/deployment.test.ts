@@ -58,6 +58,12 @@ test('rejects invalid refs, expressions and URLs at the input boundary', () => {
     expect(() => resolveDeployments([{ ...deployment, sourceBranch }], 'github')).toThrow(
       invalidDeploymentMessagePattern,
     );
-  for (const url of ['file:///tmp/site', 'https://user:password@example.com', 'https://example.com/${{secrets.TOKEN}}'])
+  for (const url of [
+    'https://example.com/$TOKEN',
+    'https://example.com/foo\nbar',
+    'file:///tmp/site',
+    'https://user:password@example.com',
+    'https://example.com/${{secrets.TOKEN}}',
+  ])
     expect(() => resolveDeployments([{ ...deployment, url }], 'github')).toThrow(invalidDeploymentMessagePattern);
 });

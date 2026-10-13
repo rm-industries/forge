@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
 const environmentNamePattern = /^[a-z][a-z0-9-]*$/;
-const invalidBranchCharacterPattern = /[\u0000-\u0020\u007f~^:?*[\]\\]/u;
+const invalidBranchCharacterPattern = /[\u0000-\u0020\u007f~^:?*$[\]\\]/u;
+const invalidDeploymentUrlCharacterPattern = /[\u0000-\u0020\u007f$]/u;
 const expressionMarkerPattern = /\$\{\{|\$\{/;
 
 const sourceBranchSchema = z
@@ -21,12 +22,19 @@ const sourceBranchSchema = z
         .every((part) => part.length > 0 && !part.startsWith('.') && !part.endsWith('.') && !part.endsWith('.lock')),
     'Invalid deployment source branch',
   );
-const deploymentUrlSchema = z.url().refine((value) => {
-  const url = new URL(value);
-  return (
-    ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password && !expressionMarkerPattern.test(value)
-  );
-}, 'Invalid deployment URL');
+const deploymentUrlSchema = z
+  .string()
+  .refine((value) => !invalidDeploymentUrlCharacterPattern.test(value), 'Invalid deployment URL')
+  .pipe(z.url())
+  .refine((value) => {
+    const url = new URL(value);
+    return (
+      ['http:', 'https:'].includes(url.protocol) &&
+      !url.username &&
+      !url.password &&
+      !expressionMarkerPattern.test(value)
+    );
+  }, 'Invalid deployment URL');
 
 export const deploymentEnvironmentSchema = z.strictObject({
   name: z.string().regex(environmentNamePattern, 'Invalid deployment environment name').max(80),
