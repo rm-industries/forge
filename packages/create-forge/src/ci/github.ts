@@ -20,8 +20,66 @@ export type ActionResolver = (action: string) => { ref: string; version?: string
 const githubBranchFilterSpecialCharacterPattern = /[!+\\]/g;
 const onMain = "github.event_name == 'push' && github.ref == 'refs/heads/main'";
 
-export function createGithubWorkflows(config: CiGenerationOptions, pins: ActionResolver, plan: WorkPlan = siteWork) {
+export function createGithubWorkflows(
+  config: CiGenerationOptions,
+  pins: ActionResolver,
+  plan: WorkPlan = siteWork,
+): { project: GithubWorkflow; automation: GithubWorkflow; security: GithubWorkflow } {
   plan = planSchema.parse(plan);
+  const deployments = resolveDeployments(config.deployments, config.primary);
+  if (deployments.length > 1) {
+    const result = createGithubWorkflows({ ...config, deployments: [deployments[0]!] }, pins, plan);
+    const project = result.project!;
+    delete project.jobs.deploy;
+    delete project.jobs['smoke-deployed'];
+    const branchFilter = [...new Set(['main', ...deployments.map((item) => item.sourceBranch)])].map((branch) =>
+      branch.replace(githubBranchFilterSpecialCharacterPattern, '\\$&'),
+    );
+    for (const workflow of Object.values(result)) {
+      if (workflow.on.push) workflow.on.push.branches = branchFilter;
+      if (workflow.on.pull_request) workflow.on.pull_request.branches = branchFilter;
+    }
+    const expressionQuote = (value: string) => `'${value.replaceAll("'", "''")}'`;
+    const siteUrl =
+      '${{ ' +
+      deployments
+        .map(
+          (item) =>
+            `(github.ref == ${expressionQuote(`refs/heads/${item.sourceBranch}`)} || github.base_ref == ${expressionQuote(item.sourceBranch)}) && ${expressionQuote(item.url!)}`,
+        )
+        .join(' || ') +
+      ' || ' +
+      expressionQuote(deployments[0]!.url!) +
+      ' }}';
+    for (const id of Object.keys(plan)) {
+      const job = project.jobs[id]!;
+      job.env = { ...job.env, PUBLIC_SITE_URL: siteUrl };
+      for (const step of job.steps)
+        if ('uses' in step && step.uses.startsWith('actions/setup-node@')) {
+          delete step.with?.cache;
+          delete step.with?.['cache-dependency-path'];
+          step.with = { ...step.with, 'package-manager-cache': false };
+        }
+    }
+    for (const deployment of deployments) {
+      const rendered = createGithubWorkflows({ ...config, deployments: [deployment] }, pins, plan).project!;
+      if (rendered.jobs.deploy) {
+        project.jobs[`deploy-${deployment.name}`] = rendered.jobs.deploy;
+        const smoke = rendered.jobs['smoke-deployed']!;
+        smoke.needs = [`deploy-${deployment.name}`];
+        smoke.env = { PUBLIC_SITE_URL: deployment.url! };
+        project.jobs[`smoke-${deployment.name}`] = smoke;
+      }
+      if (deployment.target === 'github-pages' && deployments[0]!.target !== 'github-pages') {
+        const upload = rendered.jobs.build!.steps.find(
+          (step) => 'uses' in step && step.uses.startsWith('actions/upload-pages-artifact@'),
+        );
+        if (upload) project.jobs.build!.steps.push(upload);
+      }
+    }
+    result.project = githubWorkflowSchema.parse(project);
+    return result;
+  }
   const deployment = resolveDeployments(config.deployments, config.primary)[0];
   const nativePages = config.deployments === undefined || deployment?.target === 'github-pages';
   const deployCondition = deployment

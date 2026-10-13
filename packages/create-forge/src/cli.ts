@@ -23,7 +23,7 @@ const parseArguments = (args: readonly string[], version: string) => {
     .option('--primary-ci <provider>', 'primary CI provider (defaults to github when enabled)')
     .option(
       '--deployment <json>',
-      'deployment environment JSON (repeatable; one environment supported)',
+      'deployment environment JSON (repeatable; one environment per branch)',
       (value: string, previous: unknown[]) => {
         try {
           return [...previous, JSON.parse(value) as unknown];

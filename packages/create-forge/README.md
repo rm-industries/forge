@@ -77,7 +77,7 @@ URL for smoke tests. Configure custom domains on the hosting provider before
 using them. GitHub environment approval and branch restrictions are configured
 in repository settings separately; use a name that matches those settings.
 
-This iteration accepts one deployment environment. Native Pages requires a matching primary
+Each deployment environment requires its own source branch and destination. Native Pages requires a matching primary
 CI: `github-pages` with GitHub or `gitlab-pages` with GitLab. Explicit deployments
 omit incompatible secondary-provider deployment jobs and explain why in generated
 comments. The default without `--deployment` retains both native Pages standby
@@ -91,7 +91,31 @@ The flag is repeatable, but multiple environments and parallel GitLab Pages rema
 rejected until their subsequent implementation reviews. A friendlier
 input syntax can replace JSON later without introducing a retained Forge config.
 
-### Cloudflare Pages
+### Prefixed GitLab Pages
+
+GitLab Premium or Ultimate projects with an available parallel deployment slot can
+opt in to a persistent prefixed deployment:
+
+```sh
+npm create @rm-industries/forge website -- \
+  --ci-providers github,gitlab --primary-ci gitlab \
+  --deployment '{"name":"staging","sourceBranch":"dev","target":"gitlab-pages","pathPrefix":"staging","url":"https://example.gitlab.io/site/staging/"}'
+```
+
+Use the actual Pages URL, including the project path when applicable and the final
+prefix. Forge uses this URL for the site's build paths and smoke tests. Prefixes
+must be lowercase, at most 63 characters, and start/end with a letter or digit;
+internal hyphens and periods are allowed. Forge rejects values GitLab would silently
+normalize. Avoid prefixes that shadow existing routes in the main site.
+
+The generated job uses `pages.path_prefix` and `pages.expire_in: never`, so it can
+remain deployed alongside the root site. Selecting a prefix explicitly asserts that
+your GitLab plan supports parallel Pages. Ordinary Pages remains unchanged and
+requires no paid parallel deployment feature. Repeat `--deployment` to generate several environments on separate branches.
+See [GitLab parallel Pages](https://docs.gitlab.com/user/project/pages/parallel_deployments/)
+for plan requirements, namespace slots, and route conflicts.
+
+## Cloudflare Pages
 
 Cloudflare Pages can use either GitHub or GitLab as primary CI:
 
@@ -194,3 +218,22 @@ Consumers run one Node major in CI, selected with `--node-version 22`,
 `--node-version 24`, or `--node-version 26` (the default). Forge retains its
 compatibility matrices to verify the supported runtime range. Consumers do not
 receive a compatibility job.
+
+## Multiple deployment environments
+
+Repeat `--deployment` for production and staging on separate branches. Every name,
+source branch and destination must be unique, and each environment needs an explicit
+public URL. Cloudflare environments need separate existing Direct Upload projects;
+GitLab Pages environments need distinct prefixes (one can use the root deployment).
+GitHub Pages supports one destination per repository.
+
+The project workflow validates once per branch. `PUBLIC_SITE_URL` selects that
+branch's canonical URL and build base path for build, browser and Lighthouse checks.
+Deploy and smoke jobs are named by environment, use the validated artifact, and run
+only for their selected source branch on the primary CI. Pull/merge requests validate
+against their target branch's URL but do not deploy. Other branches use the first
+configured environment's URL. Local development also defaults to the first URL;
+override `PUBLIC_SITE_URL` to exercise another environment locally.
+
+Both CI definitions remain ordinary consumer-owned YAML. To change environments
+later, edit their URL selection, branch conditions and named deploy/smoke jobs.

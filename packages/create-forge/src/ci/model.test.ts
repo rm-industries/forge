@@ -338,3 +338,119 @@ test.each(['github', 'gitlab'] as const)(
     expect(github.jobs['smoke-deployed']!.steps.some((step) => step.env?.CLOUDFLARE_API_TOKEN)).toBe(false);
   },
 );
+
+test('renders persistent prefixed GitLab Pages with matching smoke URL and branch gate', () => {
+  const selected = generationOptionsSchema.parse({
+    ...config,
+    primary: 'gitlab',
+    deployments: [
+      {
+        name: 'staging',
+        sourceBranch: 'dev',
+        target: 'gitlab-pages',
+        pathPrefix: 'staging',
+        url: 'https://example.gitlab.io/site/staging/',
+      },
+    ],
+  });
+  const pipeline = createGitlabPipeline(selected);
+  expect(pipeline.deploy).toHaveProperty('pages.path_prefix', 'staging');
+  expect(pipeline.deploy).toHaveProperty('pages.expire_in', 'never');
+  expect(pipeline['smoke-deployed']).toHaveProperty(
+    'variables.DEPLOYMENT_URL',
+    'https://example.gitlab.io/site/staging/',
+  );
+  expect(pipeline.deploy).toHaveProperty(
+    'rules.0.if',
+    '$CI_COMMIT_BRANCH == "dev" && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "parent_pipeline")',
+  );
+});
+
+test.each(['github', 'gitlab'] as const)('validates once and gates named environments under primary %s', (primary) => {
+  const selected = generationOptionsSchema.parse({
+    ...config,
+    primary,
+    deployments: [
+      {
+        name: 'production',
+        sourceBranch: 'main',
+        target: 'cloudflare-pages',
+        project: 'production-site',
+        url: 'https://example.com',
+      },
+      {
+        name: 'staging',
+        sourceBranch: 'dev',
+        target: 'cloudflare-pages',
+        project: 'staging-site',
+        url: 'https://staging.example.com',
+      },
+    ],
+  });
+  const github = createGithubWorkflows(selected, pins).project;
+  const gitlab = createGitlabPipeline(selected);
+  expect(github.jobs).not.toHaveProperty('deploy');
+  expect(github.jobs['deploy-staging']).toHaveProperty('environment.name', 'staging');
+  expect(github.jobs['smoke-staging']).toHaveProperty('needs', ['deploy-staging']);
+  expect(github.jobs.build).toHaveProperty('env.PUBLIC_SITE_URL');
+  expect(github.on.push?.branches).toEqual(['main', 'dev']);
+  expect(gitlab['smoke-staging']).toHaveProperty('needs', [{ job: 'deploy-staging', artifacts: false }]);
+  expect(gitlab.build).toHaveProperty('rules.1.variables.PUBLIC_SITE_URL', 'https://staging.example.com');
+  expect(github.jobs['deploy-staging']).toHaveProperty(
+    'if',
+    primary === 'github' ? "github.event_name == 'push' && github.ref == 'refs/heads/dev'" : false,
+  );
+  expect(gitlab['deploy-staging']).toHaveProperty(
+    primary === 'gitlab' ? 'rules.0.if' : 'rules.0.when',
+    primary === 'gitlab'
+      ? '$CI_COMMIT_BRANCH == "dev" && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "parent_pipeline")'
+      : 'never',
+  );
+});
+
+test('combines Cloudflare and GitHub Pages without losing the native artifact upload', () => {
+  const selected = generationOptionsSchema.parse({
+    ...config,
+    deployments: [
+      {
+        name: 'staging',
+        sourceBranch: 'dev',
+        target: 'cloudflare-pages',
+        project: 'staging-site',
+        url: 'https://staging.example.com',
+      },
+      { name: 'production', sourceBranch: 'main', target: 'github-pages', url: 'https://example.com' },
+    ],
+  });
+  const workflows = createGithubWorkflows(selected, pins);
+  expect(workflows.project.jobs['deploy-production']).toHaveProperty('environment.name', 'production');
+  expect(
+    workflows.project.jobs.build!.steps.filter(
+      (step) => 'uses' in step && step.uses.startsWith('actions/upload-pages-artifact@'),
+    ),
+  ).toHaveLength(1);
+  expect(workflows.security.on.pull_request?.branches).toEqual(['main', 'dev']);
+  expect(workflows.automation.on.push?.paths).toEqual(['.github/**']);
+});
+
+test('combines root and prefixed GitLab Pages with independent persistent deployment jobs', () => {
+  const selected = generationOptionsSchema.parse({
+    ...config,
+    primary: 'gitlab',
+    deployments: [
+      { name: 'production', sourceBranch: 'main', target: 'gitlab-pages', url: 'https://example.gitlab.io/site/' },
+      {
+        name: 'staging',
+        sourceBranch: 'dev',
+        target: 'gitlab-pages',
+        pathPrefix: 'staging',
+        url: 'https://example.gitlab.io/site/staging/',
+      },
+    ],
+  });
+  const pipeline = createGitlabPipeline(selected);
+  expect(pipeline['deploy-production']).not.toHaveProperty('pages.path_prefix');
+  expect(pipeline['deploy-staging']).toHaveProperty('pages.path_prefix', 'staging');
+  expect(pipeline['deploy-staging']).toHaveProperty('pages.expire_in', 'never');
+  expect(pipeline['deploy-staging']).toHaveProperty('resource_group', 'staging-gitlab-pages');
+});

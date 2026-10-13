@@ -87,3 +87,58 @@ test('supports a configured Cloudflare project from either primary CI', () => {
     expect(() => resolveDeployments([invalid], 'github')).toThrow(invalidDeploymentMessagePattern);
   expect(() => resolveDeployments([deployment], undefined)).toThrow(invalidDeploymentMessagePattern);
 });
+
+test('accepts an explicit persistent GitLab Pages prefix with its public URL', () => {
+  const deployment = {
+    name: 'staging',
+    sourceBranch: 'dev',
+    target: 'gitlab-pages',
+    pathPrefix: 'staging',
+    url: 'https://example.gitlab.io/site/staging/',
+  };
+  expect(resolveDeployments([deployment], 'gitlab')).toEqual([deployment]);
+  for (const pathPrefix of ['', 'Staging', '.stage', 'stage.', 'a/b', '$BRANCH', 'a'.repeat(64)])
+    expect(() => resolveDeployments([{ ...deployment, pathPrefix }], 'gitlab')).toThrow(
+      invalidDeploymentMessagePattern,
+    );
+  expect(() => resolveDeployments([{ ...deployment, url: undefined }], 'gitlab')).toThrow(
+    invalidDeploymentMessagePattern,
+  );
+  expect(() => resolveDeployments([{ ...deployment, url: 'https://example.gitlab.io/site/' }], 'gitlab')).toThrow(
+    invalidDeploymentMessagePattern,
+  );
+});
+
+test('reports malformed prefixed Pages URLs as deployment validation errors', () => {
+  expect(() =>
+    resolveDeployments(
+      [{ name: 'staging', sourceBranch: 'dev', target: 'gitlab-pages', pathPrefix: 'staging', url: 'not-a-url' }],
+      'gitlab',
+    ),
+  ).toThrow(invalidDeploymentMessagePattern);
+});
+
+test('accepts separate branch environments and rejects destination collisions', () => {
+  const production = {
+    name: 'production',
+    sourceBranch: 'main',
+    target: 'cloudflare-pages',
+    project: 'production-site',
+    url: 'https://example.com',
+  };
+  const staging = {
+    ...production,
+    name: 'staging',
+    sourceBranch: 'dev',
+    project: 'staging-site',
+    url: 'https://staging.example.com',
+  };
+  expect(resolveDeployments([production, staging], 'github')).toEqual([production, staging]);
+  for (const invalid of [
+    { ...staging, name: 'production' },
+    { ...staging, sourceBranch: 'main' },
+    { ...staging, project: 'production-site' },
+    { ...staging, url: undefined },
+  ])
+    expect(() => resolveDeployments([production, invalid], 'github')).toThrow(invalidDeploymentMessagePattern);
+});

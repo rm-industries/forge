@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 
 import { parse } from 'yaml';
@@ -283,6 +283,41 @@ try {
     throw new Error('No-install fixture did not preserve its requested setup state or next steps.');
   }
 
+  const prefixedPagesDirectory = join(projectsDirectory, 'prefixed-pages');
+  const prefixedPagesUrl = 'https://example.gitlab.io/site/staging/';
+  await runGenerator(executable, projectsDirectory, [
+    'prefixed-pages',
+    '--yes',
+    '--no-install',
+    '--no-git',
+    '--ci-providers',
+    'github,gitlab',
+    '--primary-ci',
+    'gitlab',
+    '--deployment',
+    JSON.stringify({
+      name: 'staging',
+      sourceBranch: 'dev',
+      target: 'gitlab-pages',
+      pathPrefix: 'staging',
+      url: prefixedPagesUrl,
+    }),
+  ]);
+  const prefixedPipeline = parse(await readFile(join(prefixedPagesDirectory, '.gitlab-ci.yml'), 'utf8')) as {
+    deploy: { pages: { path_prefix?: string; expire_in?: string }; environment: { url: string } };
+  };
+  const { site: prefixedSiteConfig } = (await import(
+    pathToFileURL(join(prefixedPagesDirectory, 'src', 'config', 'site.ts')).href
+  )) as { site: { url: string } };
+  if (
+    prefixedPipeline.deploy.pages.path_prefix !== 'staging' ||
+    prefixedPipeline.deploy.pages.expire_in !== 'never' ||
+    prefixedPipeline.deploy.environment.url !== prefixedPagesUrl ||
+    prefixedSiteConfig.url !== prefixedPagesUrl
+  ) {
+    throw new Error('Prefixed Pages must preserve the persistent prefix and matching site/deployment URL.');
+  }
+
   const cloudflareDirectory = join(projectsDirectory, 'cloudflare-site');
   await runGenerator(executable, projectsDirectory, [
     'cloudflare-site',
@@ -298,6 +333,14 @@ try {
       target: 'cloudflare-pages',
       project: 'example-site',
       url: 'https://example-site.pages.dev',
+    }),
+    '--deployment',
+    JSON.stringify({
+      name: 'staging',
+      sourceBranch: 'dev',
+      target: 'cloudflare-pages',
+      project: 'staging-site',
+      url: 'https://staging.example.com/preview/',
     }),
   ]);
   const generatorMetadata = JSON.parse(await readFile(join(packageDirectory, 'package.json'), 'utf8')) as {
@@ -323,6 +366,27 @@ try {
   }
   await runGenerator('npm', cloudflareDirectory, ['ci', '--ignore-scripts', '--no-audit', '--no-fund']);
   await runGenerator('npm', cloudflareDirectory, ['run', 'audit:unused']);
+  const stagingUrl = 'https://staging.example.com/preview/';
+  await execute('npm', ['run', 'build'], {
+    cwd: cloudflareDirectory,
+    env: { ...process.env, PUBLIC_SITE_URL: stagingUrl },
+    maxBuffer: 10 * 1024 * 1024,
+  });
+  await runGenerator('npm', cloudflareDirectory, ['run', 'typecheck']);
+  const canonicalLinkPattern = /<link rel="canonical" href="([^"]+)"/u;
+  const builtHome = await readFile(join(cloudflareDirectory, 'dist', 'index.html'), 'utf8');
+  if (canonicalLinkPattern.exec(builtHome)?.[1] !== stagingUrl)
+    throw new Error('The staging artifact must use its selected canonical URL and base path.');
+  const { stdout: selectedNodeUrl } = await execute(
+    process.execPath,
+    ['--input-type=module', '-e', "import { site } from './src/config/site.ts'; console.log(site.url);"],
+    {
+      cwd: cloudflareDirectory,
+      env: { ...process.env, PUBLIC_SITE_URL: stagingUrl },
+    },
+  );
+  if (selectedNodeUrl.trim() !== stagingUrl)
+    throw new Error('Node-based browser and Lighthouse tooling must use the same selected canonical URL.');
   const { stdout: wranglerVersion } = await execute(
     process.execPath,
     [join(cloudflareDirectory, 'node_modules', 'wrangler', 'bin', 'wrangler.js'), '--version'],
@@ -362,7 +426,7 @@ try {
     throw new Error('Conflict fixture did not fail safely with its existing filesystem state intact.');
   }
 
-  console.log(`Verified ${tarball} across 10 isolated generator behavior fixtures.`);
+  console.log(`Verified ${tarball} across 11 isolated generator behavior fixtures.`);
 } finally {
   await rm(fixtureDirectory, { recursive: true, force: true });
 }

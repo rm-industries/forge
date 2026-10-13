@@ -41,13 +41,29 @@ const environmentFields = {
   name: z.string().regex(environmentNamePattern, 'Invalid deployment environment name').max(80),
   sourceBranch: sourceBranchSchema,
 };
+const pagesPathPrefixPattern = /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/;
 const cloudflareProjectNamePattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const deploymentEnvironmentSchema = z.discriminatedUnion('target', [
   z.strictObject({
     ...environmentFields,
-    target: z.enum(['github-pages', 'gitlab-pages']),
+    target: z.literal('github-pages'),
     url: deploymentUrlSchema.optional(),
   }),
+  z
+    .strictObject({
+      ...environmentFields,
+      target: z.literal('gitlab-pages'),
+      pathPrefix: z.string().regex(pagesPathPrefixPattern, 'Invalid GitLab Pages path prefix').max(63).optional(),
+      url: deploymentUrlSchema.optional(),
+    })
+    .refine(
+      (deployment) =>
+        !deployment.pathPrefix ||
+        (deployment.url !== undefined &&
+          URL.canParse(deployment.url) &&
+          new URL(deployment.url).pathname.split('/').filter(Boolean).at(-1) === deployment.pathPrefix),
+      'Prefixed GitLab Pages deployment requires a public URL ending with its path prefix',
+    ),
   z.strictObject({
     ...environmentFields,
     target: z.literal('cloudflare-pages'),
@@ -56,9 +72,26 @@ export const deploymentEnvironmentSchema = z.discriminatedUnion('target', [
   }),
 ]);
 export type DeploymentEnvironment = z.infer<typeof deploymentEnvironmentSchema>;
-export const deploymentPlanSchema = z
-  .array(deploymentEnvironmentSchema)
-  .max(1, 'This iteration supports one deployment environment');
+export const deploymentPlanSchema = z.array(deploymentEnvironmentSchema).superRefine((deployments, context) => {
+  const names = new Set<string>();
+  const branches = new Set<string>();
+  const destinations = new Set<string>();
+  for (const deployment of deployments) {
+    const destination =
+      deployment.target === 'cloudflare-pages'
+        ? `cloudflare:${deployment.project}`
+        : deployment.target === 'gitlab-pages'
+          ? `gitlab:${deployment.pathPrefix ?? ''}`
+          : 'github-pages';
+    if (names.has(deployment.name) || branches.has(deployment.sourceBranch) || destinations.has(destination))
+      context.addIssue({ code: 'custom', message: 'Deployment names, branches and destinations must be unique' });
+    names.add(deployment.name);
+    branches.add(deployment.sourceBranch);
+    destinations.add(destination);
+    if (deployments.length > 1 && !deployment.url)
+      context.addIssue({ code: 'custom', message: 'Multiple deployments require explicit public URLs' });
+  }
+});
 
 export function resolveDeployments(
   input: unknown[] | undefined,
@@ -71,7 +104,10 @@ export function resolveDeployments(
     throw new Error(`Invalid deployment: ${result.error.issues.map((issue) => issue.message).join('; ')}`);
   if (
     result.data.length &&
-    (!primary || (result.data[0]!.target !== 'cloudflare-pages' && result.data[0]!.target !== `${primary}-pages`))
+    (!primary ||
+      result.data.some(
+        (deployment) => deployment.target !== 'cloudflare-pages' && deployment.target !== `${primary}-pages`,
+      ))
   )
     throw new Error('Deployment target requires the matching primary CI provider');
   return result.data;
