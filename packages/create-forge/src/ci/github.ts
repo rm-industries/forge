@@ -161,7 +161,7 @@ export function createGithubWorkflows(
       for (const step of job.steps) if (step.env?.DEPLOYMENT_URL) step.env.DEPLOYMENT_URL = deployment.url;
     for (const step of job.steps) {
       if ('with' in step && step.with && typeof step.with.path === 'string')
-        step.with.path = step.with.path.split('\n').map(path).join('\n');
+        step.with.path = step.with.path.split('\n').filter(Boolean).map(path).join('\n');
     }
     if (id === 'smoke-deployed') job.steps = [...setup(config.nodeVersion), ...job.steps];
     jobs[id] = githubJobSchema.parse(job);
@@ -209,7 +209,7 @@ export function createGithubWorkflows(
     for (const step of smoke.steps) {
       if (step.env?.DEPLOYMENT_URL) step.env.DEPLOYMENT_URL = deployment.url;
       if ('with' in step && typeof step.with?.path === 'string')
-        step.with.path = step.with.path.split('\n').map(path).join('\n');
+        step.with.path = step.with.path.split('\n').filter(Boolean).map(path).join('\n');
     }
     jobs['smoke-deployed'] = githubJobSchema.parse(smoke);
   }
