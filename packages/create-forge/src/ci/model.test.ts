@@ -491,3 +491,30 @@ test('matches the pinned reference website build-once validation contract', () =
   expect(pipeline.deploy).toHaveProperty('rules', [{ when: 'never' }]);
   expect(pipeline['smoke-deployed']).toHaveProperty('rules', [{ when: 'never' }]);
 });
+
+test.each(['.', 'website'])('keeps native and Cloudflare smoke uploads scoped to evidence in %s', (directory) => {
+  const native = createGithubWorkflows({ ...config, directory }, pins).project;
+  const cloudflare = createGithubWorkflows(
+    generationOptionsSchema.parse({
+      ...config,
+      directory,
+      deployments: [
+        {
+          name: 'production',
+          sourceBranch: 'main',
+          target: 'cloudflare-pages',
+          project: 'example-site',
+          url: 'https://example.com',
+        },
+      ],
+    }),
+    pins,
+  ).project;
+  for (const project of [native, cloudflare]) {
+    const uploads = project.jobs['smoke-deployed']!.steps.filter(
+      (step) => 'uses' in step && step.uses.startsWith('actions/upload-artifact@'),
+    );
+    expect(uploads).toHaveLength(1);
+    expect(uploads[0]).toHaveProperty('with.path', `${directory}/playwright-report\n${directory}/test-results`);
+  }
+});
