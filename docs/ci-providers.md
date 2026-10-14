@@ -181,3 +181,10 @@ rules would otherwise exclude merge requests. Multi-environment URL-selection ru
 also admit validation; deployment and smoke retain their separate source-branch and
 primary-provider gates. See the [reference evidence review](ci-comparison.md#issue-321-current-gitlab-reference-evidence)
 for matching push-run evidence and the remaining live MR verification limit.
+
+## Generated automation controls
+
+Generated GitHub automation supports manual dispatch alongside its existing path-filtered
+push/PR events and weekly schedule. Workflow-security and syntax jobs report independently;
+no aggregate job is generated. Consumers choose which individual checks to require in
+branch protection. Automation remains provider-local and does not gate site deployment.
