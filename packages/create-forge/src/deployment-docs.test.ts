@@ -17,7 +17,7 @@ test('documents native defaults and nested workflow ownership', () => {
   const guide = createDeploymentGuide(config);
   expect(guide).toContain('sourceBranch: main');
   expect(guide).toContain('target: github-pages');
-  expect(guide).toContain('../../.github/workflows/website-project.yml');
+  expect(guide).toContain('../.github/workflows/website-project.yml');
   expect(guide).toContain('GitHub Actions');
   expect(guide).not.toContain('CLOUDFLARE_API_TOKEN');
   expect(guide).toContain('name: github-pages');
@@ -76,6 +76,6 @@ test('explains persistent prefixed Pages and validation-only selection', () => {
   });
   expect(guide).toContain('Premium or Ultimate');
   expect(guide).toContain('never');
-  expect(guide).toContain('../../.gitlab/ci/website.yml');
+  expect(guide).toContain('../.gitlab/ci/website.yml');
   expect(createDeploymentGuide({ ...config, deployments: [] })).toContain('No deployment jobs');
 });

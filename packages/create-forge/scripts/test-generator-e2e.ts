@@ -37,7 +37,9 @@ const runGenerator = async (executable: string, cwd: string, args: string[]) => 
 
 const assertGeneratedProject = async (directory: string, packageName: string, repositoryDirectory = directory) => {
   const metadata = JSON.parse(await readFile(join(directory, 'package.json'), 'utf8')) as PackageMetadata;
-  const deploymentGuide = await readFile(join(directory, 'docs', 'deployment.md'), 'utf8');
+  if (await exists(join(directory, 'docs', 'deployment.md')))
+    throw new Error('Deployment setup belongs in the consumer README, not its docs directory.');
+  const deploymentGuide = await readFile(join(directory, 'README.md'), 'utf8');
   if (
     !deploymentGuide.includes('GitHub Actions') ||
     !deploymentGuide.includes('target: github-pages') ||
@@ -310,7 +312,7 @@ try {
       url: prefixedPagesUrl,
     }),
   ]);
-  const prefixedGuide = await readFile(join(prefixedPagesDirectory, 'docs', 'deployment.md'), 'utf8');
+  const prefixedGuide = await readFile(join(prefixedPagesDirectory, 'README.md'), 'utf8');
   if (!prefixedGuide.includes('Premium or Ultimate') || !prefixedGuide.includes('pathPrefix: staging'))
     throw new Error('Prefixed Pages must document its capability requirement and persistent prefix.');
   const prefixedPipeline = parse(await readFile(join(prefixedPagesDirectory, '.gitlab-ci.yml'), 'utf8')) as {
@@ -356,7 +358,7 @@ try {
   const generatorMetadata = JSON.parse(await readFile(join(packageDirectory, 'package.json'), 'utf8')) as {
     devDependencies: Record<string, string>;
   };
-  const cloudflareGuide = await readFile(join(cloudflareDirectory, 'docs', 'deployment.md'), 'utf8');
+  const cloudflareGuide = await readFile(join(cloudflareDirectory, 'README.md'), 'utf8');
   for (const expected of ['staging-site', 'sourceBranch: dev', 'CLOUDFLARE_API_TOKEN', 'PUBLIC_SITE_URL'])
     if (!cloudflareGuide.includes(expected)) throw new Error(`Cloudflare deployment guide is missing ${expected}.`);
   const cloudflareMetadata = JSON.parse(await readFile(join(cloudflareDirectory, 'package.json'), 'utf8')) as {

@@ -238,7 +238,7 @@ override `PUBLIC_SITE_URL` to exercise another environment locally.
 Both CI definitions remain ordinary consumer-owned YAML. To change environments
 later, edit their URL selection, branch conditions and named deploy/smoke jobs.
 
-Generated sites include `docs/deployment.md` with their selected environments, source
+Generated sites include deployment setup in their `README.md` with their selected environments, source
 branches, primary CI, workflow locations and provider setup requirements. The guide
 records bootstrap choices; it is consumer-owned documentation, not retained Forge
 configuration. Update it alongside the YAML when changing deployment behavior.

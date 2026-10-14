@@ -12,7 +12,7 @@ export function createDeploymentGuide(input: CiGenerationOptions): string {
   const deployments = resolveDeployments(config.deployments, config.primary);
   const providerName = config.primary === 'github' ? 'GitHub Actions' : 'GitLab CI';
   const sections: string[] = [];
-  const link = (path: string) => posix.join('..', config.repositoryRoot, path);
+  const link = (path: string) => posix.join(config.repositoryRoot, path);
   if (config.providers.includes('github'))
     sections.push(`[GitHub project workflow](${link(workflowPath('project', config))})`);
   if (config.providers.includes('gitlab'))
@@ -21,7 +21,7 @@ export function createDeploymentGuide(input: CiGenerationOptions): string {
   if (!deployments.length)
     return [...sections, 'No deployment jobs are enabled. These pipelines validate the project only.'].join('\n');
   sections.push(
-    '## Your environments',
+    '### Your environments',
     '',
     `Deployment is owned by ${providerName}. The secondary CI does not publish this site.`,
     '',
@@ -50,7 +50,7 @@ export function createDeploymentGuide(input: CiGenerationOptions): string {
     'path for the branch (or pull/merge-request target branch). Local development defaults',
     'to the first environment; set `PUBLIC_SITE_URL` locally to exercise another URL.',
     '',
-    'Check the canonical URL in [site configuration](../src/config/site.ts) before publishing.',
+    'Check the canonical URL in [site configuration](src/config/site.ts) before publishing.',
     "If no explicit URL is listed above, use the hosting provider's Pages URL or your custom domain.",
     '',
     'Explicit public URLs must already point to their deployment destinations. Configure',
@@ -59,18 +59,18 @@ export function createDeploymentGuide(input: CiGenerationOptions): string {
   if (deployments.some((deployment) => deployment.target === 'github-pages'))
     sections.push(
       '',
-      '## GitHub Pages setup',
+      '### GitHub Pages setup',
       '',
       'Select GitHub Actions as the Pages publishing source in repository settings.',
       'Configure the named deployment environment with source-branch restrictions and any',
       'required reviewers. Publishing uses the workflow token; no separate API secret is needed.',
-      'A repository supports one GitHub Pages destination. See [the Pages guide](github-pages.md)',
+      'A repository supports one GitHub Pages destination. See [the Pages guide](docs/github-pages.md)',
       'for project paths, custom domains and troubleshooting.',
     );
   if (deployments.some((deployment) => deployment.target === 'gitlab-pages')) {
     sections.push(
       '',
-      '## GitLab Pages setup',
+      '### GitLab Pages setup',
       '',
       'Enable Pages for the GitLab project and confirm its actual URL, including the project',
       'path when applicable. Native Pages publishing requires no separate API token. Protect',
@@ -88,7 +88,7 @@ export function createDeploymentGuide(input: CiGenerationOptions): string {
   if (deployments.some((deployment) => deployment.target === 'cloudflare-pages'))
     sections.push(
       '',
-      '## Cloudflare Pages setup',
+      '### Cloudflare Pages setup',
       '',
       'Create each listed project as an existing Direct Upload project in Cloudflare.',
       'Set its production branch to the corresponding source branch above. Separate environments',
@@ -109,7 +109,7 @@ export function createDeploymentGuide(input: CiGenerationOptions): string {
     );
   sections.push(
     '',
-    '## Switching primary CI',
+    '### Switching primary CI',
     '',
     "Keep only one authoritative deployment path. Enable the selected provider's native",
     "deployment conditions and disable the previous provider's conditions for every environment.",

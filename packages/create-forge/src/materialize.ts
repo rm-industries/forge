@@ -214,7 +214,7 @@ const customizeTemplate = async (
     ...(ciPrefix === undefined ? {} : { prefix: ciPrefix }),
   };
 
-  const deploymentGuidePath = join(projectRoot, 'docs', 'deployment.md');
+  const deploymentGuidePath = join(projectRoot, 'README.md');
   await writeFile(
     deploymentGuidePath,
     replaceRawToken(

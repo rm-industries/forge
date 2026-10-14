@@ -131,7 +131,7 @@ See [multiple environments](../packages/create-forge/README.md#multiple-deployme
 
 ## Consumer deployment guide
 
-Bootstrap fills `docs/deployment.md` with the selected plan and links to the generated
+Bootstrap fills the consumer README deployment section with the selected plan and links to the generated
 CI definitions, including repository-level paths for nested sites. Only selected
 providers get setup instructions. The guide explains environment protection, secret
 scope, Cloudflare Direct Upload prerequisites and GitLab parallel Pages requirements.

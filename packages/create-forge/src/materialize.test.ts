@@ -42,8 +42,10 @@ const createTemplate = async (fixture: string) => {
   await mkdir(join(template, '.github', 'workflows'), { recursive: true });
   await mkdir(join(template, '.github', 'actions', 'setup-project'), { recursive: true });
   await mkdir(join(template, 'public'));
-  await mkdir(join(template, 'docs'));
-  await writeFile(join(template, 'docs', 'deployment.md'), `# Deployment setup\n\n${deploymentGuidePlaceholder}\n`);
+  await writeFile(
+    join(template, 'README.md'),
+    `# Generated site\n\n## Deployment setup\n\n${deploymentGuidePlaceholder}\n`,
+  );
   await writeFile(join(template, '.editorconfig'), 'root = true\n');
   await writeFile(join(template, '.gitignore.template'), 'node_modules\n');
   await writeFile(join(template, 'public', 'asset.bin'), binaryFixture);
