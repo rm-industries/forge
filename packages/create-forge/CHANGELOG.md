@@ -2,6 +2,22 @@
 
 All notable changes to `@rm-industries/create-forge` are documented here.
 
+## 1.2.0
+
+- Configure named deployment environments through repeatable `--deployment` inputs,
+  with one environment per source branch, explicit public URLs and primary-CI gating.
+- Deploy validated artifacts to existing Cloudflare Pages Direct Upload projects from
+  either GitHub or GitLab CI, using a locked site Wrangler dependency and scoped secrets.
+  Cloudflare bootstrap resolves its lockfile through npm, including with `--no-install`.
+- Support persistent GitLab Pages path prefixes with explicit Premium/Ultimate opt-in,
+  matching build paths and smoke URLs. Preserve straightforward native Pages defaults.
+- Select branch-specific canonical URLs for builds and validation, and deliver deployment
+  setup instructions in the generated project's README without retaining Forge configuration.
+- Admit generated GitLab validation jobs into merge-request pipelines and offer manual
+  GitHub automation checks alongside independent security and syntax jobs.
+- Keep deployed-smoke artifact uploads scoped to browser/test evidence instead of the
+  project directory. Existing generated projects remain consumer-owned and unchanged.
+
 ## 1.1.2
 
 - Bootstrap projects with content-model 1.1.7 and Sveltia CMS 0.236.0.
