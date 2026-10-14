@@ -1,4 +1,6 @@
 generator-package:
+  rules:
+    - when: on_success
   image: node:26
   stage: prepare
   needs: []
@@ -15,6 +17,8 @@ generator-package:
       - .ci-packages/create-forge.tgz
     expire_in: 7 days
 consumer-primary:
+  rules:
+    - when: on_success
   image: node:$NODE_VERSION
   stage: build
   needs:
@@ -52,6 +56,8 @@ consumer-primary:
     - cp /tmp/consumer-source.tgz .ci-consumer/
     - for output in dist coverage test-results; do if [ -d "/tmp/forge-consumer/$output" ]; then cp -R "/tmp/forge-consumer/$output" .ci-consumer/; fi; done
 consumer-compatibility:
+  rules:
+    - when: on_success
   image: node:$NODE_VERSION
   stage: build
   needs:
@@ -91,6 +97,8 @@ consumer-compatibility:
     reports:
       junit: .ci-consumer/test-results/unit.xml
 consumer-quality:
+  rules:
+    - when: on_success
   image: node:26
   stage: verify
   needs:
@@ -104,6 +112,8 @@ consumer-quality:
   script:
     - npm run format && npm run lint && npm run audit:unused
 consumer-validate-build:
+  rules:
+    - when: on_success
   image: node:26
   stage: verify
   needs:
@@ -118,6 +128,8 @@ consumer-validate-build:
     - cp -R "$CI_PROJECT_DIR/.ci-consumer/dist" .
     - npm run validate:build
 consumer-browser:
+  rules:
+    - when: on_success
   image: node:26
   stage: verify
   needs:
@@ -144,6 +156,8 @@ consumer-browser:
     - mkdir -p .ci-consumer
     - for output in playwright-report test-results; do if [ -d "/tmp/forge-consumer/$output" ]; then cp -R "/tmp/forge-consumer/$output" .ci-consumer/; fi; done
 consumer-lighthouse:
+  rules:
+    - when: on_success
   image: node:26
   stage: verify
   needs:
@@ -173,6 +187,8 @@ consumer-lighthouse:
   variables:
     LHCI_COLLECT__SETTINGS__CHROME_FLAGS: --no-sandbox --disable-dev-shm-usage --disable-gpu
 generator-scenarios:
+  rules:
+    - when: on_success
   image: node:26
   stage: build
   needs:
@@ -183,6 +199,8 @@ generator-scenarios:
   script:
     - FORGE_CLI_TARBALL="$CI_PROJECT_DIR/.ci-packages/create-forge.tgz" node packages/create-forge/scripts/test-generator-e2e.ts
 consumer-quality-tool-regressions:
+  rules:
+    - when: on_success
   image: node:26
   stage: validate
   needs: []
