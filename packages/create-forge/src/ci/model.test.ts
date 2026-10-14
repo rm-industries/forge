@@ -454,3 +454,40 @@ test('combines root and prefixed GitLab Pages with independent persistent deploy
   expect(pipeline['deploy-staging']).toHaveProperty('pages.expire_in', 'never');
   expect(pipeline['deploy-staging']).toHaveProperty('resource_group', 'staging-gitlab-pages');
 });
+
+test.each([undefined, [{ name: 'production', sourceBranch: 'main', target: 'gitlab-pages' as const }], []])(
+  'admits validation jobs into workflow-approved merge requests for single/default plans',
+  (deployments) => {
+    const selected = generationOptionsSchema.parse({ ...config, primary: 'gitlab', deployments });
+    const pipeline = createGitlabPipeline(selected);
+    for (const id of Object.keys(siteWork)) expect(pipeline[id]).toHaveProperty('rules', [{ when: 'on_success' }]);
+    expect(pipeline.workflow.rules[0]).toHaveProperty('if', '$CI_PIPELINE_SOURCE == "merge_request_event"');
+    expect(Boolean(pipeline.deploy)).toBe(deployments?.length !== 0);
+  },
+);
+
+test('matches the pinned reference website build-once validation contract', () => {
+  // rahul0705.github.io 871697a: eight source gates, one build, artifact-consuming verification.
+  const pipeline = createGitlabPipeline(config);
+  const build = pipeline.build as { needs: Array<{ job: string }>; artifacts: { paths: string[] } };
+  expect(build.needs.map((need) => need.job).sort()).toEqual([
+    'audit-unused',
+    'format',
+    'lint-code',
+    'lint-markdown',
+    'lint-styles',
+    'spellcheck',
+    'typecheck',
+    'unit-tests',
+  ]);
+  expect(build.artifacts.paths).toEqual(['website/dist']);
+  for (const id of ['browser-tests', 'lighthouse', 'validate-build'])
+    expect(pipeline[id]).toHaveProperty('needs', [{ job: 'build', artifacts: true }]);
+  expect(pipeline['unit-tests']).toHaveProperty('artifacts.reports.junit', 'website/test-results/unit.xml');
+  expect(pipeline['lint-code']).toHaveProperty(
+    'artifacts.reports.codequality',
+    'website/test-results/code-quality.json',
+  );
+  expect(pipeline.deploy).toHaveProperty('rules', [{ when: 'never' }]);
+  expect(pipeline['smoke-deployed']).toHaveProperty('rules', [{ when: 'never' }]);
+});
