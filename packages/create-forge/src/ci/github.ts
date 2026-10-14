@@ -238,7 +238,12 @@ export function createGithubWorkflows(
     };
     return githubWorkflowSchema.parse({
       ...base(name),
-      on: { push: trigger, pull_request: trigger, schedule: [{ cron: `${minute} 5 * * 1` }] },
+      on: {
+        push: trigger,
+        pull_request: trigger,
+        schedule: [{ cron: `${minute} 5 * * 1` }],
+        ...(kind === 'automation' ? { workflow_dispatch: null } : {}),
+      },
       jobs: definition,
     });
   };
