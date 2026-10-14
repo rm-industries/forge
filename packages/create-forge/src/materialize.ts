@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { resolveDeployments } from './ci/deployment.ts';
 import { generationOptionsSchema } from './ci/generation-options.ts';
 import { deriveCiPrefix, validateCiPrefix, workflowPath } from './ci/paths';
+import { createDeploymentGuide, deploymentGuidePlaceholder } from './deployment-docs.ts';
 import type { GeneratorOptions } from './options';
 import { executeCommand, type CommandExecutor } from './process';
 import { deriveScheduleMinutes } from './schedule';
@@ -212,6 +213,17 @@ const customizeTemplate = async (
     automationMinute: scheduleMinutes.automation,
     ...(ciPrefix === undefined ? {} : { prefix: ciPrefix }),
   };
+
+  const deploymentGuidePath = join(projectRoot, 'README.md');
+  await writeFile(
+    deploymentGuidePath,
+    replaceRawToken(
+      await readFile(deploymentGuidePath, 'utf8'),
+      deploymentGuidePlaceholder,
+      createDeploymentGuide(generationOptionsSchema.parse(ciConfig)),
+      'deployment guide',
+    ),
+  );
 
   const dependabot = join(repositoryRoot, '.github', 'dependabot.yml');
   if (!skipped.has(dependabot)) {
