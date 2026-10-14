@@ -1,8 +1,9 @@
 # Consumer CI comparison
 
-Internal review for PR #293, recorded October 12, 2026. This compares actual
-bootstrap output with Forge's native YAML and the reference website, rather
-than comparing only the TypeScript builders. No pipeline behavior was changed.
+Internal review for PR #293, recorded October 12, 2026. This compares actual bootstrap output with
+Forge's native YAML and the reference website, rather than comparing only the TypeScript builders.
+No pipeline behavior was changed during that review. Current native GitLab admission and ownership
+are documented in [Generated CI](ci-providers.md#native-gitlab-validation).
 
 ## Inputs
 
@@ -28,7 +29,7 @@ and [automation workflow](https://github.com/rahul0705/rahul0705.github.io/blob/
 | Dependency audit      | No routine vulnerability audit job; unused-code audit remains                                 | Matches both reference websites; package publication also omits vulnerability audits                               | Aligned                                                               |
 | Deployment gate       | Direct dependencies on all project validation jobs                                            | Reference and Forge website also use direct dependencies                                                           | Matches                                                               |
 | Production deployment | Main push only, validated Pages artifact, separate privileged deploy job                      | Same reference and Forge website behavior                                                                          | Matches                                                               |
-| Smoke tests           | Deployment output URL, Chromium, failure artifacts, nonempty URL check and ten-minute timeout | Same reference safeguards; Forge website lacks the explicit timeout/URL check                                      | Matches reference in both providers                                   |
+| Smoke tests           | Deployment output URL, Chromium, failure artifacts, nonempty URL check and ten-minute timeout | Same reference safeguards; current Forge website also has the timeout/URL check                                    | Matches reference in both providers                                   |
 | Runtime setup         | Inline setup-node, npm cache/install; selected major 22/24/26                                 | Reference uses a local setup action with lts/*; Forge selects explicit versions and tests compatibility separately | Intentional single consumer runtime; no local action is required      |
 | Artifact policy       | Seven days; browser/coverage/Lighthouse evidence uploaded always                              | Reference uses fourteen days, browser evidence only on failure                                                     | Intentional diagnostics/retention choice; more successful-run uploads |
 | CodeQL                | Actions and JS/TS, no build, extended queries                                                 | Same reference and Forge security checks; current CodeQL pin matches reference v4.38.2                             | Matches                                                               |
