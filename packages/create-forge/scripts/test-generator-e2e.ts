@@ -318,6 +318,12 @@ try {
   const prefixedPipeline = parse(await readFile(join(prefixedPagesDirectory, '.gitlab-ci.yml'), 'utf8')) as {
     deploy: { pages: { path_prefix?: string; expire_in?: string }; environment: { url: string } };
   };
+  const prefixedValidation = parse(await readFile(join(prefixedPagesDirectory, '.gitlab-ci.yml'), 'utf8')) as Record<
+    string,
+    { rules?: Array<{ when?: string }> }
+  >;
+  if (prefixedValidation.build?.rules?.[0]?.when !== 'on_success')
+    throw new Error('Single-environment GitLab consumer jobs must admit workflow-approved merge requests.');
   const { site: prefixedSiteConfig } = (await import(
     pathToFileURL(join(prefixedPagesDirectory, 'src', 'config', 'site.ts')).href
   )) as { site: { url: string } };

@@ -91,3 +91,37 @@ Both primary-provider fixtures were generated successfully. Existing provider
 schema tests, actionlint/security scans and hosted PR checks cover rendering and
 GitHub validation. No live Pages deployment, GitLab server-side CI Lint, branch
 protection configuration or GitLab runner setup was exercised for this comparison.
+
+## Issue #321: current GitLab reference evidence
+
+Reviewed the reference at commit `871697a3a7984eac8df25118418a1a30c50c52b7`, using its
+[GitLab entrypoint](https://github.com/rahul0705/rahul0705.github.io/blob/871697a3a7984eac8df25118418a1a30c50c52b7/.gitlab-ci.yml)
+and [project jobs](https://github.com/rahul0705/rahul0705.github.io/blob/871697a3a7984eac8df25118418a1a30c50c52b7/.gitlab/ci/project.yml).
+Its matching [main-push pipeline](https://gitlab.com/rahul0705/rahul0705.gitlab.io/-/pipelines/2942964279)
+succeeded: all thirteen validation jobs passed. The job metadata records JUnit artifacts
+for unit/browser tests and a code-quality report for lint. No deployment or smoke jobs
+were included, consistent with GitHub being primary.
+
+| Behavior         | Reference                                                     | Generated consumer                             | Assessment                                                         |
+| ---------------- | ------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------ |
+| Source gates     | Eight checks gate build                                       | Same eight categories                          | Equivalent; package script names differ                            |
+| Build reuse      | One build; browser/Lighthouse/output checks need its artifact | Same graph and artifact needs                  | Equivalent structure; reference jobs succeeded                     |
+| Resume output    | Extra generated-resume Markdown check                         | No resume generator/check                      | Intentional site-specific difference                               |
+| Unit evidence    | Unit tests and JUnit                                          | Coverage tests, JUnit and Cobertura            | Consumer additionally enforces coverage                            |
+| Quality evidence | GitLab code-quality report                                    | Same report with repository-relative paths     | Equivalent reporting intent                                        |
+| Retention        | Fourteen days                                                 | Seven days                                     | Intentional consumer evidence policy                               |
+| Runtime          | Linux `node:lts`                                              | Linux selected Node 22/24/26                   | Consumer version is explicit; Forge qualifies platforms separately |
+| MR admission     | Workflow admits MRs; validation jobs have no rules            | Explicit job rules admit workflow-approved MRs | Generator fixes a gap also present in reference                    |
+| Deployment       | Deploy/smoke disabled while GitHub is primary                 | Same native disabling conditions               | Matching primary ownership                                         |
+
+The public API returned no merge-request pipelines for the reference. Job traces
+required authentication, so artifact downloads were not independently inspected.
+Do not claim this push run proves MR execution, duplicate-push suppression, coverage
+report ingestion, or the new generator admission rule. Those are covered structurally
+by contract tests and GitLab's documented rules; live MR evidence remains unavailable.
+
+Automation remains provider-local: GitHub scanners inspect GitHub workflows. Website
+validation is not triggered across providers solely by GitHub setup-action changes.
+CodeQL, blocking high/critical dependency review and Dependabot remain GitHub-owned
+for these mirrors. Generated GitLab validation does not imply source-security or
+GitLab-native dependency-update parity. No new npm vulnerability audit gate is added.

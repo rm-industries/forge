@@ -172,3 +172,12 @@ CI definitions, including repository-level paths for nested sites. Only selected
 providers get setup instructions. The guide explains environment protection, secret
 scope, Cloudflare Direct Upload prerequisites and GitLab parallel Pages requirements.
 It is documentation to edit alongside the YAML, not configuration for future regeneration.
+
+## Generated GitLab merge-request admission
+
+Generated validation jobs have explicit `when: on_success` rules so they participate
+in pipelines admitted by `workflow.rules`, including merge requests. Jobs without
+rules would otherwise exclude merge requests. Multi-environment URL-selection rules
+also admit validation; deployment and smoke retain their separate source-branch and
+primary-provider gates. See the [reference evidence review](ci-comparison.md#issue-321-current-gitlab-reference-evidence)
+for matching push-run evidence and the remaining live MR verification limit.

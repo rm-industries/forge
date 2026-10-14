@@ -75,6 +75,8 @@ export function createGitlabPipeline(
     jobs[id] = gitlabJobSchema.parse({
       image: `node:${config.nodeVersion}`,
       stage: stage(id),
+      // Jobs without rules are excluded from merge requests despite workflow admission.
+      rules: [{ when: 'on_success' }],
       needs: work.needs.map((job) => ({ job, artifacts: true })),
       // Node containers run as root; scope Chrome's flag to GitLab Lighthouse jobs.
       ...(id === 'lighthouse'
