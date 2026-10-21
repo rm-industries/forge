@@ -97,6 +97,10 @@ the local repository fixture's browser file storage; a minimal storage probe ver
 that difference before changing the harness.
 
 Local Firefox still fails during profile initialization before the application
-loads. The required Linux CI run must verify all three browsers before this
-integration gate is complete. The harness retains that failure rather than
-skipping Firefox. Actual Safari and iPhone evidence remain pending.
+loads. The harness retains that failure rather than skipping Firefox.
+
+The [Linux integration run](https://github.com/rm-industries/forge/actions/runs/39633224804)
+at `237d9e6` passed all 30 scenarios with zero failures across Chromium
+156.0.8078.4, Firefox 157.0, and WebKit 27.2. Its uploaded evidence includes
+results, installation, type checks, unit coverage, production build and build
+validation. Actual Safari and iPhone evidence remain pending.
