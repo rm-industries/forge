@@ -49,7 +49,7 @@ try {
       join(consumer, modelPacked[0].filename),
       'markdownlint@0.42.0',
       'typescript@7.0.2',
-      'markdown-it@15.0.2',
+      'markdown-it@15.0.3',
     ],
     { cwd: consumer, stdio: 'inherit' },
   );

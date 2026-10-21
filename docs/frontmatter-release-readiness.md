@@ -27,7 +27,7 @@ npm run --silent release:prepare -- --package markdownlint-frontmatter \
 ```
 
 The reviewed local artifact has SHA-1
-`e62dccabb71d2fcd48eff3661db57b89f2c8d1ef`, 7,807 packed bytes and 23,015
+`9b36062845a6150713a7893b6394c30567916815`, 7,931 packed bytes and 23,329
 unpacked bytes. Its SHA-512 integrity is recorded in the local release manifest;
 repacking after metadata changes requires reviewing a new digest. The manifest
 records the checked-out commit; this local candidate includes the release-preparation
@@ -90,7 +90,7 @@ strict TypeScript public-export compilation, LF/CRLF preservation, unknown and
 optional fields, comments, scalar styles, nested mappings, ordinary body rules,
 unsafe-YAML refusal, idempotence, and the public content-model/Sveltia projection.
 Its temporary declaration consumer explicitly installs TypeScript 7.0.2 and
-Markdown-it 15.0.2, matching Markdownlint's own declaration dependency; the plugin
+Markdown-it 15.0.3, satisfying Markdownlint's optional parser declaration dependency; the plugin
 adds neither as a runtime dependency.
 
 CLI2 0.24.0 directly uses Markdownlint 0.42.0 without an override. The isolated

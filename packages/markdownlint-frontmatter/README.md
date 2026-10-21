@@ -121,3 +121,8 @@ Version `0.1.0` is a release candidate awaiting maintainer publication. See the
 [release readiness report](../../docs/frontmatter-release-readiness.md) and
 [existing-site migration and rollback](../../fixtures/frontmatter-adoption/README.md).
 Existing sites adopt the configuration selectively; never regenerate over owned source.
+
+Strict TypeScript consumers may need `markdown-it@15.0.3` because Markdownlint
+0.42's public declarations reference that optional parser's types. The packed
+consumer test installs this prerequisite explicitly without `skipLibCheck`.
+JavaScript consumers do not need it, and it is not a plugin runtime dependency.
