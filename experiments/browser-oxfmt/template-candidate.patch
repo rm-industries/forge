@@ -1,0 +1,140 @@
+diff --git a/astro.config.ts b/astro.config.ts
+index d952b8c..29ca4ad 100644
+--- a/astro.config.ts
++++ b/astro.config.ts
+@@ -1,10 +1,19 @@
+ import sitemap from '@astrojs/sitemap';
++import { resolveBrowserOptions } from '@rm-industries/browser-oxfmt/build';
+ import tailwindcss from '@tailwindcss/vite';
+ import { defineConfig } from 'astro/config';
+ 
+ import { getDeploymentConfig } from './src/config/deployment';
+ import { site } from './src/config/site';
+ 
++const formatting = await resolveBrowserOptions({
++  cwd: process.cwd(),
++  filename: 'src/content/articles/_cms.md',
++  requireUniformPolicy: true,
++});
++for (const diagnostic of formatting.diagnostics)
++  console.warn(`[browser-oxfmt:${diagnostic.code}] ${diagnostic.message}`);
++
+ const deployment = getDeploymentConfig(process.env.PUBLIC_SITE_URL ?? site.url);
+ 
+ export default defineConfig({
+@@ -14,6 +23,7 @@ export default defineConfig({
+   site: deployment.site,
+   trailingSlash: 'always',
+   vite: {
++    define: { __BROWSER_OXFMT_OPTIONS__: JSON.stringify(formatting.resolvedOptions) },
+     plugins: [tailwindcss()],
+   },
+ });
+diff --git a/package.json b/package.json
+index 99831aa..8b31fcd 100644
+--- a/package.json
++++ b/package.json
+@@ -41,8 +41,9 @@
+     "@astrojs/sitemap": "^3.7.4",
+     "@fontsource/fira-code": "^5.3.0",
+     "@fontsource/fira-sans": "^5.3.0",
+-    "@rm-industries/content-model": "1.1.7",
+-    "@sveltia/cms": "0.236.0",
++    "@rm-industries/browser-oxfmt": "0.1.0",
++    "@rm-industries/content-model": "1.1.9",
++    "@sveltia/cms": "0.250.0",
+     "astro": "^7.3.8"
+   },
+   "devDependencies": {
+diff --git a/src/integrations/sveltia/formatting.test.ts b/src/integrations/sveltia/formatting.test.ts
+new file mode 100644
+index 0000000..eb8ad69
+--- /dev/null
++++ b/src/integrations/sveltia/formatting.test.ts
+@@ -0,0 +1,43 @@
++import { beforeEach, expect, test, vi } from 'vitest';
++
++const { register, format } = vi.hoisted(() => ({ register: vi.fn(), format: vi.fn() }));
++vi.mock('@sveltia/cms', () => ({ registerCustomFormat: register }));
++vi.mock('@rm-industries/browser-oxfmt', () => ({ format }));
++
++import { registerSveltiaFormatting } from './formatting';
++
++beforeEach(() => vi.clearAllMocks());
++
++test('serializes with the native context before sending text to the worker', async () => {
++  registerSveltiaFormatting();
++  const [, , { toFile }] = register.mock.calls[0]!;
++  const data = { title: 'Article', body: '# Body' };
++  const serialize = vi.fn().mockResolvedValue('native text');
++  format.mockResolvedValue('formatted text');
++  await expect(toFile(data, { serialize })).resolves.toBe('formatted text');
++  expect(serialize).toHaveBeenCalledWith(data);
++  expect(format).toHaveBeenCalledWith(
++    'native text',
++    'entry.md',
++    expect.objectContaining({ upstreamVersion: '0.72.0' }),
++  );
++});
++
++test('does not format or save after native serialization fails', async () => {
++  registerSveltiaFormatting();
++  const [, , { toFile }] = register.mock.calls[0]!;
++  const failure = new Error('Native serialization failed');
++  await expect(toFile({}, { serialize: vi.fn().mockRejectedValue(failure) })).rejects.toBe(failure);
++  expect(format).not.toHaveBeenCalled();
++});
++
++test('keeps a recoverable worker error actionable instead of returning native text', async () => {
++  registerSveltiaFormatting();
++  const [, , { toFile }] = register.mock.calls[0]!;
++  const failure = Object.assign(new Error('Missing WASM asset'), { code: 'load' });
++  format.mockRejectedValue(failure);
++  await expect(toFile({}, { serialize: vi.fn().mockResolvedValue('native text') })).rejects.toMatchObject({
++    cause: failure,
++    message: expect.stringContaining('Formatting failed (load): Missing WASM asset'),
++  });
++});
+diff --git a/src/integrations/sveltia/formatting.ts b/src/integrations/sveltia/formatting.ts
+new file mode 100644
+index 0000000..9eeda70
+--- /dev/null
++++ b/src/integrations/sveltia/formatting.ts
+@@ -0,0 +1,21 @@
++import { format, type BrowserOxfmtError, type ResolvedOptions } from '@rm-industries/browser-oxfmt';
++import { registerCustomFormat } from '@sveltia/cms';
++
++declare const __BROWSER_OXFMT_OPTIONS__: ResolvedOptions;
++
++export const registerSveltiaFormatting = () => {
++  registerCustomFormat('frontmatter', 'md', {
++    toFile: async (data, { serialize }) => {
++      const native = await serialize(data);
++      try {
++        return await format(native, 'entry.md', __BROWSER_OXFMT_OPTIONS__);
++      } catch (error) {
++        const failure = error as BrowserOxfmtError;
++        throw new Error(
++          `Formatting failed (${failure.code}): ${failure.message}. Your edits remain open; fix the error and retry.`,
++          { cause: error },
++        );
++      }
++    },
++  });
++};
+diff --git a/src/pages/admin/index.astro b/src/pages/admin/index.astro
+index 4a2d37c..57eb655 100644
+--- a/src/pages/admin/index.astro
++++ b/src/pages/admin/index.astro
+@@ -13,9 +13,11 @@ import { site } from '../../config/site';
+     <script>
+       import { init } from '@sveltia/cms';
+ 
++      import { registerSveltiaFormatting } from '../../integrations/sveltia/formatting';
+       import { sveltiaConfig } from '../../integrations/sveltia/config';
+       import { registerSveltiaPreviews } from '../../integrations/sveltia/previews';
+ 
++      registerSveltiaFormatting();
+       registerSveltiaPreviews();
+       init({ config: sveltiaConfig });
+     </script>

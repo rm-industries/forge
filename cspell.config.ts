@@ -1,9 +1,10 @@
-// cspell:ignore rustc RUSTFLAGS dont Bezos cdylib serde rlib
+// cspell:ignore rustc RUSTFLAGS dont Bezos cdylib serde rlib astrojs vite vitest
 import { defineConfig } from 'cspell';
 
 export default defineConfig({
   ignorePaths: ['node_modules', 'dist', 'coverage', 'playwright-report', 'test-results', '.lighthouseci'],
   overrides: [
+    { filename: 'experiments/browser-oxfmt/*.patch', words: ['astrojs', 'vite', 'vitest'] },
     { filename: 'packages/browser-oxfmt/**', words: ['bindgen', 'Embedder', 'rustc', 'RUSTFLAGS'] },
     {
       filename: [
