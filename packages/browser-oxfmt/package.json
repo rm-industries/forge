@@ -19,6 +19,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./build": {
+      "types": "./dist/build.d.ts",
+      "node": "./dist/build.js"
     }
   },
   "publishConfig": {
@@ -32,6 +36,9 @@
     "build:wasm": "node scripts/build-wasm.mjs",
     "test:browser": "node scripts/test-packed.mjs",
     "test:adjacent": "node scripts/compare-adjacent.mjs"
+  },
+  "dependencies": {
+    "editorconfig": "3.0.2"
   },
   "engines": {
     "node": "^22.22.2 || ^24.0.0 || ^26.0.0",

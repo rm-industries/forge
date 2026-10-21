@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -74,6 +75,8 @@ try {
   )[0];
   assert.ok(packed.files.some((file) => file.path === 'dist/wasm/engine_bg.wasm'));
   assert.ok(packed.files.some((file) => file.path === 'NOTICE.md'));
+  assert.ok(packed.files.some((file) => file.path === 'dist/build.js'));
+  assert.ok(packed.files.some((file) => file.path === 'dist/build.d.ts'));
   assert.ok(!packed.files.some((file) => file.path.includes('/src/') || file.path.endsWith('.rs')));
   run('npm', [
     'install',
@@ -83,7 +86,35 @@ try {
     '--prefix',
     consumer,
     join(consumer, packed.filename),
+    'oxfmt@0.72.0',
+    '--cache',
+    join(consumer, 'npm-cache'),
   ]);
+  // Resolve the installed package against a standalone consumer's actual policy.
+  await writeFile(join(consumer, 'oxfmt.config.ts'), await readFile(join(root, 'templates/default/oxfmt.config.ts')));
+  await writeFile(join(consumer, '.editorconfig'), await readFile(join(root, 'templates/default/.editorconfig')));
+  const consumerRequire = createRequire(join(consumer, 'package.json'));
+  const { resolveBrowserOptions } = await import(
+    pathToFileURL(consumerRequire.resolve('@rm-industries/browser-oxfmt/build')).href
+  );
+  const derived = await resolveBrowserOptions({ cwd: consumer, filename: 'article.md', requireUniformPolicy: true });
+  assert.equal(derived.resolvedOptions.options.printWidth, 120);
+  assert.equal(derived.diagnostics[0].code, 'tailwind-class-order-preserved');
+  const derivedSource =
+    '---\ntags: [one,two]\n---\n\n' +
+    'A paragraph with enough words to demonstrate the authoritative EditorConfig width and policy. '.repeat(4) +
+    '\n\n```ts\nimport {z} from "z";\nimport {a} from "a";\nconsole.log(z,a);\n```\n';
+  const derivedExpected = run(
+    process.execPath,
+    [
+      join(consumer, 'node_modules/oxfmt/bin/oxfmt'),
+      '--config',
+      join(consumer, 'oxfmt.config.ts'),
+      '--stdin-filepath',
+      join(consumer, 'article.md'),
+    ],
+    { cwd: consumer, input: derivedSource },
+  );
   await writeFile(join(consumer, 'index.html'), '<!doctype html><script type="module" src="/main.js"></script>');
   await writeFile(
     join(consumer, 'main.js'),
@@ -98,7 +129,9 @@ try {
   });
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   const origin = `http://127.0.0.1:${server.address().port}`;
-  for (const name of ['chromium', 'webkit', 'firefox']) {
+  const engineNames = process.env.BROWSER_OXFMT_ENGINES?.split(',') ?? ['chromium', 'webkit', 'firefox'];
+  assert.ok(engineNames.length && engineNames.every((name) => ['chromium', 'webkit', 'firefox'].includes(name)));
+  for (const name of engineNames) {
     const browser = await browsers[name].launch({
       headless: true,
       ...(name === 'chromium' && process.env.CHROMIUM_CHANNEL ? { channel: process.env.CHROMIUM_CHANNEL } : {}),
@@ -154,6 +187,14 @@ try {
         clearInterval(interval);
         return { matches, stable, expectedDifferences, failures, ticks, engine };
       }, cases);
+      const derivedOutput = await page.evaluate(
+        async ({ source, resolvedOptions }) => {
+          const { format } = await import('/project/node_modules/@rm-industries/browser-oxfmt/dist/index.js');
+          return format(source, 'article.md', resolvedOptions);
+        },
+        { source: derivedSource, resolvedOptions: derived.resolvedOptions },
+      );
+      assert.equal(derivedOutput, derivedExpected, 'Installed consumer config must match its matching CLI');
       assert.deepEqual(outcome.failures, []);
       assert.equal(outcome.stable, cases.length);
       assert.equal(outcome.matches, cases.length - 5);
@@ -235,6 +276,7 @@ try {
         projectPath: true,
         isolatedHeaders: true,
         viteProductionBuild: true,
+        installedConsumerConfigurationParity: true,
       };
       rows.push(result);
       console.log(JSON.stringify(result));
