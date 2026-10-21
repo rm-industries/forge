@@ -57,21 +57,17 @@ asserts CMS `0.250.0` so a future upgrade must update this evidence deliberately
 
 ## Compatibility release and adoption
 
-Content-model `1.1.8` is a compatibility-only patch. The peer range preserves
-`>=0.193.2 <0.237.0` and adds `>=0.250.0 <0.251.0`. Intermediate unverified
-minor versions remain excluded. This deliberately narrows the continuous-range
+Content-model `1.1.9` is a compatibility-only patch. The peer range preserves
+`>=0.193.2 <0.246.0` and adds `>=0.250.0 <0.251.0`. Unverified versions `0.246`–`0.249`
+remain excluded. This deliberately narrows the continuous-range
 proposal produced by `peer:prepare`; the adapter's API and runtime stay intact.
 Existing consumers need no migration. Consumers needing native serialization
-must install Sveltia `0.250.0` with content-model `1.1.8` after publication.
+must install Sveltia `0.250.0` with content-model `1.1.9` after publication.
 
 Local validation uses Node `26.9.0` on macOS and the committed npm lockfile:
 content-model's 32 tests, type checking, build, and workspace pack dry run.
-The local pack identity is `rm-industries-content-model-1.1.8.tgz`, 20,674
-bytes, with integrity:
-
-```text
-sha512-WWy/KV5r3pIjWwrpMv0pA7PJB7/pcKtfViyP/cALUCsAEg/fC1UgSiG1CqBRy7RG2eI0NeaFhupQ4mAl7jQexQ==
-```
+The local pack identity is `rm-industries-content-model-1.1.9.tgz`; regenerate
+its integrity from the dry-run JSON after validation.
 
 Run the validation above before using `--ignore-scripts`, which keeps the
 packing JSON free of test/build output.
@@ -88,7 +84,7 @@ existing `markdown-it` high severity advisory
 The affected dependency is unchanged by this compatibility update. Publication
 remains blocked until the release security gate passes.
 
-This prepares a `content-model-v1.1.8` release identity; it neither creates a
+This prepares a `content-model-v1.1.9` release identity; it neither creates a
 tag nor publishes. The protected release workflow dry run, maintainer review,
 publication, registry integrity/provenance verification, and verified
 `published-*` handoff remain required by [release policy](../package-releases.md)
