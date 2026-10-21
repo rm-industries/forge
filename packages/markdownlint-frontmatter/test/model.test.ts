@@ -47,3 +47,13 @@ test('model order drives lint and Sveltia for separate collections and reordered
     ).toEqual([]);
   }
 });
+
+test('the public rule rejects invalid projected field names', () => {
+  expect(() =>
+    lint({
+      strings: { entry: 'Body' },
+      customRules: [rule],
+      config: { default: false, 'forge/frontmatter-order': frontmatterOrderFromModel({ fields: { '': {} } }) },
+    }),
+  ).toThrow(/orderedKeys/);
+});
