@@ -59,7 +59,7 @@ Markdown rules and formatting/validation gates in place.
 
 Run `npx playwright install chromium` once, then `npm run test:frontmatter:cms`.
 The focused test serves the installed, unmodified Sveltia CMS distribution and
-uses its native `test-repo` backend in a fresh Chromium context. It seeds OPFS,
+uses its native `test-repo` backend in a fresh Chromium context. It seeds the Origin Private File System,
 edits metadata, raw Markdown, and rich text through the editor UI, and reads the
 persisted files. Every save must pass the public Markdownlint rule configured
 from the same model as the Sveltia collection. Draft state, unknown metadata,
@@ -87,3 +87,9 @@ normal site validation. Roll back content by restoring that reviewed commit or
 backup; disabling ordering alone does not undo reordered files. Keep schema,
 Astro, accessibility and ordinary Markdown checks enabled. Publication and actual
 starter activation still follow the release handoff above.
+
+Verified with Sveltia CMS 0.245.1, Playwright 1.64.1 and its matching Chromium
+156.0.8078.4 after `npx playwright install chromium`: `npm run test:frontmatter:cms`
+passed metadata-only, raw Markdown and rich-text native saves, persisted-file
+ordering checks, value/body checks and two-pass rule/Oxfmt byte convergence.
+The command prints the actual browser version on every run.
