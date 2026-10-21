@@ -54,3 +54,36 @@ Rollback: restore the prior runner manifests, lockfiles and config together;
 content already reordered remains valid YAML. After activation, removing the plugin
 requires removing its import and overrides as well as the dependency. Keep ordinary
 Markdown rules and formatting/validation gates in place.
+
+## Native save and normalization proof
+
+Run `npx playwright install chromium` once, then `npm run test:frontmatter:cms`.
+The focused test serves the installed, unmodified Sveltia CMS distribution and
+uses its native `test-repo` backend in a fresh Chromium context. It seeds OPFS,
+edits metadata, raw Markdown, and rich text through the editor UI, and reads the
+persisted files. Every save must pass the public Markdownlint rule configured
+from the same model as the Sveltia collection. Draft state, unknown metadata,
+missing optional description (with native `omit_empty_optional_fields` enabled),
+bold text and link meaning are checked. Native default output can add an empty
+optional value; omission is an editor output setting, independent of ordering. No save
+hooks, serializer replacement, backend mocks, or fixed readiness sleeps are used.
+This browser proof is an explicit
+command because ordinary unit tests do not require downloaded browser binaries.
+
+`normalization.before.md` and `normalization.after.md` record a reviewed,
+representative article migration. The ordering fix moves complete field blocks;
+the configured starter Oxfmt then changes the title's quote style. Comments,
+parsed values, the unknown nested mapping, draft state and absent optional keys
+survive. The Markdown body is unchanged in this fixture. Applying the public rule
+and Oxfmt again must produce identical bytes. Initial header comments remain at
+the top; later attached comments travel with their field.
+
+Native CMS saves can normalize YAML representation and trailing body newlines;
+rich text can normalize Markdown syntax. This proof checks the demonstrated body
+meaning, not arbitrary byte preservation across rich-text editing. Before migrating
+existing content, commit or back it up, run check before fix, inspect the complete
+diff (including comments and editor normalization), then run formatting, check and
+normal site validation. Roll back content by restoring that reviewed commit or
+backup; disabling ordering alone does not undo reordered files. Keep schema,
+Astro, accessibility and ordinary Markdown checks enabled. Publication and actual
+starter activation still follow the release handoff above.
