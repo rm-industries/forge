@@ -2,13 +2,18 @@
 
 All notable changes to `@rm-industries/content-model` are documented here.
 
-## 1.1.8
+## 1.1.9
 
-- Validate @sveltia/cms 0.250.0 and update its supported peer range from
-  `>=0.193.2 <0.237.0` to `>=0.193.2 <0.237.0 || >=0.250.0 <0.251.0`.
+- Validate @sveltia/cms 0.250.0 and preserve existing support while extending
+  `>=0.193.2 <0.246.0` to `>=0.193.2 <0.246.0 || >=0.250.0 <0.251.0`.
 - Verify the released bound native serialization callback and recoverable save
   failures. Existing consumers need no migration; consumers adopting native
   serialization must use Sveltia 0.250.0. No formatter integration is included.
+
+## 1.1.8
+
+- Validate @sveltia/cms 0.245.0 and update its supported peer range from
+  `>=0.193.2 <0.237.0` to `>=0.193.2 <0.246.0`.
 
 ## 1.1.7
 
