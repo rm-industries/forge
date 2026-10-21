@@ -21,6 +21,7 @@ for (const eol of ['\n', '\r\n']) {
   const input = [
     '---',
     '# Document',
+    '',
     'other: {z: 1, a: 2}',
     'draft: false',
     '# Title',
@@ -38,6 +39,7 @@ for (const eol of ['\n', '\r\n']) {
   const expected = [
     '---',
     '# Document',
+    '',
     '# Title',
     'title: "Hello"',
     'description: |-',
@@ -53,15 +55,31 @@ for (const eol of ['\n', '\r\n']) {
     '',
   ].join(eol);
   const errors = check(input);
-  assert.equal(errors.find((error) => error.ruleNames.includes('MD018')).lineNumber, 14);
+  assert.equal(errors.find((error) => error.ruleNames.includes('MD018')).lineNumber, 15);
   assert.equal(applyFixes(input, errors), expected);
   assert.deepEqual(check(expected), []);
   assert.equal(applyFixes(expected, check(expected)), expected);
+}
+for (const [input, expected] of [
+  [
+    '---\n# Document\n\n# Draft must remain false\ndraft: false\ntitle: Hello\n---\nBody\n',
+    '---\n# Document\n\ntitle: Hello\n# Draft must remain false\ndraft: false\n---\nBody\n',
+  ],
+  ['---\ndraft: |\n  # literal\ntitle: Hello\n---\nBody\n', '---\ntitle: Hello\ndraft: |\n  # literal\n---\nBody\n'],
+]) {
+  assert.equal(applyFixes(input, check(input)), expected);
+  assert.deepEqual(check(expected), []);
 }
 for (const input of ['', 'Body\n', '---\n---\nBody\n', '---\ntitle: Hello\nextra: 1\n---\nBody\n']) {
   assert.deepEqual(check(input), []);
 }
 for (const yaml of [
+  '# Draft must remain false\ndraft: false\ntitle: Hello',
+  '# Title comment\ntitle: Hello\ndraft: false',
+  'draft: false\n\n  # Ambiguous\ntitle: hello',
+  'title: hello\n\n  # Ambiguous\ndraft: false',
+  'draft: |+\n  hi\n\n\ntitle: |\n  hi\n',
+  'draft: >+\n  hi\n\n\ntitle: |\n  hi\n',
   'title: first\ntitle: second',
   'title: &a first\nextra: *a',
   'title: [broken',

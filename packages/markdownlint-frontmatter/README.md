@@ -34,9 +34,13 @@ order. Missing keys stay missing. Neither draft state nor values are changed.
 Fixes move original source blocks without YAML serialization. Quotes, nested
 mapping order, scalar styles, multiline values, delimiters, body bytes, and
 uniform LF or CRLF line endings are preserved. Contiguous comments immediately
-before a later key move with that key; initial and trailing document comments
-stay in place. Blank-separated comments between keys have ambiguous ownership
-and prevent fixes. Each changed line receives one non-overlapping replacement;
+before a key move with that key. Separate a document header from fields with
+a blank line; comments before the first field without that separation are
+ambiguous and prevent fixes. Trailing document comments stay in place.
+Blank-separated comments between keys, including indented comments, also prevent
+fixes. A proposed reorder is parsed again and refused if YAML values change
+(for example, when a keep-chomp scalar would absorb trailing blank lines).
+Each changed line receives one non-overlapping replacement;
 ordinary body fixes can be applied simultaneously.
 
 Duplicate keys, anchors, aliases, malformed YAML, ambiguous comments, complex

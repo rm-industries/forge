@@ -1,8 +1,9 @@
 ---
 # Article metadata
-# Draft remains deliberately unpublished
+
 # The article title
 title: 'Normalization example'
+# Draft remains deliberately unpublished
 draft: true # retain draft state
 unknown:
   z: 1
