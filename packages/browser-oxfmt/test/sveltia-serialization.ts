@@ -17,8 +17,12 @@ const require = createRequire(import.meta.url);
 const { chromium } = (await import(
   pathToFileURL(resolve(process.argv[2] ?? 'templates/default/node_modules/playwright/index.mjs')).href
 )) as typeof import('playwright-core');
-import { defineModel } from '../../content-model/dist/index.js';
-import { createSveltiaCollection } from '../../content-model/dist/sveltia.js';
+const { defineModel } = (await import(
+  new URL('../../content-model/dist/index.js', import.meta.url).href
+)) as typeof import('../../content-model/src/index.ts');
+const { createSveltiaCollection } = (await import(
+  new URL('../../content-model/dist/sveltia.js', import.meta.url).href
+)) as typeof import('../../content-model/src/sveltia/index.ts');
 const collection = createSveltiaCollection(
   defineModel({
     name: 'articles',

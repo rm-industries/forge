@@ -1,5 +1,10 @@
 {
   "extends": "../../tsconfig.json",
-  "compilerOptions": { "lib": ["ES2022", "ESNext.Disposable", "DOM"], "skipLibCheck": true },
+  "compilerOptions": {
+    "lib": ["ES2022", "ESNext.Disposable", "DOM"],
+    "skipLibCheck": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
+  },
   "include": ["test/**/*.ts"]
 }
