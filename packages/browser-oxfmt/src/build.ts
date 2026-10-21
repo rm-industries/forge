@@ -158,6 +158,8 @@ export async function resolveBrowserOptions(input: BrowserOptionsInput): Promise
   delete effective.$schema;
   if (config.ignorePatterns !== undefined) {
     if (!Array.isArray(config.ignorePatterns)) fail('ignorePatterns must be an array');
+    if (input.requireUniformPolicy && config.ignorePatterns.length)
+      fail('Uniform policy cannot apply filename-specific ignorePatterns');
     for (const pattern of config.ignorePatterns) {
       if (typeof pattern !== 'string' || !/^\/?(?:[\w.-]+\/)+(?:\*\*|[\w.-]+)$/.test(pattern))
         fail('ignorePatterns supports only literal paths and directory/** exclusions');

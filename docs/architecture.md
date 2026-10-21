@@ -75,7 +75,7 @@ derive their respective configuration from the same model registry.
 
 ## Verification layers
 
-- Root quality checks repository source and both npm workspaces.
+- Root quality checks repository source and all npm workspaces.
 - Template static verification copies the template, performs a clean install,
   runs its static gate, and exercises known-defect fixtures.
 - Template isolation performs the complete non-browser standalone gate.
