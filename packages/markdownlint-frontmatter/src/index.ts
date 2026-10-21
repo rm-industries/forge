@@ -6,6 +6,11 @@ export interface FrontmatterOrderConfiguration {
   orderedKeys: string[];
 }
 
+/** Derive top-level YAML order from a shared model; its separate body is excluded. */
+export function frontmatterOrderFromModel(model: { fields: object }): FrontmatterOrderConfiguration {
+  return { orderedKeys: Object.keys(model.fields) };
+}
+
 const rule: Rule = {
   names: ['forge/frontmatter-order'],
   description: 'YAML frontmatter fields follow the configured order',
