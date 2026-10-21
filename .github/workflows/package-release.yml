@@ -6,6 +6,7 @@ on: # yamllint disable-line rule:truthy
     tags:
       - 'content-model-v*'
       - 'create-forge-v*'
+      - 'markdownlint-frontmatter-v*'
     branches:
       - main
     paths:
@@ -20,6 +21,7 @@ on: # yamllint disable-line rule:truthy
         options:
           - content-model
           - create-forge
+          - markdownlint-frontmatter
 
 permissions: {}
 

@@ -14,6 +14,8 @@ supersedes the old one.
 | [0006](0006-versioning.md)               | Generator and content-model versioning         | Accepted |
 | [0007](0007-project-website.md)          | Isolated Forge project website                 | Accepted |
 
+| [0008](0008-frontmatter-package.md) | Independent frontmatter lint package; extends 0003/0006 | Accepted |
+
 These records implement the Forge roadmap, beginning with
 [FGE-001](https://github.com/rm-industries/forge/issues/1), and follow the
 project roadmap represented by their linked work items.
