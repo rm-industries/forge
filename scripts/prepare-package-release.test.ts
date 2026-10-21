@@ -31,6 +31,27 @@ describe('package release preparation', () => {
     });
   });
 
+  test('prepares the independent frontmatter package and rejects another manifest identity', () => {
+    const input = {
+      packageSlug: 'markdownlint-frontmatter',
+      manifest: { name: '@rm-industries/markdownlint-frontmatter', version: '0.1.0' },
+      changelog: '# Changelog\n\n## 0.1.0\n\n- Initial release.\n',
+      gitSha: 'abc123',
+    };
+    expect(createPackageReleasePlan(input)).toMatchObject({
+      packageName: '@rm-industries/markdownlint-frontmatter',
+      workspace: 'packages/markdownlint-frontmatter',
+      releaseTag: 'markdownlint-frontmatter-v0.1.0',
+      npmTag: 'latest',
+    });
+    expect(() =>
+      createPackageReleasePlan({
+        ...input,
+        manifest: { ...input.manifest, name: '@rm-industries/content-model' },
+      }),
+    ).toThrow(/identity/);
+  });
+
   test('uses latest for a stable release', () => {
     const stableChangelog = '# Changelog\n\n## 1.0.0\n\n- Stable.\n';
     expect(

@@ -82,3 +82,8 @@ editing automation. Runtime coverage must remain aligned with the
 
 By contributing, you agree that your contributions are licensed under the
 [MIT License](LICENSE).
+
+Frontmatter ordering belongs to the [independent lint
+package](packages/markdownlint-frontmatter/README.md). Test its public rule and packed consumer,
+then the [CLI2 adoption and CMS gates](docs/frontmatter-release-readiness.md). Keep Oxfmt formatting
+and Astro schema validation separate. Do not add unpublished dependencies to the standalone starter.

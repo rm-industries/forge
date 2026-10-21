@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import { prerelease, valid } from 'semver';
 
-type PackageSlug = 'content-model' | 'create-forge' | 'browser-oxfmt';
+type PackageSlug = 'content-model' | 'create-forge' | 'browser-oxfmt' | 'markdownlint-frontmatter';
 
 type PackageManifest = {
   name?: string;
@@ -25,6 +25,7 @@ const packageWorkspaces: Record<PackageSlug, string> = {
   'browser-oxfmt': 'packages/browser-oxfmt',
   'content-model': 'packages/content-model',
   'create-forge': 'packages/create-forge',
+  'markdownlint-frontmatter': 'packages/markdownlint-frontmatter',
 };
 
 export type PackageReleasePlan = {
@@ -79,7 +80,7 @@ export const createPackageReleasePlan = ({
   if (!isPackageSlug(packageSlug)) throw new Error(`Unsupported package ${packageSlug}.`);
   const packageName = requireValue(manifest.name, 'Package name');
   if (packageName !== `@rm-industries/${packageSlug}`) {
-    throw new Error('Workspace package identity does not match the selected release package.');
+    throw new Error('Package identity does not match the selected release package.');
   }
   const version = requireValue(manifest.version, 'Package version');
   if (!valid(version)) throw new Error(`Package version ${version} is not valid semantic versioning.`);
@@ -126,7 +127,7 @@ const run = async () => {
   const cwd = process.cwd();
   const tag = argumentAfter(args, '--tag');
   const requestedPackage = argumentAfter(args, '--package');
-  const tagPackage = tag?.match(/^(browser-oxfmt|content-model|create-forge)-v/)?.[1];
+  const tagPackage = tag?.match(/^(browser-oxfmt|content-model|create-forge|markdownlint-frontmatter)-v/)?.[1];
   const packageSlug = requireValue(requestedPackage ?? tagPackage, 'Package') as PackageSlug;
   if (!isPackageSlug(packageSlug)) throw new Error(`Unsupported package ${packageSlug}.`);
   const workspace = packageWorkspaces[packageSlug];

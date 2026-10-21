@@ -6,7 +6,8 @@ decision in [ADR 0006](decisions/0006-versioning.md).
 
 - Status: Initial policy for the `0.x` release line
 - Effective: 2026-08-18
-- Applies to: `@rm-industries/create-forge`, `@rm-industries/content-model`, and
+- Applies to: `@rm-industries/create-forge`, `@rm-industries/content-model`,
+  `@rm-industries/markdownlint-frontmatter`, and
   `templates/default`
 
 ## Support principles
@@ -146,12 +147,12 @@ peer, or change public behavior follow the breaking-change rules below.
 ## Versioning contracts
 
 Forge uses semantic versioning independently for `@rm-industries/create-forge`
-and `@rm-industries/content-model`. Git tags and GitHub releases identify
+`@rm-industries/content-model`, and `@rm-industries/markdownlint-frontmatter`. Git tags and GitHub releases identify
 generator releases. The sole default template is a tested source snapshot
 bundled with a generator release; it is not published or versioned as an
 independent package.
 
-For both published packages:
+For all published packages:
 
 - before `1.0.0`, breaking changes increment the minor version and require
   migration notes;
@@ -281,3 +282,18 @@ Every release checkpoint must record evidence for the following checklist:
 Any mismatch blocks the checkpoint. A deliberate support change must update this
 policy, affected ADRs when architectural intent changes, package metadata, CI,
 and user documentation in the same release-bound change.
+
+## Frontmatter lint compatibility
+
+The plugin uses the same Node/npm engine ranges above. Markdownlint `^0.42.0`
+is its required peer: 0.41 lacks the public frontmatter fix API. CLI2 `0.24.0`
+uses Markdownlint `0.42.0` directly; no override is required. Other runners must
+expose that supported peer API. No Astro, Sveltia, or content-model runtime
+dependency is imposed. The structural model helper reads `fields` insertion
+order and excludes `body`.
+
+See the [package contract](../packages/markdownlint-frontmatter/README.md) for
+configuration, delimiter, preservation, and unsafe-fix limits, and the
+[readiness evidence](frontmatter-release-readiness.md) for exact tested runtimes
+and remaining release blockers. Declared runtime support does not imply that a
+local probe covers the complete release-checkpoint matrix.

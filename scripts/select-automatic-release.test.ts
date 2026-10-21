@@ -115,3 +115,16 @@ test('keeps browser formatter changes out of the automatic peer release path', (
     }),
   ).toBeUndefined();
 });
+
+test('keeps frontmatter releases outside reviewed automatic sources', () => {
+  expect(
+    selectAutomaticRelease({
+      ...input,
+      pullRequest: {
+        ...input.pullRequest,
+        head: { ...input.pullRequest.head, ref: 'automation/markdownlint-frontmatter' },
+      },
+      files: ['packages/markdownlint-frontmatter/package.json', 'packages/markdownlint-frontmatter/CHANGELOG.md'],
+    }),
+  ).toBeUndefined();
+});

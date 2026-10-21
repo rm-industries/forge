@@ -4,7 +4,8 @@ Forge has two release layers:
 
 - checkpoint releases (`v0.6.0`, for example) record completion of a roadmap
   milestone; and
-- package releases publish independently versioned create-forge, content-model, or browser-oxfmt
+- package releases publish independently versioned create-forge, content-model,
+  browser-oxfmt, or frontmatter lint
   artifacts from package-scoped tags.
 
 Checkpoint tags never publish npm packages. Package tags trigger protected npm
@@ -57,7 +58,7 @@ After the release PR merges:
 
 1. resolve the exact reviewed merge commit on `main`;
 2. create an annotated `content-model-v<version>` or
-   `create-forge-v<version>` tag at that commit;
+   `create-forge-v<version>` or `markdownlint-frontmatter-v<version>` tag at that commit;
 3. push only that tag;
 4. wait for package preparation to pass;
 5. approve the protected `npm-release` environment deployment;
@@ -160,3 +161,10 @@ identity before publication. Actual macOS Safari and iPhone Safari saves,
 large/repeated edits, error recovery, and background/resume remain a release
 gate; emulated viewport and Playwright WebKit results do not substitute for them.
 Maintainers configure trusted publication and protected tag patterns separately.
+
+## Frontmatter plugin prerequisites
+
+For the independent frontmatter plugin, use the
+[release readiness report](frontmatter-release-readiness.md) and
+[manual handoff](package-releases.md#frontmatter-plugin-release-handoff).
+Local preparation does not replace the required protected workflow dry run.

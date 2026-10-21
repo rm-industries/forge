@@ -7,6 +7,8 @@ on: # yamllint disable-line rule:truthy
       - 'content-model-v*'
       - 'create-forge-v*'
       - 'browser-oxfmt-v*'
+
+      - 'markdownlint-frontmatter-v*'
     branches:
       - main
     paths:
@@ -23,6 +25,8 @@ on: # yamllint disable-line rule:truthy
           - content-model
           - create-forge
           - browser-oxfmt
+
+          - markdownlint-frontmatter
 
 permissions: {}
 

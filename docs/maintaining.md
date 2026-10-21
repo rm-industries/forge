@@ -169,3 +169,8 @@ Use the [architecture guide](architecture.md) to locate the affected decision.
 If a proposal changes an accepted boundary, add a new ADR that records context,
 decision, alternatives, consequences, and superseded records. Update code,
 policy, CI, and public documentation in the same release-bound change.
+
+The independent [frontmatter lint package](../packages/markdownlint-frontmatter/README.md) shares
+manual release preparation, not automatic release selection. Review its [release
+readiness](frontmatter-release-readiness.md), per-collection CLI2 configuration, and packed-consumer
+evidence when changing ordering behavior.

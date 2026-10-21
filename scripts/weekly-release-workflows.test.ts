@@ -22,7 +22,12 @@ test('prepares Friday updates with the target installed before quality checks', 
 
 test('keeps manual publication gated while reviewed automatic patches use their own environment', () => {
   expect(release.on.push.branches).toEqual(['main']);
-  expect(release.on.push.tags).toEqual(['content-model-v*', 'create-forge-v*', 'browser-oxfmt-v*']);
+  expect(release.on.push.tags).toEqual([
+    'content-model-v*',
+    'create-forge-v*',
+    'browser-oxfmt-v*',
+    'markdownlint-frontmatter-v*',
+  ]);
   expect(release.jobs.publish.if).toBe("needs.prepare.outputs.publish == 'true'");
   expect(release.jobs.publish.environment).toBe('${{ needs.prepare.outputs.release-environment }}');
   expect(release.jobs.prepare.outputs['release-environment']).toBe(
@@ -81,4 +86,15 @@ test('engine updates validate native and browser behavior before creating a revi
   expect(push).not.toContain('--force');
   expect(JSON.stringify(workflow)).not.toContain('--auto');
   expect(JSON.stringify(workflow)).not.toContain('npm publish');
+});
+
+test('supports protected manual frontmatter preparation without automatic publication', () => {
+  expect(release.on.workflow_dispatch.inputs.package.options).toContain('markdownlint-frontmatter');
+  expect(release.on.push.paths).not.toContain('packages/markdownlint-frontmatter/package.json');
+  expect(release.jobs.prepare.outputs.publish).toContain("github.event_name == 'push'");
+  expect(release.jobs.publish.permissions['id-token']).toBe('write');
+  expect(release.jobs.prepare.permissions).not.toHaveProperty('id-token');
+  const steps = release.jobs.publish.steps as { name: string; run?: string; if?: string }[];
+  expect(steps.find((step) => step.name === 'Publish with provenance')!.run).toContain('--provenance');
+  expect(steps.find((step) => step.name === 'Dispatch published content model')!.if).toContain("== 'content-model'");
 });
