@@ -70,7 +70,7 @@ hooks, serializer replacement, backend mocks, or fixed readiness sleeps are used
 This browser proof is an explicit
 command because ordinary unit tests do not require downloaded browser binaries.
 
-`normalization.before.md` and `normalization.after.md` record a reviewed,
+`normalization.before.md.txt` and `normalization.after.md.txt` record a reviewed,
 representative article migration. The ordering fix moves complete field blocks;
 the configured starter Oxfmt then changes the title's quote style. Comments,
 parsed values, the unknown nested mapping, draft state and absent optional keys

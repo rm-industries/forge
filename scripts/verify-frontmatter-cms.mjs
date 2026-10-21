@@ -41,8 +41,8 @@ const split = (source) => {
 };
 
 // The reviewed fixture records the whole migration diff, independently of native serialization.
-const before = await readFile(join(fixture, 'normalization.before.md'), 'utf8');
-const expected = await readFile(join(fixture, 'normalization.after.md'), 'utf8');
+const before = await readFile(join(fixture, 'normalization.before.md.txt'), 'utf8');
+const expected = await readFile(join(fixture, 'normalization.after.md.txt'), 'utf8');
 assert.ok(check(before).length, 'The fixture must exercise an actual ordering violation');
 const fixed = applyFixes(before, check(before));
 assert.deepEqual(split(fixed), split(before), 'Ordering must preserve values and exact body bytes');
