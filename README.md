@@ -154,6 +154,9 @@ Forge publishes two independently versioned packages:
 
 - [`@rm-industries/create-forge`](packages/create-forge/README.md) is the
   project initializer and bundles the reviewed template snapshot.
+- [`@rm-industries/browser-oxfmt`](packages/browser-oxfmt/README.md) provides
+  native Markdown formatting in a browser worker. Existing-site adoption follows
+  the [ordered migration guide](docs/browser-formatter-adoption.md) after release gates pass.
 - [`@rm-industries/content-model`](packages/content-model/README.md) provides
   integration-neutral models plus Astro and Sveltia adapters.
 
