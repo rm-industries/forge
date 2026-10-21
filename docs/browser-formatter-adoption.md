@@ -28,8 +28,9 @@ must also be validated before their source changes can be adopted.
    changes. Preserve collection declarations, schema, field order, draft state,
    frontend content handling, and existing editor configuration. Do not regenerate
    or overwrite the project. Wire formatting into Sveltia's bound native
-   serialization callback with its synchronous fallback and recoverable failures;
-   do not replace save operations or mutate a live editor to trigger formatting.
+   serialization callback and retain its recoverable failure behavior. A rejected
+   formatter blocks the tested save; it does not substitute unformatted output.
+   Do not replace save operations or mutate a live editor to trigger formatting.
 6. Build the site using its own installation and lockfile. Verify worker/WASM
    assets load under its deployment base path and actual CSP. Use the
    [package deployment contract](../packages/browser-oxfmt/README.md) for loading,
