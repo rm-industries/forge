@@ -36,7 +36,7 @@ mapping order, scalar styles, multiline values, delimiters, body bytes, and
 uniform LF or CRLF line endings are preserved. Contiguous comments immediately
 before a later key move with that key; initial and trailing document comments
 stay in place. Blank-separated comments between keys have ambiguous ownership
-and prevent fixes. Each changed line receives one nonoverlapping replacement;
+and prevent fixes. Each changed line receives one non-overlapping replacement;
 ordinary body fixes can be applied simultaneously.
 
 Duplicate keys, anchors, aliases, malformed YAML, ambiguous comments, complex

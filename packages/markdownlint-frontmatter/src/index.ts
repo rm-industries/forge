@@ -96,7 +96,7 @@ const rule: Rule = {
     if (ordered.every((entry, index) => entry === entries[index])) return;
     const detail = `${params.name}: Expected frontmatter order: ${ordered.map(({ key }) => key).join(', ')}.`;
     const yamlLines = lines.slice(1, end);
-    const tailStart = source.slice(0, previousEnd).split('\n').length - 1;
+    const tailStart = source.slice(0, previousEnd).split('\n').length - (source[previousEnd - 1] === '\n' ? 1 : 0);
     const blocks = new Map(
       entries.map((entry, index) => [entry.key, yamlLines.slice(entry.start, entries[index + 1]?.start ?? tailStart)]),
     );
