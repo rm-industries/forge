@@ -17,6 +17,8 @@ Use the following top-level layout:
 
 - `packages/create-forge/` owns the publishable `@rm-industries/create-forge`
   package, including its CLI, materialization code, and generator tests.
+- `packages/browser-oxfmt/` owns the publishable browser worker, pinned native
+  formatter assets, supported options contract, and package consumer tests.
 - `packages/content-model/` owns the publishable `@rm-industries/content-model`
   package, including its integration-neutral model language, runtime validation,
   Astro and Sveltia adapters, and tests.

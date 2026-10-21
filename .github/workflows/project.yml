@@ -187,6 +187,11 @@ jobs:
                   tar -tzf "$candidate" | grep -Fx "package/dist/$entry.d.ts"
                 done
                 ;;
+              *browser-oxfmt*.tgz)
+                for entry in dist/index.js dist/index.d.ts dist/worker.js dist/wasm/engine.js dist/wasm/engine_bg.wasm dist/wasm/identity.json NOTICE.md LICENSE; do
+                  tar -tzf "$candidate" | grep -Fx "package/$entry"
+                done
+                ;;
               *create-forge*.tgz)
                 tar -tzf "$candidate" | grep -Fx 'package/dist/index.mjs'
                 tar -tzf "$candidate" | grep -Fx 'package/dist/template/package-lock.json'

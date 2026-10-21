@@ -1,4 +1,4 @@
-# 0006: Version the generator and content-model package independently
+# 0006: Version publishable packages independently
 
 - Status: Accepted
 - Date: 2026-08-18
@@ -23,6 +23,18 @@ Apply semantic versioning independently to the published
 package range and an exact resolved version in their lockfile. The package ships
 core types, validation, and Astro and Sveltia adapters as one release so a model
 capability cannot be installed without matching adapters.
+
+Apply semantic versioning independently to `@rm-industries/browser-oxfmt`.
+Its package version identifies the browser API, worker/assets, supported options,
+and pinned upstream formatter engine together. Record the exact upstream Oxfmt
+version and asset identity; package and engine versions are separate identities.
+The consumer must use the matching authoritative Oxfmt configuration contract.
+A different engine version is rejected until its output and adjacent-version
+comparison have been reviewed. Before 1.0, incompatible browser API, output
+policy, configuration, or runtime baseline changes require a minor release and
+migration notes; compatible fixes use patch releases. After 1.0, those changes
+require a major release. Review output changes even when upstream calls an
+engine update a patch. Publishing this package never edits generated source.
 
 Before 1.0, minor releases may change the emerging generator or template
 contract, with those changes called out in release notes. From 1.0 onward,

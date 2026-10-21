@@ -22,7 +22,7 @@ test('prepares Friday updates with the target installed before quality checks', 
 
 test('keeps manual publication gated while reviewed automatic patches use their own environment', () => {
   expect(release.on.push.branches).toEqual(['main']);
-  expect(release.on.push.tags).toEqual(['content-model-v*', 'create-forge-v*']);
+  expect(release.on.push.tags).toEqual(['content-model-v*', 'create-forge-v*', 'browser-oxfmt-v*']);
   expect(release.jobs.publish.if).toBe("needs.prepare.outputs.publish == 'true'");
   expect(release.jobs.publish.environment).toBe('${{ needs.prepare.outputs.release-environment }}');
   expect(release.jobs.prepare.outputs['release-environment']).toBe(
@@ -59,4 +59,10 @@ test('packs the planned release instead of inferring a package from the triggeri
   expect(pack.run).toContain('--tag "$RELEASE_TAG"');
   expect(pack.run).not.toContain('GITHUB_REF_NAME');
   expect(pack.env).not.toHaveProperty('INPUT_PACKAGE');
+});
+
+test('offers browser package preparation without enabling automatic publication', () => {
+  expect(release.on.workflow_dispatch.inputs.package.options).toContain('browser-oxfmt');
+  expect(release.on.push.paths).toContain('packages/browser-oxfmt/package.json');
+  expect(release.jobs.prepare.outputs.publish).toContain("github.event_name == 'push'");
 });

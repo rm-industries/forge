@@ -6,11 +6,13 @@ on: # yamllint disable-line rule:truthy
     tags:
       - 'content-model-v*'
       - 'create-forge-v*'
+      - 'browser-oxfmt-v*'
     branches:
       - main
     paths:
       - packages/content-model/package.json
       - packages/create-forge/package.json
+      - packages/browser-oxfmt/package.json
   workflow_dispatch:
     inputs:
       package:
@@ -20,6 +22,7 @@ on: # yamllint disable-line rule:truthy
         options:
           - content-model
           - create-forge
+          - browser-oxfmt
 
 permissions: {}
 

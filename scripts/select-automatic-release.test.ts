@@ -106,3 +106,12 @@ test('requires a manual baseline for unreleased code or shipped template behavio
     ]),
   ).toBe(false);
 });
+
+test('keeps browser formatter changes out of the automatic peer release path', () => {
+  expect(
+    selectAutomaticRelease({
+      ...input,
+      files: ['packages/browser-oxfmt/package.json', 'packages/browser-oxfmt/CHANGELOG.md'],
+    }),
+  ).toBeUndefined();
+});

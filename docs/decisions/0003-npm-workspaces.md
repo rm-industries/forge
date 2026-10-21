@@ -13,7 +13,8 @@ without requiring contributors to install a separate monorepo tool globally.
 
 Use a private root npm package with `packages/*` as its workspace pattern and a
 committed root `package-lock.json`. The workspaces include
-`@rm-industries/create-forge` and `@rm-industries/content-model`.
+`@rm-industries/create-forge`, `@rm-industries/content-model`, and
+`@rm-industries/browser-oxfmt`.
 `templates/default/` remains a standalone project with its own package metadata
 and lockfile rather than a root workspace.
 

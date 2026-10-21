@@ -5,8 +5,8 @@ For the complete human checklist, simulated prerelease, checkpoint releases,
 rollback, and deprecation procedure, start with the
 [maintainer release guide](releasing.md).
 
-Forge publishes `@rm-industries/create-forge` and
-`@rm-industries/content-model` independently. A package version is prepared in
+Forge publishes `@rm-industries/create-forge`, `@rm-industries/content-model`,
+and `@rm-industries/browser-oxfmt` independently. A package version is prepared in
 a reviewed pull request, merged to `main`, and published only from a matching
 package-scoped Git tag.
 
@@ -21,6 +21,7 @@ Release tags use these forms:
 
 - `content-model-v<version>`
 - `create-forge-v<version>`
+- `browser-oxfmt-v<version>`
 
 The tag version must exactly match the selected workspace manifest. Prerelease
 versions publish to npm's `next` tag; stable versions publish to `latest`.
@@ -44,6 +45,13 @@ For each npm package, configure a trusted publisher for:
 - repository: `forge`
 - workflow: `package-release.yml`
 - environment: `npm-release`
+
+Before the first browser formatter publication, the maintainer must explicitly
+add `browser-oxfmt-v*` to the protected environment's allowed tag patterns and
+configure that npm package's trusted publisher. Source support alone does not
+configure these shared settings. Browser formatter changes do not qualify for
+the existing automatic peer/template patch publication flows; they require
+reviewed package tags and the manual environment approval.
 
 No npm token is stored in GitHub. npm exchanges the GitHub OIDC identity for a
 short-lived publication credential and records provenance for the published
@@ -91,3 +99,18 @@ The `published-<package>-<version>` artifact is the machine-readable handoff. It
 contains the selected package, Git SHA, release and npm tags, packed integrity,
 and verified registry integrity. Downstream automation must require
 `publication.verified: true` and must not react to preparation artifacts alone.
+
+## Browser formatter release gate
+
+Use the [adoption guide](browser-formatter-adoption.md) and
+[readiness record](reviews/browser-formatter-release.md) before approving a
+browser formatter artifact. Inspect its worker, WASM, declarations, identity,
+and licenses, along with the native rebuild and packed three-engine test run.
+The release workflow's manual dispatch remains prepare-only. It neither creates
+a tag nor publishes, and its prepare job does not request environment approval.
+A green dry run does not replace audit or actual Safari/iPhone evidence.
+
+If publication partially succeeds, use the existing recovery procedure for the
+same package/version/integrity. Never recreate a tag or replace an npm version.
+If formatter behavior needs correction, prepare a new version and keep existing
+sites on their verified lockfile until the fix is tested.
