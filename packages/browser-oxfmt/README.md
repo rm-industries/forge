@@ -66,27 +66,33 @@ PLAYWRIGHT_MODULE=/absolute/path/to/playwright/index.mjs npm run test:browser --
 ```
 
 The browser check installs the actual tarball in an isolated temporary consumer,
-then runs all 215 feasibility comparisons and idempotence checks in Chromium,
+then runs all 215 supported-version comparisons and idempotence checks in Chromium,
 Firefox, and WebKit. Five Tailwind differences per browser are required and
 reported. It also checks project paths, ordinary and isolated deployment
 headers, UI responsiveness, worker reuse, missing assets, and recovery after
 worker failures. `CHROMIUM_CHANNEL=chrome` can select installed Chrome locally.
 
-Engine upgrades must rerun this packed suite and the retained feasibility fixture matrix, compare
-against the adjacent npm Oxfmt releases, review every changed output, and update
-the versioned options contract. The committed `test/adjacent/results.json` records
-reviewed output hashes against npm 0.71.0 and 0.73.0; CI compares both with all
-215 cases and requires idempotence. Run the same gate with installed module
-paths:
+Each browser-oxfmt release targets one exact Oxfmt version and source revision.
+The build helper rejects a consumer Oxfmt version that differs from that engine,
+preventing the browser and repository formatter from silently following different
+policies. The pin is updated as part of a new browser-oxfmt release.
 
-```sh
-npm run test:adjacent --workspace @rm-industries/browser-oxfmt -- /path/0.71.0/dist/index.js /path/0.73.0/dist/index.js
-```
+An Oxfmt upgrade requires a coordinated PR:
 
-Use the comparison script's `--record` flag only to prepare reviewed evidence
-when intentionally updating the engine. Adjacent versions are rejected at runtime; a
-successful build does not establish parity. The current supported engine is
-only 0.72.0.
+1. Update the root npm Oxfmt dependency and the Rust Git revision together.
+2. Update the engine identity, version checks, option mapping and tests for that release.
+3. Regenerate native artifacts and run parity against the newly supported npm
+   version, plus idempotence, browser loading, recovery and CMS save tests.
+4. Review output changes, increment browser-oxfmt's package version, update its
+   changelog and use the protected package release workflow.
+
+During an upgrade, compare the old and proposed engines using the maintained
+`test/markdown-cases.ts` matrix. CI verifies the selected supported version;
+unsupported neighboring releases do not have permanent fixtures or snapshots.
+Dependabot detects npm and Cargo dependency updates. The Oxfmt engine revision
+is still a coordinated manual upgrade because it changes formatting behavior
+and may require adapter changes; an unattended dependency bump cannot establish
+compatibility or publish a new browser-oxfmt release.
 
 The CMS checks live beside the package tests: `sveltia-serialization.ts` verifies
 Sveltia's native serialization API, and `template-integration.ts` builds and tests
@@ -210,9 +216,3 @@ weekly. The wasm-bindgen CLI version is read from Cargo.toml so binding updates
 keep the generator and library aligned. Oxfmt's Git dependencies remain pinned:
 changing them requires the matching npm engine, supported policy and parity
 fixtures to be reviewed together.
-
-`test/adjacent/oxfmt-0.71.0` and `oxfmt-0.73.0` deliberately install the releases
-immediately around the supported 0.72.0 engine. They measure compatibility drift;
-they do not define baseline output or track the latest Oxfmt release. The
-baseline fixtures and each comparison's expected output come from the supported
-engine. Those fixture versions change only during an intentional engine upgrade.

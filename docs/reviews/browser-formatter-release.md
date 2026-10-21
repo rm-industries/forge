@@ -10,12 +10,9 @@ Neither `@rm-industries/browser-oxfmt@0.1.0` nor
 
 ## Evidence available
 
-- [Feasibility](browser-oxfmt-feasibility/README.md) records native
-  front matter/fence formatting, idempotence, preservation, and the approved
-  Tailwind sorting exception. All other supported native formatting stays on.
-- [Package checkpoint](browser-oxfmt-package.md) records isolated packed
-  consumers, real Vite production loading, CSP, worker reuse/responsiveness,
-  error recovery, version rejection, and native build reproducibility.
+- The [package contract](../../packages/browser-oxfmt/README.md) and maintained
+  browser suite cover front matter, embedded languages, idempotence, preservation,
+  installed consumers, worker recovery, CSP and the approved Tailwind limitation.
 - [Ubuntu native build and packed browser run](https://github.com/rm-industries/forge/actions/runs/39551247357)
   passed Chromium 156.0.8078.4, Firefox 157.0, and WebKit 27.2. Each produced
   210 exact comparisons of 215, five approved Tailwind differences, and 215
@@ -36,7 +33,7 @@ Neither `@rm-industries/browser-oxfmt@0.1.0` nor
 - [Final Linux candidate verification](https://github.com/rm-industries/forge/actions/runs/39633224804)
   passed all 30 actual CMS save and recovery scenarios: Chromium 156.0.8078.4,
   Firefox 157.0, and WebKit 27.2, with zero failures. The same run passed
-  native rebuild reproducibility, package contracts, adjacent releases and
+  native rebuild reproducibility, package contracts and
   isolated packed consumers.
 - The final dependency audit still fails its high severity threshold:
   seven advisories (three low, three moderate, one high), including

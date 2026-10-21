@@ -33,7 +33,7 @@ export default defineConfig({
       enabled: false,
     },
     {
-      filename: ['packages/browser-oxfmt/test/fixtures/**', 'docs/reviews/browser-oxfmt-feasibility/**'],
+      filename: 'packages/browser-oxfmt/test/markdown-cases.ts',
       words: ['dont', 'Bezos', 'frontmatter', 'cdylib', 'serde', 'rlib'],
     },
   ],

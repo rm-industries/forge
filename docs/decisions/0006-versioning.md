@@ -29,8 +29,8 @@ Its package version identifies the browser API, worker/assets, supported options
 and pinned upstream formatter engine together. Record the exact upstream Oxfmt
 version and asset identity; package and engine versions are separate identities.
 The consumer must use the matching authoritative Oxfmt configuration contract.
-A different engine version is rejected until its output and adjacent-version
-comparison have been reviewed. Before 1.0, incompatible browser API, output
+A different engine version is rejected until its output, supported options and
+browser/CMS tests have been reviewed as part of a new package release. Before 1.0, incompatible browser API, output
 policy, configuration, or runtime baseline changes require a minor release and
 migration notes; compatible fixes use patch releases. After 1.0, those changes
 require a major release. Review output changes even when upstream calls an

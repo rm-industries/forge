@@ -34,7 +34,6 @@
     "build": "node native/build.ts && tsdown && node native/build.ts --copy",
     "prepack": "npm run typecheck && npm test && npm run build",
     "test:browser": "node test/packed-browser.ts",
-    "test:adjacent": "node test/adjacent-versions.ts",
     "build:native": "node native/build.ts",
     "quality:native": "node native/build.ts --check"
   },

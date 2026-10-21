@@ -13,7 +13,7 @@ declare global {
   }
 }
 
-import { createCases } from './fixtures/cases.ts';
+import { createCases } from './markdown-cases.ts';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const { format: reference } = await import(
   pathToFileURL(process.env.OXFMT_MODULE ?? join(root, 'node_modules/oxfmt/dist/index.js')).href

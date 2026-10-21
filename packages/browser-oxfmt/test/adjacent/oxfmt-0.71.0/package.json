@@ -1,7 +1,0 @@
-{
-  "name": "browser-oxfmt-0.71.0-fixture",
-  "private": true,
-  "dependencies": {
-    "oxfmt": "0.71.0"
-  }
-}
