@@ -3,9 +3,14 @@ name = "oxfmt-markdown-wasm-spike"
 version = "0.0.0"
 edition = "2024"
 publish = false
+license = "MIT"
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["raw-abi"]
+raw-abi = []
 
 [dependencies]
 oxc_allocator = { path = "../source/crates/oxc_allocator" }

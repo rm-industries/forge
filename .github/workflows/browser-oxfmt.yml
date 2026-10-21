@@ -1,0 +1,72 @@
+---
+name: Browser Oxfmt Package
+
+on: # yamllint disable-line rule:truthy
+  pull_request:
+    paths:
+      - packages/browser-oxfmt/**
+      - experiments/browser-oxfmt/**
+      - .github/workflows/browser-oxfmt.yml
+      - package-lock.json
+      - oxfmt.config.ts
+      - oxlint.config.ts
+      - cspell.config.ts
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: browser-oxfmt-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  RUSTUP_TOOLCHAIN: 1.97.0
+  CARGO_TARGET_DIR: ${{ github.workspace }}/.browser-oxfmt-target
+
+jobs:
+  package:
+    name: Rebuild native assets and verify packed browsers
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Setup project dependencies
+        uses: ./.github/actions/setup-project
+        with:
+          node-version: 26.8.1
+      - name: Install pinned native build tools
+        run: |
+          rustup toolchain install 1.97.0 --profile minimal --target wasm32-unknown-unknown
+          cargo install wasm-bindgen-cli --version 0.2.114 --locked
+      - name: Rebuild verified native release assets
+        run: |
+          npm run build:wasm --workspace @rm-industries/browser-oxfmt
+          cp packages/browser-oxfmt/assets/identity.json /tmp/browser-oxfmt-first.json
+          cp packages/browser-oxfmt/NOTICE.md /tmp/browser-oxfmt-first-notices.md
+          npm run build:wasm --workspace @rm-industries/browser-oxfmt
+          cmp /tmp/browser-oxfmt-first.json packages/browser-oxfmt/assets/identity.json
+          cmp /tmp/browser-oxfmt-first-notices.md packages/browser-oxfmt/NOTICE.md
+      - name: Verify package contracts
+        run: |
+          npm run typecheck --workspace @rm-industries/browser-oxfmt
+          npm test --workspace @rm-industries/browser-oxfmt
+          npm run build --workspace @rm-industries/browser-oxfmt
+      - name: Verify adjacent release behavior
+        run: |
+          npm install --prefix "$RUNNER_TEMP/oxfmt-previous" --ignore-scripts --no-audit --no-fund oxfmt@0.71.0
+          npm install --prefix "$RUNNER_TEMP/oxfmt-next" --ignore-scripts --no-audit --no-fund oxfmt@0.73.0
+          npm run test:adjacent --workspace @rm-industries/browser-oxfmt -- "$RUNNER_TEMP/oxfmt-previous/node_modules/oxfmt/dist/index.js" "$RUNNER_TEMP/oxfmt-next/node_modules/oxfmt/dist/index.js"
+      - name: Install existing browser test tools
+        run: |
+          npm ci --prefix templates/default --ignore-scripts
+          npm exec --prefix templates/default -- playwright install --with-deps chromium firefox webkit
+      - name: Verify isolated packed consumers
+        run: npm run test:browser --workspace @rm-industries/browser-oxfmt
