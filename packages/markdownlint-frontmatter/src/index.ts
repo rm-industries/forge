@@ -1,3 +1,5 @@
+import { isDeepStrictEqual } from 'node:util';
+
 import type { Rule } from 'markdownlint';
 import { isAlias, isMap, isNode, isScalar, parseDocument, visit } from 'yaml';
 
@@ -59,6 +61,7 @@ const rule: Rule = {
     }
     const entries: { key: string; start: number }[] = [];
     let previousEnd = 0;
+    let gapStart = 0;
     for (const pair of doc.contents.items) {
       if (!isScalar(pair.key) || typeof pair.key.value !== 'string' || !pair.key.range) {
         report('Unsafe YAML: keys must be simple string keys; no fix available.');
@@ -70,21 +73,28 @@ const rule: Rule = {
         report('Unsafe YAML: explicit or indented keys prevent source-preserving fixes.');
         return;
       }
-      const gap = source.slice(previousEnd, lineStart).replace(/\n$/, '');
-      if (entries.length && /^#/m.test(gap) && gap.split('\n').some((line) => line.trim() === '')) {
+      const gap = source.slice(gapStart, lineStart).replace(/\n$/, '');
+      if (entries.length && /^[ \t]*#/m.test(gap) && gap.split('\n').some((line) => line.trim() === '')) {
         report('Unsafe YAML: ambiguous comment ownership; no fix available.');
         return;
       }
-      previousEnd = isNode(pair.value) && pair.value.range ? pair.value.range[2] : pair.key.range[2];
       let start = source.slice(0, offset).split('\n').length - 1;
-      // Initial comments describe the document; later contiguous comments travel with their key.
+      // Only parser-bounded gaps contain comments; scalar content may also start with '#'.
       if (entries.length) {
-        while (start > 0 && lines[start]!.startsWith('#')) start--;
-        if (start > 0 && lines[start]?.trim() === '' && lines[start + 1]!.startsWith('#')) {
-          report('Unsafe YAML: ambiguous comment ownership; no fix available.');
+        start -= gap.split('\n').filter((line) => /^[ \t]*#/.test(line)).length;
+      } else {
+        const prefix = gap.split('\n');
+        let attached = 0;
+        while (attached < prefix.length && /^[ \t]*#/.test(prefix[prefix.length - attached - 1]!)) attached++;
+        if (attached === prefix.length) {
+          report('Unsafe YAML: ambiguous comment ownership at document start; separate the header with a blank line.');
           return;
         }
+        start -= attached;
       }
+      previousEnd = isNode(pair.value) && pair.value.range ? pair.value.range[2] : pair.key.range[2];
+      const valueEnd = isNode(pair.value) && pair.value.range ? pair.value.range[1] : pair.key.range[1];
+      gapStart = source[valueEnd - 1] === '\n' ? valueEnd : source.indexOf('\n', valueEnd) + 1;
       entries.push({ key: pair.key.value, start });
     }
     if (!entries.length) return;
@@ -105,6 +115,15 @@ const rule: Rule = {
       ...ordered.flatMap(({ key }) => blocks.get(key)!),
       ...yamlLines.slice(tailStart),
     ];
+    const proposed = parseDocument(replacement.join('\n') + '\n', { uniqueKeys: true });
+    if (
+      proposed.errors.length ||
+      proposed.warnings.length ||
+      !isDeepStrictEqual(doc.toJS({ mapAsMap: true }), proposed.toJS({ mapAsMap: true }))
+    ) {
+      report('Unsafe YAML: reordering would change YAML meaning; no fix available.');
+      return;
+    }
     let diagnosed = false;
     for (let index = 0; index < replacement.length; index++) {
       if (replacement[index] !== yamlLines[index]) {

@@ -1,6 +1,7 @@
 import { applyFixes } from 'markdownlint';
 import { lint } from 'markdownlint/sync';
 import { describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
 
 import rule from './index.ts';
 
@@ -23,6 +24,7 @@ describe('public Markdownlint rule', () => {
     const source = [
       '---',
       '# Document comment',
+      '',
       'draft: false # keep',
       '# Title comment',
       'title: "Hello"',
@@ -39,6 +41,7 @@ describe('public Markdownlint rule', () => {
     const expected = [
       '---',
       '# Document comment',
+      '',
       '# Title comment',
       'title: "Hello"',
       'description: |-',
@@ -56,6 +59,11 @@ describe('public Markdownlint rule', () => {
     expect(check(expected)).toEqual([]);
   });
   it.each([
+    ['# Draft must remain false\ndraft: false\ntitle: Hello', 'ambiguous comment'],
+    ['# Title comment\ntitle: Hello\ndraft: false', 'ambiguous comment'],
+    ['draft: false\n\n  # Ambiguous\ntitle: hello', 'ambiguous comment'],
+    ['title: hello\n\n  # Ambiguous\ndraft: false', 'ambiguous comment'],
+    ['title: hello\n  # Ambiguous\n\ndraft: false', 'ambiguous comment'],
     ['title: first\ntitle: second', 'Map keys must be unique'],
     ['title: &name hello\nextra: *name', 'anchors or aliases'],
     ['title: [broken', 'Unsafe YAML'],
@@ -67,6 +75,25 @@ describe('public Markdownlint rule', () => {
     expect(errors[0]?.errorDetail).toContain(detail);
     expect(errors.every((error) => error.fixInfo === null)).toBe(true);
     expect(applyFixes(source, errors)).toBe(source);
+  });
+  it.each(['|+', '>+'])('refuses reordered scalars that change meaning: %s', (style) => {
+    const source = `---\ndraft: ${style}\n  hi\n\n\ntitle: |\n  hi\n\n---\nBody\n`;
+    const errors = check(source);
+    expect(errors[0]?.errorDetail).toContain('meaning');
+    expect(errors.every((error) => error.fixInfo === null)).toBe(true);
+    const fixed = applyFixes(source, errors);
+    expect(fixed).toBe(source);
+    expect(parse(fixed.split('---')[1]!).draft).toBe('hi\n\n\n');
+  });
+  it('keeps literal comment-looking block scalar content with its value', () => {
+    const source = '---\ndraft: |\n  # literal\ntitle: Hello\n---\nBody\n';
+    expect(applyFixes(source, check(source))).toBe('---\ntitle: Hello\ndraft: |\n  # literal\n---\nBody\n');
+  });
+  it('separates a blank-delimited header from attached first-field comments', () => {
+    const source = '---\n# Document\n\n# Draft must remain false\ndraft: false\ntitle: Hello\n---\nBody\n';
+    const expected = '---\n# Document\n\ntitle: Hello\n# Draft must remain false\ndraft: false\n---\nBody\n';
+    expect(applyFixes(source, check(source))).toBe(expected);
+    expect(check(expected)).toEqual([]);
   });
   it('moves empty values without dropping their key', () => {
     const source = '---\ndraft: false\ntitle:\n---\nBody';

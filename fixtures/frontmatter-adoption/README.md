@@ -75,8 +75,11 @@ representative article migration. The ordering fix moves complete field blocks;
 the configured starter Oxfmt then changes the title's quote style. Comments,
 parsed values, the unknown nested mapping, draft state and absent optional keys
 survive. The Markdown body is unchanged in this fixture. Applying the public rule
-and Oxfmt again must produce identical bytes. Initial header comments remain at
-the top; later attached comments travel with their field.
+and Oxfmt again must produce identical bytes. Blank-separated header comments remain at
+the top; attached comments travel with their field, including the first field.
+An initial comment group without a blank separator is ambiguous and needs manual
+review. Indented ambiguous comments and reorders that change scalar values are
+also diagnosed without edits.
 
 Native CMS saves can normalize YAML representation and trailing body newlines;
 rich text can normalize Markdown syntax. This proof checks the demonstrated body

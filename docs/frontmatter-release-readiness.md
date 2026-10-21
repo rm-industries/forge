@@ -27,7 +27,7 @@ npm run --silent release:prepare -- --package markdownlint-frontmatter \
 ```
 
 The reviewed local artifact has SHA-1
-`9b36062845a6150713a7893b6394c30567916815`, 7,931 packed bytes and 23,329
+`d7fb15d8b2ac58b5b98432860296773b1d1de3ac`, 8,500 packed bytes and 25,756
 unpacked bytes. Its SHA-512 integrity is recorded in the local release manifest;
 repacking after metadata changes requires reviewing a new digest. The manifest
 records the checked-out commit; this local candidate includes the release-preparation
@@ -43,9 +43,9 @@ the same preparer registry independently.
 
 ## Verification evidence
 
-On this final ticket change, `npm run quality` passed formatting, lint,
-spelling, documentation links, typechecking, all 227 tests (65 root, 32
-content-model, 112 generator, 18 plugin), builds, and workspace pack dry runs.
+On the final review fixes, `npm run quality` passed formatting, lint,
+spelling, documentation links, typechecking, all 236 tests (65 root, 32
+content-model, 112 generator, 27 plugin), builds, and workspace pack dry runs.
 `git diff --check` passed. `npm audit --json` independently confirmed the eight
 advisories listed below; quality does not include that separate security gate.
 
@@ -101,10 +101,11 @@ packed plugin and verifies two model-derived collection orders, ordinary Markdow
 scope, non-mutating check, fix exit behavior, preservation, and unsafe refusal.
 This proves the handoff, not registry distribution.
 
-Node 22.22.2 and 24.22.0 each passed all 18 public rule/model tests, packed
+Before the final review fixes, Node 22.22.2 and 24.22.0 each passed all
+18 public rule/model tests, packed
 public-consumer tests, and the actual CLI2 adoption script, including native
 TypeScript model configuration. Node 26.9.0 with npm 11.19.1 passed those same
-boundaries. The supported engine ranges remain those in the
+boundaries before the final review fixes. The supported engine ranges remain those in the
 [support policy](support-policy.md). These focused probes are not a full root,
 build, generator, and browser matrix for Node 22/24.
 
@@ -115,6 +116,29 @@ metadata-only, raw Markdown and rich-text saves persisted valid ordering, and
 rule/Oxfmt normalization converged on the second pass. The
 [migration evidence](../fixtures/frontmatter-adoption/README.md) records value,
 comment, draft, optional-field, and body-meaning limits.
+
+## Standards
+
+The final two-axis review reported zero standards findings. The report is
+`/tmp/forge-343-review-standards.md`.
+
+## Spec
+
+The final review reported two spec findings: P1, a keep-chomp scalar could absorb
+detached blank lines; P2, indented ambiguous comments could bypass refusal.
+Both now have public API regressions that failed before the fix and pass afterward.
+A further first-field comment case also failed first and is fixed: blank-separated
+document headers stay put, attached comments travel, and an initial comment group
+without a separator requires manual review. The rule compares parsed Map values
+before offering edits and refuses meaning changes. The original review is
+`/tmp/forge-343-review-spec.md`.
+
+All 27 final public rule/model tests passed on Node 22.22.2, 24.22.0, and 26.9.0.
+The packed consumer, isolated CLI2 adoption, native CMS saves and Oxfmt convergence
+were rerun with Node 26 after these changes. These checks cover the reported cases,
+not every possible YAML document. Final logs are under
+`/tmp/forge-343-review-{quality,packed,adoption,cms}.log`; the refreshed artifact
+and dry-run release manifest are under `/tmp/forge-343-review-release/`.
 
 ## Unresolved release blockers
 
