@@ -211,3 +211,7 @@ link and critical-command checks. Architecture decisions live in
 ## License
 
 Forge is licensed under the [MIT License](LICENSE).
+
+The independently versioned [frontmatter lint package](packages/markdownlint-frontmatter/README.md)
+provides source-preserving key ordering with Markdownlint CLI2. Registry-based starter activation is
+staged until publication; see the [release handoff](docs/frontmatter-release-readiness.md).

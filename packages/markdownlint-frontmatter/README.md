@@ -103,3 +103,21 @@ existing `fields` property without importing or depending on content-model.
 The packages remain independently versioned. The packed test installs both npm
 artifacts in an isolated consumer; publication of the new plugin remains a
 maintainer-controlled handoff before registry-based adoption.
+
+## Runtime and release contract
+
+Supported engines are Node `^22.22.2 || ^24.0.0 || ^26.0.0` and npm
+`^10.9.0 || ^11.0.0`. The required Markdownlint peer is `^0.42.0`;
+CLI2 `0.24.0` is the tested runner. The package is ESM, exposes JavaScript and
+TypeScript declarations at its root export, and ships only `dist` plus npm's
+README, changelog, manifest, and MIT license metadata. YAML is its only direct
+runtime dependency; it does not install content-model, Astro, or Sveltia.
+
+The opening delimiter must be `---` on the first line; closing `---` and `...`
+are supported. Non-YAML frontmatter is ignored. Keep the default Markdownlint
+frontmatter handling and review diagnostics before applying fixes.
+
+Version `0.1.0` is a release candidate awaiting maintainer publication. See the
+[release readiness report](../../docs/frontmatter-release-readiness.md) and
+[existing-site migration and rollback](../../fixtures/frontmatter-adoption/README.md).
+Existing sites adopt the configuration selectively; never regenerate over owned source.

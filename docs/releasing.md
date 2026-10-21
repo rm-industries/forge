@@ -4,7 +4,7 @@ Forge has two release layers:
 
 - checkpoint releases (`v0.6.0`, for example) record completion of a roadmap
   milestone; and
-- package releases publish independently versioned create-forge or content-model
+- package releases publish independently versioned create-forge, content-model, or frontmatter lint
   artifacts from package-scoped tags.
 
 Checkpoint tags never publish npm packages. Package tags trigger protected npm
@@ -57,7 +57,7 @@ After the release PR merges:
 
 1. resolve the exact reviewed merge commit on `main`;
 2. create an annotated `content-model-v<version>` or
-   `create-forge-v<version>` tag at that commit;
+   `create-forge-v<version>` or `markdownlint-frontmatter-v<version>` tag at that commit;
 3. push only that tag;
 4. wait for package preparation to pass;
 5. approve the protected `npm-release` environment deployment;
@@ -149,3 +149,8 @@ follow the defective-package procedure.
 - [ ] GitHub release and `published-*` evidence exist.
 - [ ] Synchronization or remediation follow-up is linked where applicable.
 - [ ] Release gate and milestone record the final evidence.
+
+For the independent frontmatter plugin, use the
+[release readiness report](frontmatter-release-readiness.md) and
+[manual handoff](package-releases.md#frontmatter-plugin-release-handoff).
+Local preparation does not replace the required protected workflow dry run.

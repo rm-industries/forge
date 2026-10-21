@@ -6,13 +6,15 @@ rollback, and deprecation procedure, start with the
 [maintainer release guide](releasing.md).
 
 Forge publishes `@rm-industries/create-forge` and
-`@rm-industries/content-model` independently. A package version is prepared in
+`@rm-industries/content-model`, and `@rm-industries/markdownlint-frontmatter` independently. A
+package version is prepared in
 a reviewed pull request, merged to `main`, and published only from a matching
 package-scoped Git tag.
 
 ## Version and changelog policy
 
-The semantic-versioning policy in ADR 0006 remains authoritative. Every version
+The semantic-versioning policy in ADR 0006, extended by
+[ADR 0008](decisions/0008-frontmatter-package.md), remains authoritative. Every version
 change must add a matching section to that package's `CHANGELOG.md`. Use the
 exact version as the heading, newest first, and include migration guidance for
 pre-1.0 breaking changes.
@@ -21,6 +23,7 @@ Release tags use these forms:
 
 - `content-model-v<version>`
 - `create-forge-v<version>`
+- `markdownlint-frontmatter-v<version>`
 
 The tag version must exactly match the selected workspace manifest. Prerelease
 versions publish to npm's `next` tag; stable versions publish to `latest`.
@@ -91,3 +94,18 @@ The `published-<package>-<version>` artifact is the machine-readable handoff. It
 contains the selected package, Git SHA, release and npm tags, packed integrity,
 and verified registry integrity. Downstream automation must require
 `publication.verified: true` and must not react to preparation artifacts alone.
+
+## Frontmatter plugin release handoff
+
+The frontmatter package is manual-only: dispatch `Package Release` with
+`package=markdownlint-frontmatter` to prepare it. No main-branch automatic
+release source or template synchronization is enabled. Its tag publication uses
+the same `npm-release` trusted publisher and provenance checks described above.
+The shared preparer registry is also the extension point for browser formatter
+[#349](https://github.com/rm-industries/forge/issues/349); that work is independent.
+
+Before approving a tag, reconcile the [readiness report](frontmatter-release-readiness.md),
+[package contract](../packages/markdownlint-frontmatter/README.md), and
+[existing-site migration](../fixtures/frontmatter-adoption/README.md). Publication, release
+tags, and merging require separate maintainer authorization. Registry-based
+starter adoption follows publication in a reviewed dependency/lockfile change.

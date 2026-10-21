@@ -1,6 +1,6 @@
 # Architecture guide
 
-Forge is a monorepo that publishes two packages and bundles one standalone site
+Forge is a monorepo that publishes three packages and bundles one standalone site
 template. This guide is the maintainer-oriented map; accepted architectural
 decisions remain authoritative in the [ADR index](decisions/README.md).
 
@@ -27,6 +27,8 @@ website ──generated once, then owned──▶ GitHub Pages project site
   materialization, project setup, reporting, and the bundled template snapshot.
 - `packages/content-model/` owns integration-neutral model semantics and the
   Astro and Sveltia adapter entry points.
+- `packages/markdownlint-frontmatter/` owns the generic ordering rule and model
+  projection; Markdownlint is its peer, and YAML is its runtime dependency.
 - `templates/default/` is a complete Astro repository outside the npm workspace.
   It owns its lockfile so standalone checks cannot pass through root hoisting.
 - `scripts/` owns repository-level release, compatibility, synchronization, and
@@ -44,10 +46,11 @@ update an existing generated project. The content-model package is the supported
 upgrade path for shared model and adapter behavior; template source changes need
 manual migration guidance.
 
-The generator and content-model package use independent semantic versions. The
+The generator, content-model, and frontmatter lint packages use independent semantic versions. The
 template has no independent package version: a generator release identifies the
 exact template snapshot it contains. See the
-[support policy](support-policy.md) and [versioning ADR](decisions/0006-versioning.md)
+[support policy](support-policy.md) and [versioning ADR](decisions/0006-versioning.md), extended by
+[ADR 0008](decisions/0008-frontmatter-package.md)
 for breaking-change rules.
 
 The project website has a separate deployment lifecycle. Merges affecting it
@@ -72,7 +75,7 @@ derive their respective configuration from the same model registry.
 
 ## Verification layers
 
-- Root quality checks repository source and both npm workspaces.
+- Root quality checks repository source and all npm workspaces.
 - Template static verification copies the template, performs a clean install,
   runs its static gate, and exercises known-defect fixtures.
 - Template isolation performs the complete non-browser standalone gate.
@@ -94,6 +97,7 @@ derive their respective configuration from the same model registry.
 | Shared content model         | [ADR 0005](decisions/0005-shared-content-model.md)     |
 | Package versioning           | [ADR 0006](decisions/0006-versioning.md)               |
 | Project website              | [ADR 0007](decisions/0007-project-website.md)          |
+| Independent frontmatter lint | [ADR 0008](decisions/0008-frontmatter-package.md)      |
 
 Create a new ADR when changing an accepted decision materially. Do not rewrite
 the history of an accepted record; mark the new record as superseding it and
