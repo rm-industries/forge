@@ -6,6 +6,7 @@ use oxc_formatter_markdown::{MarkdownFormatOptions, ProseWrap, SingleQuote};
 use serde::Deserialize;
 use std::sync::Arc;
 
+#[cfg(feature = "raw-abi")]
 #[link(wasm_import_module = "env")]
 unsafe extern "C" {
     fn report_panic(ptr: *const u8, len: usize);
@@ -31,7 +32,7 @@ struct Options {
     embedded_language_formatting: String,
 }
 
-fn run(source: &[u8], options: &[u8]) -> Result<String, String> {
+pub fn run(source: &[u8], options: &[u8]) -> Result<String, String> {
     let source = std::str::from_utf8(source).map_err(|error| error.to_string())?;
     let input: Options = serde_json::from_slice(options).map_err(|error| error.to_string())?;
     if input.embedded_language_formatting != "auto" {
@@ -158,16 +159,19 @@ fn run(source: &[u8], options: &[u8]) -> Result<String, String> {
         .map_err(|error| error.to_string())
 }
 
+#[cfg(feature = "raw-abi")]
 #[unsafe(no_mangle)]
 pub extern "C" fn alloc(len: usize) -> *mut u8 {
     Box::into_raw(vec![0u8; len].into_boxed_slice()) as *mut u8
 }
 
+#[cfg(feature = "raw-abi")]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn release(ptr: *mut u8, len: usize) {
     unsafe { drop(Box::from_raw(std::ptr::slice_from_raw_parts_mut(ptr, len))) };
 }
 
+#[cfg(feature = "raw-abi")]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn format(
     source: *const u8,

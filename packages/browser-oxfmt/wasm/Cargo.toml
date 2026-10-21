@@ -1,0 +1,18 @@
+[package]
+name = "forge-browser-oxfmt"
+version = "0.1.0"
+edition = "2024"
+publish = false
+license = "MIT"
+[lib]
+crate-type = ["cdylib"]
+[dependencies]
+oxfmt-markdown-wasm-spike = { path = "../../../experiments/browser-oxfmt/wrapper", default-features = false }
+wasm-bindgen = "=0.2.114"
+[profile.release]
+opt-level = "s"
+lto = true
+panic = "abort"
+strip = true
+[patch.crates-io]
+oxc_allocator = { path = "../../../experiments/browser-oxfmt/source/crates/oxc_allocator" }

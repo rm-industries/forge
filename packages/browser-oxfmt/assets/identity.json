@@ -1,0 +1,24 @@
+{
+  "upstreamVersion": "0.72.0",
+  "buildPlatform": "darwin",
+  "buildArch": "arm64",
+  "sourceSha": "2bd08ebe8f36fcf1954a675ffdeb4c6d0129f609",
+  "archiveSha": "0581446634d6ce5a59947bf87d720a3b85ede4a5e7c831eb02ba82d3223a9584",
+  "rustVersion": "1.97.0",
+  "bindingsVersion": "0.2.114",
+  "cargoLockSha256": "0fea7b6a99f332d24dba0c07e7dc1b6a1cee90cdc2ef2978b0780e4b7370f682",
+  "assets": {
+    "engine.js": "6216f035ec9ff25d81bf2968842f2f2db349c618c9b588e655c97d762c3b4c07",
+    "engine_bg.wasm": "b651fec7569e2e13b48a08f7e7d4c5f28f815c7abbcf0b0228b2aecaeb27f797",
+    "engine.d.ts": "f79ac5472618f380d205023e581c8c07752aa75912c1c5d97c5e0181bcd8129b",
+    "engine_bg.wasm.d.ts": "4a7d640ea1d0905dcabd7e785d4aa5105d7d3c92d4e3c84874353695bed75d3f"
+  },
+  "buildInputs": {
+    "packages/browser-oxfmt/wasm/Cargo.toml": "0403a5d91a4be587ff5b4967fc647a5834d4d67f783759a247483b12ce89efa8",
+    "packages/browser-oxfmt/wasm/Cargo.lock": "0fea7b6a99f332d24dba0c07e7dc1b6a1cee90cdc2ef2978b0780e4b7370f682",
+    "packages/browser-oxfmt/wasm/src/lib.rs": "3dc3310863c424938f0c1ebbc7ab4fc69b6aebb6e7480c979c06ec6739062c2e",
+    "experiments/browser-oxfmt/wrapper/Cargo.toml": "dd483e8ea4f88d5b10a7db9697a86f53bda126305fb71122d646a9cdaa1bf966",
+    "experiments/browser-oxfmt/wrapper/src/lib.rs": "e424f5c808a7179b2661d2b90105c5643ee7e747eed4caefddec4d787e1fe1a5",
+    "packages/browser-oxfmt/scripts/build-wasm.mjs": "0cd10ad47bffcd30437910a03a82f6ee6490651818d9a5b40d8397a280557d40"
+  }
+}
