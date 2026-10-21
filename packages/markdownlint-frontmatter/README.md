@@ -72,6 +72,7 @@ import { articleModel, pageModel } from './content-models.mjs';
 
 export default {
   customRules: [rule],
+  config: { 'forge/frontmatter-order': false },
   overrides: [
     {
       filter: ['content/articles/**/*.md'],
