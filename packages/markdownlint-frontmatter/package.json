@@ -1,0 +1,51 @@
+{
+  "name": "@rm-industries/markdownlint-frontmatter",
+  "version": "0.1.0",
+  "description": "Source-preserving YAML frontmatter ordering rule for Markdownlint",
+  "homepage": "https://github.com/rm-industries/forge/tree/main/packages/markdownlint-frontmatter#readme",
+  "bugs": {
+    "url": "https://github.com/rm-industries/forge/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rm-industries/forge.git",
+    "directory": "packages/markdownlint-frontmatter"
+  },
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "latest"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "prepack": "npm run typecheck && npm test && npm run build",
+    "test:packed": "node test/packed.ts"
+  },
+  "dependencies": {
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "markdownlint": "^0.42.0"
+  },
+  "peerDependencies": {
+    "markdownlint": "^0.42.0"
+  },
+  "engines": {
+    "node": "^22.22.2 || ^24.0.0 || ^26.0.0",
+    "npm": "^10.9.0 || ^11.0.0"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["DOM", "ES2022", "ESNext.Disposable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "skipLibCheck": true,
+    "paths": {
+      "@rm-industries/content-model": ["./packages/content-model/src/index.ts"],
+      "@rm-industries/content-model/sveltia": ["./packages/content-model/src/sveltia/index.ts"],
+      "@rm-industries/markdownlint-frontmatter": ["./packages/markdownlint-frontmatter/src/index.ts"]
+    }
+  },
+  "include": ["scripts/verify-frontmatter-*.ts", "packages/markdownlint-frontmatter/test/**/*.ts"],
+  "exclude": []
+}

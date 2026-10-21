@@ -106,3 +106,16 @@ test('requires a manual baseline for unreleased code or shipped template behavio
     ]),
   ).toBe(false);
 });
+
+test('keeps frontmatter releases outside reviewed automatic sources', () => {
+  expect(
+    selectAutomaticRelease({
+      ...input,
+      pullRequest: {
+        ...input.pullRequest,
+        head: { ...input.pullRequest.head, ref: 'automation/markdownlint-frontmatter' },
+      },
+      files: ['packages/markdownlint-frontmatter/package.json', 'packages/markdownlint-frontmatter/CHANGELOG.md'],
+    }),
+  ).toBeUndefined();
+});
