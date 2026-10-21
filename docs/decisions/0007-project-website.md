@@ -71,7 +71,7 @@ The deployment and Pages environment must remain traceable to the merged commit.
 
 Package releases and website deployments are independent:
 
-- `content-model-v*` and `create-forge-v*` tags publish npm packages according
+- `content-model-v*`, `create-forge-v*`, and `browser-oxfmt-v*` tags publish npm packages according
   to [ADR 0006](0006-versioning.md);
 - repository checkpoint tags, including the `v1.1.0` website launch checkpoint,
   do not publish the site or an npm package; and

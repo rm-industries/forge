@@ -1,6 +1,6 @@
 # Architecture guide
 
-Forge is a monorepo that publishes two packages and bundles one standalone site
+Forge is a monorepo that publishes three packages and bundles one standalone site
 template. This guide is the maintainer-oriented map; accepted architectural
 decisions remain authoritative in the [ADR index](decisions/README.md).
 
@@ -25,6 +25,9 @@ website ──generated once, then owned──▶ GitHub Pages project site
 
 - `packages/create-forge/` owns CLI parsing, prompts, validation, safe
   materialization, project setup, reporting, and the bundled template snapshot.
+- `packages/browser-oxfmt/` owns the browser worker API and pinned native
+  formatting engine. Browser configuration/adoption remains an explicit consumer
+  source change; its releases never regenerate projects or alter content models.
 - `packages/content-model/` owns integration-neutral model semantics and the
   Astro and Sveltia adapter entry points.
 - `templates/default/` is a complete Astro repository outside the npm workspace.
@@ -44,7 +47,7 @@ update an existing generated project. The content-model package is the supported
 upgrade path for shared model and adapter behavior; template source changes need
 manual migration guidance.
 
-The generator and content-model package use independent semantic versions. The
+The generator, content-model, and browser formatter packages use independent semantic versions. The
 template has no independent package version: a generator release identifies the
 exact template snapshot it contains. See the
 [support policy](support-policy.md) and [versioning ADR](decisions/0006-versioning.md)
