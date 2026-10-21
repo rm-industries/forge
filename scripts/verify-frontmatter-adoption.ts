@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const temporary = await mkdtemp(join(tmpdir(), 'forge-frontmatter-adoption-'));
 const consumer = join(temporary, 'site');
-const run = (args, cwd = consumer, expected = 0) => {
+const run = (args: string[], cwd = consumer, expected = 0) => {
   const result = spawnSync('npm', args, {
     cwd,
     encoding: 'utf8',
@@ -21,7 +21,7 @@ const run = (args, cwd = consumer, expected = 0) => {
 try {
   await cp(join(root, 'templates/default'), consumer, {
     recursive: true,
-    filter: (path) => !['node_modules', 'dist', '.astro', 'coverage'].includes(path.split('/').at(-1)),
+    filter: (path) => !['node_modules', 'dist', '.astro', 'coverage'].includes(path.split('/').at(-1) ?? ''),
   });
   // Prove the normal starter installs from its registry-only lock before overlaying the candidate.
   run(['ci', '--ignore-scripts', '--no-audit', '--no-fund']);
@@ -51,7 +51,11 @@ try {
   await rm(join(consumer, '.markdownlint-cli2.jsonc'));
   await cp(join(consumer, '.markdownlint.json'), join(consumer, '.markdownlint-rules.json'));
   await rm(join(consumer, '.markdownlint.json'));
-  await cp(join(root, 'fixtures/frontmatter-adoption/markdownlint-cli2.mjs'), join(consumer, '.markdownlint-cli2.mjs'));
+  await writeFile(join(consumer, '.markdownlint-cli2.mjs'), "export { default } from './markdownlint.config.ts';\n");
+  await cp(
+    join(root, 'fixtures/frontmatter-adoption/markdownlint.config.ts'),
+    join(consumer, 'markdownlint.config.ts'),
+  );
   const registry = join(consumer, 'src/config/content-models/registry.ts');
   await writeFile(
     registry,

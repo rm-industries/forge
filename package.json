@@ -30,7 +30,7 @@
     "lint:repo": "npm run lint:code && npm run lint:markdown && npm run spellcheck && npm run docs:validate",
     "spellcheck": "cspell \"**\"",
     "typecheck": "npm run typecheck:root && npm run typecheck:workspaces",
-    "typecheck:root": "tsc --noEmit",
+    "typecheck:root": "tsc --noEmit && tsc --project tsconfig.verification.json --noEmit",
     "typecheck:workspaces": "npm run typecheck --workspaces --if-present",
     "test": "npm run test:root && npm run test:workspaces",
     "test:generator:e2e": "npm run test:e2e --workspace @rm-industries/create-forge",
@@ -51,7 +51,7 @@
     "quality": "npm run format && npm run lint && npm run typecheck && npm test && npm run build && npm run pack",
     "verify:template": "node scripts/verify-template.ts",
     "verify:template:static": "node scripts/verify-template-static-quality.ts",
-    "test:frontmatter:cms": "npm run build --workspace @rm-industries/content-model && npm run build --workspace @rm-industries/markdownlint-frontmatter && node scripts/verify-frontmatter-cms.mjs"
+    "test:frontmatter:cms": "npm run build --workspace @rm-industries/content-model && npm run build --workspace @rm-industries/markdownlint-frontmatter && node scripts/verify-frontmatter-cms.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",

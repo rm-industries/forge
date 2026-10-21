@@ -27,7 +27,7 @@ npm run --silent release:prepare -- --package markdownlint-frontmatter \
 ```
 
 The reviewed local artifact has SHA-1
-`d7fb15d8b2ac58b5b98432860296773b1d1de3ac`, 8,500 packed bytes and 25,756
+`0f0685319522aedf075d70714082ab95d0b2b611`, 8,582 packed bytes and 25,981
 unpacked bytes. Its SHA-512 integrity is recorded in the local release manifest;
 repacking after metadata changes requires reviewing a new digest. The manifest
 records the checked-out commit; this local candidate includes the release-preparation
@@ -81,7 +81,7 @@ Commands for the plugin and consumer boundaries:
 ```sh
 npm run quality
 npm run test:packed --workspace @rm-industries/markdownlint-frontmatter
-node scripts/verify-frontmatter-adoption.mjs
+node scripts/verify-frontmatter-adoption.ts
 npm run test:frontmatter:cms
 npm run verify:template:static
 npm run test:generator:e2e
@@ -139,6 +139,14 @@ were rerun with Node 26 after these changes. These checks cover the reported cas
 not every possible YAML document. Final logs are under
 `/tmp/forge-343-review-{quality,packed,adoption,cms}.log`; the refreshed artifact
 and dry-run release manifest are under `/tmp/forge-343-review-release/`.
+
+The verification scripts and packed consumer are authored in TypeScript and included
+in static typechecking. The adoption configuration is also TypeScript; CLI2 requires
+a one-line `.mjs` loader, created in the isolated consumer and documented for adoption.
+No `.mjs` source files are maintained in this feature. Full quality (236 tests),
+packed-consumer, CLI2 adoption and native CMS checks pass after the conversion.
+The TypeScript packed consumer and CLI2 configuration also pass directly on
+minimum Node 22.22.2 without an additional loader dependency.
 
 ## Unresolved release blockers
 

@@ -67,12 +67,12 @@ and follows the same insertion order as `createSveltiaCollection`. Use it once p
 collection; changing the model changes both consumers. It adds no defaults or model
 validation. The rule validates the resulting list. Explicit lists remain supported.
 
-For a project using Markdownlint CLI2, import its own models in `.markdownlint-cli2.mjs`:
+For a project using Markdownlint CLI2, put its configuration in `markdownlint.config.ts`:
 
-```js
+```ts
 import rule, { frontmatterOrderFromModel } from '@rm-industries/markdownlint-frontmatter';
 
-import { articleModel, pageModel } from './content-models.mjs';
+import { articleModel, pageModel } from './content-models.ts';
 
 export default {
   customRules: [rule],
@@ -90,6 +90,13 @@ export default {
     },
   ],
 };
+```
+
+CLI2 only discovers `.mjs` or `.cjs` configuration modules. Keep a one-line
+`.markdownlint-cli2.mjs` loader; Node's supported runtimes load the TypeScript module:
+
+```js
+export { default } from './markdownlint.config.ts';
 ```
 
 If an existing `.markdownlint.json` is present, rename it to a non-config name

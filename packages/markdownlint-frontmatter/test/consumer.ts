@@ -6,7 +6,7 @@ import rule, { frontmatterOrderFromModel } from '@rm-industries/markdownlint-fro
 import { applyFixes } from 'markdownlint';
 import { lint } from 'markdownlint/sync';
 
-function check(source) {
+function check(source: string) {
   return lint({
     strings: { 'article.md': source },
     customRules: [rule],
@@ -15,7 +15,7 @@ function check(source) {
       MD018: true,
       'forge/frontmatter-order': { orderedKeys: ['title', 'description', 'draft'] },
     },
-  })['article.md'];
+  })['article.md']!;
 }
 for (const eol of ['\n', '\r\n']) {
   const input = [
@@ -55,7 +55,7 @@ for (const eol of ['\n', '\r\n']) {
     '',
   ].join(eol);
   const errors = check(input);
-  assert.equal(errors.find((error) => error.ruleNames.includes('MD018')).lineNumber, 15);
+  assert.equal(errors.find((error) => error.ruleNames.includes('MD018'))!.lineNumber, 15);
   assert.equal(applyFixes(input, errors), expected);
   assert.deepEqual(check(expected), []);
   assert.equal(applyFixes(expected, check(expected)), expected);
@@ -66,7 +66,7 @@ for (const [input, expected] of [
     '---\n# Document\n\ntitle: Hello\n# Draft must remain false\ndraft: false\n---\nBody\n',
   ],
   ['---\ndraft: |\n  # literal\ntitle: Hello\n---\nBody\n', '---\ntitle: Hello\ndraft: |\n  # literal\n---\nBody\n'],
-]) {
+] as const) {
   assert.equal(applyFixes(input, check(input)), expected);
   assert.deepEqual(check(expected), []);
 }
@@ -115,6 +115,6 @@ const modelErrors = lint({
   strings: { doc: modelSource },
   customRules: [rule],
   config: { default: false, 'forge/frontmatter-order': modelConfig },
-}).doc;
+}).doc!;
 assert.equal(applyFixes(modelSource, modelErrors), '---\ntitle: Hello\ndraft: false\n---\nBody\n');
 console.log('Packed public content-model/Sveltia projection passed.');

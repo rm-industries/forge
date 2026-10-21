@@ -33,7 +33,7 @@
     "test": "vitest run",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "prepack": "npm run typecheck && npm test && npm run build",
-    "test:packed": "node test/packed.mjs"
+    "test:packed": "node test/packed.ts"
   },
   "dependencies": {
     "yaml": "^2.9.1"

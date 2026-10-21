@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+type PackedArtifact = { name: string; filename: string; files: { path: string }[] };
+
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const consumer = mkdtempSync(join(tmpdir(), 'forge-frontmatter-consumer-'));
 try {
@@ -14,7 +16,7 @@ try {
       cwd: packageRoot,
       encoding: 'utf8',
     }),
-  );
+  ) as [PackedArtifact];
   assert.equal(packed[0].name, '@rm-industries/markdownlint-frontmatter');
   assert.deepEqual(packed[0].files.map(({ path }) => path).sort(), [
     'CHANGELOG.md',
@@ -36,7 +38,7 @@ try {
       cwd: modelRoot,
       encoding: 'utf8',
     }),
-  );
+  ) as [PackedArtifact];
   writeFileSync(join(consumer, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
   execFileSync(
     'npm',
@@ -54,7 +56,7 @@ try {
     { cwd: consumer, stdio: 'inherit' },
   );
   writeFileSync(
-    join(consumer, 'consumer.ts'),
+    join(consumer, 'declarations.ts'),
     `
 import rule, { frontmatterOrderFromModel, type FrontmatterOrderConfiguration } from '@rm-industries/markdownlint-frontmatter';
 import type { Rule } from 'markdownlint';
@@ -74,13 +76,13 @@ void publicRule; void config;
       'NodeNext',
       '--target',
       'ES2022',
-      'consumer.ts',
+      'declarations.ts',
     ],
     { cwd: consumer, stdio: 'inherit' },
   );
   console.log('Packed allowlist, dependency boundary, and public declarations passed.');
-  copyFileSync(join(packageRoot, 'test/consumer.mjs'), join(consumer, 'consumer.mjs'));
-  execFileSync(process.execPath, ['consumer.mjs'], { cwd: consumer, stdio: 'inherit' });
+  copyFileSync(join(packageRoot, 'test/consumer.ts'), join(consumer, 'consumer.ts'));
+  execFileSync(process.execPath, ['consumer.ts'], { cwd: consumer, stdio: 'inherit' });
 } finally {
   rmSync(consumer, { recursive: true, force: true });
 }

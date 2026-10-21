@@ -6,13 +6,13 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { chromium, expect } from '@playwright/test';
+import { chromium, expect, type Browser } from '@playwright/test';
+import type { ContentCollectionModel } from '@rm-industries/content-model';
+import { createSveltiaCollection } from '@rm-industries/content-model/sveltia';
+import rule, { frontmatterOrderFromModel } from '@rm-industries/markdownlint-frontmatter';
 import { applyFixes } from 'markdownlint';
 import { lint } from 'markdownlint/sync';
 import { parse } from 'yaml';
-
-import { createSveltiaCollection } from '../packages/content-model/dist/sveltia.js';
-import rule, { frontmatterOrderFromModel } from '../packages/markdownlint-frontmatter/dist/index.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const fixture = join(root, 'fixtures/frontmatter-adoption');
@@ -28,16 +28,17 @@ const model = {
     draft: { kind: 'boolean', label: 'Draft' },
   },
   body: { name: 'body', label: 'Body', required: true },
-};
-const check = (source) =>
+} satisfies ContentCollectionModel;
+const check = (source: string) =>
   lint({
     strings: { 'article.md': source },
     customRules: [rule],
     config: { default: false, 'forge/frontmatter-order': frontmatterOrderFromModel(model) },
-  })['article.md'];
-const split = (source) => {
-  const [, yaml, body] = source.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/u);
-  return { values: parse(yaml), body };
+  })['article.md']!;
+const split = (source: string) => {
+  const match = source.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/u);
+  assert.ok(match);
+  return { values: parse(match[1]!), body: match[2]! };
 };
 
 // The reviewed fixture records the whole migration diff, independently of native serialization.
@@ -48,7 +49,7 @@ const fixed = applyFixes(before, check(before));
 assert.deepEqual(split(fixed), split(before), 'Ordering must preserve values and exact body bytes');
 const temporary = await mkdtemp(join(tmpdir(), 'forge-cms-order-'));
 const file = join(temporary, 'article.md');
-const format = async (source) => {
+const format = async (source: string) => {
   await writeFile(file, source);
   const result = spawnSync(
     process.execPath,
@@ -78,7 +79,8 @@ const config = {
 };
 const server = http.createServer(async (req, res) => {
   try {
-    let data;
+    assert.ok(req.url);
+    let data: string | Buffer;
     let type = 'text/plain';
     if (req.url === '/') {
       data = `<!doctype html><html><head><link rel="cms-seed-url" href="/seed/manifest.json"></head><body><script>window.CMS_MANUAL_INIT=true;</script><script src="/cms/sveltia-cms.js"></script><script>CMS.init({config:${JSON.stringify(config)}})</script></body></html>`;
@@ -100,13 +102,15 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(500).end(String(error));
   }
 });
-await new Promise((ready) => server.listen(0, '127.0.0.1', ready));
-let browser;
+await new Promise<void>((ready) => server.listen(0, '127.0.0.1', ready));
+let browser: Browser | undefined;
 try {
   browser = await chromium.launch({ headless: true });
   console.log(`Native CMS browser: Chromium ${browser.version()}`);
   const page = await browser.newPage();
-  await page.goto(`http://127.0.0.1:${server.address().port}`);
+  const address = server.address();
+  assert.ok(address && typeof address !== 'string');
+  await page.goto(`http://127.0.0.1:${address.port}`);
   await page.getByRole('button', { name: 'Start Demo' }).click();
   const readSaved = () =>
     page.evaluate(async () => {
@@ -115,11 +119,11 @@ try {
         directory = await directory.getDirectoryHandle(name);
       return (await (await directory.getFileHandle('probe.md')).getFile()).text();
     });
-  const open = async (title) => {
+  const open = async (title: string) => {
     await page.getByText(title, { exact: true }).click();
     await page.getByRole('textbox', { name: 'Title', exact: true }).waitFor();
   };
-  const save = async (fragment) => {
+  const save = async (fragment: string) => {
     await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect.poll(readSaved).toContain(fragment);
     const saved = await readSaved();
@@ -143,5 +147,5 @@ try {
   console.log('Native CMS metadata, raw and rich-text saves pass model-derived ordering; Oxfmt convergence passed.');
 } finally {
   await browser?.close();
-  await new Promise((done) => server.close(done));
+  await new Promise<void>((done) => server.close(() => done()));
 }
