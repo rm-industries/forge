@@ -54,3 +54,47 @@ work around it; upgrade Markdownlint instead.
 Run `npm test --workspace @rm-industries/markdownlint-frontmatter` for public API
 coverage, and `npm run test:packed --workspace @rm-industries/markdownlint-frontmatter`
 for an isolated consumer test of the built npm artifact.
+
+## Shared content models and CLI2
+
+`frontmatterOrderFromModel(model)` returns `{ orderedKeys: Object.keys(model.fields) }`.
+It uses the existing public content-model shape, excludes the separate `model.body`,
+and follows the same insertion order as `createSveltiaCollection`. Use it once per
+collection; changing the model changes both consumers. It adds no defaults or model
+validation. The rule validates the resulting list. Explicit lists remain supported.
+
+For a project using Markdownlint CLI2, import its own models in `.markdownlint-cli2.mjs`:
+
+```js
+import rule, { frontmatterOrderFromModel } from '@rm-industries/markdownlint-frontmatter';
+
+import { articleModel, pageModel } from './content-models.mjs';
+
+export default {
+  customRules: [rule],
+  overrides: [
+    {
+      filter: ['content/articles/**/*.md'],
+      config: { 'forge/frontmatter-order': frontmatterOrderFromModel(articleModel) },
+      combine: 'merge',
+    },
+    {
+      filter: ['content/pages/**/*.md'],
+      config: { 'forge/frontmatter-order': frontmatterOrderFromModel(pageModel) },
+      combine: 'merge',
+    },
+  ],
+};
+```
+
+Load model modules supported by your Node runtime (or their compiled JavaScript).
+Keep the rule disabled outside matching collections. CLI2 0.23.3 includes
+Markdownlint 0.41.1; override its Markdownlint dependency to 0.42.0 until CLI2
+supports that version. Runner compatibility and model imports belong to the
+consumer, not this generic package.
+
+Content-model needs no release or compatibility change: this helper consumes its
+existing `fields` property without importing or depending on content-model.
+The packages remain independently versioned. The packed test installs both npm
+artifacts in an isolated consumer; publication of the new plugin remains a
+maintainer-controlled handoff before registry-based adoption.
