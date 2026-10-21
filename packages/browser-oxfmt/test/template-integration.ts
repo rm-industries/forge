@@ -7,16 +7,27 @@ import { tmpdir } from 'node:os';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import type { Browser, BrowserContext, Page } from 'playwright-core';
 import { parse } from 'yaml';
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+import type { ResolvedOptions } from '../src/options.ts';
+declare global {
+  interface Window {
+    __forgeTestOptions?: ResolvedOptions;
+    __forgeNative: string;
+    __forgeTicks: number;
+    __forgeTimer: number;
+  }
+}
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const temporary = await mkdtemp(join(tmpdir(), 'forge-cms-candidate-'));
 const site = join(temporary, 'site');
 const evidence = resolve(process.env.FORGE_CMS_ARTIFACT_DIR ?? join(temporary, 'evidence'));
 await mkdir(evidence, { recursive: true });
-const results = [];
-const failures = [];
-function run(command, args, cwd = site, expectedFailure = false) {
+const results: { browser: string; version: string; scenario: string; passed: boolean; recovered: boolean }[] = [];
+const failures: { browser: string; message: string }[] = [];
+function run(command: string, args: string[], cwd = site, expectedFailure = false) {
   const result = spawnSync(command, args, {
     cwd,
     encoding: 'utf8',
@@ -32,25 +43,25 @@ function run(command, args, cwd = site, expectedFailure = false) {
 }
 const initial = `---\ntitle: Formatting probe\ndescription: Before\npublishedAt: 2026-10-21\ntags:\n  - preserved\ndraft: true\n---\n\n## Body retained\n\nOriginal **body**. A deliberately long paragraph containing ordinary prose to demonstrate wrapping according to the consuming project's actual configuration rather than a formatter-specific policy.\n\n| Name | Value |\n| --- | --- |\n| One | 1 |\n\n\`\`\`ts\nconst x: string="hello";\n\`\`\`\n\n\`\`\`css\na{color:red;margin:0 1px}\n\`\`\`\n`;
 const contentPath = ['src', 'content', 'articles'];
-const readSaved = async (parts) => {
+const readSaved = async (parts: string[]) => {
   let directory = await (await navigator.storage.getDirectory()).getDirectoryHandle('candidate');
   for (const part of parts) directory = await directory.getDirectoryHandle(part);
   return (await (await directory.getFileHandle('probe.md')).getFile()).text();
 };
 // Replace only the exported formatter's body with unreachable, keeping a valid real module.
-function trapFormatter(bytes) {
-  const read = (at) => {
+function trapFormatter(bytes: Buffer) {
+  const read = (at: number) => {
     let value = 0,
       shift = 0,
       byte;
     do {
-      byte = bytes[at++];
+      byte = bytes[at++]!;
       value |= (byte & 127) << shift;
       shift += 7;
     } while (byte & 128);
     return { value, at };
   };
-  const encode = (value) => {
+  const encode = (value: number) => {
     const output = [];
     do {
       let byte = value & 127;
@@ -60,9 +71,12 @@ function trapFormatter(bytes) {
     } while (value);
     return Buffer.from(output);
   };
-  const module = new WebAssembly.Module(bytes);
+  const module = new WebAssembly.Module(new Uint8Array(bytes));
   const importedFunctions = WebAssembly.Module.imports(module).filter((entry) => entry.kind === 'function').length;
-  let functionIndex, codeStart, codeEnd, codeBody;
+  let functionIndex: number | undefined;
+  let codeStart: number | undefined;
+  let codeEnd: number | undefined;
+  let codeBody: Buffer | undefined;
   for (let at = 8; at < bytes.length;) {
     const start = at;
     const id = bytes[at++];
@@ -87,11 +101,11 @@ function trapFormatter(bytes) {
       codeEnd = end;
       const count = read(at);
       let cursor = count.at;
-      const chunks = [encode(count.value)];
+      const chunks: Buffer[] = [encode(count.value)];
       for (let n = 0; n < count.value; n++) {
         const size = read(cursor);
         const body =
-          n === functionIndex - importedFunctions
+          n === (functionIndex ?? -1) - importedFunctions
             ? Buffer.from([0, 0, 11])
             : bytes.subarray(size.at, size.at + size.value);
         chunks.push(encode(body.length), body);
@@ -101,7 +115,10 @@ function trapFormatter(bytes) {
     }
     at = end;
   }
-  assert.ok(Number.isInteger(functionIndex) && codeBody, 'The pinned native formatter export must exist');
+  assert.ok(
+    Number.isInteger(functionIndex) && codeBody && codeStart !== undefined && codeEnd !== undefined,
+    'The pinned native formatter export must exist',
+  );
   const patched = Buffer.concat([
     bytes.subarray(0, codeStart),
     Buffer.from([10]),
@@ -112,17 +129,17 @@ function trapFormatter(bytes) {
   assert.doesNotThrow(() => new WebAssembly.Module(patched));
   return patched;
 }
-let server;
+let server: ReturnType<typeof createServer> | undefined;
 try {
   await cp(join(root, 'templates/default'), site, {
     recursive: true,
     filter: (path) =>
       !['node_modules', 'dist', '.astro', 'coverage', 'test-results', 'playwright-report', '.lighthouseci'].includes(
-        path.split('/').at(-1),
+        path.split('/').at(-1) ?? '',
       ),
   });
-  run('git', ['apply', '--check', join(root, 'scripts/template-browser-formatting.patch')]);
-  run('git', ['apply', join(root, 'scripts/template-browser-formatting.patch')]);
+  run('git', ['apply', '--check', join(root, 'packages/browser-oxfmt/test/template-integration.patch')]);
+  run('git', ['apply', join(root, 'packages/browser-oxfmt/test/template-integration.patch')]);
   const tarballs = [];
   for (const workspace of ['@rm-industries/content-model', '@rm-industries/browser-oxfmt']) {
     run('npm', ['run', 'build', '--workspace', workspace], root);
@@ -186,7 +203,7 @@ try {
   );
   await writeFile(join(evidence, 'build.log'), run('npm', ['run', 'build']));
   await writeFile(join(evidence, 'validate-build.log'), run('npm', ['run', 'validate:build']));
-  const mime = {
+  const mime: Record<string, string> = {
     '.js': 'text/javascript',
     '.wasm': 'application/wasm',
     '.css': 'text/css',
@@ -198,7 +215,7 @@ try {
   };
   server = createServer(async (req, res) => {
     try {
-      const path = new URL(req.url, 'http://localhost').pathname;
+      const path = new URL(req.url ?? '/', 'http://localhost').pathname;
       assert.ok(path.startsWith('/project/'));
       const file = resolve(site, 'dist', '.' + path.slice('/project'.length), path.endsWith('/') ? 'index.html' : '');
       assert.ok(file.startsWith(join(site, 'dist') + '/'));
@@ -213,16 +230,19 @@ try {
       res.end();
     }
   });
-  await new Promise((done) => server.listen(0, '127.0.0.1', done));
-  const origin = `http://127.0.0.1:${server.address().port}`;
-  const browsers = await import(
+  const listeningServer = server;
+  await new Promise<void>((done) => listeningServer.listen(0, '127.0.0.1', done));
+  const address = server.address();
+  assert.ok(address && typeof address !== 'string');
+  const origin = `http://127.0.0.1:${address.port}`;
+  const browsers = (await import(
     pathToFileURL(process.env.PLAYWRIGHT_MODULE ?? join(site, 'node_modules/playwright/index.mjs')).href
-  );
-  for (const name of ['chromium', 'webkit', 'firefox']) {
-    let browser;
-    let activePage;
-    let activeContext;
-    const browserErrors = [];
+  )) as typeof import('playwright-core');
+  for (const name of ['chromium', 'webkit', 'firefox'] as const) {
+    let browser: Browser | undefined;
+    let activePage: Page | undefined;
+    let activeContext: BrowserContext | undefined;
+    const browserErrors: string[] = [];
     try {
       if (name !== 'webkit')
         browser = await browsers[name].launch({
@@ -247,7 +267,7 @@ try {
             ? await browsers.webkit.launchPersistentContext(await mkdtemp(join(temporary, 'webkit-profile-')), {
                 headless: true,
               })
-            : await browser.newContext();
+            : await browser!.newContext();
         activeContext = context;
         const version = context.browser()?.version();
         assert.ok(version, 'Record the actual browser engine version');
@@ -333,8 +353,8 @@ try {
             range.selectNodeContents(element);
             range.collapse(false);
             const selection = window.getSelection();
-            selection.removeAllRanges();
-            selection.addRange(range);
+            selection?.removeAllRanges();
+            selection?.addRange(range);
           });
           await page.keyboard.press('Enter');
           await page.keyboard.insertText('Rich edit retained.');
@@ -342,7 +362,7 @@ try {
         if (scenario === 'large')
           await page.evaluate(() => {
             window.__forgeTicks = 0;
-            window.__forgeTimer = setInterval(() => window.__forgeTicks++, 0);
+            window.__forgeTimer = window.setInterval(() => window.__forgeTicks++, 0);
           });
         await editor.getByRole('button', { name: 'Save', exact: true }).click();
         if (failure) {

@@ -5,11 +5,9 @@ on: # yamllint disable-line rule:truthy
   pull_request:
     paths:
       - packages/browser-oxfmt/**
-      - scripts/template-browser-formatting.patch
       - .github/workflows/browser-oxfmt.yml
       - .github/actions/setup-project/**
       - package-lock.json
-      - scripts/verify-template-browser-formatting.mjs
       - templates/default/**
       - oxfmt.config.ts
       - oxlint.config.ts
@@ -63,9 +61,9 @@ jobs:
           npm run build --workspace @rm-industries/browser-oxfmt
       - name: Verify adjacent release behavior
         run: |
-          npm ci --prefix packages/browser-oxfmt/test/adjacent/previous --ignore-scripts --no-audit --no-fund
-          npm ci --prefix packages/browser-oxfmt/test/adjacent/next --ignore-scripts --no-audit --no-fund
-          npm run test:adjacent --workspace @rm-industries/browser-oxfmt -- "$GITHUB_WORKSPACE/packages/browser-oxfmt/test/adjacent/previous/node_modules/oxfmt/dist/index.js" "$GITHUB_WORKSPACE/packages/browser-oxfmt/test/adjacent/next/node_modules/oxfmt/dist/index.js"
+          npm ci --prefix packages/browser-oxfmt/test/adjacent/oxfmt-0.71.0 --ignore-scripts --no-audit --no-fund
+          npm ci --prefix packages/browser-oxfmt/test/adjacent/oxfmt-0.73.0 --ignore-scripts --no-audit --no-fund
+          npm run test:adjacent --workspace @rm-industries/browser-oxfmt -- "$GITHUB_WORKSPACE/packages/browser-oxfmt/test/adjacent/oxfmt-0.71.0/node_modules/oxfmt/dist/index.js" "$GITHUB_WORKSPACE/packages/browser-oxfmt/test/adjacent/oxfmt-0.73.0/node_modules/oxfmt/dist/index.js"
       - name: Install existing browser test tools
         run: |
           npm ci --prefix templates/default --ignore-scripts
@@ -75,7 +73,7 @@ jobs:
       - name: Verify gated Astro and CMS formatting candidate
         env:
           FORGE_CMS_ARTIFACT_DIR: ${{ runner.temp }}/forge-cms-evidence
-        run: node scripts/verify-template-browser-formatting.mjs
+        run: node packages/browser-oxfmt/test/template-integration.ts
       - name: Preserve candidate verification evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

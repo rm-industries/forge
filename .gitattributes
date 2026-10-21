@@ -1,2 +1,2 @@
 # Unified diff blank context lines require a single space.
-scripts/template-browser-formatting.patch whitespace=-blank-at-eol
+packages/browser-oxfmt/test/template-integration.patch whitespace=-blank-at-eol

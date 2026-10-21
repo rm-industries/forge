@@ -21,12 +21,15 @@ public API. Malformed envelopes are ignored, and identifiable invalid options
 receive a configuration error. Unit tests cover both rejection and successful
 messages without a Window origin. There is no scanner suppression.
 
-## Native source downloads (CodeQL 180 and 184)
+## Native source downloads (CodeQL 180, 184 and 185)
 
-Both alerts identify the same build-time download write. The downloaded Oxfmt
-archive has a fixed upstream commit and its SHA-256 is checked against a pinned
-expected digest before writing the archive to disk, extracting, or building.
-The scanner flags the subsequent verified-byte write; unverified downloaded code
-does not execute. Source integrity must remain checked before extraction
-and execution as build tooling is reorganized. These findings do not justify a
-global untrusted-download suppression.
+The custom archive downloader was removed. Cargo now resolves HTTPS Git
+dependencies pinned to the supported Oxfmt revision and locked registry
+packages. Dependabot can inspect this graph directly without generated local
+path dependencies. Native builds use `--locked`; build metadata verifies the
+Oxfmt revision before recording artifact identity. Dependency fetching and
+integrity checks belong to Cargo rather than a second downloader in our code.
+
+Historical review comments remain visible even after their code is removed.
+The dedicated-worker origin warning is documented above; it is not a Window
+message channel and no global scanner suppression is used.

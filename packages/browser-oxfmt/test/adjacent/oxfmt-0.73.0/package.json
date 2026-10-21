@@ -1,5 +1,5 @@
 {
-  "name": "browser-oxfmt-next-fixture",
+  "name": "browser-oxfmt-0.73.0-fixture",
   "private": true,
   "dependencies": {
     "oxfmt": "0.73.0"

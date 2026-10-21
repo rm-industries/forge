@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync, type SpawnSyncOptions } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { cp, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,11 +9,13 @@ import { fileURLToPath } from 'node:url';
 const native = dirname(fileURLToPath(import.meta.url));
 const packageRoot = resolve(native, '..');
 const root = resolve(packageRoot, '../..');
-const upstream = join(native, '.upstream');
 const generated = join(packageRoot, 'src/generated');
 const sourceSha = '2bd08ebe8f36fcf1954a675ffdeb4c6d0129f609';
-const archiveSha = '0581446634d6ce5a59947bf87d720a3b85ede4a5e7c831eb02ba82d3223a9584';
-const inputs = ['Cargo.toml', 'Cargo.lock', 'src/lib.rs', 'src/formatter.rs', 'build.ts'];
+// Keep the JS bindings CLI aligned with Cargo when Dependabot updates wasm-bindgen.
+const manifest = await readFile(join(native, 'Cargo.toml'), 'utf8');
+const bindingsVersion = /^wasm-bindgen = "=(\d+\.\d+\.\d+)"$/m.exec(manifest)?.[1];
+assert.ok(bindingsVersion, 'Pin wasm-bindgen to an exact version in native/Cargo.toml');
+const inputs = ['Cargo.toml', 'Cargo.lock', 'src/lib.rs', 'src/markdown_adapter.rs', 'build.ts'];
 const outputs = ['engine.js', 'engine_bg.wasm', 'engine.d.ts', 'engine_bg.wasm.d.ts'];
 const hash = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
 function run(command: string, args: string[], options: Omit<SpawnSyncOptions, 'encoding'> = {}) {
@@ -51,30 +53,11 @@ async function verifyGenerated() {
     'Use maintained bindings',
   );
 }
-async function prepareUpstream() {
-  try {
-    if ((await readFile(join(upstream, '.forge-source'), 'utf8')) === sourceSha) return;
-  } catch {
-    /* No verified source cache yet. */
-  }
-  const download = join(native, '.download');
-  await mkdir(download);
-  try {
-    const response = await fetch(`https://api.github.com/repos/oxc-project/oxc/tarball/${sourceSha}`);
-    if (!response.ok) throw new Error(`Upstream download failed: ${response.status}`);
-    const archive = Buffer.from(await response.arrayBuffer());
-    if (hash(archive) !== archiveSha) throw new Error('Upstream archive checksum mismatch');
-    await writeFile(join(download, 'source.tar.gz'), archive);
-    await mkdir(join(download, 'source'));
-    run('tar', ['-xzf', join(download, 'source.tar.gz'), '-C', join(download, 'source'), '--strip-components=1']);
-    await writeFile(join(download, 'source/.forge-source'), sourceSha);
-    await rm(upstream, { recursive: true, force: true });
-    await rename(join(download, 'source'), upstream);
-  } finally {
-    await rm(download, { recursive: true, force: true });
-  }
-}
 async function main() {
+  if (process.argv.includes('--bindings-version')) {
+    console.log(bindingsVersion);
+    return;
+  }
   if (process.argv.includes('--copy')) {
     await verifyGenerated();
     await cp(generated, join(packageRoot, 'dist/generated'), { recursive: true });
@@ -90,13 +73,18 @@ async function main() {
     }
   }
   assert.match(run('rustc', ['--version']), /^rustc 1\.97\.0 /);
-  await prepareUpstream();
   const env = {
     ...process.env,
     RUSTFLAGS: `--remap-path-prefix=${packageRoot}=/forge --remap-path-prefix=${process.env.CARGO_HOME ?? join(homedir(), '.cargo')}=/cargo`,
   };
   if (check) {
-    run('rustfmt', ['--edition', '2024', '--check', join(native, 'src/lib.rs'), join(native, 'src/formatter.rs')]);
+    run('rustfmt', [
+      '--edition',
+      '2024',
+      '--check',
+      join(native, 'src/lib.rs'),
+      join(native, 'src/markdown_adapter.rs'),
+    ]);
     run(
       'cargo',
       [
@@ -116,7 +104,7 @@ async function main() {
     return;
   }
   const bindings = process.env.WASM_BINDGEN ?? 'wasm-bindgen';
-  assert.equal(run(bindings, ['--version']).trim(), 'wasm-bindgen 0.2.114');
+  assert.equal(run(bindings, ['--version']).trim(), `wasm-bindgen ${bindingsVersion}`);
   run(
     'cargo',
     [
@@ -153,8 +141,15 @@ async function main() {
       license?: string;
       license_file?: string;
       manifest_path: string;
+      source?: string;
     }[];
   };
+  const upstreamPackage = metadata.packages.find((pkg) => pkg.name === 'oxc_formatter_markdown');
+  assert.ok(
+    upstreamPackage && upstreamPackage.source?.endsWith(`#${sourceSha}`),
+    'Keep the Oxfmt source revision aligned with the supported engine',
+  );
+  const upstreamRoot = resolve(dirname(upstreamPackage.manifest_path), '../..');
   const fenced = (text: string) => {
     const fence = '`'.repeat(Math.max(3, ...[...text.matchAll(/`+/g)].map((match) => match[0].length + 1)));
     return `${fence}text\n${text
@@ -171,8 +166,8 @@ async function main() {
     const directory = dirname(pkg.manifest_path);
     const files = (await readdir(directory)).filter((name) => /^(license|copying)([._-]|$)/i.test(name));
     if (pkg.license_file && !files.includes(pkg.license_file)) files.push(pkg.license_file);
-    if (!files.length && directory.startsWith(`${upstream}/`))
-      notices.push(fenced(await readFile(join(upstream, 'LICENSE'), 'utf8')));
+    if (!files.length && pkg.source?.startsWith('git+https://github.com/oxc-project/oxc'))
+      notices.push(fenced(await readFile(join(upstreamRoot, 'LICENSE'), 'utf8')));
     for (const file of files) {
       try {
         notices.push(fenced(await readFile(join(directory, file), 'utf8')));
@@ -196,9 +191,8 @@ async function main() {
         buildPlatform: process.platform,
         buildArch: process.arch,
         sourceSha,
-        archiveSha,
         rustVersion: '1.97.0',
-        bindingsVersion: '0.2.114',
+        bindingsVersion,
         buildInputs,
         cargoLockSha256: hash(await readFile(join(native, 'Cargo.lock'))),
         noticesSha256: hash(Buffer.from(notice)),

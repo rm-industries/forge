@@ -23,8 +23,6 @@ interface Link {
 
 const ignoredDirectories = new Set([
   '.cache',
-  '.download',
-  '.upstream',
   '.git',
   '.lighthouseci',
   'coverage',

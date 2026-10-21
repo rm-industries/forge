@@ -80,13 +80,13 @@ remain subject to the later release-readiness ticket.
 
 ## Maintained source layout
 
-The native dispatcher now belongs to `packages/browser-oxfmt/native/src/formatter.rs`,
+The native dispatcher now belongs to `packages/browser-oxfmt/native/src/markdown_adapter.rs`,
 with one Cargo crate and lockfile. Native artifacts and notices are generated
 during builds and are no longer tracked. The obsolete raw-ABI crate and feasibility
 runner were removed. Package tests own the retained 215-case fixture matrix;
 historical results and language inventory live in
 [browser formatting feasibility](browser-oxfmt-feasibility/README.md). The gated
-template overlay is `scripts/template-browser-formatting.patch`.
+template overlay is `packages/browser-oxfmt/test/template-integration.patch`.
 
 After this move, the pinned native rebuild, all 223 repository tests, lint,
 type checks, builds and three package dry runs passed. The rebuilt isolated

@@ -20,7 +20,7 @@ export const engine = Object.freeze({
   upstreamVersion: '0.72.0',
   sourceSha: '2bd08ebe8f36fcf1954a675ffdeb4c6d0129f609',
   rustVersion: '1.97.0',
-  bindingsVersion: '0.2.114',
+  bindingsVersion: identity.bindingsVersion,
   artifactSha256: identity.assets['engine_bg.wasm'],
   capabilities: Object.freeze({
     markdown: true,

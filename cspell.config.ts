@@ -3,8 +3,6 @@ import { defineConfig } from 'cspell';
 
 export default defineConfig({
   ignorePaths: [
-    'packages/browser-oxfmt/native/.upstream/**',
-    'packages/browser-oxfmt/native/.download/**',
     'packages/browser-oxfmt/native/target/**',
     'node_modules',
     'dist',
@@ -17,7 +15,10 @@ export default defineConfig({
     { filename: 'docs/reviews/browser-formatter-release.md', words: ['Clippy'] },
     { filename: 'packages/browser-oxfmt/src/worker.test.ts', words: ['unstub'] },
     { filename: ['.github/**', '.gitlab/**'], words: ['rustup', 'clippy', 'bindgen', 'RUSTUP'] },
-    { filename: 'scripts/template-browser-formatting.patch', words: ['astrojs', 'vite', 'vitest', 'frontmatter'] },
+    {
+      filename: 'packages/browser-oxfmt/test/template-integration.patch',
+      words: ['astrojs', 'vite', 'vitest', 'frontmatter'],
+    },
     {
       filename: 'packages/browser-oxfmt/**',
       words: ['bindgen', 'Embedder', 'rustc', 'RUSTFLAGS', 'rustfmt', 'clippy', 'rustup'],

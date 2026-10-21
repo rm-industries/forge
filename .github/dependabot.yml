@@ -175,3 +175,35 @@ updates:
         applies-to: security-updates
         patterns:
           - '*'
+
+  - package-ecosystem: cargo
+    directory: /packages/browser-oxfmt/native
+    schedule:
+      interval: weekly
+      day: monday
+      time: '05:50'
+      timezone: UTC
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+    labels:
+      - dependencies
+      - rust
+    assignees:
+      - rahul0705
+    allow:
+      - dependency-type: all
+    ignore:
+      # Oxfmt upgrades must match the supported npm engine and parity fixtures.
+      - dependency-name: 'oxc_*'
+    groups:
+      cargo-dependencies:
+        patterns:
+          - '*'
+        applies-to: version-updates
+      security-updates:
+        patterns:
+          - '*'
+        applies-to: security-updates

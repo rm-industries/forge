@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 import { expect, test } from 'vitest';
@@ -35,7 +36,7 @@ test('scans maintained Rust source while excluding downloaded upstream and gener
   expect(security.jobs['code-analysis'].strategy.matrix.language).toContain('rust');
   const configuration = read('../.github/codeql-config.yml');
   expect(configuration['paths-ignore']).toEqual(
-    expect.arrayContaining(['packages/browser-oxfmt/native/.upstream', 'packages/browser-oxfmt/src/generated']),
+    expect.arrayContaining(['packages/browser-oxfmt/native/target', 'packages/browser-oxfmt/src/generated']),
   );
 });
 
@@ -47,4 +48,20 @@ test('runtime lanes restore the built engine before typechecking without install
   expect(check).toBeGreaterThan(restore);
   expect(steps[restore]?.run).toContain('NOTICE.md');
   expect(steps.find((step) => step.uses === '$/.github/actions/setup-project')?.with?.native).toBeUndefined();
+});
+
+test('Cargo updates can resolve their graph without generated files and keep bindings aligned', () => {
+  const dependencies = read('../.github/dependabot.yml').updates;
+  expect(
+    dependencies.find((entry: { 'package-ecosystem': string }) => entry['package-ecosystem'] === 'cargo').directory,
+  ).toBe('/packages/browser-oxfmt/native');
+  const manifest = readFileSync(new URL('../packages/browser-oxfmt/native/Cargo.toml', import.meta.url), 'utf8');
+  expect(manifest).not.toContain('path =');
+  const version = /^wasm-bindgen = "=(\d+\.\d+\.\d+)"$/m.exec(manifest)?.[1];
+  expect(
+    execFileSync(process.execPath, ['packages/browser-oxfmt/native/build.ts', '--bindings-version'], {
+      encoding: 'utf8',
+      env: { ...process.env, PATH: '' },
+    }).trim(),
+  ).toBe(version);
 });

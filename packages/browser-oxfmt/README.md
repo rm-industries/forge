@@ -74,7 +74,7 @@ worker failures. `CHROMIUM_CHANNEL=chrome` can select installed Chrome locally.
 
 Engine upgrades must rerun this packed suite and the retained feasibility fixture matrix, compare
 against the adjacent npm Oxfmt releases, review every changed output, and update
-the versioned options contract. The committed `adjacent-results.json` records
+the versioned options contract. The committed `test/adjacent/results.json` records
 reviewed output hashes against npm 0.71.0 and 0.73.0; CI compares both with all
 215 cases and requires idempotence. Run the same gate with installed module
 paths:
@@ -88,26 +88,33 @@ when intentionally updating the engine. Adjacent versions are rejected at runtim
 successful build does not establish parity. The current supported engine is
 only 0.72.0.
 
+The CMS checks live beside the package tests: `sveltia-serialization.ts` verifies
+Sveltia's native serialization API, and `template-integration.ts` builds and tests
+the actual Astro template with `template-integration.patch`. The patch is a gated
+adoption overlay, applied only to a temporary template copy until the required
+package versions are published; generated projects do not apply it. It keeps the
+current published template installable while testing the pending integration.
+
 ## Build from source
 
 Published npm packages include the generated worker bindings, WASM and license
 notices. Consumers need Node and npm; they do not need Rust. Git tracks only the
 native source, Cargo lockfile and TypeScript tooling. Generated files under
-`src/generated/`, the verified upstream source cache and `NOTICE.md` are ignored.
+`src/generated/`, `NOTICE.md` are ignored.
 
 Building a fresh Git checkout requires Rust 1.97.0 with the
 `wasm32-unknown-unknown` target and wasm-bindgen-cli 0.2.114:
 
 ```sh
 rustup toolchain install 1.97.0 --profile minimal --component rustfmt --component clippy --target wasm32-unknown-unknown
-cargo +1.97.0 install wasm-bindgen-cli --version 0.2.114 --locked
+cargo +1.97.0 install wasm-bindgen-cli --version "$(node packages/browser-oxfmt/native/build.ts --bindings-version)" --locked
 RUSTUP_TOOLCHAIN=1.97.0 npm run build --workspace @rm-industries/browser-oxfmt
 ```
 
 `build` and `typecheck` generate missing or stale native output automatically.
 An unchanged verified artifact is reused without invoking Rust. Native generation
-verifies the pinned upstream archive before writing or extracting it, uses the
-committed Cargo lock, remaps build paths, records source/toolchain/asset hashes,
+uses Cargo to fetch the pinned upstream Git revision and registry dependencies,
+uses the committed lockfile, remaps build paths, records source/toolchain/asset hashes,
 and generates dependency notices. Packaging verifies those hashes before copying
 artifacts to `dist/generated/`. Missing tools produce setup instructions.
 
@@ -191,3 +198,21 @@ dependency directories and root build output directories are excluded; other sym
 because their configuration cannot be proven uniform. Use a standalone project
 root, not a monorepo containing multiple independently configured sites. This
 mode must succeed before applying one resolved policy globally.
+
+## Dependency and adapter ownership
+
+`native/src/markdown_adapter.rs` maps browser options and embedded-language
+requests to upstream Oxfmt crates. It contains no independent formatting
+algorithm. `native/src/lib.rs` exposes that adapter through WASM bindings.
+
+Dependabot checks Cargo registry dependencies, including transitive dependencies,
+weekly. The wasm-bindgen CLI version is read from Cargo.toml so binding updates
+keep the generator and library aligned. Oxfmt's Git dependencies remain pinned:
+changing them requires the matching npm engine, supported policy and parity
+fixtures to be reviewed together.
+
+`test/adjacent/oxfmt-0.71.0` and `oxfmt-0.73.0` deliberately install the releases
+immediately around the supported 0.72.0 engine. They measure compatibility drift;
+they do not define baseline output or track the latest Oxfmt release. The
+baseline fixtures and each comparison's expected output come from the supported
+engine. Those fixture versions change only during an intentional engine upgrade.

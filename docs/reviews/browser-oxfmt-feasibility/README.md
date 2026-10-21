@@ -72,7 +72,7 @@ removed; the maintained package supersedes them.
 The original inputs and configurations now live in the
 [fixture matrix](../../../packages/browser-oxfmt/test/fixtures/cases.ts).
 The production formatter dispatcher lives directly in
-[`packages/browser-oxfmt/native/src/formatter.rs`](../../../packages/browser-oxfmt/native/src/formatter.rs).
+[`packages/browser-oxfmt/native/src/markdown_adapter.rs`](../../../packages/browser-oxfmt/native/src/markdown_adapter.rs).
 Use the package's verified native build and isolated packed-browser suite:
 
 ```sh

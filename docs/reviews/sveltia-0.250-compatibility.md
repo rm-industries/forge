@@ -47,7 +47,7 @@ Chromium browser:
 
 ```sh
 npm run build --workspace @rm-industries/content-model
-node scripts/verify-sveltia-serialization.mjs
+node packages/browser-oxfmt/test/sveltia-serialization.ts
 ```
 
 The first optional argument is an installed Playwright module path; the second

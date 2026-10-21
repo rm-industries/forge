@@ -4,12 +4,21 @@ import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+declare global {
+  interface Window {
+    CMS_MANUAL_INIT: boolean;
+    probeMode: string;
+    probeConfig: unknown;
+    callbackCalled: boolean;
+    unchanged: boolean;
+  }
+}
 const require = createRequire(import.meta.url);
-const { chromium } = await import(
+const { chromium } = (await import(
   pathToFileURL(resolve(process.argv[2] ?? 'templates/default/node_modules/playwright/index.mjs')).href
-);
-import { defineModel } from '../packages/content-model/dist/index.js';
-import { createSveltiaCollection } from '../packages/content-model/dist/sveltia.js';
+)) as typeof import('playwright-core');
+import { defineModel } from '../../content-model/dist/index.js';
+import { createSveltiaCollection } from '../../content-model/dist/sveltia.js';
 const collection = createSveltiaCollection(
   defineModel({
     name: 'articles',
@@ -37,18 +46,20 @@ const initial =
   '---\ntitle: Compatibility probe\ndescription: Before\ntags:\n  - preserved\ndraft: true\n---\n\n## Body retained\n\nOriginal **body**.\n';
 const root = resolve(dirname(require.resolve('@sveltia/cms')), '../dist');
 assert.equal(JSON.parse(await readFile(resolve(root, '../package.json'), 'utf8')).version, '0.250.0');
-const browser = await chromium.launch({ headless: true, channel: process.argv[3] });
+const browser = await chromium.launch({ headless: true, ...(process.argv[3] ? { channel: process.argv[3] } : {}) });
 const server = createServer(async (req, res) => {
   try {
     res.setHeader('Content-Type', 'text/javascript');
-    res.end(await readFile(root + new URL(req.url, 'http://localhost').pathname));
+    res.end(await readFile(root + new URL(req.url ?? '/', 'http://localhost').pathname));
   } catch {
     res.statusCode = 404;
     res.end();
   }
 });
-await new Promise((r) => server.listen(0, '127.0.0.1', r));
-const origin = `http://127.0.0.1:${server.address().port}`;
+await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+const address = server.address();
+assert.ok(address && typeof address !== 'string');
+const origin = `http://127.0.0.1:${address.port}`;
 const results = [];
 try {
   for (const mode of ['metadata', 'raw', 'rich', 'delimiters', 'reject', 'throw', 'native-error']) {
@@ -104,8 +115,8 @@ try {
         r.selectNodeContents(el);
         r.collapse(false);
         let s = window.getSelection();
-        s.removeAllRanges();
-        s.addRange(r);
+        s?.removeAllRanges();
+        s?.addRange(r);
       });
       await page.keyboard.press('Enter');
       await page.keyboard.insertText('Rich edit retained.');

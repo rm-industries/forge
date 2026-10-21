@@ -1,3 +1,6 @@
+//! Adapts browser policy to upstream Oxfmt; formatting algorithms stay in the pinned crates.
+//! This module owns the supported embedded-language dispatch, not a formatter implementation.
+
 use oxc_allocator::Allocator;
 use oxc_formatter_core::{DispatchResponse, FormatSession, InputKind, SessionServices};
 use oxc_formatter_core::{IndentStyle, IndentWidth, LineEnding, LineWidth};
@@ -25,7 +28,7 @@ struct Options {
     embedded_language_formatting: String,
 }
 
-pub fn run(source: &[u8], options: &[u8]) -> Result<String, String> {
+pub fn format_markdown(source: &[u8], options: &[u8]) -> Result<String, String> {
     let source = std::str::from_utf8(source).map_err(|error| error.to_string())?;
     let input: Options = serde_json::from_slice(options).map_err(|error| error.to_string())?;
     if input.embedded_language_formatting != "auto" {
@@ -63,6 +66,7 @@ pub fn run(source: &[u8], options: &[u8]) -> Result<String, String> {
         single_quote: SingleQuote::from(input.single_quote),
     };
     let allocator = Allocator::new();
+    // Native callers supply their own embed dispatcher; every fence inherits its host Markdown policy.
     let session = FormatSession::with_services(
         &allocator,
         InputKind::PhysicalFile,
@@ -136,6 +140,7 @@ pub fn run(source: &[u8], options: &[u8]) -> Result<String, String> {
                     }
                     _ => return Ok(DispatchResponse::PreserveOriginal),
                 };
+                // Match upstream preservation when an embedded snippet cannot be formatted.
                 Ok(match result {
                     Ok(ir) => DispatchResponse::Formatted(ir.into()),
                     Err(_) => DispatchResponse::PreserveOriginal,

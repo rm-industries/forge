@@ -7,15 +7,15 @@ license = "MIT"
 [lib]
 crate-type = ["cdylib"]
 [dependencies]
-oxc_allocator = { path = ".upstream/crates/oxc_allocator" }
-oxc_formatter_core = { path = ".upstream/crates/oxc_formatter_core" }
-oxc_formatter_markdown = { path = ".upstream/crates/oxc_formatter_markdown" }
+oxc_allocator = { git = "https://github.com/oxc-project/oxc.git", rev = "2bd08ebe8f36fcf1954a675ffdeb4c6d0129f609" }
+oxc_formatter_core = { git = "https://github.com/oxc-project/oxc.git", rev = "2bd08ebe8f36fcf1954a675ffdeb4c6d0129f609" }
+oxc_formatter_markdown = { git = "https://github.com/oxc-project/oxc.git", rev = "2bd08ebe8f36fcf1954a675ffdeb4c6d0129f609" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-oxc_formatter_yaml = { path = ".upstream/crates/oxc_formatter_yaml" }
-oxc_formatter_css = { path = ".upstream/crates/oxc_formatter_css" }
-oxc_formatter = { path = ".upstream/crates/oxc_formatter" }
-oxc_span = { path = ".upstream/crates/oxc_span" }
+oxc_formatter_yaml = { git = "https://github.com/oxc-project/oxc.git", rev = "2bd08ebe8f36fcf1954a675ffdeb4c6d0129f609" }
+oxc_formatter_css = { git = "https://github.com/oxc-project/oxc.git", rev = "2bd08ebe8f36fcf1954a675ffdeb4c6d0129f609" }
+oxc_formatter = { git = "https://github.com/oxc-project/oxc.git", rev = "2bd08ebe8f36fcf1954a675ffdeb4c6d0129f609" }
+oxc_span = { git = "https://github.com/oxc-project/oxc.git", rev = "2bd08ebe8f36fcf1954a675ffdeb4c6d0129f609" }
 wasm-bindgen = "=0.2.114"
 [profile.release]
 opt-level = "s"
@@ -23,4 +23,4 @@ lto = true
 panic = "abort"
 strip = true
 [patch.crates-io]
-oxc_allocator = { path = ".upstream/crates/oxc_allocator" }
+oxc_allocator = { git = "https://github.com/oxc-project/oxc.git", rev = "2bd08ebe8f36fcf1954a675ffdeb4c6d0129f609" }

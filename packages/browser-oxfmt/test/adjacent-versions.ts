@@ -33,6 +33,6 @@ console.log(JSON.stringify(rows, null, 2));
 if (!process.argv.includes('--record'))
   assert.deepEqual(
     rows,
-    JSON.parse(await readFile(new URL('../adjacent-results.json', import.meta.url), 'utf8')),
+    JSON.parse(await readFile(new URL('./adjacent/results.json', import.meta.url), 'utf8')),
     'Adjacent release behavior changed; review the differences before updating the engine',
   );
