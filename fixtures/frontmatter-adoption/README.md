@@ -1,8 +1,8 @@
 # Frontmatter ordering release handoff
 
-The starter, repository, and website use Markdownlint CLI2 0.23.3. Their narrow
-npm override selects Markdownlint 0.42.0, whose public API supports frontmatter
-fixes. Keep the override until a tested CLI2 version uses a compatible engine.
+The starter, repository, and website use Markdownlint CLI2 0.24.0, which directly
+uses Markdownlint 0.42.0 and its public frontmatter diagnostic/fix API. No
+dependency override is needed.
 Existing Markdown rules, 120-character line length, code/table exceptions, root
 `.gitignore` handling, and `lint:markdown` / `lint:markdown:fix` script names remain.
 Each script performs one Markdown scan; CI quality commands retain those names.

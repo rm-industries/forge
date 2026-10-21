@@ -59,7 +59,7 @@
     "astro": "^7.3.8",
     "audit-ci": "7.1.0",
     "cspell": "^10.3.6",
-    "markdownlint-cli2": "0.23.3",
+    "markdownlint-cli2": "0.24.0",
     "oxfmt": "^0.72.0",
     "oxlint": "^1.87.0",
     "semver": "^7.8.5",
@@ -67,11 +67,6 @@
     "typescript": "^7.0.2",
     "vitest": "^5.0.5",
     "yaml": "^2.9.1"
-  },
-  "overrides": {
-    "markdownlint-cli2": {
-      "markdownlint": "0.42.0"
-    }
   },
   "engines": {
     "node": "^22.22.2 || ^24.0.0 || ^26.0.0",
