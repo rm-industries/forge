@@ -10,7 +10,8 @@ describe('Markdownlint runner contract', () => {
       expect(manifest.scripts['lint:markdown']).toBe('markdownlint-cli2 "**/*.md"');
       expect(manifest.scripts['lint:markdown:fix']).toBe('markdownlint-cli2 --fix "**/*.md"');
       expect(manifest.devDependencies['markdownlint-cli']).toBeUndefined();
-      expect(manifest.overrides).toEqual({ 'markdownlint-cli2': { markdownlint: '0.42.0' } });
+      expect(manifest.devDependencies['markdownlint-cli2']).toBe('0.24.0');
+      expect(manifest.overrides).toBeUndefined();
       expect(await readFile(`${directory}/.markdownlint-cli2.jsonc`, 'utf8')).toMatch(/"gitignore": "\.gitignore"/u);
     },
   );
