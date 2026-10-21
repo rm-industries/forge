@@ -120,7 +120,7 @@ function normalizedOptions(values: Record<string, unknown>): ResolvedOptions {
 export async function resolveBrowserOptions(input: BrowserOptionsInput): Promise<BrowserOptionsResult> {
   const cwd = resolve(input.cwd);
   const filename = resolve(cwd, input.filename);
-  if (!/\.md$/i.test(filename) || input.filename.includes('\0'))
+  if (!filename.endsWith('.md') || input.filename.includes('\0'))
     fail('A physical Markdown filename ending in .md is required');
   let version: string;
   try {

@@ -24,6 +24,12 @@ async function fixture(config = {}) {
   );
   return cwd;
 }
+test('rejects filenames outside the browser runtime contract at build time', async () => {
+  const cwd = await fixture();
+  await expect(resolveBrowserOptions({ cwd, filename: 'article.MD' })).rejects.toMatchObject({
+    code: 'configuration',
+  });
+});
 test('derives EditorConfig width and authoritative options with separate approved diagnostic', async () => {
   const cwd = await fixture({
     singleQuote: true,
