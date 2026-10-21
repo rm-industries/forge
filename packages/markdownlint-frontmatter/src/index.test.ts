@@ -68,6 +68,10 @@ describe('public Markdownlint rule', () => {
     expect(errors.every((error) => error.fixInfo === null)).toBe(true);
     expect(applyFixes(source, errors)).toBe(source);
   });
+  it('moves empty values without dropping their key', () => {
+    const source = '---\ndraft: false\ntitle:\n---\nBody';
+    expect(applyFixes(source, check(source))).toBe('---\ntitle:\ndraft: false\n---\nBody');
+  });
   it('keeps trailing document comments in place', () => {
     const source = '---\ndraft: false\ntitle: Hello\n\n# Document footer\n---\nBody';
     expect(applyFixes(source, check(source))).toBe('---\ntitle: Hello\ndraft: false\n\n# Document footer\n---\nBody');
