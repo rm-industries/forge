@@ -88,6 +88,11 @@ export default {
 };
 ```
 
+If an existing `.markdownlint.json` is present, rename it to a non-config name
+and import/spread its rules into the `config` above. CLI2 gives recognized
+Markdownlint config files precedence over its `config` option. Leaving one in
+place discards the rule configuration, including the default disable.
+
 Load model modules supported by your Node runtime (or their compiled JavaScript).
 Keep the rule disabled outside matching collections. CLI2 0.23.3 includes
 Markdownlint 0.41.1; override its Markdownlint dependency to 0.42.0 until CLI2
