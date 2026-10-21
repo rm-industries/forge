@@ -10,7 +10,7 @@ Neither `@rm-industries/browser-oxfmt@0.1.0` nor
 
 ## Evidence available
 
-- [Feasibility](../../experiments/browser-oxfmt/README.md) records native
+- [Feasibility](browser-oxfmt-feasibility/README.md) records native
   front matter/fence formatting, idempotence, preservation, and the approved
   Tailwind sorting exception. All other supported native formatting stays on.
 - [Package checkpoint](browser-oxfmt-package.md) records isolated packed

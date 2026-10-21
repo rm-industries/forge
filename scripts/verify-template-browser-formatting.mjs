@@ -121,8 +121,8 @@ try {
         path.split('/').at(-1),
       ),
   });
-  run('git', ['apply', '--check', join(root, 'experiments/browser-oxfmt/template-candidate.patch')]);
-  run('git', ['apply', join(root, 'experiments/browser-oxfmt/template-candidate.patch')]);
+  run('git', ['apply', '--check', join(root, 'scripts/template-browser-formatting.patch')]);
+  run('git', ['apply', join(root, 'scripts/template-browser-formatting.patch')]);
   const tarballs = [];
   for (const workspace of ['@rm-industries/content-model', '@rm-industries/browser-oxfmt']) {
     run('npm', ['run', 'build', '--workspace', workspace], root);

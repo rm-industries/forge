@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { createCases } from '../../../experiments/browser-oxfmt/cases.mjs';
+import { createCases } from '../test/fixtures/cases.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const { format: reference } = await import(
   pathToFileURL(process.env.OXFMT_MODULE ?? join(root, 'node_modules/oxfmt/dist/index.js')).href

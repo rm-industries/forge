@@ -1,6 +1,6 @@
 # Gated template formatting candidate
 
-The reviewed [candidate patch](../../experiments/browser-oxfmt/template-candidate.patch)
+The reviewed [candidate patch](../../scripts/template-browser-formatting.patch)
 prepares the default template's CMS integration for browser Oxfmt. It is kept
 outside generator output because content-model 1.1.9 and browser-oxfmt 0.1.0
 are not published. The default template's manifest and registry lock remain
@@ -15,8 +15,8 @@ After that handoff, review and apply the patch, update the registry lock and run
 the full template/generator checks:
 
 ```sh
-git apply --check --directory=templates/default experiments/browser-oxfmt/template-candidate.patch
-git apply --directory=templates/default experiments/browser-oxfmt/template-candidate.patch
+git apply --check --directory=templates/default scripts/template-browser-formatting.patch
+git apply --directory=templates/default scripts/template-browser-formatting.patch
 npm install --prefix templates/default --package-lock-only --ignore-scripts
 npm run verify:template
 ```

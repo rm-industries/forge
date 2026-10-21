@@ -4,8 +4,8 @@ import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { createCases } from '../../../experiments/browser-oxfmt/cases.mjs';
 import { format } from '../../../node_modules/oxfmt/dist/index.js';
+import { createCases } from '../test/fixtures/cases.mjs';
 const cases = await createCases(format);
 const rows = [];
 for (const [index, version] of ['0.71.0', '0.73.0'].entries()) {

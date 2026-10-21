@@ -4,7 +4,7 @@ import { defineConfig } from 'cspell';
 export default defineConfig({
   ignorePaths: ['node_modules', 'dist', 'coverage', 'playwright-report', 'test-results', '.lighthouseci'],
   overrides: [
-    { filename: 'experiments/browser-oxfmt/*.patch', words: ['astrojs', 'vite', 'vitest'] },
+    { filename: 'scripts/template-browser-formatting.patch', words: ['astrojs', 'vite', 'vitest', 'frontmatter'] },
     { filename: 'packages/browser-oxfmt/**', words: ['bindgen', 'Embedder', 'rustc', 'RUSTFLAGS'] },
     {
       filename: [
@@ -15,7 +15,7 @@ export default defineConfig({
       enabled: false,
     },
     {
-      filename: 'experiments/browser-oxfmt/**',
+      filename: ['packages/browser-oxfmt/test/fixtures/**', 'docs/reviews/browser-oxfmt-feasibility/**'],
       words: ['dont', 'Bezos', 'frontmatter', 'cdylib', 'serde', 'rlib'],
     },
   ],

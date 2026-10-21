@@ -62,35 +62,26 @@ The precise missing service is visible in upstream
 `trailingComma` settings are `all`. The four historical configurations retain
 their original widths, quotes, wrapping, and line endings.
 
-## Reproduce
+## Reproduce with the maintained package
 
-Use Node.js with the pinned `oxfmt` 0.72.0 npm API and Playwright with installed
-Chrome. The measured toolchain was Rust 1.97.0 with the
-`wasm32-unknown-unknown` target. Rust, Chrome, and Playwright are experiment
-prerequisites, not new production dependencies.
+These JSON files retain the historical feasibility observations, including the
+original raw-ABI artifact's size and timings. They are not measurements of the
+current packaged module. The obsolete raw-ABI build, client and probe have been
+removed; the maintained package supersedes them.
+
+The original inputs and configurations now live in the
+[fixture matrix](../../../packages/browser-oxfmt/test/fixtures/cases.mjs).
+The production formatter dispatcher lives directly in
+[`packages/browser-oxfmt/wasm/src/formatter.rs`](../../../packages/browser-oxfmt/wasm/src/formatter.rs).
+Use the package's verified native build and isolated packed-browser suite:
 
 ```sh
-sh experiments/browser-oxfmt/build.sh
-OXFMT_MODULE="$PWD/node_modules/oxfmt/dist/index.js" \
-PLAYWRIGHT_MODULE="/absolute/path/to/playwright/index.mjs" \
-node experiments/browser-oxfmt/probe.mjs
-node experiments/browser-oxfmt/inventory.mjs /absolute/path/to/adopting-site
+npm run build:wasm --workspace @rm-industries/browser-oxfmt
+npm run test:browser --workspace @rm-industries/browser-oxfmt
 ```
 
-The build fetches the pinned upstream archive and verifies its SHA-256 before
-extracting it. Cargo uses the committed lockfile. `source`, generated WASM,
-archives, and target directories are ignored. For a clean reproduction, start
-without an existing `source` directory; an existing source directory is reused.
-The tested source crates were compared against the verified archive with no
-changes. Upstream's repository toolchain currently requests a newer compiler;
-the explicit `+1.97.0` invocation records the compiler actually tested here.
-
-`baseline.json` preserves the original inputs once each; historical expected
-outputs with embedded formatting disabled are regenerated against the npm API
-with embeds enabled. The probe records mismatches rather than hiding them and
-exits nonzero if positive controls, idempotence, or preservation fail. A passing
-probe means the recorded experiment ran successfully, **not** a claim of Tailwind sorting parity.
-
-This repository contains the harness and evidence, not vendored upstream code or
-binary distributions. Preserve upstream MIT and dependency license notices if
-packaging the generated artifact later.
+See the [package checkpoint](../browser-oxfmt-package.md) for the pinned native
+toolchain, browser prerequisites, asset identity and current CI evidence.
+`inventory.json` remains a historical language inventory; its one-off scanner
+has been removed. Rerun a fresh inventory before expanding the supported
+language contract.

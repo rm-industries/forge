@@ -77,3 +77,18 @@ Safari/device readiness approval. The package documentation records the
 supported asset layout, CSP, native option/language slice, Tailwind exception,
 rebuild command, and reproducible test commands. Publication and final rollout
 remain subject to the later release-readiness ticket.
+
+## Maintained source layout
+
+The native dispatcher now belongs to `packages/browser-oxfmt/wasm/src/formatter.rs`,
+with one Cargo crate and lockfile. The obsolete raw-ABI crate and feasibility
+runner were removed. Package tests own the retained 215-case fixture matrix;
+historical results and language inventory live in
+[browser formatting feasibility](browser-oxfmt-feasibility/README.md). The gated
+template overlay is `scripts/template-browser-formatting.patch`.
+
+After this move, the pinned native rebuild, all 223 repository tests, lint,
+type checks, builds and three package dry runs passed. The rebuilt isolated
+package passed Chromium and WebKit parity, idempotence, configuration, worker
+recovery, CSP and Vite production checks. These checks do not establish actual
+Safari or iPhone support.

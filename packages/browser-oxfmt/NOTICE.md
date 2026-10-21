@@ -555,10 +555,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## oxfmt-markdown-wasm-spike 0.0.0
-
-License: MIT
-
 ## forge-browser-oxfmt 0.1.0
 
 License: MIT

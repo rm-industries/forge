@@ -21,20 +21,15 @@ assert.equal(run(bindings, ['--version']).trim(), 'wasm-bindgen 0.2.114');
 const staging = join(packageRoot, '.wasm-build');
 await mkdir(staging);
 try {
-  const experiment = join(staging, 'experiments/browser-oxfmt');
-  const wrapper = join(staging, 'packages/browser-oxfmt/wasm');
-  await mkdir(experiment, { recursive: true });
+  const upstream = join(staging, 'upstream');
+  const wrapper = join(staging, 'wasm');
+  await mkdir(upstream, { recursive: true });
   const response = await fetch(`https://api.github.com/repos/oxc-project/oxc/tarball/${sourceSha}`);
   if (!response.ok) throw Error(`Upstream download failed: ${response.status}`);
   const archive = Buffer.from(await response.arrayBuffer());
   assert.equal(hash(archive), archiveSha);
   await writeFile(join(staging, 'upstream.tar.gz'), archive);
-  await mkdir(join(experiment, 'source'));
-  run('tar', ['-xzf', join(staging, 'upstream.tar.gz'), '-C', join(experiment, 'source'), '--strip-components=1']);
-  await cp(join(root, 'experiments/browser-oxfmt/wrapper'), join(experiment, 'wrapper'), {
-    recursive: true,
-    filter: (path) => !path.includes('/target'),
-  });
+  run('tar', ['-xzf', join(staging, 'upstream.tar.gz'), '-C', upstream, '--strip-components=1']);
   await cp(join(packageRoot, 'wasm'), wrapper, { recursive: true, filter: (path) => !path.includes('/target') });
   const env = {
     ...process.env,
@@ -70,8 +65,7 @@ try {
     'packages/browser-oxfmt/wasm/Cargo.toml',
     'packages/browser-oxfmt/wasm/Cargo.lock',
     'packages/browser-oxfmt/wasm/src/lib.rs',
-    'experiments/browser-oxfmt/wrapper/Cargo.toml',
-    'experiments/browser-oxfmt/wrapper/src/lib.rs',
+    'packages/browser-oxfmt/wasm/src/formatter.rs',
     'packages/browser-oxfmt/scripts/build-wasm.mjs',
   ])
     buildInputs[file] = hash(await readFile(join(root, file)));
@@ -118,8 +112,8 @@ try {
     const dir = dirname(pkg.manifest_path);
     const filenames = (await readdir(dir)).filter((name) => /^(license|copying)([._-]|$)/i.test(name));
     if (pkg.license_file && !filenames.includes(pkg.license_file)) filenames.push(pkg.license_file);
-    if (!filenames.length && dir.includes('/source/'))
-      notices.push(fenced(await readFile(join(experiment, 'source/LICENSE'), 'utf8')));
+    if (!filenames.length && dir.startsWith(`${upstream}/`))
+      notices.push(fenced(await readFile(join(upstream, 'LICENSE'), 'utf8')));
     for (const filename of filenames) {
       try {
         notices.push(fenced(await readFile(join(dir, filename), 'utf8')));

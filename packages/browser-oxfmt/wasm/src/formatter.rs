@@ -1,16 +1,9 @@
-// Throwaway feasibility probe. Raw ABI is for the controlled test harness only.
 use oxc_allocator::Allocator;
 use oxc_formatter_core::{DispatchResponse, FormatSession, InputKind, SessionServices};
 use oxc_formatter_core::{IndentStyle, IndentWidth, LineEnding, LineWidth};
 use oxc_formatter_markdown::{MarkdownFormatOptions, ProseWrap, SingleQuote};
 use serde::Deserialize;
 use std::sync::Arc;
-
-#[cfg(feature = "raw-abi")]
-#[link(wasm_import_module = "env")]
-unsafe extern "C" {
-    fn report_panic(ptr: *const u8, len: usize);
-}
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -36,14 +29,14 @@ pub fn run(source: &[u8], options: &[u8]) -> Result<String, String> {
     let source = std::str::from_utf8(source).map_err(|error| error.to_string())?;
     let input: Options = serde_json::from_slice(options).map_err(|error| error.to_string())?;
     if input.embedded_language_formatting != "auto" {
-        return Err("This probe requires embeddedLanguageFormatting: auto".into());
+        return Err("Browser formatting requires embeddedLanguageFormatting: auto".into());
     }
     if input
         .trailing_comma
         .as_deref()
         .is_some_and(|value| value != "all")
     {
-        return Err("This probe only supports trailingComma: all".into());
+        return Err("Browser formatting only supports trailingComma: all".into());
     }
     // Physical input is always Markdown; sortPackageJson only applies to package.json.
     let _ = input.sort_package_json;
@@ -157,44 +150,4 @@ pub fn run(source: &[u8], options: &[u8]) -> Result<String, String> {
         .print()
         .map(|printed| printed.into_code())
         .map_err(|error| error.to_string())
-}
-
-#[cfg(feature = "raw-abi")]
-#[unsafe(no_mangle)]
-pub extern "C" fn alloc(len: usize) -> *mut u8 {
-    Box::into_raw(vec![0u8; len].into_boxed_slice()) as *mut u8
-}
-
-#[cfg(feature = "raw-abi")]
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn release(ptr: *mut u8, len: usize) {
-    unsafe { drop(Box::from_raw(std::ptr::slice_from_raw_parts_mut(ptr, len))) };
-}
-
-#[cfg(feature = "raw-abi")]
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn format(
-    source: *const u8,
-    source_len: usize,
-    options: *const u8,
-    options_len: usize,
-) -> u64 {
-    std::panic::set_hook(Box::new(|info| {
-        let message = info.to_string();
-        unsafe { report_panic(message.as_ptr(), message.len()) };
-    }));
-    let result = run(
-        unsafe { std::slice::from_raw_parts(source, source_len) },
-        unsafe { std::slice::from_raw_parts(options, options_len) },
-    );
-    let output = match result {
-        Ok(code) => serde_json::json!({"code": code}),
-        Err(error) => serde_json::json!({"error": error}),
-    }
-    .to_string()
-    .into_bytes()
-    .into_boxed_slice();
-    let len = output.len();
-    let ptr = Box::into_raw(output) as *mut u8;
-    ((len as u64) << 32) | ptr as u64
 }

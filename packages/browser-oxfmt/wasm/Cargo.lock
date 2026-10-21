@@ -108,7 +108,15 @@ checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 name = "forge-browser-oxfmt"
 version = "0.1.0"
 dependencies = [
- "oxfmt-markdown-wasm-spike",
+ "oxc_allocator",
+ "oxc_formatter",
+ "oxc_formatter_core",
+ "oxc_formatter_css",
+ "oxc_formatter_markdown",
+ "oxc_formatter_yaml",
+ "oxc_span",
+ "serde",
+ "serde_json",
  "wasm-bindgen",
 ]
 
@@ -568,21 +576,6 @@ dependencies = [
  "oxc_str",
  "phf",
  "unicode-id-start",
-]
-
-[[package]]
-name = "oxfmt-markdown-wasm-spike"
-version = "0.0.0"
-dependencies = [
- "oxc_allocator",
- "oxc_formatter",
- "oxc_formatter_core",
- "oxc_formatter_css",
- "oxc_formatter_markdown",
- "oxc_formatter_yaml",
- "oxc_span",
- "serde",
- "serde_json",
 ]
 
 [[package]]
