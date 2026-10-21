@@ -19,12 +19,14 @@ const rule: Rule = {
   tags: ['frontmatter'],
   parser: 'none',
   function(params, onError) {
-    const config = params.config as Partial<FrontmatterOrderConfiguration>;
+    const config: unknown = params.config;
+    const configuredKeys =
+      typeof config === 'object' && config !== null && 'orderedKeys' in config ? config.orderedKeys : undefined;
+    const orderedKeys = Array.isArray(configuredKeys) ? Array.from<unknown>(configuredKeys) : undefined;
     if (
-      !config ||
-      !Array.isArray(config.orderedKeys) ||
-      !config.orderedKeys.every((key) => typeof key === 'string' && key.trim().length > 0) ||
-      new Set(config.orderedKeys).size !== config.orderedKeys.length
+      !orderedKeys ||
+      !orderedKeys.every((key: unknown): key is string => typeof key === 'string' && key.trim().length > 0) ||
+      new Set(orderedKeys).size !== orderedKeys.length
     ) {
       throw new Error('forge/frontmatter-order requires { orderedKeys: string[] } with nonempty, unique key names.');
     }
@@ -85,7 +87,10 @@ const rule: Rule = {
       } else {
         const prefix = gap.split('\n');
         let attached = 0;
-        while (attached < prefix.length && /^[ \t]*#/.test(prefix[prefix.length - attached - 1]!)) attached++;
+        for (const line of [...prefix].reverse()) {
+          if (!/^[ \t]*#/.test(line)) break;
+          attached++;
+        }
         if (attached === prefix.length) {
           report('Unsafe YAML: ambiguous comment ownership at document start; separate the header with a blank line.');
           return;
@@ -97,22 +102,24 @@ const rule: Rule = {
       gapStart = source[valueEnd - 1] === '\n' ? valueEnd : source.indexOf('\n', valueEnd) + 1;
       entries.push({ key: pair.key.value, start });
     }
-    if (!entries.length) return;
+    const [firstEntry] = entries;
+    if (!firstEntry) return;
     const rank = (key: string) => {
-      const index = config.orderedKeys!.indexOf(key);
-      return index < 0 ? config.orderedKeys!.length : index;
+      const index = orderedKeys.indexOf(key);
+      return index < 0 ? orderedKeys.length : index;
     };
-    const ordered = [...entries].sort((a, b) => rank(a.key) - rank(b.key));
-    if (ordered.every((entry, index) => entry === entries[index])) return;
-    const detail = `${params.name}: Expected frontmatter order: ${ordered.map(({ key }) => key).join(', ')}.`;
     const yamlLines = lines.slice(1, end);
     const tailStart = source.slice(0, previousEnd).split('\n').length - (source[previousEnd - 1] === '\n' ? 1 : 0);
-    const blocks = new Map(
-      entries.map((entry, index) => [entry.key, yamlLines.slice(entry.start, entries[index + 1]?.start ?? tailStart)]),
-    );
+    const blocks = entries.map((entry, index) => ({
+      key: entry.key,
+      lines: yamlLines.slice(entry.start, entries[index + 1]?.start ?? tailStart),
+    }));
+    const ordered = [...blocks].sort((a, b) => rank(a.key) - rank(b.key));
+    if (ordered.every((block, index) => block === blocks[index])) return;
+    const detail = `${params.name}: Expected frontmatter order: ${ordered.map(({ key }) => key).join(', ')}.`;
     const replacement = [
-      ...yamlLines.slice(0, entries[0]!.start),
-      ...ordered.flatMap(({ key }) => blocks.get(key)!),
+      ...yamlLines.slice(0, firstEntry.start),
+      ...ordered.flatMap((block) => block.lines),
       ...yamlLines.slice(tailStart),
     ];
     const proposed = parseDocument(replacement.join('\n') + '\n', { uniqueKeys: true });
@@ -124,17 +131,23 @@ const rule: Rule = {
       report('Unsafe YAML: reordering would change YAML meaning; no fix available.');
       return;
     }
-    let diagnosed = false;
-    for (let index = 0; index < replacement.length; index++) {
-      if (replacement[index] !== yamlLines[index]) {
-        onError({
-          frontMatter: stripped,
-          lineNumber: index + 2,
-          detail: diagnosed ? 'Frontmatter ordering fix.' : detail,
-          fixInfo: { editColumn: 1, deleteCount: yamlLines[index]!.length, insertText: replacement[index]! },
-        });
-        diagnosed = true;
+    if (replacement.length !== yamlLines.length) {
+      report('Unsafe YAML: reordering would change frontmatter line count; no fix available.');
+      return;
+    }
+    const fixes = [];
+    for (const [index, insertText] of replacement.entries()) {
+      const original = yamlLines[index];
+      if (original === undefined) {
+        report('Unsafe YAML: missing source line; no fix available.');
+        return;
       }
+      if (insertText !== original) {
+        fixes.push({ lineNumber: index + 2, fixInfo: { editColumn: 1, deleteCount: original.length, insertText } });
+      }
+    }
+    for (const [index, fix] of fixes.entries()) {
+      onError({ frontMatter: stripped, ...fix, detail: index === 0 ? detail : 'Frontmatter ordering fix.' });
     }
   },
 };

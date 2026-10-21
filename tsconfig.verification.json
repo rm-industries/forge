@@ -11,10 +11,6 @@
       "@rm-industries/markdownlint-frontmatter": ["./packages/markdownlint-frontmatter/src/index.ts"]
     }
   },
-  "include": [
-    "scripts/verify-frontmatter-*.ts",
-    "packages/markdownlint-frontmatter/test/consumer.ts",
-    "packages/markdownlint-frontmatter/test/packed.ts"
-  ],
+  "include": ["scripts/verify-frontmatter-*.ts", "packages/markdownlint-frontmatter/test/**/*.ts"],
   "exclude": []
 }

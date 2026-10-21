@@ -7,7 +7,7 @@ import { applyFixes } from 'markdownlint';
 import { lint } from 'markdownlint/sync';
 
 function check(source: string) {
-  return lint({
+  const errors = lint({
     strings: { 'article.md': source },
     customRules: [rule],
     config: {
@@ -15,7 +15,9 @@ function check(source: string) {
       MD018: true,
       'forge/frontmatter-order': { orderedKeys: ['title', 'description', 'draft'] },
     },
-  })['article.md']!;
+  })['article.md'];
+  assert.ok(errors, 'Markdownlint must return the requested document');
+  return errors;
 }
 for (const eol of ['\n', '\r\n']) {
   const input = [
@@ -55,7 +57,9 @@ for (const eol of ['\n', '\r\n']) {
     '',
   ].join(eol);
   const errors = check(input);
-  assert.equal(errors.find((error) => error.ruleNames.includes('MD018'))!.lineNumber, 15);
+  const headingError = errors.find((error) => error.ruleNames.includes('MD018'));
+  assert.ok(headingError, 'Expected a heading diagnostic');
+  assert.equal(headingError.lineNumber, 15);
   assert.equal(applyFixes(input, errors), expected);
   assert.deepEqual(check(expected), []);
   assert.equal(applyFixes(expected, check(expected)), expected);
@@ -115,6 +119,7 @@ const modelErrors = lint({
   strings: { doc: modelSource },
   customRules: [rule],
   config: { default: false, 'forge/frontmatter-order': modelConfig },
-}).doc!;
+}).doc;
+assert.ok(modelErrors, 'Markdownlint must return the requested document');
 assert.equal(applyFixes(modelSource, modelErrors), '---\ntitle: Hello\ndraft: false\n---\nBody\n');
 console.log('Packed public content-model/Sveltia projection passed.');

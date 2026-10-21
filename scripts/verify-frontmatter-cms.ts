@@ -29,16 +29,22 @@ const model = {
   },
   body: { name: 'body', label: 'Body', required: true },
 } satisfies ContentCollectionModel;
-const check = (source: string) =>
-  lint({
+const check = (source: string) => {
+  const errors = lint({
     strings: { 'article.md': source },
     customRules: [rule],
     config: { default: false, 'forge/frontmatter-order': frontmatterOrderFromModel(model) },
-  })['article.md']!;
+  })['article.md'];
+  assert.ok(errors, 'Markdownlint must return the requested document');
+  return errors;
+};
 const split = (source: string) => {
   const match = source.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/u);
   assert.ok(match);
-  return { values: parse(match[1]!), body: match[2]! };
+  const [, yaml, body] = match;
+  assert.ok(yaml !== undefined && body !== undefined);
+  const values: unknown = parse(yaml);
+  return { values, body };
 };
 
 // The reviewed fixture records the whole migration diff, independently of native serialization.

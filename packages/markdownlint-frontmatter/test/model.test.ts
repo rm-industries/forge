@@ -1,3 +1,5 @@
+import assert from 'node:assert/strict';
+
 import { applyFixes } from 'markdownlint';
 import { lint } from 'markdownlint/sync';
 import { expect, test } from 'vitest';
@@ -32,7 +34,8 @@ test('model order drives lint and Sveltia for separate collections and reordered
       strings: { entry: input },
       customRules: [rule],
       config: { default: false, 'forge/frontmatter-order': config },
-    }).entry!;
+    }).entry;
+    assert.ok(errors, 'Markdownlint must return the requested document');
     const fixed = applyFixes(input, errors);
     const known = expected
       .filter((key) => key !== 'description')

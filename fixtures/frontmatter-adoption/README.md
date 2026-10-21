@@ -16,10 +16,9 @@ silent fallback.
 After the maintainer publishes and verifies `@rm-industries/markdownlint-frontmatter@0.1.0`:
 
 1. In the starter, run `npm install --save-dev --save-exact @rm-industries/markdownlint-frontmatter@0.1.0`.
-2. Copy this directory's `markdownlint.config.ts` to the project root. Replace
-   `.markdownlint-cli2.jsonc` with `.markdownlint-cli2.mjs` containing only
-   `export { default } from './markdownlint.config.ts';`. CLI2 only discovers
-   `.mjs`/`.cjs` modules; this loader delegates to the TypeScript configuration.
+2. Replace `.markdownlint-cli2.jsonc` with this directory's `markdownlint-cli2.mjs`,
+   named `.markdownlint-cli2.mjs`. CLI2 requires this configuration extension;
+   the imported models and maintained implementation remain TypeScript.
    Rename `.markdownlint.json` to `.markdownlint-rules.json`; the overlay imports
    these ordinary rules. CLI2 gives a recognized `.markdownlint.json` precedence
    over its `config` option, so leaving it in place loses the collection settings.

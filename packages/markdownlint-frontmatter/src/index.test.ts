@@ -1,17 +1,21 @@
+import assert from 'node:assert/strict';
+
 import { applyFixes } from 'markdownlint';
 import { lint } from 'markdownlint/sync';
 import { describe, expect, it } from 'vitest';
-import { parse } from 'yaml';
+import { parseDocument } from 'yaml';
 
 import rule from './index.ts';
 
 function check(source: string, stripped = true) {
-  return lint({
+  const errors = lint({
     strings: { 'article.md': source },
     ...(stripped ? {} : { frontMatter: null }),
     customRules: [rule],
     config: { default: false, 'forge/frontmatter-order': { orderedKeys: ['title', 'description', 'draft'] } },
-  })['article.md']!;
+  })['article.md'];
+  assert.ok(errors, 'Markdownlint must return the requested document');
+  return errors;
 }
 describe('public Markdownlint rule', () => {
   it.each(['', 'Body\n', '---\n---\nBody\n', '---\n# Document comment\n---\n'])(
@@ -83,7 +87,9 @@ describe('public Markdownlint rule', () => {
     expect(errors.every((error) => error.fixInfo === null)).toBe(true);
     const fixed = applyFixes(source, errors);
     expect(fixed).toBe(source);
-    expect(parse(fixed.split('---')[1]!).draft).toBe('hi\n\n\n');
+    const [, frontmatter] = fixed.split('---');
+    assert.ok(frontmatter !== undefined);
+    expect(parseDocument(frontmatter).get('draft')).toBe('hi\n\n\n');
   });
   it('keeps literal comment-looking block scalar content with its value', () => {
     const source = '---\ndraft: |\n  # literal\ntitle: Hello\n---\nBody\n';
@@ -104,7 +110,16 @@ describe('public Markdownlint rule', () => {
     expect(applyFixes(source, check(source))).toBe('---\ntitle: Hello\ndraft: false\n\n# Document footer\n---\nBody');
   });
   it('requires actionable explicit configuration', () => {
-    for (const config of [true, { orderedKeys: ['title', 'title'] }, { orderedKeys: [''] }, { orderedKeys: [1] }]) {
+    for (const config of [
+      true,
+      {},
+      { orderedKeys: null },
+      { orderedKeys: Array<string>(1) },
+      { orderedKeys: 'title' },
+      { orderedKeys: ['title', 'title'] },
+      { orderedKeys: [''] },
+      { orderedKeys: [1] },
+    ]) {
       expect(() =>
         lint({
           strings: { doc: 'Body' },
@@ -120,7 +135,8 @@ describe('public Markdownlint rule', () => {
       strings: { doc: source },
       customRules: [rule],
       config: { default: false, MD018: true, 'forge/frontmatter-order': { orderedKeys: ['title', 'draft'] } },
-    }).doc!;
+    }).doc;
+    assert.ok(errors, 'Markdownlint must return the requested document');
     expect(errors.find((error) => error.ruleNames.includes('MD018'))?.lineNumber).toBe(5);
     expect(errors.find((error) => error.ruleNames.includes('forge/frontmatter-order'))?.lineNumber).toBe(2);
     expect(applyFixes(source, errors)).toBe('---\ntitle: Hello\ndraft: false\n---\n# Heading\n');

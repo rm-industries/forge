@@ -5,20 +5,28 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-type PackedArtifact = { name: string; filename: string; files: { path: string }[] };
-
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const consumer = mkdtempSync(join(tmpdir(), 'forge-frontmatter-consumer-'));
 try {
   execFileSync('npm', ['run', 'build'], { cwd: packageRoot, stdio: 'inherit' });
-  const packed = JSON.parse(
+  const packOutput: unknown = JSON.parse(
     execFileSync('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', consumer], {
       cwd: packageRoot,
       encoding: 'utf8',
     }),
-  ) as [PackedArtifact];
-  assert.equal(packed[0].name, '@rm-industries/markdownlint-frontmatter');
-  assert.deepEqual(packed[0].files.map(({ path }) => path).sort(), [
+  );
+  assert.ok(Array.isArray(packOutput) && packOutput.length === 1);
+  const packed: unknown = packOutput[0];
+  assert.ok(typeof packed === 'object' && packed !== null);
+  assert.ok('name' in packed && 'filename' in packed && typeof packed.filename === 'string');
+  assert.ok('files' in packed && Array.isArray(packed.files));
+  const files: unknown[] = packed.files;
+  const paths = files.map((file) => {
+    assert.ok(typeof file === 'object' && file !== null && 'path' in file && typeof file.path === 'string');
+    return file.path;
+  });
+  assert.equal(packed.name, '@rm-industries/markdownlint-frontmatter');
+  assert.deepEqual(paths.sort(), [
     'CHANGELOG.md',
     'LICENSE',
     'README.md',
@@ -27,18 +35,25 @@ try {
     'dist/index.js.map',
     'package.json',
   ]);
-  const manifest = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
+  const manifest: unknown = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
+  assert.ok(typeof manifest === 'object' && manifest !== null);
+  assert.ok('dependencies' in manifest && typeof manifest.dependencies === 'object' && manifest.dependencies !== null);
+  assert.ok('exports' in manifest && 'publishConfig' in manifest);
   assert.deepEqual(Object.keys(manifest.dependencies), ['yaml']);
-  assert.equal(manifest.exports['.'].types, './dist/index.d.ts');
-  assert.equal(manifest.publishConfig.access, 'public');
+  assert.deepEqual(manifest.exports, { '.': { types: './dist/index.d.ts', default: './dist/index.js' } });
+  assert.deepEqual(manifest.publishConfig, { access: 'public', tag: 'latest' });
   const modelRoot = resolve(packageRoot, '../content-model');
   execFileSync('npm', ['run', 'build'], { cwd: modelRoot, stdio: 'inherit' });
-  const modelPacked = JSON.parse(
+  const modelPackOutput: unknown = JSON.parse(
     execFileSync('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', consumer], {
       cwd: modelRoot,
       encoding: 'utf8',
     }),
-  ) as [PackedArtifact];
+  );
+  assert.ok(Array.isArray(modelPackOutput) && modelPackOutput.length === 1);
+  const modelPacked: unknown = modelPackOutput[0];
+  assert.ok(typeof modelPacked === 'object' && modelPacked !== null);
+  assert.ok('filename' in modelPacked && typeof modelPacked.filename === 'string');
   writeFileSync(join(consumer, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
   execFileSync(
     'npm',
@@ -47,8 +62,8 @@ try {
       '--ignore-scripts',
       '--no-audit',
       '--no-fund',
-      join(consumer, packed[0].filename),
-      join(consumer, modelPacked[0].filename),
+      join(consumer, packed.filename),
+      join(consumer, modelPacked.filename),
       'markdownlint@0.42.0',
       'typescript@7.0.2',
       'markdown-it@15.0.3',
