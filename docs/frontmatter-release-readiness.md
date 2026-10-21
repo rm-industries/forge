@@ -56,6 +56,8 @@ code/CSS/Markdown lint, spelling, unused-dependency analysis, Astro checks,
 the final tracked starter README, its own manifest/lock, and no plugin overlay.
 Its log is `/tmp/forge-354-registry-starter.log`; the initial copy command was:
 
+<!-- cspell:ignore shutil copytree -->
+
 ```sh
 python3 - <<'PYTHON'
 import shutil, tempfile
