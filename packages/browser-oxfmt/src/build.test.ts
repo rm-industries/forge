@@ -221,6 +221,22 @@ test('uses explicit EditorConfig tab width and configured tabs without inferring
   await expect(resolveBrowserOptions({ cwd, filename: 'article.md' })).rejects.toThrow(/requires indent_style/);
 });
 
+test('uniform policy rejects ignores for another collection while filename resolution stays supported', async () => {
+  const cwd = await fixture({ ignorePatterns: ['src/content/private/**'] });
+  await expect(
+    resolveBrowserOptions({ cwd, filename: 'src/content/articles/_cms.md', requireUniformPolicy: true }),
+  ).rejects.toThrow(/Uniform policy.*ignorePatterns/);
+  await expect(resolveBrowserOptions({ cwd, filename: 'src/content/articles/_cms.md' })).resolves.toHaveProperty(
+    'resolvedOptions.options.printWidth',
+    120,
+  );
+  await expect(resolveBrowserOptions({ cwd, filename: 'src/content/private/entry.md' })).rejects.toThrow(/excluded/);
+  await writeFile(join(cwd, 'oxfmt.config.mjs'), 'export default { ignorePatterns: [] }');
+  await expect(
+    resolveBrowserOptions({ cwd, filename: 'src/content/articles/_cms.md', requireUniformPolicy: true }),
+  ).resolves.toHaveProperty('resolvedOptions');
+});
+
 test('does not silently truncate malformed EditorConfig or apply ignored filename policies', async () => {
   const cwd = await fixture({ ignorePatterns: ['excluded/**', 'docs/private.md'] });
   expect((await resolveBrowserOptions({ cwd, filename: 'article.md' })).resolvedOptions.options.printWidth).toBe(120);

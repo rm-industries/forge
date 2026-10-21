@@ -167,7 +167,7 @@ preserves class order while native CSS formatting stays enabled, and repository
 Oxfmt may reorder classes. Custom Tailwind configuration objects are unsupported.
 
 For a CMS serializer without filename or collection context, request
-`requireUniformPolicy:true`. It rejects filename overrides, EditorConfig sections
+`requireUniformPolicy:true`. It rejects nonempty `ignorePatterns`, filename overrides, EditorConfig sections
 other than `[*]`, and nested Oxfmt/EditorConfig files throughout `cwd`. Standard
 dependency directories and root build output directories are excluded; other symbolic links fail
 because their configuration cannot be proven uniform. Use a standalone project
