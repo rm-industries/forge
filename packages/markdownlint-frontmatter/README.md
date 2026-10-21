@@ -94,9 +94,8 @@ Markdownlint config files precedence over its `config` option. Leaving one in
 place discards the rule configuration, including the default disable.
 
 Load model modules supported by your Node runtime (or their compiled JavaScript).
-Keep the rule disabled outside matching collections. CLI2 0.23.3 includes
-Markdownlint 0.41.1; override its Markdownlint dependency to 0.42.0 until CLI2
-supports that version. Runner compatibility and model imports belong to the
+Keep the rule disabled outside matching collections. CLI2 0.24.0 directly uses
+Markdownlint 0.42.0; no dependency override is needed. Runner compatibility and model imports belong to the
 consumer, not this generic package.
 
 Content-model needs no release or compatibility change: this helper consumes its
