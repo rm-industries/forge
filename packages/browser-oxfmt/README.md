@@ -89,10 +89,15 @@ An Oxfmt upgrade requires a coordinated PR:
 During an upgrade, compare the old and proposed engines using the maintained
 `test/markdown-cases.ts` matrix. CI verifies the selected supported version;
 unsupported neighboring releases do not have permanent fixtures or snapshots.
-Dependabot detects npm and Cargo dependency updates. The Oxfmt engine revision
-is still a coordinated manual upgrade because it changes formatting behavior
-and may require adapter changes; an unattended dependency bump cannot establish
-compatibility or publish a new browser-oxfmt release.
+The weekly **Browser Oxfmt Engine Updates** workflow (also available manually)
+resolves the registry release to its upstream Git tag, updates coordinated pins,
+regenerates both lockfiles, and prepares a browser package patch and changelog.
+It opens a PR only after repository quality, packed browser parity and CMS
+integration checks pass. Existing update branches are preserved for review.
+It reuses `PEER_UPGRADE_APP_CLIENT_ID` and `PEER_UPGRADE_APP_PRIVATE_KEY`.
+Review supported options and formatting changes before merging; publication
+continues through the protected release process. Dependabot handles other npm
+and Cargo dependencies. Failed engine checks require maintainer intervention.
 
 The CMS checks live beside the package tests: `sveltia-serialization.ts` verifies
 Sveltia's native serialization API, and `template-integration.ts` builds and tests

@@ -65,6 +65,13 @@ updates:
       day: monday
       time: '05:20'
       timezone: UTC
+    # Coordinated npm/Rust engine upgrades are prepared by oxfmt-upgrades.yml.
+    ignore:
+      - dependency-name: oxfmt
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+          - version-update:semver-patch
     cooldown:
       default-days: 7
       semver-major-days: 21

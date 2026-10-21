@@ -154,7 +154,7 @@ try {
   }
   await writeFile(
     join(evidence, 'install.log'),
-    run('npm', ['install', '--ignore-scripts', ...tarballs, '@sveltia/cms@0.250.0']),
+    run('npm', ['install', '--ignore-scripts', ...tarballs, '@sveltia/cms@0.250.0', 'oxfmt@0.72.0']),
   );
   const require = createRequire(join(site, 'package.json'));
   const { resolveBrowserOptions } = await import(

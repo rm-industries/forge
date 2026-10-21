@@ -66,3 +66,19 @@ test('offers browser package preparation without enabling automatic publication'
   expect(release.on.push.paths).toContain('packages/browser-oxfmt/package.json');
   expect(release.jobs.prepare.outputs.publish).toContain("github.event_name == 'push'");
 });
+
+test('engine updates validate native and browser behavior before creating a reviewed PR', () => {
+  const workflow = read('oxfmt-upgrades');
+  expect(workflow.on.schedule).toHaveLength(1);
+  const steps = workflow.jobs.prepare.steps as { name: string; run?: string }[];
+  const validation = steps.findIndex((step) => step.name === 'Validate proposed engine');
+  expect(steps[validation]!.run).toContain('npm run quality');
+  expect(steps[validation]!.run).toContain('test:browser');
+  expect(steps[validation]!.run).toContain('template-integration.ts');
+  expect(steps.findIndex((step) => step.name === 'Create GitHub App token')).toBeGreaterThan(validation);
+  const push = steps.find((step) => step.name === 'Push engine upgrade branch')!.run!;
+  expect(push).toContain('git ls-remote');
+  expect(push).not.toContain('--force');
+  expect(JSON.stringify(workflow)).not.toContain('--auto');
+  expect(JSON.stringify(workflow)).not.toContain('npm publish');
+});
