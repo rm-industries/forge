@@ -1,8 +1,25 @@
 import { readFile } from 'node:fs/promises';
+
+import type { FormatConfig, format as nativeFormat } from 'oxfmt';
+
+import type { FormatterOptions } from '../../src/options.ts';
+type FixtureOptions = FormatterOptions & FormatConfig & { sortTailwindcss?: boolean };
+
+interface Sample {
+  id: string;
+  source: string;
+  preserve?: string;
+  policy?: boolean;
+}
+interface Baseline {
+  samples: Sample[];
+  configs: Record<string, FixtureOptions>;
+}
+
 const root = new URL('./', import.meta.url);
-export const baseline = JSON.parse(await readFile(new URL('baseline.json', root), 'utf8'));
-const fence = (language, source) => `\n\`\`\`${language}\n${source}\n\`\`\`\n`;
-const extras = [
+export const baseline: Baseline = JSON.parse(await readFile(new URL('baseline.json', root), 'utf8'));
+const fence = (language: string, source: string) => `\n\`\`\`${language}\n${source}\n\`\`\`\n`;
+const extras: Sample[] = [
   { id: 'frontmatter', source: '---\ntitle: "Example"\ntags: [one,two]\n---\n\n# Title\n' },
   { id: 'yaml-fence', source: fence('yaml', 'items: [one,two]\nname: "Example"') },
   { id: 'ts-fence', source: fence('ts', 'const x: string="hello";') },
@@ -29,22 +46,22 @@ const extras = [
   },
   { id: 'policy-tailwind', source: fence('css', '.example { @apply text-white flex p-4; }'), policy: true },
 ];
-export const configurations = {
+export const configurations: Record<string, FixtureOptions> = {
   ...baseline.configs,
   forgePolicy: {
-    ...baseline.configs.twoSpacesWrapped,
+    ...baseline.configs.twoSpacesWrapped!,
     sortImports: true,
     sortTailwindcss: true,
     sortPackageJson: true,
     trailingComma: 'all',
   },
 };
-export async function createCases(format) {
+export async function createCases(format: typeof nativeFormat) {
   const cases = [];
   for (const sample of [...baseline.samples, ...extras]) {
     for (const [configName, options] of Object.entries(configurations)) {
       const referenceOptions = sample.policy
-        ? { ...options, sortImports: true, sortTailwindcss: true, sortPackageJson: true, trailingComma: 'all' }
+        ? { ...options, sortImports: true, sortTailwindcss: true, sortPackageJson: true, trailingComma: 'all' as const }
         : options;
       const expected = await format('article.md', sample.source, referenceOptions);
       cases.push({

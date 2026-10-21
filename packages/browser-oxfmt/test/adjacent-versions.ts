@@ -5,11 +5,13 @@ import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { format } from '../../../node_modules/oxfmt/dist/index.js';
-import { createCases } from '../test/fixtures/cases.mjs';
+import { createCases } from './fixtures/cases.ts';
 const cases = await createCases(format);
 const rows = [];
 for (const [index, version] of ['0.71.0', '0.73.0'].entries()) {
-  const entry = resolve(process.argv[index + 2]);
+  const argument = process.argv[index + 2];
+  assert.ok(argument, `Missing module entry for ${version}`);
+  const entry = resolve(argument);
   const pkg = JSON.parse(await readFile(resolve(dirname(entry), '../package.json'), 'utf8'));
   assert.equal(pkg.version, version);
   const { format: adjacent } = await import(pathToFileURL(entry).href);

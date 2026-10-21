@@ -127,16 +127,8 @@ jobs:
           node-version: 26.x
       - name: Run tests
         run: npm run test:root
-  build:
-    name: Tool Build
-    needs:
-      - format
-      - lint-code
-      - lint-markdown
-      - spellcheck
-      - documentation
-      - typecheck
-      - test
+  native:
+    name: Tool Rust quality
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -149,6 +141,33 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: 26.x
+          native: 'true'
+      - name: Check Rust formatting and Clippy
+        run: npm run quality:native --workspace @rm-industries/browser-oxfmt
+  build:
+    name: Tool Build
+    needs:
+      - format
+      - lint-code
+      - lint-markdown
+      - spellcheck
+      - documentation
+      - typecheck
+      - test
+      - native
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Setup project
+        uses: $/.github/actions/setup-project
+        with:
+          node-version: 26.x
+          native: 'true'
       - name: Build packages
         run: npm run build
       - name: Package tested candidates without repeating prepack
@@ -188,7 +207,7 @@ jobs:
                 done
                 ;;
               *browser-oxfmt*.tgz)
-                for entry in dist/index.js dist/index.d.ts dist/worker.js dist/wasm/engine.js dist/wasm/engine_bg.wasm dist/wasm/identity.json NOTICE.md LICENSE; do
+                for entry in dist/index.js dist/index.d.ts dist/worker.js dist/generated/engine.js dist/generated/engine_bg.wasm dist/generated/identity.json NOTICE.md LICENSE; do
                   tar -tzf "$candidate" | grep -Fx "package/$entry"
                 done
                 ;;
@@ -224,12 +243,18 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Check package types and unit tests
-        run: npm run typecheck:workspaces && npm run test:workspaces
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: project-packages
           path: ${{ runner.temp }}/forge-packages
+      - name: Restore generated engine from the tested package
+        run: |
+          mkdir -p "$RUNNER_TEMP/browser-oxfmt"
+          tar -xzf "$RUNNER_TEMP/forge-packages/"*browser-oxfmt*.tgz --strip-components=1 -C "$RUNNER_TEMP/browser-oxfmt"
+          cp -R "$RUNNER_TEMP/browser-oxfmt/dist/generated" packages/browser-oxfmt/src/generated
+          cp "$RUNNER_TEMP/browser-oxfmt/NOTICE.md" packages/browser-oxfmt/NOTICE.md
+      - name: Check package types and unit tests
+        run: npm run typecheck:workspaces && npm run test:workspaces
       - name: Exercise candidate content-model exports
         run: |-
           mkdir -p "$RUNNER_TEMP/content-model-check"

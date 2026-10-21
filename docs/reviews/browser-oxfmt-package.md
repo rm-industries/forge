@@ -80,8 +80,9 @@ remain subject to the later release-readiness ticket.
 
 ## Maintained source layout
 
-The native dispatcher now belongs to `packages/browser-oxfmt/wasm/src/formatter.rs`,
-with one Cargo crate and lockfile. The obsolete raw-ABI crate and feasibility
+The native dispatcher now belongs to `packages/browser-oxfmt/native/src/formatter.rs`,
+with one Cargo crate and lockfile. Native artifacts and notices are generated
+during builds and are no longer tracked. The obsolete raw-ABI crate and feasibility
 runner were removed. Package tests own the retained 215-case fixture matrix;
 historical results and language inventory live in
 [browser formatting feasibility](browser-oxfmt-feasibility/README.md). The gated

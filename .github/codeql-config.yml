@@ -1,0 +1,5 @@
+---
+name: Maintained source analysis
+paths-ignore:
+  - packages/browser-oxfmt/native/.upstream
+  - packages/browser-oxfmt/src/generated

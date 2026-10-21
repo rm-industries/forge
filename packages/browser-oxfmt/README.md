@@ -72,7 +72,7 @@ reported. It also checks project paths, ordinary and isolated deployment
 headers, UI responsiveness, worker reuse, missing assets, and recovery after
 worker failures. `CHROMIUM_CHANNEL=chrome` can select installed Chrome locally.
 
-Engine upgrades must rerun this packed suite and the feasibility probe, compare
+Engine upgrades must rerun this packed suite and the retained feasibility fixture matrix, compare
 against the adjacent npm Oxfmt releases, review every changed output, and update
 the versioned options contract. The committed `adjacent-results.json` records
 reviewed output hashes against npm 0.71.0 and 0.73.0; CI compares both with all
@@ -88,23 +88,41 @@ when intentionally updating the engine. Adjacent versions are rejected at runtim
 successful build does not establish parity. The current supported engine is
 only 0.72.0.
 
-To regenerate the checked precompiled release assets, install Rust 1.97.0 with
-`wasm32-unknown-unknown` and wasm-bindgen-cli 0.2.114, then run:
+## Build from source
+
+Published npm packages include the generated worker bindings, WASM and license
+notices. Consumers need Node and npm; they do not need Rust. Git tracks only the
+native source, Cargo lockfile and TypeScript tooling. Generated files under
+`src/generated/`, the verified upstream source cache and `NOTICE.md` are ignored.
+
+Building a fresh Git checkout requires Rust 1.97.0 with the
+`wasm32-unknown-unknown` target and wasm-bindgen-cli 0.2.114:
 
 ```sh
-npm run build:wasm --workspace @rm-industries/browser-oxfmt
+rustup toolchain install 1.97.0 --profile minimal --component rustfmt --component clippy --target wasm32-unknown-unknown
+cargo +1.97.0 install wasm-bindgen-cli --version 0.2.114 --locked
+RUSTUP_TOOLCHAIN=1.97.0 npm run build --workspace @rm-industries/browser-oxfmt
 ```
 
-The script verifies the pinned upstream archive, uses the committed Cargo lock,
-remaps build paths, records source/toolchain/asset hashes, and generates license
-notices. CI rebuilds twice in a fixed staging path and compares both results
-on its canonical Linux builder, then tests that generated artifact. Cross-host
-byte identity between macOS and Linux is not claimed; Cargo's local package
-identity can affect code layout even after source paths are remapped. The asset
-identity records its build host. `build` and `prepack` verify shipped asset hashes
-and copy them without invoking Rust. The tracked WASM and generated bindings
-are an explicit package release asset exception to ignoring generated output.
-Review identity and notices whenever regenerating them.
+`build` and `typecheck` generate missing or stale native output automatically.
+An unchanged verified artifact is reused without invoking Rust. Native generation
+verifies the pinned upstream archive before writing or extracting it, uses the
+committed Cargo lock, remaps build paths, records source/toolchain/asset hashes,
+and generates dependency notices. Packaging verifies those hashes before copying
+artifacts to `dist/generated/`. Missing tools produce setup instructions.
+
+```sh
+npm run build:native --workspace @rm-industries/browser-oxfmt -- --force
+npm run quality:native --workspace @rm-industries/browser-oxfmt
+```
+
+The first command forces regeneration. The second checks Rust formatting and
+runs Clippy for the actual WASM target with warnings denied. CI generates twice
+in one canonical checkout and compares identities and notices before testing the
+packed artifact. Cross-host byte identity between macOS and Linux is not claimed;
+Cargo's local package identity can affect code layout even with remapped paths.
+The generated identity records its build host. Release artifacts are built in CI,
+then passed unchanged to protected publication and registry verification.
 
 ## Derive browser settings during a build
 

@@ -70,13 +70,13 @@ current packaged module. The obsolete raw-ABI build, client and probe have been
 removed; the maintained package supersedes them.
 
 The original inputs and configurations now live in the
-[fixture matrix](../../../packages/browser-oxfmt/test/fixtures/cases.mjs).
+[fixture matrix](../../../packages/browser-oxfmt/test/fixtures/cases.ts).
 The production formatter dispatcher lives directly in
-[`packages/browser-oxfmt/wasm/src/formatter.rs`](../../../packages/browser-oxfmt/wasm/src/formatter.rs).
+[`packages/browser-oxfmt/native/src/formatter.rs`](../../../packages/browser-oxfmt/native/src/formatter.rs).
 Use the package's verified native build and isolated packed-browser suite:
 
 ```sh
-npm run build:wasm --workspace @rm-industries/browser-oxfmt
+npm run build:native --workspace @rm-industries/browser-oxfmt
 npm run test:browser --workspace @rm-industries/browser-oxfmt
 ```
 

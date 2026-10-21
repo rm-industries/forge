@@ -6,5 +6,5 @@ export default defineConfig({
   sortImports: true,
   sortTailwindcss: true,
   sortPackageJson: true,
-  ignorePatterns: ['packages/browser-oxfmt/assets/**', 'packages/browser-oxfmt/NOTICE.md'],
+  ignorePatterns: ['packages/browser-oxfmt/src/generated/**', 'packages/browser-oxfmt/NOTICE.md'],
 });

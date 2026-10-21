@@ -33,6 +33,7 @@ jobs:
         language:
           - actions
           - javascript-typescript
+          - rust
 
     steps:
       - name: Checkout repository
@@ -40,9 +41,21 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Prepare Rust dependency sources
+        if: matrix.language == 'rust'
+        uses: $/.github/actions/setup-project
+        with:
+          node-version: 26.x
+          native: 'true'
+
+      - name: Resolve the pinned native crate graph
+        if: matrix.language == 'rust'
+        run: npm run build:native --workspace @rm-industries/browser-oxfmt
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
+          config-file: ./.github/codeql-config.yml
           build-mode: none
           languages: ${{ matrix.language }}
           queries: security-extended,security-and-quality

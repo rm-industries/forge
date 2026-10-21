@@ -59,15 +59,21 @@ try {
         : config;
     const page = await browser.newPage();
     page.setDefaultTimeout(15000);
-    await page.addInitScript(() =>
-      Object.defineProperty(window, 'showDirectoryPicker', {
-        value: async () => (await navigator.storage.getDirectory()).getDirectoryHandle('probe', { create: true }),
-      }),
+    await page.addInitScript(
+      ({ mode, config }) => {
+        window.CMS_MANUAL_INIT = true;
+        window.probeMode = mode;
+        window.probeConfig = config;
+        Object.defineProperty(window, 'showDirectoryPicker', {
+          value: async () => (await navigator.storage.getDirectory()).getDirectoryHandle('probe', { create: true }),
+        });
+      },
+      { mode, config: scenarioConfig },
     );
     await page.route('**/probe', (r) =>
       r.fulfill({
         contentType: 'text/html',
-        body: `<html><script>window.CMS_MANUAL_INIT=true;window.probeMode=${JSON.stringify(mode)};</script><script type="module">import{init,registerCustomFormat}from'/sveltia-cms.mjs';registerCustomFormat('frontmatter','md',{toFile:(data,{serialize})=>{window.callbackData=structuredClone(data);window.callbackCalled=true;if(window.probeMode==='throw')throw Error('Probe callback exception');if(window.probeMode==='reject')return Promise.reject(Error('Probe callback rejection'));if(window.probeMode==='native-error'){return serialize({...data,unsupported:()=>{}});}return serialize(data).then(output=>{window.nativeOutput=output;window.unchanged=JSON.stringify(data)===JSON.stringify(window.callbackData);return output;});}});init({config:${JSON.stringify(scenarioConfig)}});</script></html>`,
+        body: `<html><script type="module">import{init,registerCustomFormat}from'/sveltia-cms.mjs';registerCustomFormat('frontmatter','md',{toFile:(data,{serialize})=>{window.callbackData=structuredClone(data);window.callbackCalled=true;if(window.probeMode==='throw')throw Error('Probe callback exception');if(window.probeMode==='reject')return Promise.reject(Error('Probe callback rejection'));if(window.probeMode==='native-error'){return serialize({...data,unsupported:()=>{}});}return serialize(data).then(output=>{window.nativeOutput=output;window.unchanged=JSON.stringify(data)===JSON.stringify(window.callbackData);return output;});}});init({config:window.probeConfig});</script></html>`,
       }),
     );
     await page.goto(origin + '/probe');

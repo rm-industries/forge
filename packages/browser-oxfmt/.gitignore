@@ -1,1 +1,5 @@
-/.wasm-build/
+/src/generated/
+/NOTICE.md
+/native/.upstream/
+/native/.download/
+/native/target/

@@ -1,5 +1,5 @@
-import identity from '../assets/identity.json' with { type: 'json' };
 import { BrowserOxfmtError } from './errors.js';
+import identity from './generated/identity.json' with { type: 'json' };
 export interface FormatterOptions {
   printWidth: number;
   tabWidth: number;

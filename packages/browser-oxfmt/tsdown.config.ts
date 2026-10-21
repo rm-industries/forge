@@ -5,7 +5,7 @@ export default defineConfig([
     format: 'esm',
     platform: 'browser',
     sourcemap: true,
-    external: ['./wasm/engine.js'],
+    external: ['./generated/engine.js'],
   },
   {
     entry: { build: 'src/build.ts' },

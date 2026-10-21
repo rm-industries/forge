@@ -66,6 +66,7 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: 26.8.1
+          native: 'true'
 
       - name: Identify configured automation App
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

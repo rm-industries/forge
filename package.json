@@ -48,7 +48,7 @@
     "website:quality:static": "npm run quality:static:ci --prefix website",
     "website:test:browser": "npm run test:e2e --prefix website",
     "website:test:coverage": "npm run test:coverage --prefix website",
-    "quality": "npm run format && npm run lint && npm run typecheck && npm test && npm run build && npm run pack",
+    "quality": "npm run quality:native --workspace @rm-industries/browser-oxfmt && npm run format && npm run lint && npm run typecheck && npm test && npm run build && npm run pack",
     "verify:template": "node scripts/verify-template.ts",
     "verify:template:static": "node scripts/verify-template-static-quality.ts"
   },

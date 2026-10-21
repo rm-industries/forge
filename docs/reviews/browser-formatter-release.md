@@ -80,3 +80,8 @@ complete until the missing audit, real-device, and release gates
 have evidence. Once publication and registry verification are complete, follow
 [ordered adoption and rollback](../browser-formatter-adoption.md). A project-site
 adoption requires its standalone lockfile/build boundary to pass separately.
+
+Native build ownership now lives under `packages/browser-oxfmt/native/` and
+generated artifacts are excluded from Git. The prepare-only runs above precede
+that build change; repeat release preparation for the final source before
+publication. Rust formatting, Clippy and CodeQL are included in verification.
