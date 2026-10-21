@@ -2,6 +2,12 @@ import { defineConfig } from 'cspell';
 
 export default defineConfig({
   ignorePaths: ['node_modules', 'dist', 'coverage', 'playwright-report', 'test-results', '.lighthouseci'],
+  overrides: [
+    {
+      filename: 'experiments/browser-oxfmt/**',
+      words: ['dont', 'Bezos', 'frontmatter', 'cdylib', 'serde'],
+    },
+  ],
   words: [
     'mktemp',
     'codequality',
