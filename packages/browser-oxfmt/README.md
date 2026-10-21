@@ -105,3 +105,71 @@ identity records its build host. `build` and `prepack` verify shipped asset hash
 and copy them without invoking Rust. The tracked WASM and generated bindings
 are an explicit package release asset exception to ignoring generated output.
 Review identity and notices whenever regenerating them.
+
+## Derive browser settings during a build
+
+Use the Node-only `@rm-industries/browser-oxfmt/build` entry point to derive
+settings from the consumer's installed Oxfmt version, authoritative configuration,
+and nearest `.editorconfig`. Import it from your build or server configuration;
+import the regular package entry point from browser code.
+
+```ts
+import { resolveBrowserOptions } from '@rm-industries/browser-oxfmt/build';
+
+const { resolvedOptions, diagnostics } = await resolveBrowserOptions({
+  cwd: process.cwd(),
+  filename: 'src/content/articles/example.md',
+});
+
+// Report these during the build; serialize only resolvedOptions for browser use.
+for (const diagnostic of diagnostics) console.warn(diagnostic.message);
+```
+
+Pass `resolvedOptions` as the third argument to browser `format(source, filename,
+resolvedOptions)`. Do not pass the diagnostic wrapper. No executable configuration,
+filesystem paths, parser, or Node module is needed in the browser. The installed
+consumer Oxfmt must match the browser engine exactly; version mismatches and
+unsupported options fail with configuration errors.
+
+The helper resolves one physical Markdown filename at a time. All matching
+Oxfmt overrides apply in declaration order, excluding `excludeFiles`, relative
+to the authoritative configuration directory. Fenced languages inherit the host
+Markdown policy; TypeScript overrides are not selected for TypeScript fences.
+Explicit Oxfmt settings take precedence over EditorConfig fallback, then engine
+defaults. Root and template EditorConfig therefore supply width 120.
+
+The supported build contract is deliberately bounded:
+
+- Discover the nearest `oxfmt.config.{js,mjs,cjs,ts,mts,cts}` or `.oxfmtrc.json`
+  from `cwd` upwards, or specify `configFile`. JSONC and Vite+ configuration
+  are unsupported. Multiple configuration files require an explicit selection.
+- Use plain object exports with the runtime's supported options. `overrides`
+  may contain `files`, optional `excludeFiles`, and `options`. Override patterns
+  accept relative literals, `*`, `?`, and whole `**` path segments; braces,
+  character classes, extended globs, negation, parent traversal, and hidden-path targets
+  with overrides fail rather than risk different matching semantics.
+- Ignore patterns support literal relative paths and literal `directory/**`
+  exclusions. An ignored target fails; more complex ignore syntax is rejected.
+- Use the single nearest EditorConfig from `cwd`, matching Oxfmt's selection.
+  Descendant EditorConfig/Oxfmt files on a target's ancestor path are rejected.
+  EditorConfig supports numeric widths, space indentation, explicit line endings,
+  `quote_type=single|double`, and a final newline. Tab-based EditorConfig,
+  `unset`, unsupported selector syntax, and hidden targets with selectors fail. Configured `useTabs:true` works
+  when `tabWidth` is explicit. Charset and whitespace properties unused by
+  Oxfmt do not become browser options.
+- The ESM root configuration module is re-imported on each call. Start a fresh
+  Node build process when CommonJS configuration or imported configuration
+  dependencies change; Node caches those modules. The helper performs no persistent option caching.
+
+`sortTailwindcss:true` produces the structured diagnostic
+`tailwind-class-order-preserved`. It is the approved exception: browser formatting
+preserves class order while native CSS formatting stays enabled, and repository
+Oxfmt may reorder classes. Custom Tailwind configuration objects are unsupported.
+
+For a CMS serializer without filename or collection context, request
+`requireUniformPolicy:true`. It rejects filename overrides, EditorConfig sections
+other than `[*]`, and nested Oxfmt/EditorConfig files throughout `cwd`. Standard
+dependency directories and root build output directories are excluded; other symbolic links fail
+because their configuration cannot be proven uniform. Use a standalone project
+root, not a monorepo containing multiple independently configured sites. This
+mode must succeed before applying one resolved policy globally.
