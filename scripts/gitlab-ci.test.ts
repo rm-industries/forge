@@ -1,4 +1,7 @@
-import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 import { expect, test } from 'vitest';
 import { parse } from 'yaml';
@@ -42,11 +45,6 @@ test('publishes native test and quality reports without mapping disposable cover
 });
 
 test('composes native GitLab includes with valid dependency graphs', () => {
-  expect(entry.include.map((include: { local: string }) => include.local)).toEqual([
-    '.gitlab/ci/project.yml',
-    '.gitlab/ci/generator.yml',
-    '.gitlab/ci/website.yml',
-  ]);
   const jobs = { ...project, ...generator, ...website };
   const names = Object.keys(jobs);
   expect(names).toHaveLength(Object.keys(project).length + Object.keys(generator).length + Object.keys(website).length);
@@ -206,20 +204,75 @@ test('omits dependency vulnerability audits from publication and normal mirrored
     expect(workflow.jobs).not.toHaveProperty('dependency-audit');
 });
 
-test('admits native validation jobs in merge-request and default-branch push pipelines', () => {
+test('admits merge requests, default pushes and broad scheduled/manual validation with failure propagation', () => {
   expect(entry.workflow.rules).toEqual([
     { if: '$CI_PIPELINE_SOURCE == "merge_request_event"' },
-    {
-      if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS && $CI_PIPELINE_SOURCE == "push"',
-      when: 'never',
-    },
+    { if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS && $CI_PIPELINE_SOURCE == "push"', when: 'never' },
     { if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"' },
+    { if: '$CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"' },
   ]);
-  for (const pipeline of [project, generator, website]) {
-    for (const [id, job] of Object.entries(pipeline)) {
-      if (['website-deploy', 'website-smoke-deployed'].includes(id)) continue;
-      // Jobs without rules default to excluding merge-request pipelines.
-      expect(job).toMatchObject({ rules: [{ when: 'on_success' }] });
+  expect(entry['mirror-validation']).toMatchObject({
+    needs: ['select-impact'],
+    trigger: { include: [{ artifact: '.gitlab-child.json', job: 'select-impact' }], strategy: 'mirror' },
+  });
+  expect(entry['select-impact'].variables.GIT_DEPTH).toBe('0');
+  expect(entry['select-impact'].script).toContain('node .gitlab/ci/select.ts');
+});
+
+test('selects a complete child graph from the shared consumption matrix', async () => {
+  const { createMirrorPipeline } = await import('../.gitlab/ci/select.ts');
+  for (const [paths, selected] of [
+    [['docs/guide.md'], ['website-build']],
+    [['website/src/pages/index.astro'], ['website-build']],
+    [['packages/content-model/src/index.ts'], ['project-build']],
+    [['packages/create-forge/src/index.ts'], ['project-build', 'generator-package']],
+    [['templates/default/src/index.ts'], ['project-build', 'generator-package']],
+    [['packages/browser-oxfmt/native/src/lib.rs'], ['project-build', 'project-native']],
+    [['unknown/input'], ['project-build', 'project-native', 'generator-package', 'website-build']],
+    [null, ['project-build', 'project-native', 'generator-package', 'website-build']],
+    [[], ['project-build', 'project-native', 'generator-package', 'website-build']],
+    [
+      ['docs/deleted.md', 'packages/create-forge/src/renamed.ts'],
+      ['project-build', 'generator-package', 'website-build'],
+    ],
+  ] as const) {
+    const pipeline = createMirrorPipeline(paths ? [...paths] : null);
+    for (const id of ['project-build', 'project-native', 'generator-package', 'website-build']) {
+      expect(id in pipeline, `${paths}: ${id}`).toBe(selected.includes(id as never));
     }
+    expect(pipeline).toHaveProperty('project-format');
+    for (const [, job] of Object.entries(pipeline)) {
+      if (!('needs' in (job as object))) continue;
+      for (const need of (job as { needs: { job: string }[] }).needs) expect(pipeline).toHaveProperty(need.job);
+    }
+  }
+});
+
+test('builds and verifies the selected package artifacts without requiring unrelated native output', async () => {
+  const { createMirrorPipeline } = await import('../.gitlab/ci/select.ts');
+  const pipeline = createMirrorPipeline(['packages/markdownlint-frontmatter/src/index.ts']);
+  expect(pipeline.variables).toMatchObject({ FORGE_PACKAGES: 'markdownlint-frontmatter', FORGE_NATIVE: 'false' });
+  expect(project['project-build'].script.join('\n')).toContain('for package in $FORGE_PACKAGES');
+  expect(project['project-compatibility'].script.join('\n')).toContain('for package in $FORGE_PACKAGES');
+  expect(project['project-build'].before_script.join('\n')).toContain('if [ "$FORGE_NATIVE" = true ]');
+  expect(project['project-compatibility'].script.join('\n')).toContain(
+    'if [ -d packages/browser-oxfmt/dist/generated ]',
+  );
+  for (const name of ['select-impact', 'mirror-validation'])
+    expect(entry[name].rules).toEqual([{ when: 'on_success' }]);
+});
+
+test('does not produce an accepting child artifact after a diff failure', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'forge-mirror-impact-'));
+  try {
+    const run = spawnSync(process.execPath, [new URL('../.gitlab/ci/select.ts', import.meta.url).pathname], {
+      cwd: directory,
+      env: { CI_PIPELINE_SOURCE: 'push', CI_COMMIT_BEFORE_SHA: 'a'.repeat(40), CI_COMMIT_SHA: 'b'.repeat(40) },
+      encoding: 'utf8',
+    });
+    expect(run.status).not.toBe(0);
+    expect(() => readFileSync(join(directory, '.gitlab-child.json'))).toThrow(/ENOENT/);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
   }
 });
