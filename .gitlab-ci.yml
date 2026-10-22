@@ -5,6 +5,7 @@ workflow:
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS && $CI_PIPELINE_SOURCE == "push"
       when: never
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"
 default:
   interruptible: true
 stages:
@@ -14,23 +15,28 @@ stages:
   - verify
   - deploy
   - smoke
-include:
-  - local: .gitlab/ci/project.yml
-  - local: .gitlab/ci/generator.yml
-    rules:
-      - changes:
-          - .github/**/*
-          - .gitlab/**/*
-          - .gitlab-ci.yml
-          - templates/default/**/*
-          - packages/**/*
-          - scripts/**/*
-          - '*.json'
-          - '*.ts'
-  - local: .gitlab/ci/website.yml
-    rules:
-      - changes:
-          - website/**/*
-          - docs/**/*
-          - .gitlab/ci/website.yml
-          - .gitlab-ci.yml
+select-impact:
+  rules:
+    - when: on_success
+  image: node:26
+  stage: prepare
+  variables:
+    GIT_DEPTH: '0'
+  script:
+    - npm ci
+    - node .gitlab/ci/select.ts
+  artifacts:
+    paths:
+      - .gitlab-child.json
+    expire_in: 1 day
+mirror-validation:
+  rules:
+    - when: on_success
+  stage: validate
+  needs:
+    - select-impact
+  trigger:
+    include:
+      - artifact: .gitlab-child.json
+        job: select-impact
+    strategy: mirror
