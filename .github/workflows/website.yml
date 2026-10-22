@@ -5,19 +5,12 @@ on: # yamllint disable-line rule:truthy
   pull_request:
     branches:
       - main
-    paths:
-      - 'website/**'
-      - 'docs/**'
-      - '.github/workflows/website.yml'
-      - '.github/actions/setup-project/**'
   push:
     branches:
       - main
-    paths:
-      - 'website/**'
-      - 'docs/**'
-      - '.github/workflows/website.yml'
-      - '.github/actions/setup-project/**'
+  workflow_dispatch:
+  schedule:
+    - cron: '41 7 * * 1'
 
 permissions: {}
 
@@ -31,7 +24,27 @@ defaults:
     working-directory: website
 
 jobs:
+  impact:
+    name: Select website impact
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      website: ${{ steps.impact.outputs.website }}
+      full-browsers: ${{ steps.impact.outputs.website-full-browsers }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Select affected work
+        id: impact
+        uses: $/.github/actions/ci-impact
+
   format:
+    needs: impact
+    if: needs.impact.outputs.website == 'true'
     name: Format
     runs-on: ubuntu-latest
 
@@ -55,6 +68,8 @@ jobs:
         run: npm run format
 
   spellcheck:
+    needs: impact
+    if: needs.impact.outputs.website == 'true'
     name: Spellcheck
     runs-on: ubuntu-latest
 
@@ -78,6 +93,8 @@ jobs:
         run: npm run spellcheck
 
   lint-code:
+    needs: impact
+    if: needs.impact.outputs.website == 'true'
     name: Lint code
     runs-on: ubuntu-latest
 
@@ -101,6 +118,8 @@ jobs:
         run: npm run lint:code -- --format github
 
   lint-styles:
+    needs: impact
+    if: needs.impact.outputs.website == 'true'
     name: Lint styles
     runs-on: ubuntu-latest
     permissions:
@@ -120,6 +139,8 @@ jobs:
         run: npm run lint:css
 
   lint-markdown:
+    needs: impact
+    if: needs.impact.outputs.website == 'true'
     name: Lint Markdown
     runs-on: ubuntu-latest
     permissions:
@@ -139,6 +160,8 @@ jobs:
         run: npm run lint:markdown
 
   audit-unused:
+    needs: impact
+    if: needs.impact.outputs.website == 'true'
     name: Audit unused code
     runs-on: ubuntu-latest
     permissions:
@@ -158,6 +181,8 @@ jobs:
         run: npm run audit:unused
 
   typecheck:
+    needs: impact
+    if: needs.impact.outputs.website == 'true'
     name: Type-check
     runs-on: ubuntu-latest
     permissions:
@@ -177,6 +202,8 @@ jobs:
         run: npm run typecheck
 
   unit-tests:
+    needs: impact
+    if: needs.impact.outputs.website == 'true'
     name: Unit tests and coverage
     runs-on: ubuntu-latest
 
@@ -283,6 +310,7 @@ jobs:
   browser-tests:
     name: Browser and accessibility tests
     needs:
+      - impact
       - build
     runs-on: ubuntu-latest
 
@@ -302,8 +330,15 @@ jobs:
           cache-dependency-path: website/package-lock.json
           working-directory: website
 
-      - name: Install supported browsers
-        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Install selected browsers
+        env:
+          FULL_BROWSERS: ${{ needs.impact.outputs.full-browsers }}
+        run: |
+          if [[ "$FULL_BROWSERS" == 'true' ]]; then
+            npx playwright install --with-deps chromium firefox webkit
+          else
+            npx playwright install --with-deps chromium
+          fi
 
       - name: Download production build
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -312,7 +347,14 @@ jobs:
           path: website/dist
 
       - name: Run browser and accessibility tests
-        run: npm run test:e2e
+        env:
+          FULL_BROWSERS: ${{ needs.impact.outputs.full-browsers }}
+        run: |
+          if [[ "$FULL_BROWSERS" == 'true' ]]; then
+            npm run test:e2e
+          else
+            npm run test:e2e -- --project=chromium
+          fi
 
       - name: Upload browser test evidence
         if: always()
