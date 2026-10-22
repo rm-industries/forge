@@ -27,7 +27,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - id: impact
-        uses: ./.github/actions/ci-impact
+        uses: $/.github/actions/ci-impact
   package:
     name: Package generator candidate
     needs: [impact]

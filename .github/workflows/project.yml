@@ -30,7 +30,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - id: impact
-        uses: ./.github/actions/ci-impact
+        uses: $/.github/actions/ci-impact
   format:
     name: Tool Format
     needs: [impact]
