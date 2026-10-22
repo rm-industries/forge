@@ -1,0 +1,146 @@
+---
+name: Browser Oxfmt Engine Updates
+
+on: # yamllint disable-line rule:truthy
+  schedule:
+    - cron: '23 6 * * 5'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact stable Oxfmt version; empty uses the registry latest tag
+        required: false
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: browser-oxfmt-engine-updates
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Setup project dependencies
+        uses: $/.github/actions/setup-project
+        with:
+          node-version: 26.8.1
+          native: 'true'
+      - name: Prepare coordinated engine update
+        id: prepare
+        env:
+          TARGET_VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          target_version="$TARGET_VERSION"
+          if [[ -z "$target_version" ]]; then
+            target_version=$(npm view oxfmt@latest version)
+          fi
+          plan=$(node scripts/prepare-oxfmt-upgrade.ts "$target_version")
+          {
+            echo "changed=$(jq -r .changed <<< "$plan")"
+            echo "target=$(jq -r .target <<< "$plan")"
+            echo "package-version=$(jq -r .packageVersion <<< "$plan")"
+          } >> "$GITHUB_OUTPUT"
+          echo "$plan" >> "$GITHUB_STEP_SUMMARY"
+      - name: Regenerate lockfiles and install target engine
+        if: steps.prepare.outputs.changed == 'true'
+        run: |
+          expected_npm=$(node --print "require('./package.json').packageManager.split('@').at(-1)")
+          test "$(npm --version)" = "$expected_npm"
+          npm install --package-lock-only --ignore-scripts
+          npm ci
+          cargo metadata --format-version 1 --manifest-path packages/browser-oxfmt/native/Cargo.toml > /dev/null
+          npx oxfmt --write package.json package-lock.json packages/browser-oxfmt
+      - name: Validate proposed engine
+        if: steps.prepare.outputs.changed == 'true'
+        run: |
+          npm run quality
+          npm ci --prefix templates/default --ignore-scripts
+          npm exec --prefix templates/default -- playwright install --with-deps chromium firefox webkit
+          npm run test:browser --workspace @rm-industries/browser-oxfmt
+          node packages/browser-oxfmt/test/sveltia-serialization.ts
+      - name: Verify GitHub App configuration
+        if: steps.prepare.outputs.changed == 'true'
+        env:
+          APP_CLIENT_ID: ${{ vars.PEER_UPGRADE_APP_CLIENT_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.PEER_UPGRADE_APP_PRIVATE_KEY }}
+        run: |
+          if [[ -z "$APP_CLIENT_ID" || -z "$APP_PRIVATE_KEY" ]]; then
+            echo '::error title=GitHub App configuration missing::Configure PEER_UPGRADE_APP_CLIENT_ID and PEER_UPGRADE_APP_PRIVATE_KEY before creating engine upgrade pull requests.'
+            echo '- ❌ GitHub App credentials are not configured.' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo '- ✅ GitHub App credentials are configured.' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create GitHub App token
+        if: steps.prepare.outputs.changed == 'true'
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.PEER_UPGRADE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.PEER_UPGRADE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Resolve GitHub App identity
+        if: steps.prepare.outputs.changed == 'true'
+        id: app-user
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+        run: echo "id=$(gh api "/users/${APP_SLUG}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+
+      - name: Push engine upgrade branch
+        if: steps.prepare.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          APP_USER_ID: ${{ steps.app-user.outputs.id }}
+          TARGET_VERSION: ${{ steps.prepare.outputs.target }}
+        run: |
+          branch="automation/oxfmt-${TARGET_VERSION}"
+          git config user.name "${APP_SLUG}[bot]"
+          git config user.email "${APP_USER_ID}+${APP_SLUG}[bot]@users.noreply.github.com"
+          gh auth setup-git
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            echo 'An update branch already exists; preserve it for review.'
+            exit 0
+          fi
+          git switch -c "$branch"
+          git add package.json package-lock.json packages/browser-oxfmt
+          git commit -m "chore: update browser Oxfmt to ${TARGET_VERSION}"
+          git push origin "HEAD:refs/heads/${branch}"
+
+      - name: Open engine upgrade pull request
+        if: steps.prepare.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TARGET_VERSION: ${{ steps.prepare.outputs.target }}
+          PACKAGE_VERSION: ${{ steps.prepare.outputs.package-version }}
+        run: |
+          branch="automation/oxfmt-${TARGET_VERSION}"
+          pull_request=$(gh pr list --head "$branch" --state open --json number --jq '.[0].number')
+          body_file="${RUNNER_TEMP}/automation-pr-body.md"
+          printf '%s\n' \
+            "Update native Oxfmt to ${TARGET_VERSION} and prepare browser-oxfmt ${PACKAGE_VERSION}." \
+            '' \
+            'Validated with repository quality, packed browser parity and native CMS serialization checks.' \
+            'Review formatting changes and supported options before merging. Publication uses the existing protected release process.' > "$body_file"
+          if [[ -n "$pull_request" ]]; then
+            pull_request_url=$(gh pr view "$pull_request" --json url --jq .url)
+          else
+            pull_request_url=$(gh pr create --head "$branch" --base main --title "Update browser Oxfmt to ${TARGET_VERSION}" --body-file "$body_file")
+          fi
+          echo "- ✅ Engine upgrade pull request: ${pull_request_url}" >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=Engine upgrade pull request::${pull_request_url}"

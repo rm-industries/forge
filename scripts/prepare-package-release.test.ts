@@ -92,3 +92,32 @@ describe('package release preparation', () => {
     expect(() => releaseNotesFor(changelog, '0.3.0')).toThrow(/Changelog/);
   });
 });
+
+test('prepares the browser formatter as an independent release unit', () => {
+  expect(
+    createPackageReleasePlan({
+      packageSlug: 'browser-oxfmt',
+      manifest: { name: '@rm-industries/browser-oxfmt', version: '0.1.0' },
+      changelog: '# Changelog\n\n## 0.1.0\n\n- Native browser formatting.\n',
+      gitSha: 'abc123',
+      releaseTag: 'browser-oxfmt-v0.1.0',
+    }),
+  ).toMatchObject({
+    packageName: '@rm-industries/browser-oxfmt',
+    packageSlug: 'browser-oxfmt',
+    workspace: 'packages/browser-oxfmt',
+    releaseTag: 'browser-oxfmt-v0.1.0',
+    npmTag: 'latest',
+  });
+});
+
+test('rejects a workspace manifest belonging to another package', () => {
+  expect(() =>
+    createPackageReleasePlan({
+      packageSlug: 'browser-oxfmt',
+      manifest: { name: '@rm-industries/content-model', version: '0.1.0' },
+      changelog: '# Changelog\n\n## 0.1.0\n\n- Initial release.\n',
+      gitSha: 'abc123',
+    }),
+  ).toThrow(/identity/);
+});

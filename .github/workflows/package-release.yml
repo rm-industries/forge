@@ -6,12 +6,15 @@ on: # yamllint disable-line rule:truthy
     tags:
       - 'content-model-v*'
       - 'create-forge-v*'
+      - 'browser-oxfmt-v*'
+
       - 'markdownlint-frontmatter-v*'
     branches:
       - main
     paths:
       - packages/content-model/package.json
       - packages/create-forge/package.json
+      - packages/browser-oxfmt/package.json
   workflow_dispatch:
     inputs:
       package:
@@ -21,6 +24,8 @@ on: # yamllint disable-line rule:truthy
         options:
           - content-model
           - create-forge
+          - browser-oxfmt
+
           - markdownlint-frontmatter
 
 permissions: {}
@@ -65,6 +70,7 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: 26.8.1
+          native: 'true'
 
       - name: Identify configured automation App
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

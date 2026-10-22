@@ -4,7 +4,8 @@ Forge has two release layers:
 
 - checkpoint releases (`v0.6.0`, for example) record completion of a roadmap
   milestone; and
-- package releases publish independently versioned create-forge, content-model, or frontmatter lint
+- package releases publish independently versioned create-forge, content-model,
+  browser-oxfmt, or frontmatter lint
   artifacts from package-scoped tags.
 
 Checkpoint tags never publish npm packages. Package tags trigger protected npm
@@ -149,6 +150,19 @@ follow the defective-package procedure.
 - [ ] GitHub release and `published-*` evidence exist.
 - [ ] Synchronization or remediation follow-up is linked where applicable.
 - [ ] Release gate and milestone record the final evidence.
+
+## Browser formatter prerequisites
+
+Follow the [ordered adoption and rollback guide](browser-formatter-adoption.md)
+and reconcile the [release-readiness record](reviews/browser-formatter-release.md).
+Run `npm run quality`, `npm run audit`, the package's packed browser suite, and
+the native rebuild workflow. Inspect the prepared package artifact and provenance
+identity before publication. Actual macOS Safari and iPhone Safari saves,
+large/repeated edits, error recovery, and background/resume remain a release
+gate; emulated viewport and Playwright WebKit results do not substitute for them.
+Maintainers configure trusted publication and protected tag patterns separately.
+
+## Frontmatter plugin prerequisites
 
 For the independent frontmatter plugin, use the
 [release readiness report](frontmatter-release-readiness.md) and

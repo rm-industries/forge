@@ -25,6 +25,9 @@ website ──generated once, then owned──▶ GitHub Pages project site
 
 - `packages/create-forge/` owns CLI parsing, prompts, validation, safe
   materialization, project setup, reporting, and the bundled template snapshot.
+- `packages/browser-oxfmt/` owns the browser worker API and pinned native
+  formatting engine. Browser configuration/adoption remains an explicit consumer
+  source change; its releases never regenerate projects or alter content models.
 - `packages/content-model/` owns integration-neutral model semantics and the
   Astro and Sveltia adapter entry points.
 - `packages/markdownlint-frontmatter/` owns the generic ordering rule and model
@@ -46,7 +49,7 @@ update an existing generated project. The content-model package is the supported
 upgrade path for shared model and adapter behavior; template source changes need
 manual migration guidance.
 
-The generator, content-model, and frontmatter lint packages use independent semantic versions. The
+The generator, content-model, browser formatter, and frontmatter lint packages use independent semantic versions. The
 template has no independent package version: a generator release identifies the
 exact template snapshot it contains. See the
 [support policy](support-policy.md) and [versioning ADR](decisions/0006-versioning.md), extended by

@@ -6,6 +6,10 @@ inputs:
   node-version:
     description: Node.js version to install
     required: true
+  native:
+    description: Install the pinned browser formatter native toolchain
+    required: false
+    default: 'false'
   working-directory:
     description: Directory containing the package manifest and lockfile
     required: false
@@ -29,3 +33,11 @@ runs:
       run: npm ci
       shell: bash
       working-directory: ${{ inputs.working-directory }}
+
+    - name: Install pinned native build tools
+      if: inputs.native == 'true'
+      shell: bash
+      run: |
+        rustup toolchain install 1.97.0 --profile minimal --target wasm32-unknown-unknown --component rustfmt --component clippy
+        cargo +1.97.0 install wasm-bindgen-cli --version "$(node packages/browser-oxfmt/native/build-wasm.ts --bindings-version)" --locked
+        echo 'RUSTUP_TOOLCHAIN=1.97.0' >> "$GITHUB_ENV"

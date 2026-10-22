@@ -83,13 +83,29 @@ project-test:
     expire_in: 7 days
     reports:
       junit: test-results/unit.xml
+project-native:
+  rules:
+    - when: on_success
+  image: node:26
+  stage: validate
+  before_script: &native-setup
+    - npm ci
+    - |
+      curl --fail --silent --show-error --location --output /tmp/forge-rustup-init https://static.rust-lang.org/rustup/archive/1.28.2/x86_64-unknown-linux-gnu/rustup-init
+      echo '20a06e644b0d9bd2fbdbfd52d42540bdde820ea7df86e92e533c073da0cdd43c  /tmp/forge-rustup-init' | sha256sum --check
+      chmod +x /tmp/forge-rustup-init
+      /tmp/forge-rustup-init -y --profile minimal --default-toolchain 1.97.0 --target wasm32-unknown-unknown --component rustfmt --component clippy
+      . "$HOME/.cargo/env"
+      cargo +1.97.0 install wasm-bindgen-cli --version "$(node packages/browser-oxfmt/native/build-wasm.ts --bindings-version)" --locked
+  needs: []
+  script:
+    - npm run quality:native --workspace @rm-industries/browser-oxfmt
 project-build:
   rules:
     - when: on_success
   image: node:26
   stage: build
-  before_script:
-    - npm ci
+  before_script: *native-setup
   needs:
     - job: project-format
       artifacts: false
@@ -105,12 +121,15 @@ project-build:
       artifacts: false
     - job: project-test
       artifacts: false
+    - job: project-native
+      artifacts: false
   script:
     - npm run build
     - mkdir -p .ci-packages
     - npm pack --ignore-scripts --workspaces --pack-destination .ci-packages
   artifacts:
     paths:
+      - packages/browser-oxfmt/dist
       - packages/content-model/dist
       - packages/create-forge/dist
       - .ci-packages
@@ -135,6 +154,11 @@ project-pack:
               tar -tzf "$candidate" | grep -Fx "package/dist/$entry.d.ts"
             done
             ;;
+          *browser-oxfmt*.tgz)
+            for entry in dist/index.js dist/index.d.ts dist/worker.js dist/generated/engine.js dist/generated/engine_bg.wasm dist/generated/identity.json NOTICE.md LICENSE; do
+              tar -tzf "$candidate" | grep -Fx "package/$entry"
+            done
+            ;;
           *create-forge*.tgz)
             tar -tzf "$candidate" | grep -Fx 'package/dist/index.mjs'
             tar -tzf "$candidate" | grep -Fx 'package/dist/template/package-lock.json'
@@ -152,6 +176,9 @@ project-compatibility:
     - job: project-build
       artifacts: true
   script:
+    - cp -R packages/browser-oxfmt/dist/generated packages/browser-oxfmt/src/generated
+    - |
+      tar -xOf .ci-packages/*browser-oxfmt*.tgz package/NOTICE.md > packages/browser-oxfmt/NOTICE.md
     - npm run typecheck:workspaces && npm run test:workspaces
     - |-
       mkdir -p "/tmp/content-model-check"

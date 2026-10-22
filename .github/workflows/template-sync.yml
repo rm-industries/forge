@@ -41,6 +41,7 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: 26.8.1
+          native: 'true'
 
       - name: Resolve verified publication
         id: source

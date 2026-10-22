@@ -1,7 +1,38 @@
+// cspell:ignore rustup clippy RUSTUP unstub rustc RUSTFLAGS dont Bezos cdylib serde rlib astrojs vite vitest
 import { defineConfig } from 'cspell';
 
 export default defineConfig({
-  ignorePaths: ['node_modules', 'dist', 'coverage', 'playwright-report', 'test-results', '.lighthouseci'],
+  ignorePaths: [
+    'packages/browser-oxfmt/native/target/**',
+    'node_modules',
+    'dist',
+    'coverage',
+    'playwright-report',
+    'test-results',
+    '.lighthouseci',
+  ],
+  overrides: [
+    { filename: 'docs/reviews/browser-formatter-release.md', words: ['Clippy'] },
+    { filename: 'packages/browser-oxfmt/src/worker.test.ts', words: ['unstub'] },
+    { filename: ['.github/**', '.gitlab/**'], words: ['rustup', 'clippy', 'bindgen', 'RUSTUP'] },
+    {
+      filename: 'packages/browser-oxfmt/**',
+      words: ['bindgen', 'Embedder', 'rustc', 'RUSTFLAGS', 'rustfmt', 'clippy', 'rustup'],
+    },
+    {
+      filename: [
+        'packages/browser-oxfmt/src/generated/**',
+        'packages/browser-oxfmt/NOTICE.md',
+        'packages/browser-oxfmt/native/**/*.rs',
+        'packages/browser-oxfmt/native/Cargo.toml',
+      ],
+      enabled: false,
+    },
+    {
+      filename: 'packages/browser-oxfmt/test/markdown-cases.ts',
+      words: ['dont', 'Bezos', 'frontmatter', 'cdylib', 'serde', 'rlib'],
+    },
+  ],
   words: [
     'frontmatter',
     'mktemp',

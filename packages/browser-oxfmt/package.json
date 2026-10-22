@@ -1,0 +1,55 @@
+{
+  "name": "@rm-industries/browser-oxfmt",
+  "version": "0.1.0",
+  "description": "Native Oxfmt Markdown formatting in a browser worker",
+  "homepage": "https://github.com/rm-industries/forge/tree/main/packages/browser-oxfmt",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rm-industries/forge.git",
+    "directory": "packages/browser-oxfmt"
+  },
+  "files": [
+    "dist",
+    "NOTICE.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./build": {
+      "types": "./dist/build.d.ts",
+      "node": "./dist/build.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "node native/build-wasm.ts && vitest run",
+    "typecheck": "node native/build-wasm.ts && tsc --noEmit && tsc --project tsconfig.test.json && tsc --project tsconfig.native.json",
+    "build": "node native/build-wasm.ts && tsdown && node native/build-wasm.ts --copy",
+    "prepack": "npm run typecheck && npm test && npm run build",
+    "test:browser": "node test/packed-browser.ts",
+    "build:native": "node native/build-wasm.ts",
+    "quality:native": "node native/build-wasm.ts --check"
+  },
+  "dependencies": {
+    "editorconfig": "3.0.2"
+  },
+  "peerDependencies": {
+    "oxfmt": "0.72.0"
+  },
+  "peerDependenciesMeta": {
+    "oxfmt": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": "^22.22.2 || ^24.0.0 || ^26.0.0",
+    "npm": "^10.9.0 || ^11.0.0"
+  }
+}
