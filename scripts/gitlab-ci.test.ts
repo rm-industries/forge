@@ -102,8 +102,10 @@ test('GitLab checks reuse the canonical consumer instead of regenerating it', ()
 const githubProject = read('../.github/workflows/project.yml');
 const githubGenerator = read('../.github/workflows/generator.yml');
 const githubWebsite = read('../.github/workflows/website.yml');
-const dependencyNames = (job: { needs?: (string | { job: string })[] }, prefix = '') =>
-  (job.needs ?? []).map((need) => (typeof need === 'string' ? need : need.job).slice(prefix.length)).sort();
+const dependencyNames = (job: { needs?: string | (string | { job: string })[] }, prefix = '') =>
+  (typeof job.needs === 'string' ? [job.needs] : (job.needs ?? []))
+    .map((need) => (typeof need === 'string' ? need : need.job).slice(prefix.length))
+    .sort();
 
 test('mirrors project and website job coverage and dependency gates across providers', () => {
   for (const [github, gitlab, prefix] of [

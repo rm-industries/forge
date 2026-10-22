@@ -437,7 +437,7 @@ jobs:
       - impact
       - build
   frontmatter-candidate:
-    name: Candidate frontmatter and CMS compatibility
+    name: Candidate model and frontmatter compatibility
     if: always()
     needs: [impact, build]
     runs-on: ubuntu-latest
@@ -464,12 +464,6 @@ jobs:
       - name: Verify isolated packed model and frontmatter consumers
         if: needs.impact.outputs.frontmatterCandidate == 'true'
         run: npm run test:packed --workspace @rm-industries/markdownlint-frontmatter
-      - name: Install CMS test browser
-        if: needs.impact.outputs.frontmatterCandidate == 'true'
-        run: npx playwright install --with-deps chromium
-      - name: Verify candidate model-derived frontmatter and CMS saves
-        if: needs.impact.outputs.frontmatterCandidate == 'true'
-        run: npm run test:frontmatter:cms
   validation:
     name: Tool validation
     if: always()

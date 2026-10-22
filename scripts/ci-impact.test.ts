@@ -64,8 +64,8 @@ test('routes actual local and copied inputs without changing registry-pinned con
     });
 });
 
-import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -85,15 +85,15 @@ for (const workflow of ['project', 'generator']) {
       if (id === 'impact') continue;
       expect(job.if).toBe('always()');
       expect(job.needs).toContain('impact');
-      if (
+      const conditionalSteps =
         id !== 'validation' &&
         !(
           workflow === 'project' && ['format', 'lint-code', 'lint-markdown', 'spellcheck', 'documentation'].includes(id)
         )
-      ) {
-        for (const step of job.steps.slice(2))
-          expect(step.if).toMatch(/needs\.impact\.outputs\.(project|generator|native|frontmatterCandidate|packages)/);
-      }
+          ? job.steps.slice(2)
+          : [];
+      for (const step of conditionalSteps)
+        expect(step.if).toMatch(/needs\.impact\.outputs\.(project|generator|native|frontmatterCandidate|packages)/);
       const guard = job.steps[0];
       const command = guard.run.match(/node -e '(.*)'/)[1];
       if (checked.has(command)) continue;
@@ -158,7 +158,7 @@ test('package jobs execute only selected workspaces and pack those tested candid
           RUNNER_TEMP: directory,
         },
       });
-      expect(result.status, result.stderr.toString()).toBe(0);
+      expect(result.status).toBe(0);
     }
     const executed = readFileSync(log, 'utf8').trim().split('\n');
     expect(executed).toEqual([
@@ -171,6 +171,32 @@ test('package jobs execute only selected workspaces and pack those tested candid
       'run typecheck --workspace @rm-industries/markdownlint-frontmatter',
       'test --workspace @rm-industries/markdownlint-frontmatter',
     ]);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('renames crossing ownership boundaries select both old and new consumers', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'forge-rename-'));
+  const git = (...args: string[]) => execFileSync('git', args, { cwd: directory, encoding: 'utf8' }).trim();
+  try {
+    git('init', '--quiet');
+    mkdirSync(join(directory, 'docs'));
+    writeFileSync(join(directory, 'docs/a.md'), '# Page\n');
+    git('add', '.');
+    git('-c', 'user.name=CI test', '-c', 'user.email=ci@example.invalid', 'commit', '--quiet', '-m', 'base');
+    const base = git('rev-parse', 'HEAD');
+    mkdirSync(join(directory, 'packages/content-model'), { recursive: true });
+    git('mv', 'docs/a.md', 'packages/content-model/a.md');
+    git('-c', 'user.name=CI test', '-c', 'user.email=ci@example.invalid', 'commit', '--quiet', '-m', 'rename');
+    const output = join(directory, 'output');
+    const result = spawnSync(process.execPath, [fileURLToPath(new URL('./ci-impact.ts', import.meta.url))], {
+      cwd: directory,
+      env: { ...process.env, GITHUB_OUTPUT: output, CI_BASE_SHA: base, CI_HEAD_SHA: git('rev-parse', 'HEAD') },
+    });
+    expect(result.status).toBe(0);
+    expect(readFileSync(output, 'utf8')).toContain('website=true\n');
+    expect(readFileSync(output, 'utf8')).toContain('packages=content-model markdownlint-frontmatter\n');
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

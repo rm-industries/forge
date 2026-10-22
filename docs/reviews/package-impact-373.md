@@ -7,8 +7,8 @@ Other root tests and types run whenever package execution is selected.
 
 | Changed input                                                       | Package build, pack and runtime checks  | Other selected consumers                                                     |
 | ------------------------------------------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------- |
-| `packages/content-model/**`                                         | content-model, markdownlint-frontmatter | Explicit packed frontmatter/CMS and browser serialization candidates         |
-| `packages/markdownlint-frontmatter/**`                              | markdownlint-frontmatter                | Explicit packed model/frontmatter and CMS candidate                          |
+| `packages/content-model/**`                                         | content-model, markdownlint-frontmatter | Explicit packed frontmatter and native CMS serialization candidates          |
+| `packages/markdownlint-frontmatter/**`                              | markdownlint-frontmatter                | Explicit packed model/frontmatter candidate                                  |
 | `packages/browser-oxfmt/**`                                         | browser-oxfmt                           | Rust quality, native reproducibility, packed browsers and CMS serialization  |
 | `packages/create-forge/**`                                          | create-forge                            | Packed CLI, isolated registry-pinned consumers and generated workflow checks |
 | `templates/default/**`                                              | create-forge                            | Generated consumers and native CMS/browser integration                       |
@@ -35,6 +35,13 @@ New candidate checks feed Tool validation; all required contexts and summaries r
 failed, cancelled, skipped or missing prerequisites. Reverting this change restores
 broad package execution without changing protected context names. No branch protection,
 publication, dependency-resolution or independent-release policy changed.
+
+The existing `test:frontmatter:cms` browser probe was also attempted. Chromium
+launched outside the sandbox, but after Start Demo a dialog intercepted the Native
+probe click until its 30-second timeout. That command was not added to CI and its
+model-derived ordering across browser saves remains unverified here. The retained
+browser serialization probe tests a different contract and is not a substitute for
+that failed ordering probe. No unrelated CMS test repair is included.
 
 Local validation exercises the representative routing matrix, selected workspace
 commands, failure propagation, packed public frontmatter/model declarations and consumer

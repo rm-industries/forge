@@ -13,7 +13,7 @@ interface Step {
 }
 
 interface Job {
-  if?: string | undefined;
+  if?: string | boolean | undefined;
   outputs?: Record<string, string> | undefined;
   needs?: string | string[] | undefined;
   steps?: Step[] | undefined;
