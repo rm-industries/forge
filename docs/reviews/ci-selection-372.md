@@ -19,3 +19,8 @@ To roll back, revert the selection commit; the original broad execution and cont
 names return together. Any future consolidation of required contexts needs a separate
 approved protection migration. Local workflow contracts validate selection and guard
 behavior; live GitHub runs are still needed to establish runner and protection behavior.
+
+**Tool validation** and **Generator validation** summarize every job in their own
+workflow, including impact selection. They fail when any prerequisite fails or is
+cancelled or skipped. These new summaries are additional checks; adopting them as
+required contexts must be separately approved before removing existing protections.

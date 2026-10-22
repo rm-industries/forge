@@ -559,3 +559,29 @@ jobs:
       - name: Verify static quality tools
         if: needs.impact.outputs.generator == 'true'
         run: npm run verify:template:static
+  validation:
+    name: Generator validation
+    if: always()
+    needs:
+      [
+        push,
+        impact,
+        package,
+        consumer-compatibility,
+        quality,
+        validate-build,
+        browser,
+        lighthouse,
+        security,
+        syntax,
+        scenarios,
+        static-tool-regressions,
+      ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful impact selection and prerequisites
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          SELECTED: ${{ needs.impact.outputs.generator }}
+        run: |-
+          node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'

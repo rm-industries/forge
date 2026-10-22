@@ -45,9 +45,6 @@ jobs:
           SELECTED: ${{ needs.impact.outputs.project }}
         run: |-
           node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'
-      - name: Report unaffected validation
-        if: needs.impact.outputs.project == 'false'
-        run: echo 'This validation is unaffected by the complete change set.'
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -72,9 +69,6 @@ jobs:
           SELECTED: ${{ needs.impact.outputs.project }}
         run: |-
           node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'
-      - name: Report unaffected validation
-        if: needs.impact.outputs.project == 'false'
-        run: echo 'This validation is unaffected by the complete change set.'
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -99,9 +93,6 @@ jobs:
           SELECTED: ${{ needs.impact.outputs.project }}
         run: |-
           node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'
-      - name: Report unaffected validation
-        if: needs.impact.outputs.project == 'false'
-        run: echo 'This validation is unaffected by the complete change set.'
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -126,9 +117,6 @@ jobs:
           SELECTED: ${{ needs.impact.outputs.project }}
         run: |-
           node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'
-      - name: Report unaffected validation
-        if: needs.impact.outputs.project == 'false'
-        run: echo 'This validation is unaffected by the complete change set.'
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -153,9 +141,6 @@ jobs:
           SELECTED: ${{ needs.impact.outputs.project }}
         run: |-
           node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'
-      - name: Report unaffected validation
-        if: needs.impact.outputs.project == 'false'
-        run: echo 'This validation is unaffected by the complete change set.'
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -431,3 +416,31 @@ jobs:
     needs:
       - impact
       - build
+  validation:
+    name: Tool validation
+    if: always()
+    needs:
+      [
+        push,
+        run,
+        impact,
+        format,
+        lint-code,
+        lint-markdown,
+        spellcheck,
+        documentation,
+        typecheck,
+        test,
+        native,
+        build,
+        pack,
+        compatibility,
+      ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful impact selection and prerequisites
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          SELECTED: ${{ needs.impact.outputs.project }}
+        run: |-
+          node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'
