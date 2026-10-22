@@ -7,7 +7,10 @@ import { site } from '../src/config/site.ts';
 import { resolveSiteHref } from '../src/lib/paths.ts';
 
 const previewOrigin = 'http://127.0.0.1:4321';
-const auditedPaths = ['/', '/articles/', '/articles/designing-a-calm-starting-point/'] as const;
+// Audit configured public navigation; article/content accessibility is covered by browser tests.
+const auditedPaths = [...new Set(['/', ...site.navigation.map(({ href }) => href)])].filter(
+  (path) => path.startsWith('/') && !path.startsWith('//'),
+);
 
 export const getLighthouseUrls = (siteUrl: string, origin = previewOrigin): string[] => {
   const deployment = getDeploymentConfig(siteUrl);

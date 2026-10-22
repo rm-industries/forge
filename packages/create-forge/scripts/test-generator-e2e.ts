@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { access, copyFile, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -159,6 +159,66 @@ try {
   await access(join(defaultDirectory, '.github', 'workflows', 'automation.yml'));
   await access(join(defaultDirectory, '.github', 'workflows', 'project.yml'));
   await access(join(defaultDirectory, '.github', 'workflows', 'security.yml'));
+
+  // Exercise shipped commands on the packed default, then on consumer-owned customization.
+  const runConsumer = async (commands: string[]) => {
+    for (const command of commands) {
+      await execute('npm', ['run', command], { cwd: defaultDirectory, maxBuffer: 20 * 1024 * 1024 });
+    }
+  };
+  await runConsumer(['test', 'build', 'validate:build']);
+  await execute('npm', ['exec', '--', 'playwright', 'install', '--with-deps', 'chromium'], {
+    cwd: defaultDirectory,
+    maxBuffer: 20 * 1024 * 1024,
+  });
+  const starterTests = await readdir(join(packageDirectory, 'fixtures', 'starter-tests'));
+  for (const name of starterTests) {
+    await copyFile(
+      join(packageDirectory, 'fixtures', 'starter-tests', name),
+      join(defaultDirectory, 'tests', `starter-${name}`),
+    );
+  }
+  const runBrowser = () =>
+    execute('npm', ['run', 'test:e2e', '--', '--project=chromium', '--workers=2'], {
+      cwd: defaultDirectory,
+      maxBuffer: 20 * 1024 * 1024,
+    });
+  await runBrowser();
+  for (const name of starterTests) await rm(join(defaultDirectory, 'tests', `starter-${name}`));
+
+  const customize = async (directory: string): Promise<void> => {
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) await customize(path);
+      else if (!entry.name.endsWith('.test.ts') && /\.(?:ts|astro|md|css)$/u.test(entry.name)) {
+        const original = await readFile(path, 'utf8');
+        const updated = original
+          .replaceAll('/about/', '/studio/')
+          .replaceAll('designing-a-calm-starting-point', 'our-first-story')
+          .replaceAll('Designing a calm starting point', 'Our first story')
+          .replaceAll('A useful foundation, not a finished identity.', 'Meet our studio')
+          .replace("darkTheme: FlavorName = 'mocha'", "darkTheme: FlavorName = 'macchiato'");
+        if (updated !== original) await writeFile(path, updated);
+      }
+    }
+  };
+  await customize(join(defaultDirectory, 'src'));
+  await rename(join(defaultDirectory, 'src/pages/about.astro'), join(defaultDirectory, 'src/pages/studio.astro'));
+  await rename(
+    join(defaultDirectory, 'src/content/articles/designing-a-calm-starting-point.md'),
+    join(defaultDirectory, 'src/content/articles/our-first-story.md'),
+  );
+  await runConsumer(['test', 'build', 'validate:build']);
+  await runBrowser();
+  console.log('Verified default starter and customized consumer unit, build and Chromium commands.');
+  await access(join(defaultDirectory, 'dist/studio/index.html'));
+  const customizedArticle = await readFile(join(defaultDirectory, 'dist/articles/our-first-story/index.html'), 'utf8');
+  if (
+    !customizedArticle.includes('Our first story') ||
+    (await exists(join(defaultDirectory, 'dist/about/index.html')))
+  ) {
+    throw new Error('The customized consumer must build edited content and replace the starter route.');
+  }
 
   const explicitDirectory = join(projectsDirectory, 'explicit-site');
   await runGenerator(executable, projectsDirectory, [
@@ -449,7 +509,7 @@ try {
     throw new Error('Conflict fixture did not fail safely with its existing filesystem state intact.');
   }
 
-  console.log(`Verified ${tarball} across 11 isolated generator behavior fixtures.`);
+  console.log(`Verified ${tarball} across 11 isolated generator behavior fixtures and consumer customization.`);
 } finally {
   await rm(fixtureDirectory, { recursive: true, force: true });
 }

@@ -43,6 +43,15 @@ describe('generated build validation', () => {
     await expect(validateBuild(await createFixture())).resolves.toBeUndefined();
   });
 
+  test('accepts replaced starter routes and articles', async () => {
+    const fixture = await createFixture();
+    await rm(join(fixture, 'about'), { recursive: true });
+    await rm(join(fixture, 'articles'), { recursive: true });
+    await mkdir(join(fixture, 'work'));
+    await writeFile(join(fixture, 'work/index.html'), '<main>Our work</main>');
+    await expect(validateBuild(fixture)).resolves.toBeUndefined();
+  });
+
   test('reports a missing required output path', async () => {
     const fixture = await createFixture();
     await rm(join(fixture, 'rss.xml'));
