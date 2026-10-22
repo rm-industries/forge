@@ -13,6 +13,8 @@ interface Step {
 }
 
 interface Job {
+  if?: string | undefined;
+  outputs?: Record<string, string> | undefined;
   needs?: string | string[] | undefined;
   steps?: Step[] | undefined;
   uses?: string | undefined;
@@ -22,6 +24,8 @@ interface Workflow {
   on: {
     push?: { paths?: string[] | undefined } | null | undefined;
     pull_request?: { paths?: string[] | undefined } | null | undefined;
+    schedule?: { cron: string }[] | undefined;
+    workflow_dispatch?: null | undefined;
   };
   concurrency?:
     | {
@@ -76,12 +80,7 @@ const download = (workflow: Workflow, job: string, name: string, path: string) =
 describe('generated website CI contract', () => {
   it('watches website content and automation build inputs without filtering required validation', () => {
     for (const event of ['push', 'pull_request'] as const) {
-      expect(website.on[event]?.paths).toEqual([
-        'website/**',
-        'docs/**',
-        '.github/workflows/website.yml',
-        '.github/actions/setup-project/**',
-      ]);
+      expect(website.on[event]).not.toHaveProperty('paths');
       expect(automation.on[event]?.paths).toEqual(['.github/**']);
       expect(generator.on[event]).not.toHaveProperty('paths');
       expect(project.on[event]).not.toHaveProperty('paths');
@@ -124,16 +123,49 @@ describe('generated website CI contract', () => {
 });
 
 describe('Forge website CI contract', () => {
-  it('mirrors the generated workflow graph with website-scoped paths', () => {
+  it('keeps content accessibility and budgets while scheduling broad browser coverage', () => {
+    expect(website.on).toHaveProperty('workflow_dispatch');
+    expect(website.on.schedule).toHaveLength(1);
+    for (const name of [
+      'format',
+      'spellcheck',
+      'lint-code',
+      'lint-styles',
+      'lint-markdown',
+      'audit-unused',
+      'typecheck',
+      'unit-tests',
+    ]) {
+      expect(dependencies(job(website, name))).toEqual(['impact']);
+      expect(job(website, name).if).toBe("needs.impact.outputs.website == 'true'");
+    }
+    expect(job(website, 'impact').outputs?.['full-browsers']).toBe('${{ steps.impact.outputs.website-full-browsers }}');
+    expect(steps(website, 'browser-tests').find((step) => step.run?.includes('npm run test:e2e'))).toMatchObject({
+      env: { FULL_BROWSERS: '${{ needs.impact.outputs.full-browsers }}' },
+    });
+    expect(commands(website).join('\n')).toContain('npm run test:e2e -- --project=chromium');
+    expect(job(website, 'lighthouse').if).toBeUndefined();
+    expect(job(website, 'deploy').if).toBe("github.event_name == 'push' && github.ref == 'refs/heads/main'");
+  });
+
+  it('selects website work before its production graph', () => {
     for (const name of ['build', 'validate-build', 'browser-tests', 'lighthouse']) {
-      expect(dependencies(job(website, name)).sort()).toEqual(dependencies(job(template, name)).sort());
+      expect(
+        dependencies(job(website, name))
+          .filter((dependency) => dependency !== 'impact')
+          .sort(),
+      ).toEqual(dependencies(job(template, name)).sort());
     }
     expect(commands(website).filter((command) => command.includes('npm run build'))).toEqual(['npm run build']);
     expect(website.concurrency?.['cancel-in-progress']).toBe("${{ github.event_name == 'pull_request' }}");
   });
 
   it('matches consumer deployment gates, smoke safeguards and browser evidence policy', () => {
-    expect(dependencies(job(website, 'deploy')).sort()).toEqual(dependencies(job(template, 'deploy')).sort());
+    expect(
+      dependencies(job(website, 'deploy'))
+        .filter((dependency) => dependency !== 'impact')
+        .sort(),
+    ).toEqual(dependencies(job(template, 'deploy')).sort());
     expect(job(website, 'smoke-deployed')).toHaveProperty('timeout-minutes', 10);
     expect(steps(website, 'smoke-deployed').find((step) => step.run?.includes('test:smoke'))?.run).toBe(
       'test -n "$DEPLOYMENT_URL"\nnpm run test:smoke\n',
