@@ -12,27 +12,59 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  package:
-    name: Package generator candidate
+  impact:
+    name: Select validation impact
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      project: ${{ steps.impact.outputs.project }}
+      generator: ${{ steps.impact.outputs.generator }}
+      website: ${{ steps.impact.outputs.website }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+          fetch-depth: 0
+      - id: impact
+        uses: $/.github/actions/ci-impact
+  package:
+    name: Package generator candidate
+    needs: [impact]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Require successful impact selection and prerequisites
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          SELECTED: ${{ needs.impact.outputs.generator }}
+        run: |-
+          node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'
+      - name: Report unaffected validation
+        if: needs.impact.outputs.generator == 'false'
+        run: echo 'This validation is unaffected by the complete change set.'
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: needs.impact.outputs.generator == 'true'
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: needs.impact.outputs.generator == 'true'
         with:
           node-version: 26.x
       - name: Install Forge dependencies
+        if: needs.impact.outputs.generator == 'true'
         run: npm ci
       - name: Build and package CLI once
+        if: needs.impact.outputs.generator == 'true'
         run: |-
           npm run build --workspace @rm-industries/create-forge
           mkdir -p "$RUNNER_TEMP/forge-packages"
           npm pack --ignore-scripts --workspace @rm-industries/create-forge --pack-destination "$RUNNER_TEMP/forge-packages"
           mv "$RUNNER_TEMP/forge-packages/"*.tgz "$RUNNER_TEMP/forge-packages/create-forge.tgz"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: needs.impact.outputs.generator == 'true'
         with:
           name: generator-package
           path: ${{ runner.temp }}/forge-packages/create-forge.tgz
@@ -40,23 +72,38 @@ jobs:
           retention-days: 7
   consumer-compatibility:
     name: Consumer compatibility (${{ matrix.runtime }})
+    if: always()
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
     needs:
+      - impact
       - package
     steps:
+      - name: Require successful impact selection and prerequisites
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          SELECTED: ${{ needs.impact.outputs.generator }}
+        run: |-
+          node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'
+      - name: Report unaffected validation
+        if: needs.impact.outputs.generator == 'false'
+        run: echo 'This validation is unaffected by the complete change set.'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: needs.impact.outputs.generator == 'true'
         with:
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: needs.impact.outputs.generator == 'true'
         with:
           node-version: ${{ matrix.node }}
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: needs.impact.outputs.generator == 'true'
         with:
           name: generator-package
           path: ${{ runner.temp }}/forge-packages
       - name: Bootstrap once on this runtime
+        if: needs.impact.outputs.generator == 'true'
         run: |- # zizmor: ignore[adhoc-packages] installs the local package artifact from this run
           mkdir -p "$RUNNER_TEMP/forge-cli"
           # Install this run's local CLI candidate to test the package consumers receive.
@@ -71,21 +118,26 @@ jobs:
           path: ${{ runner.temp }}/consumer-source.tgz
           if-no-files-found: error
           retention-days: 7
-        if: matrix.primary == true
+        if: (needs.impact.outputs.generator == 'true') && (matrix.primary == true)
       - name: Install exactly the consumer lockfile
+        if: needs.impact.outputs.generator == 'true'
         run: npm ci
         working-directory: ${{ runner.temp }}/forge-consumer
       - name: Verify locked content-model
+        if: needs.impact.outputs.generator == 'true'
         run: node scripts/verify-consumer-lock.ts "$RUNNER_TEMP/forge-consumer"
       - name: Check consumer types
+        if: needs.impact.outputs.generator == 'true'
         run: npm run typecheck
         working-directory: ${{ runner.temp }}/forge-consumer
       - name: Run consumer unit tests
+        if: needs.impact.outputs.generator == 'true'
         run: if [ "$PRIMARY" = true ]; then npm run test:coverage; else npm test; fi
         working-directory: ${{ runner.temp }}/forge-consumer
         env:
           PRIMARY: ${{ matrix.primary }}
       - name: Build consumer once on this runtime
+        if: needs.impact.outputs.generator == 'true'
         run: npm run build
         working-directory: ${{ runner.temp }}/forge-consumer
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -94,14 +146,14 @@ jobs:
           path: ${{ runner.temp }}/forge-consumer/dist
           if-no-files-found: error
           retention-days: 7
-        if: matrix.primary == true
+        if: (needs.impact.outputs.generator == 'true') && (matrix.primary == true)
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: consumer-coverage
           path: ${{ runner.temp }}/forge-consumer/coverage
           if-no-files-found: error
           retention-days: 7
-        if: always() && matrix.primary == true
+        if: (needs.impact.outputs.generator == 'true') && (always() && matrix.primary == true)
     strategy:
       fail-fast: false
       matrix:
@@ -129,97 +181,151 @@ jobs:
             major: '26'
   quality:
     name: Consumer source quality
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: read
     needs:
+      - impact
       - consumer-compatibility
     steps:
+      - name: Require successful impact selection and prerequisites
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          SELECTED: ${{ needs.impact.outputs.generator }}
+        run: |-
+          node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'
+      - name: Report unaffected validation
+        if: needs.impact.outputs.generator == 'false'
+        run: echo 'This validation is unaffected by the complete change set.'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: needs.impact.outputs.generator == 'true'
         with:
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: needs.impact.outputs.generator == 'true'
         with:
           node-version: 26.x
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: needs.impact.outputs.generator == 'true'
         with:
           name: consumer-source
           path: ${{ runner.temp }}/consumer-artifacts
       - name: Restore the canonical consumer
+        if: needs.impact.outputs.generator == 'true'
         run: |-
           mkdir -p "$RUNNER_TEMP/forge-consumer"
           tar -xzf "$RUNNER_TEMP/consumer-artifacts/consumer-source.tgz" -C "$RUNNER_TEMP/forge-consumer"
       - name: Install consumer dependencies
+        if: needs.impact.outputs.generator == 'true'
         run: npm ci
         working-directory: ${{ runner.temp }}/forge-consumer
       - name: Check consumer source quality
+        if: needs.impact.outputs.generator == 'true'
         run: npm run format && npm run lint:code -- --format github && npm run lint:css && npm run lint:markdown && npm run spellcheck && npm run audit:unused
         working-directory: ${{ runner.temp }}/forge-consumer
   validate-build:
     name: Consumer build validation
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: read
     needs:
+      - impact
       - consumer-compatibility
     steps:
+      - name: Require successful impact selection and prerequisites
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          SELECTED: ${{ needs.impact.outputs.generator }}
+        run: |-
+          node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'
+      - name: Report unaffected validation
+        if: needs.impact.outputs.generator == 'false'
+        run: echo 'This validation is unaffected by the complete change set.'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: needs.impact.outputs.generator == 'true'
         with:
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: needs.impact.outputs.generator == 'true'
         with:
           node-version: 26.x
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: needs.impact.outputs.generator == 'true'
         with:
           name: consumer-source
           path: ${{ runner.temp }}/consumer-artifacts
       - name: Restore the canonical consumer
+        if: needs.impact.outputs.generator == 'true'
         run: |-
           mkdir -p "$RUNNER_TEMP/forge-consumer"
           tar -xzf "$RUNNER_TEMP/consumer-artifacts/consumer-source.tgz" -C "$RUNNER_TEMP/forge-consumer"
       - name: Install consumer dependencies
+        if: needs.impact.outputs.generator == 'true'
         run: npm ci
         working-directory: ${{ runner.temp }}/forge-consumer
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: needs.impact.outputs.generator == 'true'
         with:
           name: consumer-build
           path: ${{ runner.temp }}/forge-consumer/dist
       - name: Validate the shared production artifact
+        if: needs.impact.outputs.generator == 'true'
         run: npm run validate:build
         working-directory: ${{ runner.temp }}/forge-consumer
   browser:
     name: Consumer browser tests
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: read
     needs:
+      - impact
       - consumer-compatibility
     steps:
+      - name: Require successful impact selection and prerequisites
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          SELECTED: ${{ needs.impact.outputs.generator }}
+        run: |-
+          node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'
+      - name: Report unaffected validation
+        if: needs.impact.outputs.generator == 'false'
+        run: echo 'This validation is unaffected by the complete change set.'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: needs.impact.outputs.generator == 'true'
         with:
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: needs.impact.outputs.generator == 'true'
         with:
           node-version: 26.x
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: needs.impact.outputs.generator == 'true'
         with:
           name: consumer-source
           path: ${{ runner.temp }}/consumer-artifacts
       - name: Restore the canonical consumer
+        if: needs.impact.outputs.generator == 'true'
         run: |-
           mkdir -p "$RUNNER_TEMP/forge-consumer"
           tar -xzf "$RUNNER_TEMP/consumer-artifacts/consumer-source.tgz" -C "$RUNNER_TEMP/forge-consumer"
       - name: Install consumer dependencies
+        if: needs.impact.outputs.generator == 'true'
         run: npm ci
         working-directory: ${{ runner.temp }}/forge-consumer
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: needs.impact.outputs.generator == 'true'
         with:
           name: consumer-build
           path: ${{ runner.temp }}/forge-consumer/dist
       - name: Install supported browsers
+        if: needs.impact.outputs.generator == 'true'
         run: npx playwright install --with-deps chromium firefox webkit
         working-directory: ${{ runner.temp }}/forge-consumer
       - name: Test the shared production artifact
+        if: needs.impact.outputs.generator == 'true'
         run: npm run test:e2e
         working-directory: ${{ runner.temp }}/forge-consumer
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -230,40 +336,59 @@ jobs:
             ${{ runner.temp }}/forge-consumer/test-results
           if-no-files-found: ignore
           retention-days: 7
-        if: always()
+        if: (needs.impact.outputs.generator == 'true') && (always())
   lighthouse:
     name: Consumer Lighthouse budgets
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: read
     needs:
+      - impact
       - consumer-compatibility
     steps:
+      - name: Require successful impact selection and prerequisites
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          SELECTED: ${{ needs.impact.outputs.generator }}
+        run: |-
+          node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'
+      - name: Report unaffected validation
+        if: needs.impact.outputs.generator == 'false'
+        run: echo 'This validation is unaffected by the complete change set.'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: needs.impact.outputs.generator == 'true'
         with:
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: needs.impact.outputs.generator == 'true'
         with:
           node-version: 26.x
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: needs.impact.outputs.generator == 'true'
         with:
           name: consumer-source
           path: ${{ runner.temp }}/consumer-artifacts
       - name: Restore the canonical consumer
+        if: needs.impact.outputs.generator == 'true'
         run: |-
           mkdir -p "$RUNNER_TEMP/forge-consumer"
           tar -xzf "$RUNNER_TEMP/consumer-artifacts/consumer-source.tgz" -C "$RUNNER_TEMP/forge-consumer"
       - name: Install consumer dependencies
+        if: needs.impact.outputs.generator == 'true'
         run: npm ci
         working-directory: ${{ runner.temp }}/forge-consumer
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: needs.impact.outputs.generator == 'true'
         with:
           name: consumer-build
           path: ${{ runner.temp }}/forge-consumer/dist
       - name: Install Chromium
+        if: needs.impact.outputs.generator == 'true'
         run: npx playwright install --with-deps chromium
         working-directory: ${{ runner.temp }}/forge-consumer
       - name: Audit the shared production artifact
+        if: needs.impact.outputs.generator == 'true'
         run: npm run lighthouse:ci
         working-directory: ${{ runner.temp }}/forge-consumer
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -273,32 +398,48 @@ jobs:
           if-no-files-found: error
           retention-days: 7
           include-hidden-files: true
-        if: always()
+        if: (needs.impact.outputs.generator == 'true') && (always())
   security:
     name: Generated workflow security
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
     needs:
+      - impact
       - consumer-compatibility
     steps:
+      - name: Require successful impact selection and prerequisites
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          SELECTED: ${{ needs.impact.outputs.generator }}
+        run: |-
+          node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'
+      - name: Report unaffected validation
+        if: needs.impact.outputs.generator == 'false'
+        run: echo 'This validation is unaffected by the complete change set.'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: needs.impact.outputs.generator == 'true'
         with:
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: needs.impact.outputs.generator == 'true'
         with:
           node-version: 26.x
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: needs.impact.outputs.generator == 'true'
         with:
           name: consumer-source
           path: ${{ runner.temp }}/consumer-artifacts
       # Zizmor mounts the workspace into Docker; runner temporary paths are not mounted.
       - name: Restore the canonical consumer
+        if: needs.impact.outputs.generator == 'true'
         run: |-
           mkdir -p .ci-consumer
           tar -xzf "$RUNNER_TEMP/consumer-artifacts/consumer-source.tgz" -C .ci-consumer
       - name: Scan generated workflows
+        if: needs.impact.outputs.generator == 'true'
         uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
         with:
           advanced-security: true
@@ -306,69 +447,140 @@ jobs:
           inputs: .ci-consumer/.github
   syntax:
     name: Generated workflow syntax
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: read
     needs:
+      - impact
       - consumer-compatibility
     steps:
+      - name: Require successful impact selection and prerequisites
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          SELECTED: ${{ needs.impact.outputs.generator }}
+        run: |-
+          node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'
+      - name: Report unaffected validation
+        if: needs.impact.outputs.generator == 'false'
+        run: echo 'This validation is unaffected by the complete change set.'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: needs.impact.outputs.generator == 'true'
         with:
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: needs.impact.outputs.generator == 'true'
         with:
           node-version: 26.x
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: needs.impact.outputs.generator == 'true'
         with:
           name: consumer-source
           path: ${{ runner.temp }}/consumer-artifacts
       - name: Restore the canonical consumer
+        if: needs.impact.outputs.generator == 'true'
         run: |-
           mkdir -p "$RUNNER_TEMP/forge-consumer"
           tar -xzf "$RUNNER_TEMP/consumer-artifacts/consumer-source.tgz" -C "$RUNNER_TEMP/forge-consumer"
       - name: Validate generated workflows
+        if: needs.impact.outputs.generator == 'true'
         uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2
         with:
           files: ${{ runner.temp }}/forge-consumer/.github/workflows/*.yml
   scenarios:
     name: Generator behavior scenarios
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: read
     needs:
+      - impact
       - package
     steps:
+      - name: Require successful impact selection and prerequisites
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          SELECTED: ${{ needs.impact.outputs.generator }}
+        run: |-
+          node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'
+      - name: Report unaffected validation
+        if: needs.impact.outputs.generator == 'false'
+        run: echo 'This validation is unaffected by the complete change set.'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: needs.impact.outputs.generator == 'true'
         with:
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: needs.impact.outputs.generator == 'true'
         with:
           node-version: 26.x
       - name: Install test harness dependencies
+        if: needs.impact.outputs.generator == 'true'
         run: npm ci
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: needs.impact.outputs.generator == 'true'
         with:
           name: generator-package
           path: ${{ runner.temp }}/forge-packages
       - name: Exercise distinct bootstrap behaviors
+        if: needs.impact.outputs.generator == 'true'
         run: node packages/create-forge/scripts/test-generator-e2e.ts
         env:
           FORGE_CLI_TARBALL: ${{ runner.temp }}/forge-packages/create-forge.tgz
   static-tool-regressions:
     name: Consumer quality tool regressions
+    needs: [impact]
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
+      - name: Require successful impact selection and prerequisites
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          SELECTED: ${{ needs.impact.outputs.generator }}
+        run: |-
+          node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'
+      - name: Report unaffected validation
+        if: needs.impact.outputs.generator == 'false'
+        run: echo 'This validation is unaffected by the complete change set.'
       - name: Checkout repository
+        if: needs.impact.outputs.generator == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
       - name: Setup Node.js
+        if: needs.impact.outputs.generator == 'true'
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 26.x
           cache: npm
           cache-dependency-path: templates/default/package-lock.json
       - name: Verify static quality tools
+        if: needs.impact.outputs.generator == 'true'
         run: npm run verify:template:static
+  validation:
+    name: Generator validation
+    if: always()
+    needs:
+      [
+        impact,
+        package,
+        consumer-compatibility,
+        quality,
+        validate-build,
+        browser,
+        lighthouse,
+        security,
+        syntax,
+        scenarios,
+        static-tool-regressions,
+      ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful impact selection and prerequisites
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          SELECTED: ${{ needs.impact.outputs.generator }}
+        run: |-
+          node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'
