@@ -166,6 +166,11 @@ try {
       await execute('npm', ['run', command], { cwd: defaultDirectory, maxBuffer: 20 * 1024 * 1024 });
     }
   };
+  const starterUnitDirectory = join(packageDirectory, 'fixtures', 'starter-unit');
+  const starterUnitTests = (await readdir(starterUnitDirectory, { recursive: true })).filter((path) =>
+    path.endsWith('.test.ts'),
+  );
+  for (const path of starterUnitTests) await copyFile(join(starterUnitDirectory, path), join(defaultDirectory, path));
   await runConsumer(['test', 'build', 'validate:build']);
   await execute('npm', ['exec', '--', 'playwright', 'install', '--with-deps', 'chromium'], {
     cwd: defaultDirectory,
@@ -185,6 +190,8 @@ try {
     });
   await runBrowser();
   for (const name of starterTests) await rm(join(defaultDirectory, 'tests', `starter-${name}`));
+
+  for (const path of starterUnitTests) await rm(join(defaultDirectory, path));
 
   const customize = async (directory: string): Promise<void> => {
     for (const entry of await readdir(directory, { withFileTypes: true })) {

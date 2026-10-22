@@ -10,7 +10,7 @@ all their scripts, tests and YAML after bootstrap. No regeneration is required.
 | -------------------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/config/site.test.ts`, `deployment.test.ts`                            | Retain       | Validate configuration, URL trust boundaries, environment overrides and CMS branding derived from current site configuration.                                                                                          |
 | `src/config/content-models/registry.test.ts`, `src/content.config.test.ts` | Retain       | Protect the shared content model and Astro collection contract rather than example article values. Adapt with intentional model changes.                                                                               |
-| `src/integrations/sveltia/{config,preview-collections,previews}.test.ts`   | Retain       | Protect CMS authentication/configuration, model-derived fields and preview registration. Keep these when replacing the public design.                                                                                  |
+| `src/integrations/sveltia/{config,preview-collections,previews}.test.ts`   | Retain       | Protect CMS authentication/configuration, model-derived fields and configured preview registration. Move exact article/tags shape and preview classes into Forge fixtures.                                             |
 | `src/lib/{articles,paths,navigation}.test.ts`                              | Retain       | Protect draft exclusion, ordering, pagination boundaries, deployment paths and link classification with synthetic content.                                                                                             |
 | `src/themes/site-theme.test.ts`                                            | Retain       | Derive expectations from configured flavors; no fixed Latte/Mocha obligation. Remove with the Catppuccin implementation if replacing the theme system.                                                                 |
 | `scripts/documentation-examples.test.ts`                                   | Retain       | Checks that the local documentation matches the shipped CMS/configuration contract.                                                                                                                                    |
@@ -24,13 +24,22 @@ all their scripts, tests and YAML after bootstrap. No regeneration is required.
 | `tests/routes.spec.ts` starter values                                      | Move         | Forge fixtures retain attribution, tags, example feed/draft values and named 404 recovery. Remove duplicated exact-text expectations from consumers.                                                                   |
 | `tests/smoke/deployment.spec.ts`                                           | Retain/adapt | Verify the real deployed page/assets, heading and mobile overflow. Remove fixed generator attribution because README explicitly permits its removal.                                                                   |
 
+The baseline proposed moving article and theme unit suites. Inspection showed their
+fixtures are synthetic and their color/default expectations derive from current configuration;
+retaining those functional contracts protects draft handling and supported theme selection
+without fixing starter names, routes or colors. Exact article/tag/preview/documentation
+values are split into Forge fixtures as proposed.
+
 ## Integration evidence and adaptation boundary
 
 The existing packed-generator end-to-end harness runs the isolated default project's public
 `test`, `build`, `validate:build` and Chromium `test:e2e` commands. Only that default fixture
 receives Forge's starter browser regression files from
 `packages/create-forge/fixtures/starter-tests/`; those files are outside the published package.
-It then removes those tests, renames About to Studio, changes a published article title/slug,
+Starter unit fixtures under `packages/create-forge/fixtures/starter-unit/` are also copied
+into the default project only, protecting the example registry/tags, preview classes and
+documentation snippet. The harness then removes both fixture sets, renames About to Studio,
+changes a published article title/slug,
 and selects another dark flavor. The same consumer commands must pass, and the built edited
 article/new route must exist while the old About output is absent. This covers actual emitted
 source and registry-pinned dependencies, without overlaying local package candidates.
