@@ -114,9 +114,16 @@ test('mirrors project and website job coverage and dependency gates across provi
       Object.keys(gitlab)
         .map((id) => id.slice(prefix.length))
         .sort(),
-    ).toEqual(Object.keys(github).sort());
+    ).toEqual(
+      Object.keys(github)
+        .filter((id) => !['impact', 'validation'].includes(id))
+        .sort(),
+    );
     for (const [id, job] of Object.entries(github)) {
-      expect(dependencyNames(gitlab[`${prefix}${id}`], prefix)).toEqual(dependencyNames(job as { needs?: string[] }));
+      if (['impact', 'validation'].includes(id)) continue;
+      expect(dependencyNames(gitlab[`${prefix}${id}`], prefix)).toEqual(
+        dependencyNames(job as { needs?: string[] }).filter((id) => !['impact', 'validation'].includes(id)),
+      );
       const commands = (job as { steps: { run?: string }[] }).steps
         .filter((step) => step.run?.startsWith('npm run ') || step.run === 'npm test')
         .map((step) => step.run?.replace(' -- --format github', ''));
@@ -141,6 +148,7 @@ test('mirrors generator package and validation flows while security scans stay o
   };
   for (const [githubId, gitlabId] of Object.entries(mirrors)) {
     const expected = dependencyNames(githubGenerator.jobs[githubId])
+      .filter((id) => !['impact', 'validation'].includes(id))
       .map((id) => dependencyMapping[id] ?? id)
       .sort();
     expect(dependencyNames(generator[gitlabId])).toEqual(expected);

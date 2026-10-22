@@ -154,7 +154,7 @@ it('keeps package correctness in project CI without repeating root checks or bui
   expect(commands(project).filter((command) => command === 'npm run build')).toHaveLength(1);
   expect(steps(project, 'test').at(-1)?.run).toBe('npm run test:root');
   expect(steps(project, 'typecheck').at(-1)?.run).toBe('npm run typecheck:root');
-  expect(dependencies(job(project, 'compatibility'))).toEqual(['build']);
+  expect(dependencies(job(project, 'compatibility'))).toEqual(['impact', 'build']);
   expect(
     steps(project, 'compatibility').some((step) =>
       step.run?.includes('npm run typecheck:workspaces && npm run test:workspaces'),
@@ -167,10 +167,10 @@ it('keeps package correctness in project CI without repeating root checks or bui
 
 describe('generator consumer verification contract', () => {
   it('bootstraps once per runtime and reuses the packaged CLI and primary artifacts', () => {
-    expect(dependencies(job(generator, 'consumer-compatibility'))).toEqual(['package']);
+    expect(dependencies(job(generator, 'consumer-compatibility'))).toEqual(['impact', 'package']);
     expect(commands(generator).filter((command) => command.includes('--node-version "$NODE_MAJOR"'))).toHaveLength(1);
     for (const consumer of ['quality', 'validate-build', 'browser', 'lighthouse', 'security', 'syntax']) {
-      expect(dependencies(job(generator, consumer))).toEqual(['consumer-compatibility']);
+      expect(dependencies(job(generator, consumer))).toEqual(['impact', 'consumer-compatibility']);
       download(generator, consumer, 'consumer-source', '${{ runner.temp }}/consumer-artifacts');
       expect(steps(generator, consumer).some((step) => step.run?.includes('npm run build'))).toBe(false);
     }
