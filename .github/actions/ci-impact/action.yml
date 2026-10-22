@@ -10,6 +10,21 @@ outputs:
   website:
     description: Website execution required
     value: ${{ steps.select.outputs.website }}
+  packages:
+    description: Selected local package workspace slugs
+    value: ${{ steps.select.outputs.packages }}
+  native:
+    description: Native Rust quality required
+    value: ${{ steps.select.outputs.native }}
+  frontmatterCandidate:
+    description: Candidate model and frontmatter CMS integration required
+    value: ${{ steps.select.outputs.frontmatterCandidate }}
+  browserCandidate:
+    description: Candidate packed browser and serialization required
+    value: ${{ steps.select.outputs.browserCandidate }}
+  website-full-browsers:
+    description: Full website browser matrix required
+    value: ${{ steps.select.outputs.websiteFullBrowsers }}
 runs:
   using: composite
   steps:

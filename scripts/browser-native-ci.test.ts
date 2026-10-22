@@ -26,7 +26,7 @@ test('checks Rust source and generates ignored native outputs in every clean bui
   ).toBe(true);
   expect(
     project.jobs.build.steps.find((step: Step) => step.uses === '$/.github/actions/setup-project')?.with?.native,
-  ).toBe('true');
+  ).toBe('${{ needs.impact.outputs.native }}');
   expect(
     browser.jobs.package.steps.find((step: Step) => step.uses === '$/.github/actions/setup-project')?.with?.native,
   ).toBe('true');
@@ -43,7 +43,7 @@ test('scans maintained Rust source while excluding downloaded upstream and gener
 test('runtime lanes restore the built engine before typechecking without installing Rust', () => {
   const steps = project.jobs.compatibility.steps as Step[];
   const restore = steps.findIndex((step) => step.run?.includes('src/generated'));
-  const check = steps.findIndex((step) => step.run?.includes('typecheck:workspaces'));
+  const check = steps.findIndex((step) => step.run?.includes('npm run typecheck --workspace'));
   expect(restore).toBeGreaterThan(-1);
   expect(check).toBeGreaterThan(restore);
   expect(steps[restore]?.run).toContain('NOTICE.md');

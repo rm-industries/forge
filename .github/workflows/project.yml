@@ -24,6 +24,9 @@ jobs:
       project: ${{ steps.impact.outputs.project }}
       generator: ${{ steps.impact.outputs.generator }}
       website: ${{ steps.impact.outputs.website }}
+      packages: ${{ steps.impact.outputs.packages }}
+      native: ${{ steps.impact.outputs.native }}
+      frontmatterCandidate: ${{ steps.impact.outputs.frontmatterCandidate }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -222,25 +225,25 @@ jobs:
       - name: Require successful impact selection and prerequisites
         env:
           NEEDS: ${{ toJSON(needs) }}
-          SELECTED: ${{ needs.impact.outputs.project }}
+          SELECTED: ${{ needs.impact.outputs.native }}
         run: |-
           node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'
       - name: Report unaffected validation
-        if: needs.impact.outputs.project == 'false'
+        if: needs.impact.outputs.native == 'false'
         run: echo 'This validation is unaffected by the complete change set.'
       - name: Checkout repository
-        if: needs.impact.outputs.project == 'true'
+        if: needs.impact.outputs.native == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
       - name: Setup project
-        if: needs.impact.outputs.project == 'true'
+        if: needs.impact.outputs.native == 'true'
         uses: $/.github/actions/setup-project
         with:
           node-version: 26.x
           native: 'true'
       - name: Check Rust formatting and Clippy
-        if: needs.impact.outputs.project == 'true'
+        if: needs.impact.outputs.native == 'true'
         run: npm run quality:native --workspace @rm-industries/browser-oxfmt
   build:
     name: Tool Build
@@ -278,15 +281,22 @@ jobs:
         uses: $/.github/actions/setup-project
         with:
           node-version: 26.x
-          native: 'true'
+          native: ${{ needs.impact.outputs.native }}
       - name: Build packages
         if: needs.impact.outputs.project == 'true'
-        run: npm run build
+        env:
+          PACKAGES: ${{ needs.impact.outputs.packages }}
+        run: |-
+          for package in $PACKAGES; do npm run build --workspace "@rm-industries/$package"; done
       - name: Package tested candidates without repeating prepack
         if: needs.impact.outputs.project == 'true'
+        env:
+          PACKAGES: ${{ needs.impact.outputs.packages }}
         run: |-
           mkdir -p "$RUNNER_TEMP/forge-packages"
-          npm pack --ignore-scripts --workspaces --pack-destination "$RUNNER_TEMP/forge-packages"
+          for package in $PACKAGES; do
+            npm pack --ignore-scripts --workspace "@rm-industries/$package" --pack-destination "$RUNNER_TEMP/forge-packages"
+          done
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: needs.impact.outputs.project == 'true'
         with:
@@ -339,6 +349,10 @@ jobs:
                   tar -tzf "$candidate" | grep -Fx "package/$entry"
                 done
                 ;;
+              *markdownlint-frontmatter*.tgz)
+                tar -tzf "$candidate" | grep -Fx 'package/dist/index.js'
+                tar -tzf "$candidate" | grep -Fx 'package/dist/index.d.ts'
+                ;;
               *create-forge*.tgz)
                 tar -tzf "$candidate" | grep -Fx 'package/dist/index.mjs'
                 tar -tzf "$candidate" | grep -Fx 'package/dist/template/package-lock.json'
@@ -389,7 +403,7 @@ jobs:
           name: project-packages
           path: ${{ runner.temp }}/forge-packages
       - name: Restore generated engine from the tested package
-        if: needs.impact.outputs.project == 'true'
+        if: needs.impact.outputs.native == 'true'
         run: |
           mkdir -p "$RUNNER_TEMP/browser-oxfmt"
           tar -xzf "$RUNNER_TEMP/forge-packages/"*browser-oxfmt*.tgz --strip-components=1 -C "$RUNNER_TEMP/browser-oxfmt"
@@ -397,9 +411,15 @@ jobs:
           cp "$RUNNER_TEMP/browser-oxfmt/NOTICE.md" packages/browser-oxfmt/NOTICE.md
       - name: Check package types and unit tests
         if: needs.impact.outputs.project == 'true'
-        run: npm run typecheck:workspaces && npm run test:workspaces
+        env:
+          PACKAGES: ${{ needs.impact.outputs.packages }}
+        run: |-
+          for package in $PACKAGES; do
+            npm run typecheck --workspace "@rm-industries/$package"
+            npm test --workspace "@rm-industries/$package"
+          done
       - name: Exercise candidate content-model exports
-        if: needs.impact.outputs.project == 'true'
+        if: contains(needs.impact.outputs.packages, 'content-model')
         run: |-
           mkdir -p "$RUNNER_TEMP/content-model-check"
           mkdir -p "$RUNNER_TEMP/content-model-check/node_modules/@rm-industries/content-model"
@@ -416,6 +436,40 @@ jobs:
     needs:
       - impact
       - build
+  frontmatter-candidate:
+    name: Candidate frontmatter and CMS compatibility
+    if: always()
+    needs: [impact, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Require successful impact selection and prerequisites
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          SELECTED: ${{ needs.impact.outputs.frontmatterCandidate }}
+        run: |-
+          node -e 'const n=JSON.parse(process.env.NEEDS); if (!Object.values(n).every(j => j.result === "success") || !["true", "false"].includes(process.env.SELECTED)) process.exit(1)'
+      - name: Report unaffected validation
+        if: needs.impact.outputs.frontmatterCandidate == 'false'
+        run: echo 'Candidate frontmatter integration is unaffected.'
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: needs.impact.outputs.frontmatterCandidate == 'true'
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup-project
+        if: needs.impact.outputs.frontmatterCandidate == 'true'
+        with:
+          node-version: 26.x
+      - name: Verify isolated packed model and frontmatter consumers
+        if: needs.impact.outputs.frontmatterCandidate == 'true'
+        run: npm run test:packed --workspace @rm-industries/markdownlint-frontmatter
+      - name: Install CMS test browser
+        if: needs.impact.outputs.frontmatterCandidate == 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Verify candidate model-derived frontmatter and CMS saves
+        if: needs.impact.outputs.frontmatterCandidate == 'true'
+        run: npm run test:frontmatter:cms
   validation:
     name: Tool validation
     if: always()
@@ -433,6 +487,7 @@ jobs:
         build,
         pack,
         compatibility,
+        frontmatter-candidate,
       ]
     runs-on: ubuntu-latest
     steps:

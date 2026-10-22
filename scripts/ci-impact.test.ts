@@ -2,27 +2,70 @@ import { expect, test } from 'vitest';
 
 import { selectCiImpact } from './ci-impact.ts';
 
-test('isolates website and docs while uncertain or shared changes retain validation', () => {
-  expect(selectCiImpact(['website/src/pages/index.astro'])).toEqual({
-    project: false,
+test('routes actual local and copied inputs without changing registry-pinned consumers', () => {
+  expect(selectCiImpact(['packages/content-model/src/index.ts'])).toMatchObject({
+    packages: 'content-model markdownlint-frontmatter',
+    project: true,
+    generator: false,
+    website: false,
+    native: false,
+    frontmatterCandidate: true,
+    browserCandidate: true,
+  });
+  expect(selectCiImpact(['packages/markdownlint-frontmatter/src/index.ts'])).toMatchObject({
+    packages: 'markdownlint-frontmatter',
+    generator: false,
+    website: false,
+    frontmatterCandidate: true,
+    browserCandidate: false,
+  });
+  expect(selectCiImpact(['packages/browser-oxfmt/native/Cargo.lock'])).toMatchObject({
+    packages: 'browser-oxfmt',
+    native: true,
+    browserCandidate: true,
+    generator: false,
+    website: false,
+  });
+  expect(selectCiImpact(['templates/default/src/pages/index.astro'])).toMatchObject({
+    packages: 'create-forge',
+    generator: true,
+    website: false,
+    native: false,
+    browserCandidate: true,
+  });
+  expect(selectCiImpact(['packages/create-forge/src/ci/github.ts'])).toMatchObject({
+    packages: 'create-forge',
+    generator: true,
+    website: false,
+  });
+  for (const path of ['docs/guide.md', 'website/src/pages/index.astro'])
+    expect(selectCiImpact([path])).toMatchObject({ project: false, generator: false, website: true, packages: '' });
+  expect(selectCiImpact(['website/a', 'packages/content-model/deleted.ts'])).toMatchObject({
+    packages: 'content-model markdownlint-frontmatter',
     generator: false,
     website: true,
   });
-  expect(selectCiImpact(['docs/guide.md'])).toEqual({ project: false, generator: false, website: true });
   for (const paths of [
     null,
     [],
-    ['package-lock.json'],
     ['unknown'],
-    ['website/a', 'packages/content-model/a'],
+    ['package-lock.json'],
+    ['.github/actions/setup-project/action.yml'],
     ['.github/workflows/project.yml'],
-  ]) {
-    expect(selectCiImpact(paths)).toEqual({ project: true, generator: true, website: true });
-  }
+  ])
+    expect(selectCiImpact(paths)).toMatchObject({
+      packages: 'browser-oxfmt content-model create-forge markdownlint-frontmatter',
+      project: true,
+      generator: true,
+      website: true,
+      native: true,
+      frontmatterCandidate: true,
+      browserCandidate: true,
+    });
 });
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -48,7 +91,8 @@ for (const workflow of ['project', 'generator']) {
           workflow === 'project' && ['format', 'lint-code', 'lint-markdown', 'spellcheck', 'documentation'].includes(id)
         )
       ) {
-        for (const step of job.steps.slice(2)) expect(step.if).toContain(`needs.impact.outputs.${workflow} == 'true'`);
+        for (const step of job.steps.slice(2))
+          expect(step.if).toMatch(/needs\.impact\.outputs\.(project|generator|native|frontmatterCandidate|packages)/);
       }
       const guard = job.steps[0];
       const command = guard.run.match(/node -e '(.*)'/)[1];
@@ -83,13 +127,50 @@ test('revision uncertainty requests broad work but an actual diff failure emits 
       env: { ...process.env, GITHUB_OUTPUT: output, CI_BASE_SHA: '0'.repeat(40), CI_HEAD_SHA: '1'.repeat(40) },
     });
     expect(unknown.status).toBe(0);
-    expect(readFileSync(output, 'utf8')).toBe('project=true\ngenerator=true\nwebsite=true\n');
+    expect(readFileSync(output, 'utf8')).toContain('project=true\ngenerator=true\nwebsite=true\n');
     rmSync(output);
     const failed = spawnSync(process.execPath, [fileURLToPath(script)], {
       env: { ...process.env, GITHUB_OUTPUT: output, CI_BASE_SHA: '1'.repeat(40), CI_HEAD_SHA: '2'.repeat(40) },
     });
     expect(failed.status).not.toBe(0);
     expect(existsSync(output)).toBe(false);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('package jobs execute only selected workspaces and pack those tested candidates', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'forge-workspaces-'));
+  const log = join(directory, 'commands');
+  try {
+    writeFileSync(join(directory, 'npm'), '#!/bin/sh\nprintf "%s\\n" "$*" >> "$COMMAND_LOG"\n', { mode: 0o755 });
+    const project = parse(readFileSync(new URL('../.github/workflows/project.yml', import.meta.url), 'utf8'));
+    const commands = [...project.jobs.build.steps, ...project.jobs.compatibility.steps]
+      .filter((step: { env?: { PACKAGES?: string } }) => step.env?.PACKAGES)
+      .map((step: { run: string }) => step.run);
+    for (const command of commands) {
+      const result = spawnSync('bash', ['-e', '-c', command], {
+        env: {
+          ...process.env,
+          PATH: `${directory}:${process.env.PATH}`,
+          PACKAGES: 'content-model markdownlint-frontmatter',
+          COMMAND_LOG: log,
+          RUNNER_TEMP: directory,
+        },
+      });
+      expect(result.status, result.stderr.toString()).toBe(0);
+    }
+    const executed = readFileSync(log, 'utf8').trim().split('\n');
+    expect(executed).toEqual([
+      'run build --workspace @rm-industries/content-model',
+      'run build --workspace @rm-industries/markdownlint-frontmatter',
+      `pack --ignore-scripts --workspace @rm-industries/content-model --pack-destination ${directory}/forge-packages`,
+      `pack --ignore-scripts --workspace @rm-industries/markdownlint-frontmatter --pack-destination ${directory}/forge-packages`,
+      'run typecheck --workspace @rm-industries/content-model',
+      'test --workspace @rm-industries/content-model',
+      'run typecheck --workspace @rm-industries/markdownlint-frontmatter',
+      'test --workspace @rm-industries/markdownlint-frontmatter',
+    ]);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

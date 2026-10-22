@@ -1,5 +1,8 @@
 # GitHub validation isolation
 
+This records the initial isolation step. [Package impact](package-impact-373.md)
+extends its conservative fallback with the actual workspace consumption graph.
+
 Project and generator workflows select impact on every pull request and main push.
 Only a complete nonempty set of paths under `website/` and `docs/` skips package
 and generator execution. Root formatting, code lint, Markdown lint, spelling and
