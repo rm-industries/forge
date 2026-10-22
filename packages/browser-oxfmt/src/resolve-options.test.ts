@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, mkdir, writeFile, symlink, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile, symlink, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -269,4 +269,127 @@ test('checks accepted question-mark and anchored literal patterns against the ma
     );
     expect((await format(filename, source, { ...resolvedOptions.options })).code).toBe(expected);
   }
+});
+
+test('uniform policy accepts the adopting site JSON override without changing CLI JSON formatting', async () => {
+  const cwd = await fixture({
+    trailingComma: 'all',
+    singleQuote: true,
+    sortImports: true,
+    sortTailwindcss: true,
+    sortPackageJson: true,
+    ignorePatterns: [],
+    overrides: [{ files: ['src/content/experience/*.json'], options: { printWidth: 1 } }],
+  });
+  await writeFile(
+    join(cwd, '.editorconfig'),
+    [
+      '[*]',
+      'charset=utf-8',
+      'trim_trailing_whitespace=true',
+      'end_of_line=lf',
+      'insert_final_newline=true',
+      'indent_style=space',
+      'indent_size=2',
+      'max_line_length=120',
+      '',
+    ].join('\n'),
+  );
+  const configPath = join(cwd, 'oxfmt.config.mjs');
+  const original = await readFile(configPath, 'utf8');
+  const cli = (filename: string, source: string) =>
+    execFileSync(
+      process.execPath,
+      [resolve('../../node_modules/oxfmt/bin/oxfmt'), '--config', configPath, '--stdin-filepath', join(cwd, filename)],
+      { cwd, input: source, encoding: 'utf8' },
+    );
+  const json = '{"roles":["Engineer","Writer"]}';
+  const expectedJson = cli('src/content/experience/future.json', json);
+  expect(expectedJson).toContain('"roles": [\n');
+  const input = { cwd, filename: 'src/content/articles/future.md' };
+  const uniform = await resolveBrowserOptions({ ...input, requireUniformPolicy: true });
+  expect(uniform).toEqual(await resolveBrowserOptions(input));
+  expect(uniform.resolvedOptions.options.printWidth).toBe(120);
+  expect(uniform.diagnostics).toEqual([expect.objectContaining({ code: 'tailwind-class-order-preserved' })]);
+  const markdown =
+    'A paragraph with enough words to verify that the Markdown policy remains the authoritative site width instead of the JSON width.\n';
+  const { format } = await import('oxfmt');
+  expect((await format(input.filename, markdown, { ...uniform.resolvedOptions.options })).code).toBe(
+    cli(input.filename, markdown),
+  );
+  expect(await readFile(configPath, 'utf8')).toBe(original);
+  expect(cli('src/content/experience/future.json', json)).toBe(expectedJson);
+  await mkdir(join(cwd, 'another-collection'));
+  await writeFile(join(cwd, 'another-collection/.editorconfig'), '[*]\nmax_line_length=40\n');
+  await expect(resolveBrowserOptions({ ...input, requireUniformPolicy: true })).rejects.toThrow(/Uniform.*nested/);
+});
+
+test.each([['*.json'], ['src/**/*.ts'], ['README.txt'], ['**/*.MD'], ['*.json', '**/*.yaml'], ['src/*.md/*.json']])(
+  'uniform policy accepts provably non-Markdown filename rules %j',
+  async (...files) => {
+    const cwd = await fixture({ overrides: [{ files, options: { printWidth: 1 } }] });
+    expect(
+      (await resolveBrowserOptions({ cwd, filename: 'future/article.md', requireUniformPolicy: true })).resolvedOptions
+        .options.printWidth,
+    ).toBe(120);
+  },
+);
+
+test.each([
+  ['**/*.md'],
+  ['future/*.md'],
+  ['*'],
+  ['**/*'],
+  ['*.json*'],
+  ['*.m?'],
+  ['*d'],
+  ['*.json', '**/*.md'],
+  ['assets.json/**'],
+])('uniform policy rejects rules that could match future Markdown targets %j', async (...files) => {
+  const cwd = await fixture({ overrides: [{ files, options: { printWidth: 1 } }] });
+  await expect(resolveBrowserOptions({ cwd, filename: 'unrelated.md', requireUniformPolicy: true })).rejects.toThrow(
+    /Uniform.*Markdown/,
+  );
+});
+
+test.each([
+  { files: ['**/*'], excludeFiles: ['*.md'] },
+  { files: ['**/*.md'], excludeFiles: ['**/*'] },
+  { files: ['docs/**/*.md', '*.json'], excludeFiles: ['docs/**'] },
+  { files: ['future?.md'], excludeFiles: ['future?.md'] },
+])('uniform policy accepts rules whose Markdown targets are completely excluded: %j', async (override) => {
+  const cwd = await fixture({ overrides: [{ ...override, options: { printWidth: 1 } }] });
+  expect(
+    (await resolveBrowserOptions({ cwd, filename: 'future/article.md', requireUniformPolicy: true })).resolvedOptions
+      .options.printWidth,
+  ).toBe(120);
+});
+
+test.each([
+  { files: ['**/*.md'], excludeFiles: ['existing.md'] },
+  { files: ['*.md'], excludeFiles: ['./*.md'] },
+  { files: ['**/*'], excludeFiles: ['*.json'] },
+  { files: ['docs/**/*.md'], excludeFiles: ['docs/existing/**'] },
+  { files: ['docs/.hidden.md'], excludeFiles: ['**/*.md'] },
+  { files: ['docs/.private/**/*.md'], excludeFiles: ['docs/**'] },
+])('uniform policy rejects partially excluded Markdown rules: %j', async (override) => {
+  const cwd = await fixture({ overrides: [{ ...override, options: { printWidth: 1 } }] });
+  await expect(resolveBrowserOptions({ cwd, filename: 'unrelated.md', requireUniformPolicy: true })).rejects.toThrow(
+    /Uniform.*Markdown/,
+  );
+});
+
+test.each([
+  { files: ['*.{json,yaml}'], options: { printWidth: 1 } },
+  { files: ['*.json'], excludeFiles: ['**/*.{md,mdx}'], options: { printWidth: 1 } },
+  { files: ['*.json'], excludeFiles: [], options: { printWidth: 1 } },
+  { files: ['../*.json'], options: { printWidth: 1 } },
+  { files: [], options: { printWidth: 1 } },
+  { files: ['*.json', 42], options: { printWidth: 1 } },
+  { files: ['*.json'], options: { semi: false } },
+])('uniform policy still validates every skipped rule: %j', async (override) => {
+  const cwd = await fixture({ overrides: [override] });
+  await expect(
+    resolveBrowserOptions({ cwd, filename: 'article.md', requireUniformPolicy: true }),
+  ).rejects.toMatchObject({ code: 'configuration' });
 });
