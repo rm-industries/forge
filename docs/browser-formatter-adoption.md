@@ -60,7 +60,8 @@ npm run test:e2e
 Use the site's actual scripts if it has evolved. The Forge project site uses
 `npm ci --prefix website` and its own scripts/lockfile; a successful root build
 is not project-site adoption evidence. Final commands and source patches must
-match the approved integration candidate, not an earlier feasibility prototype.
+be reviewed with the post-publication integration. The temporary overlay and
+its harness have been removed; the default template does not yet enable browser formatting.
 
 ## Rollback
 

@@ -39,5 +39,5 @@ runs:
       shell: bash
       run: |
         rustup toolchain install 1.97.0 --profile minimal --target wasm32-unknown-unknown --component rustfmt --component clippy
-        cargo +1.97.0 install wasm-bindgen-cli --version "$(node packages/browser-oxfmt/native/build.ts --bindings-version)" --locked
+        cargo +1.97.0 install wasm-bindgen-cli --version "$(node packages/browser-oxfmt/native/build-wasm.ts --bindings-version)" --locked
         echo 'RUSTUP_TOOLCHAIN=1.97.0' >> "$GITHUB_ENV"

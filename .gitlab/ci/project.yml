@@ -96,7 +96,7 @@ project-native:
       chmod +x /tmp/forge-rustup-init
       /tmp/forge-rustup-init -y --profile minimal --default-toolchain 1.97.0 --target wasm32-unknown-unknown --component rustfmt --component clippy
       . "$HOME/.cargo/env"
-      cargo +1.97.0 install wasm-bindgen-cli --version "$(node packages/browser-oxfmt/native/build.ts --bindings-version)" --locked
+      cargo +1.97.0 install wasm-bindgen-cli --version "$(node packages/browser-oxfmt/native/build-wasm.ts --bindings-version)" --locked
   needs: []
   script:
     - npm run quality:native --workspace @rm-industries/browser-oxfmt

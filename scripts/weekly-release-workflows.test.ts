@@ -79,7 +79,7 @@ test('engine updates validate native and browser behavior before creating a revi
   const validation = steps.findIndex((step) => step.name === 'Validate proposed engine');
   expect(steps[validation]!.run).toContain('npm run quality');
   expect(steps[validation]!.run).toContain('test:browser');
-  expect(steps[validation]!.run).toContain('template-integration.ts');
+  expect(steps[validation]!.run).toContain('sveltia-serialization.ts');
   expect(steps.findIndex((step) => step.name === 'Create GitHub App token')).toBeGreaterThan(validation);
   const push = steps.find((step) => step.name === 'Push engine upgrade branch')!.run!;
   expect(push).toContain('git ls-remote');

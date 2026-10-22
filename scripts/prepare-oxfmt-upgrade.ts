@@ -8,32 +8,26 @@ import { gt, inc, valid } from 'semver';
 
 const packageRoot = 'packages/browser-oxfmt';
 const engineFiles = [
-  'src/options.ts',
   'src/index.test.ts',
-  'src/build.test.ts',
-  'native/build.ts',
+  'src/resolve-options.test.ts',
   'native/Cargo.toml',
   'test/packed-browser.ts',
-  'test/template-integration.ts',
-  'test/template-integration.patch',
   'README.md',
 ];
 
-export function updateEngineText(text: string, previous: string, target: string, sha: string, nextSha: string) {
+export function updateEngineText(text: string, previous: string, target: string) {
   assert.equal(valid(target), target, 'Use an exact stable Oxfmt version');
   assert.ok(!target.includes('-'), 'Prerelease upgrades require manual review');
-  assert.match(nextSha, /^[a-f0-9]{40}$/);
   assert.ok(gt(target, previous), 'Engine updates must move forwards');
-  return text.replaceAll(previous, target).replaceAll(sha, nextSha);
+  return text.replaceAll(previous, target);
 }
 
 export async function prepareOxfmtUpgrade(cwd: string, target: string) {
   assert.equal(valid(target), target, 'Use an exact Oxfmt version');
   assert.ok(!target.includes('-'), 'Prerelease upgrades require manual review');
-  const options = await readFile(resolve(cwd, packageRoot, 'src/options.ts'), 'utf8');
-  const previous = /upstreamVersion: '([^']+)'/.exec(options)?.[1];
-  const sha = /sourceSha: '([^']+)'/.exec(options)?.[1];
-  assert.ok(previous && sha, 'Missing engine identity');
+  const cargoManifest = await readFile(resolve(cwd, packageRoot, 'native/Cargo.toml'), 'utf8');
+  const previous = /tag = "oxfmt_v([^"]+)"/.exec(cargoManifest)?.[1];
+  assert.ok(previous, 'Missing engine release tag');
   if (target === previous) return { changed: false, target };
   assert.ok(gt(target, previous), 'Engine updates must move forwards');
   const api = (path: string) => execFileSync('gh', ['api', `repos/oxc-project/oxc/${path}`], { encoding: 'utf8' });
@@ -49,7 +43,7 @@ export async function prepareOxfmtUpgrade(cwd: string, target: string) {
   const edits = await Promise.all(
     engineFiles.map(async (file) => {
       const path = resolve(cwd, packageRoot, file);
-      return [path, updateEngineText(await readFile(path, 'utf8'), previous, target, sha, nextSha)] as const;
+      return [path, updateEngineText(await readFile(path, 'utf8'), previous, target)] as const;
     }),
   );
   const rootPath = resolve(cwd, 'package.json');

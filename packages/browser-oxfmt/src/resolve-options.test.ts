@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 
 import { afterEach, expect, test } from 'vitest';
 
-import { resolveBrowserOptions } from './build.js';
+import { resolveBrowserOptions } from './resolve-options.js';
 
 const directories: string[] = [];
 afterEach(async () => {

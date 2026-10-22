@@ -8,7 +8,7 @@ export default defineConfig([
     external: ['./generated/engine.js'],
   },
   {
-    entry: { build: 'src/build.ts' },
+    entry: { build: 'src/resolve-options.ts' },
     format: 'esm',
     platform: 'node',
     outExtensions: () => ({ js: '.js' }),

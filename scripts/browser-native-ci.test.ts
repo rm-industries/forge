@@ -59,7 +59,7 @@ test('Cargo updates can resolve their graph without generated files and keep bin
   expect(manifest).not.toContain('path =');
   const version = /^wasm-bindgen = "=(\d+\.\d+\.\d+)"$/m.exec(manifest)?.[1];
   expect(
-    execFileSync(process.execPath, ['packages/browser-oxfmt/native/build.ts', '--bindings-version'], {
+    execFileSync(process.execPath, ['packages/browser-oxfmt/native/build-wasm.ts', '--bindings-version'], {
       encoding: 'utf8',
       env: { ...process.env, PATH: '' },
     }).trim(),

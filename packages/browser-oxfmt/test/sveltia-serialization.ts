@@ -49,7 +49,9 @@ const config = {
 const initial =
   '---\ntitle: Compatibility probe\ndescription: Before\ntags:\n  - preserved\ndraft: true\n---\n\n## Body retained\n\nOriginal **body**.\n';
 const root = resolve(dirname(require.resolve('@sveltia/cms')), '../dist');
-assert.equal(JSON.parse(await readFile(resolve(root, '../package.json'), 'utf8')).version, '0.250.0');
+const cmsVersion = JSON.parse(await readFile(resolve(root, '../package.json'), 'utf8')).version as string;
+assert.match(cmsVersion, /^0\.250\.\d+$/, 'Test the supported stable Sveltia minor line');
+console.log({ cmsVersion });
 const browser = await chromium.launch({ headless: true, ...(process.argv[3] ? { channel: process.argv[3] } : {}) });
 const server = createServer(async (req, res) => {
   try {

@@ -69,7 +69,7 @@ jobs:
           npm ci --prefix templates/default --ignore-scripts
           npm exec --prefix templates/default -- playwright install --with-deps chromium firefox webkit
           npm run test:browser --workspace @rm-industries/browser-oxfmt
-          node packages/browser-oxfmt/test/template-integration.ts
+          node packages/browser-oxfmt/test/sveltia-serialization.ts
       - name: Verify GitHub App configuration
         if: steps.prepare.outputs.changed == 'true'
         env:
@@ -135,7 +135,7 @@ jobs:
           printf '%s\n' \
             "Update native Oxfmt to ${TARGET_VERSION} and prepare browser-oxfmt ${PACKAGE_VERSION}." \
             '' \
-            'Validated with repository quality, packed browser parity and CMS integration checks.' \
+            'Validated with repository quality, packed browser parity and native CMS serialization checks.' \
             'Review formatting changes and supported options before merging. Publication uses the existing protected release process.' > "$body_file"
           if [[ -n "$pull_request" ]]; then
             pull_request_url=$(gh pr view "$pull_request" --json url --jq .url)

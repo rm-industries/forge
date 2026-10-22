@@ -16,10 +16,6 @@ export default defineConfig({
     { filename: 'packages/browser-oxfmt/src/worker.test.ts', words: ['unstub'] },
     { filename: ['.github/**', '.gitlab/**'], words: ['rustup', 'clippy', 'bindgen', 'RUSTUP'] },
     {
-      filename: 'packages/browser-oxfmt/test/template-integration.patch',
-      words: ['astrojs', 'vite', 'vitest', 'frontmatter'],
-    },
-    {
       filename: 'packages/browser-oxfmt/**',
       words: ['bindgen', 'Embedder', 'rustc', 'RUSTFLAGS', 'rustfmt', 'clippy', 'rustup'],
     },

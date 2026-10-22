@@ -93,18 +93,22 @@ The weekly **Browser Oxfmt Engine Updates** workflow (also available manually)
 resolves the registry release to its upstream Git tag, updates coordinated pins,
 regenerates both lockfiles, and prepares a browser package patch and changelog.
 It opens a PR only after repository quality, packed browser parity and CMS
-integration checks pass. Existing update branches are preserved for review.
+serialization checks pass. Existing update branches are preserved for review.
 It reuses `PEER_UPGRADE_APP_CLIENT_ID` and `PEER_UPGRADE_APP_PRIVATE_KEY`.
 Review supported options and formatting changes before merging; publication
 continues through the protected release process. Dependabot handles other npm
 and Cargo dependencies. Failed engine checks require maintainer intervention.
 
-The CMS checks live beside the package tests: `sveltia-serialization.ts` verifies
-Sveltia's native serialization API, and `template-integration.ts` builds and tests
-the actual Astro template with `template-integration.patch`. The patch is a gated
-adoption overlay, applied only to a temporary template copy until the required
-package versions are published; generated projects do not apply it. It keeps the
-current published template installable while testing the pending integration.
+`test/sveltia-serialization.ts` verifies the native CMS serialization contract.
+The temporary template overlay and its integration harness have been removed.
+Default-template adoption follows package publication in a separate reviewed
+change; end-to-end CMS save and recovery coverage must be restored with that wiring.
+
+`native/build-wasm.ts` compiles the Rust adapter, generates browser bindings and
+license notices, and verifies cached output. It derives the engine version from
+Cargo's release tag and the exact source commit from Cargo metadata. The Node
+configuration helper is implemented in `src/resolve-options.ts` and remains
+available to consumers at `@rm-industries/browser-oxfmt/build`.
 
 ## Build from source
 
@@ -118,7 +122,7 @@ Building a fresh Git checkout requires Rust 1.97.0 with the
 
 ```sh
 rustup toolchain install 1.97.0 --profile minimal --component rustfmt --component clippy --target wasm32-unknown-unknown
-cargo +1.97.0 install wasm-bindgen-cli --version "$(node packages/browser-oxfmt/native/build.ts --bindings-version)" --locked
+cargo +1.97.0 install wasm-bindgen-cli --version "$(node packages/browser-oxfmt/native/build-wasm.ts --bindings-version)" --locked
 RUSTUP_TOOLCHAIN=1.97.0 npm run build --workspace @rm-industries/browser-oxfmt
 ```
 

@@ -21,16 +21,16 @@ Neither `@rm-industries/browser-oxfmt@0.1.0` nor
   minimums or actual Safari support guarantees.
 - [Sveltia compatibility](sveltia-0.250-compatibility.md) records the bound native
   serialization callback and recoverable failures against Sveltia `0.250.0`.
-- [Configuration](browser-oxfmt-configuration.md) and the
-  [gated template candidate](browser-oxfmt-template-candidate.md) provide the
-  authoritative build helper, source overlay, standalone template checks, and
-  installed-consumer CMS tests. Uniform CMS policy rejects filename exclusions
-  because Sveltia supplies no filename to its global callback.
+- [Configuration](browser-oxfmt-configuration.md) documents the build helper
+  and installed-consumer checks. Uniform CMS policy rejects filename exclusions
+  because Sveltia supplies no filename to its global callback. The temporary
+  template overlay and its harness were removed by maintainer request; template
+  adoption and renewed end-to-end save/recovery checks follow npm publication.
 - Full repository quality at `237d9e6` passed formatting, lint, types, 223 tests,
   builds, and all three package dry runs. The two-axis review found no blocking
   standards violations; its configuration exclusion finding was reproduced,
   fixed, and verified with a regression test and reviewer recheck.
-- [Final Linux candidate verification](https://github.com/rm-industries/forge/actions/runs/39633224804)
+- Historical [Linux candidate verification](https://github.com/rm-industries/forge/actions/runs/39633224804)
   passed all 30 actual CMS save and recovery scenarios: Chromium 156.0.8078.4,
   Firefox 157.0, and WebKit 27.2, with zero failures. The same run passed
   native rebuild reproducibility, package contracts and

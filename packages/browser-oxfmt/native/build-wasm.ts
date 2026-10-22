@@ -10,12 +10,13 @@ const native = dirname(fileURLToPath(import.meta.url));
 const packageRoot = resolve(native, '..');
 const root = resolve(packageRoot, '../..');
 const generated = join(packageRoot, 'src/generated');
-const sourceSha = '2bd08ebe8f36fcf1954a675ffdeb4c6d0129f609';
 // Keep the JS bindings CLI aligned with Cargo when Dependabot updates wasm-bindgen.
 const manifest = await readFile(join(native, 'Cargo.toml'), 'utf8');
+const upstreamVersion = /tag = "oxfmt_v([^"]+)"/.exec(manifest)?.[1];
+assert.ok(upstreamVersion, 'Select an Oxfmt release tag in native/Cargo.toml');
 const bindingsVersion = /^wasm-bindgen = "=(\d+\.\d+\.\d+)"$/m.exec(manifest)?.[1];
 assert.ok(bindingsVersion, 'Pin wasm-bindgen to an exact version in native/Cargo.toml');
-const inputs = ['Cargo.toml', 'Cargo.lock', 'src/lib.rs', 'src/markdown_adapter.rs', 'build.ts'];
+const inputs = ['Cargo.toml', 'Cargo.lock', 'src/lib.rs', 'src/markdown_adapter.rs', 'build-wasm.ts'];
 const outputs = ['engine.js', 'engine_bg.wasm', 'engine.d.ts', 'engine_bg.wasm.d.ts'];
 const hash = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
 function run(command: string, args: string[], options: Omit<SpawnSyncOptions, 'encoding'> = {}) {
@@ -145,10 +146,10 @@ async function main() {
     }[];
   };
   const upstreamPackage = metadata.packages.find((pkg) => pkg.name === 'oxc_formatter_markdown');
-  assert.ok(
-    upstreamPackage && upstreamPackage.source?.endsWith(`#${sourceSha}`),
-    'Keep the Oxfmt source revision aligned with the supported engine',
-  );
+  assert.ok(upstreamPackage, 'Cargo metadata must include the Markdown formatter');
+  assert.equal(upstreamPackage.version, upstreamVersion, 'Cargo must match the selected Oxfmt release');
+  const sourceSha = upstreamPackage.source?.split('#').at(-1);
+  assert.match(sourceSha ?? '', /^[a-f0-9]{40}$/, 'Cargo must resolve an exact upstream commit');
   const upstreamRoot = resolve(dirname(upstreamPackage.manifest_path), '../..');
   const fenced = (text: string) => {
     const fence = '`'.repeat(Math.max(3, ...[...text.matchAll(/`+/g)].map((match) => match[0].length + 1)));
@@ -187,7 +188,7 @@ async function main() {
     join(generated, 'identity.json'),
     JSON.stringify(
       {
-        upstreamVersion: '0.72.0',
+        upstreamVersion,
         buildPlatform: process.platform,
         buildArch: process.arch,
         sourceSha,

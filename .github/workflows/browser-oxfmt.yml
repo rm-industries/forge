@@ -65,15 +65,7 @@ jobs:
           npm exec --prefix templates/default -- playwright install --with-deps chromium firefox webkit
       - name: Verify isolated packed consumers
         run: npm run test:browser --workspace @rm-industries/browser-oxfmt
-      - name: Verify gated Astro and CMS formatting candidate
-        env:
-          FORGE_CMS_ARTIFACT_DIR: ${{ runner.temp }}/forge-cms-evidence
-        run: node packages/browser-oxfmt/test/template-integration.ts
-      - name: Preserve candidate verification evidence
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: browser-oxfmt-template-candidate
-          path: ${{ runner.temp }}/forge-cms-evidence
-          if-no-files-found: warn
-          retention-days: 7
+      - name: Verify native CMS serialization contract
+        run: |
+          npm run build --workspace @rm-industries/content-model
+          node packages/browser-oxfmt/test/sveltia-serialization.ts
