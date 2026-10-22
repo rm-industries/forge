@@ -564,7 +564,6 @@ jobs:
     if: always()
     needs:
       [
-        push,
         impact,
         package,
         consumer-compatibility,

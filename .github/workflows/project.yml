@@ -421,8 +421,6 @@ jobs:
     if: always()
     needs:
       [
-        push,
-        run,
         impact,
         format,
         lint-code,
