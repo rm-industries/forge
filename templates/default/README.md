@@ -353,3 +353,20 @@ The normal starter does not yet enable the unpublished independent front matter
 ordering plugin. After its release, follow the
 [selective adoption and rollback guide](https://github.com/rm-industries/forge/blob/main/fixtures/frontmatter-adoption/README.md)
 with the reviewed plugin version and a regenerated registry-only lockfile.
+
+## Adapting tests
+
+Your tests and scripts are owned source. Browser accessibility checks discover
+public pages from the production build, so replace example articles, About routes
+and theme colors freely. Run `npm test`, `npm run build`, `npm run validate:build`
+and `npm run test:e2e` after editing. Install Playwright browsers first when needed.
+Lighthouse audits the current internal links in `site.navigation`; include routes
+that represent your important page types and keep performance/accessibility budgets
+appropriate to your product.
+
+Keep CMS configuration/model tests, draft filtering, URL validation, unresolved-token
+checks, accessibility and deployment smoke protection. Adapt capability checks when
+intentionally removing RSS, relocating the CMS or replacing the content/theme system.
+Add keyboard/focus tests for your own interactive components. Starter navigation,
+article names and exact palette assertions are tested within Forge instead of being
+requirements for your site; Forge's starter test fixtures can serve as examples.
