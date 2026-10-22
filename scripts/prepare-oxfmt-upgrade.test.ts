@@ -51,6 +51,9 @@ test('prepares coordinated source pins and release metadata from a verified tag'
     expect(plan).toMatchObject({ changed: true, target, sourceSha: nextSha });
     const read = (path: string) => readFile(join(cwd, path), 'utf8');
     expect(JSON.parse(await read('package.json')).devDependencies.oxfmt).toBe(target);
+    const browserManifest = JSON.parse(await read('packages/browser-oxfmt/package.json'));
+    expect(browserManifest.peerDependencies.oxfmt).toBe(target);
+    expect(browserManifest.peerDependenciesMeta.oxfmt.optional).toBe(true);
     expect(await read('packages/browser-oxfmt/native/Cargo.toml')).toContain(`tag = "oxfmt_v${target}"`);
     expect(await read('packages/browser-oxfmt/CHANGELOG.md')).toContain(`## ${plan.packageVersion}`);
   } finally {

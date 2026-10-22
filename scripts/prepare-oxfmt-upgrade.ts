@@ -52,6 +52,7 @@ export async function prepareOxfmtUpgrade(cwd: string, target: string) {
   edits.push([rootPath, `${JSON.stringify(root, null, 2)}\n`]);
   const manifestPath = resolve(cwd, packageRoot, 'package.json');
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+  manifest.peerDependencies.oxfmt = target;
   manifest.version = inc(manifest.version, 'patch');
   assert.ok(manifest.version);
   edits.push([manifestPath, `${JSON.stringify(manifest, null, 2)}\n`]);

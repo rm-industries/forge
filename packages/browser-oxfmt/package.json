@@ -40,6 +40,14 @@
   "dependencies": {
     "editorconfig": "3.0.2"
   },
+  "peerDependencies": {
+    "oxfmt": "0.72.0"
+  },
+  "peerDependenciesMeta": {
+    "oxfmt": {
+      "optional": true
+    }
+  },
   "engines": {
     "node": "^22.22.2 || ^24.0.0 || ^26.0.0",
     "npm": "^10.9.0 || ^11.0.0"

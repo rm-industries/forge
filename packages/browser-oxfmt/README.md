@@ -110,6 +110,11 @@ Cargo's release tag and the exact source commit from Cargo metadata. The Node
 configuration helper is implemented in `src/resolve-options.ts` and remains
 available to consumers at `@rm-industries/browser-oxfmt/build`.
 
+The optional `oxfmt` peer dependency declares the exact supported version for
+users of the Node `/build` configuration helper. Install that version alongside
+this package when resolving project configuration. Browser-only consumers use
+the bundled engine and do not need to install Oxfmt.
+
 ## Build from source
 
 Published npm packages include the generated worker bindings, WASM and license
