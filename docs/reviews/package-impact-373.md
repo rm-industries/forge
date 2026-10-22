@@ -31,7 +31,7 @@ and manual events without revisions request broad validation. The website action
 exposes a full-browser flag: only complete docs Markdown changes can narrow its matrix.
 
 The existing 27 required contexts, permissions and release gates remain unchanged.
-New candidate checks feed Tool validation; all required contexts and summaries reject
+New candidate checks feed Tool validation and the existing required Tool Pack gate; all required contexts and summaries reject
 failed, cancelled, skipped or missing prerequisites. Reverting this change restores
 broad package execution without changing protected context names. No branch protection,
 publication, dependency-resolution or independent-release policy changed.

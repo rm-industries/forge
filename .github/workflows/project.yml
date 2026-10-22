@@ -313,6 +313,7 @@ jobs:
     needs:
       - impact
       - build
+      - frontmatter-candidate
     steps:
       - name: Require successful impact selection and prerequisites
         env:

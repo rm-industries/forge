@@ -17,7 +17,7 @@ outputs:
     description: Native Rust quality required
     value: ${{ steps.select.outputs.native }}
   frontmatterCandidate:
-    description: Candidate model and frontmatter CMS integration required
+    description: Candidate model and frontmatter integration required
     value: ${{ steps.select.outputs.frontmatterCandidate }}
   browserCandidate:
     description: Candidate packed browser and serialization required
