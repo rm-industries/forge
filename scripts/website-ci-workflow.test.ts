@@ -13,7 +13,7 @@ interface Step {
 }
 
 interface Job {
-  if?: string | undefined;
+  if?: string | boolean | undefined;
   outputs?: Record<string, string> | undefined;
   needs?: string | string[] | undefined;
   steps?: Step[] | undefined;
@@ -183,13 +183,15 @@ describe('Forge website CI contract', () => {
 });
 
 it('keeps package correctness in project CI without repeating root checks or builds in runtime lanes', () => {
-  expect(commands(project).filter((command) => command === 'npm run build')).toHaveLength(1);
+  expect(
+    commands(project).filter((command) => command.includes('for package in $PACKAGES; do npm run build --workspace')),
+  ).toHaveLength(1);
   expect(steps(project, 'test').at(-1)?.run).toBe('npm run test:root');
   expect(steps(project, 'typecheck').at(-1)?.run).toBe('npm run typecheck:root');
   expect(dependencies(job(project, 'compatibility'))).toEqual(['impact', 'build']);
   expect(
-    steps(project, 'compatibility').some((step) =>
-      step.run?.includes('npm run typecheck:workspaces && npm run test:workspaces'),
+    steps(project, 'compatibility').some(
+      (step) => step.run?.includes('npm run typecheck --workspace') && step.run.includes('npm test --workspace'),
     ),
   ).toBe(true);
   expect(
