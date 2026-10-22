@@ -102,8 +102,10 @@ test('GitLab checks reuse the canonical consumer instead of regenerating it', ()
 const githubProject = read('../.github/workflows/project.yml');
 const githubGenerator = read('../.github/workflows/generator.yml');
 const githubWebsite = read('../.github/workflows/website.yml');
-const dependencyNames = (job: { needs?: (string | { job: string })[] }, prefix = '') =>
-  (job.needs ?? []).map((need) => (typeof need === 'string' ? need : need.job).slice(prefix.length)).sort();
+const dependencyNames = (job: { needs?: string | (string | { job: string })[] }, prefix = '') =>
+  (typeof job.needs === 'string' ? [job.needs] : (job.needs ?? []))
+    .map((need) => (typeof need === 'string' ? need : need.job).slice(prefix.length))
+    .sort();
 
 test('mirrors project and website job coverage and dependency gates across providers', () => {
   for (const [github, gitlab, prefix] of [
@@ -116,13 +118,15 @@ test('mirrors project and website job coverage and dependency gates across provi
         .sort(),
     ).toEqual(
       Object.keys(github)
-        .filter((id) => !['impact', 'validation'].includes(id))
+        .filter((id) => !['impact', 'validation', 'frontmatter-candidate'].includes(id))
         .sort(),
     );
     for (const [id, job] of Object.entries(github)) {
-      if (['impact', 'validation'].includes(id)) continue;
+      if (['impact', 'validation', 'frontmatter-candidate'].includes(id)) continue;
       expect(dependencyNames(gitlab[`${prefix}${id}`], prefix)).toEqual(
-        dependencyNames(job as { needs?: string[] }).filter((id) => !['impact', 'validation'].includes(id)),
+        dependencyNames(job as { needs?: string[] }).filter(
+          (id) => !['impact', 'validation', 'frontmatter-candidate'].includes(id),
+        ),
       );
       const commands = (job as { steps: { run?: string }[] }).steps
         .filter((step) => step.run?.startsWith('npm run ') || step.run === 'npm test')
@@ -148,7 +152,7 @@ test('mirrors generator package and validation flows while security scans stay o
   };
   for (const [githubId, gitlabId] of Object.entries(mirrors)) {
     const expected = dependencyNames(githubGenerator.jobs[githubId])
-      .filter((id) => !['impact', 'validation'].includes(id))
+      .filter((id) => !['impact', 'validation', 'frontmatter-candidate'].includes(id))
       .map((id) => dependencyMapping[id] ?? id)
       .sort();
     expect(dependencyNames(generator[gitlabId])).toEqual(expected);

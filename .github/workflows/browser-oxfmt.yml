@@ -3,15 +3,6 @@ name: Browser Oxfmt Package
 
 on: # yamllint disable-line rule:truthy
   pull_request:
-    paths:
-      - packages/browser-oxfmt/**
-      - .github/workflows/browser-oxfmt.yml
-      - .github/actions/setup-project/**
-      - package-lock.json
-      - templates/default/**
-      - oxfmt.config.ts
-      - oxlint.config.ts
-      - cspell.config.ts
   workflow_dispatch:
 
 permissions: {}
@@ -29,22 +20,49 @@ env:
   CARGO_TARGET_DIR: ${{ github.workspace }}/.browser-oxfmt-target
 
 jobs:
+  impact:
+    name: Select validation impact
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      browserCandidate: ${{ steps.impact.outputs.browserCandidate }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - id: impact
+        uses: $/.github/actions/ci-impact
   package:
+    needs: [impact]
+    if: always()
     name: Rebuild native assets and verify packed browsers
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
+      - name: Require successful impact selection
+        env:
+          RESULT: ${{ needs.impact.result }}
+          SELECTED: ${{ needs.impact.outputs.browserCandidate }}
+        run: test "$RESULT" = success && [[ "$SELECTED" = true || "$SELECTED" = false ]]
+      - name: Report unaffected validation
+        if: needs.impact.outputs.browserCandidate == 'false'
+        run: echo 'Packed browser candidate integration is unaffected.'
       - name: Checkout repository
+        if: needs.impact.outputs.browserCandidate == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
       - name: Setup project dependencies
+        if: needs.impact.outputs.browserCandidate == 'true'
         uses: $/.github/actions/setup-project
         with:
           node-version: 26.8.1
           native: 'true'
       - name: Rebuild verified native release assets
+        if: needs.impact.outputs.browserCandidate == 'true'
         run: |
           npm run build:native --workspace @rm-industries/browser-oxfmt -- --force
           cp packages/browser-oxfmt/src/generated/identity.json /tmp/browser-oxfmt-first.json
@@ -53,19 +71,24 @@ jobs:
           cmp /tmp/browser-oxfmt-first.json packages/browser-oxfmt/src/generated/identity.json
           cmp /tmp/browser-oxfmt-first-notices.md packages/browser-oxfmt/NOTICE.md
       - name: Check Rust formatting and Clippy
+        if: needs.impact.outputs.browserCandidate == 'true'
         run: npm run quality:native --workspace @rm-industries/browser-oxfmt
       - name: Verify package contracts
+        if: needs.impact.outputs.browserCandidate == 'true'
         run: |
           npm run typecheck --workspace @rm-industries/browser-oxfmt
           npm test --workspace @rm-industries/browser-oxfmt
           npm run build --workspace @rm-industries/browser-oxfmt
       - name: Install existing browser test tools
+        if: needs.impact.outputs.browserCandidate == 'true'
         run: |
           npm ci --prefix templates/default --ignore-scripts
           npm exec --prefix templates/default -- playwright install --with-deps chromium firefox webkit
       - name: Verify isolated packed consumers
+        if: needs.impact.outputs.browserCandidate == 'true'
         run: npm run test:browser --workspace @rm-industries/browser-oxfmt
       - name: Verify native CMS serialization contract
+        if: needs.impact.outputs.browserCandidate == 'true'
         run: |
           npm run build --workspace @rm-industries/content-model
           node packages/browser-oxfmt/test/sveltia-serialization.ts
