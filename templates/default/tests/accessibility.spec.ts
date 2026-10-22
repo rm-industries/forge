@@ -2,7 +2,8 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-import { publicRoutes, resolvePreviewPath } from './preview';
+import { publicRoutes } from './pages';
+import { resolvePreviewPath } from './preview';
 
 const analyzePage = async (page: Page) => {
   const results = await new AxeBuilder({ page })

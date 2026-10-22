@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
 
 import { site } from '../src/config/site';
-import { publicRoutes, resolvePreviewPath, resolvePreviewUrl } from './preview';
+import { publicRoutes } from './pages';
+import { resolvePreviewPath, resolvePreviewUrl } from './preview';
 
 test('serves every baseline page with configured canonical and social metadata', async ({ page }) => {
   for (const route of [...publicRoutes.filter((path) => path !== '/does-not-exist/'), '/admin/']) {
