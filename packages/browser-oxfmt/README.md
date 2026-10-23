@@ -1,6 +1,6 @@
 # Browser Oxfmt
 
-Native Oxfmt 0.72.0 Markdown formatting in a reusable module worker. The package
+Native Oxfmt 0.74.0 Markdown formatting in a reusable module worker. The package
 ships precompiled WebAssembly and maintained wasm-bindgen bindings. Consumer
 installation and website builds need no Rust toolchain.
 
@@ -8,7 +8,7 @@ installation and website builds need no Rust toolchain.
 import { format, engine } from '@rm-industries/browser-oxfmt';
 
 const text = await format(source, 'article.md', {
-  upstreamVersion: '0.72.0',
+  upstreamVersion: '0.74.0',
   options: {
     printWidth: 120,
     tabWidth: 2,

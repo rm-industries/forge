@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 
 import { format, engine, BrowserOxfmtError, type ResolvedOptions } from './index.js';
 const resolved: ResolvedOptions = {
-  upstreamVersion: '0.72.0',
+  upstreamVersion: '0.74.0',
   options: {
     printWidth: 120,
     tabWidth: 2,
@@ -14,7 +14,7 @@ const resolved: ResolvedOptions = {
   },
 };
 test('exports the measured native engine and approved Tailwind limitation', () => {
-  expect(engine.upstreamVersion).toBe('0.72.0');
+  expect(engine.upstreamVersion).toBe('0.74.0');
   expect(engine.capabilities.tailwindClassSorting).toBe(false);
 });
 test('rejects invalid source and filenames before creating a worker', async () => {
