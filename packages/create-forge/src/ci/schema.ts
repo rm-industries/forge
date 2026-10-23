@@ -106,10 +106,14 @@ export const githubWorkflowSchema = z
 const rule = z
   .strictObject({
     variables: values.optional(),
+    changes: z.strictObject({ paths: nonEmptyStringsSchema }).optional(),
     if: nonEmptyStringSchema.optional(),
     when: z.enum(['never', 'always', 'on_success']).optional(),
   })
-  .refine((value) => value.if !== undefined || value.when !== undefined, 'Rule requires a condition or when');
+  .refine(
+    (value) => value.if !== undefined || value.when !== undefined || value.changes !== undefined,
+    'Rule requires a condition or when',
+  );
 export const gitlabJobSchema = z.strictObject({
   resource_group: nonEmptyStringSchema.optional(),
   image: imageSchema,

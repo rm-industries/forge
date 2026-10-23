@@ -1,0 +1,92 @@
+---
+name: Markdownlint Frontmatter Package
+
+on: # yamllint disable-line rule:truthy
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packages/markdownlint-frontmatter/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - 'tsconfig.verification.json'
+      - '.github/actions/setup-project/action.yml'
+      - '.github/workflows/markdownlint-frontmatter.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'packages/markdownlint-frontmatter/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - 'tsconfig.verification.json'
+      - '.github/actions/setup-project/action.yml'
+      - '.github/workflows/markdownlint-frontmatter.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '29 7 * * 1'
+
+permissions: {}
+
+concurrency:
+  group: markdownlint-frontmatter-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  package:
+    name: Build and inspect package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup-project
+        with:
+          node-version: 26.x
+      - name: Build package once
+        run: npm run build --workspace @rm-industries/markdownlint-frontmatter
+      - name: Inspect publishable files
+        run: |
+          npm pack --dry-run --ignore-scripts --json --workspace @rm-industries/markdownlint-frontmatter > "$RUNNER_TEMP/package-files.json"
+          node --input-type=module - "$RUNNER_TEMP/package-files.json" dist/index.js dist/index.d.ts <<'CHECK'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const [manifest] = JSON.parse(readFileSync(process.argv[2], 'utf8'));
+          for (const entry of process.argv.slice(3)) {
+            assert(manifest.files.some(file => file.path === entry), `Missing publishable file: ${entry}`);
+          }
+          CHECK
+  compatibility:
+    name: Runtime (${{ matrix.runtime }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runtime: minimum Node 22
+            node-version: 22.22.2
+          - runtime: latest Node 22
+            node-version: 22.x
+          - runtime: latest Node 24
+            node-version: 24.x
+          - runtime: latest Node 26
+            node-version: 26.x
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup-project
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Check package types and unit tests
+        run: |
+          npm run typecheck --workspace @rm-industries/markdownlint-frontmatter
+          npm test --workspace @rm-industries/markdownlint-frontmatter

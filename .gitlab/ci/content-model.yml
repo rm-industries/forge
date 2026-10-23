@@ -1,0 +1,43 @@
+.content-model:
+  extends: .node
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"
+    - changes:
+        - packages/content-model/**/*
+        - package.json
+        - package-lock.json
+        - tsconfig.json
+        - tsconfig.verification.json
+        - .github/actions/setup-project/action.yml
+        - .github/workflows/content-model.yml
+        - .gitlab-ci.yml
+        - .gitlab/ci/setup.yml
+        - .gitlab/ci/content-model.yml
+content-model-package:
+  extends: .content-model
+  script:
+    - npm run build --workspace @rm-industries/content-model
+    - |-
+      npm pack --dry-run --ignore-scripts --json --workspace @rm-industries/content-model > /tmp/package-files.json
+      node --input-type=module - /tmp/package-files.json dist/index.js dist/index.d.ts dist/astro.js dist/astro.d.ts dist/sveltia.js dist/sveltia.d.ts <<'CHECK'
+      import assert from 'node:assert/strict';
+      import { readFileSync } from 'node:fs';
+      const [manifest] = JSON.parse(readFileSync(process.argv[2], 'utf8'));
+      for (const entry of process.argv.slice(3)) {
+        assert(manifest.files.some(file => file.path === entry), `Missing publishable file: ${entry}`);
+      }
+      CHECK
+content-model-runtime:
+  extends:
+    - .content-model
+    - .runtime
+  script:
+    - npm run typecheck --workspace @rm-industries/content-model
+    - npm test --workspace @rm-industries/content-model
+  artifacts:
+    when: always
+    expire_in: 7 days
+    paths:
+      - packages/content-model/test-results/unit.xml
+    reports:
+      junit: packages/content-model/test-results/unit.xml

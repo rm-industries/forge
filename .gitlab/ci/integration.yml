@@ -1,0 +1,32 @@
+model-cms-integration:
+  extends: .native
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"
+    - changes:
+        - scripts/verify-frontmatter-model.test.ts
+        - packages/browser-oxfmt/test/sveltia-serialization.ts
+        - scripts/vitest.config.ts
+        - package.json
+        - package-lock.json
+        - tsconfig.json
+        - tsconfig.verification.json
+        - .npmrc
+        - .github/actions/setup-project/**/*
+        - .github/workflows/integration.yml
+        - .gitlab-ci.yml
+        - .gitlab/ci/setup.yml
+        - .gitlab/ci/integration.yml
+  script:
+    - npm run test:integration
+    - npx tsc --project tsconfig.verification.json --noEmit
+    - npm run build --workspace @rm-industries/content-model
+    - npm run build --workspace @rm-industries/browser-oxfmt
+    - npx playwright install --with-deps chromium
+    - node packages/browser-oxfmt/test/sveltia-serialization.ts node_modules/playwright-core/index.mjs
+  artifacts:
+    when: always
+    expire_in: 7 days
+    paths:
+      - test-results/unit.xml
+    reports:
+      junit: test-results/unit.xml

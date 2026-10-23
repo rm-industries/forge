@@ -43,6 +43,9 @@ the same preparer registry independently.
 
 ## Verification evidence
 
+The static-tool negative-fixture runner used during this historical verification
+has since been retired. Normal formatting, lint, type, and audit commands remain.
+
 On the final review fixes, `npm run quality` passed formatting, lint,
 spelling, documentation links, typechecking, all 236 tests (65 root, 32
 content-model, 112 generator, 27 plugin), builds, and workspace pack dry runs.
@@ -83,7 +86,6 @@ npm run quality
 npm run test:packed --workspace @rm-industries/markdownlint-frontmatter
 node scripts/verify-frontmatter-adoption.ts
 npm run test:frontmatter:cms
-npm run verify:template:static
 npm run test:generator:e2e
 ```
 

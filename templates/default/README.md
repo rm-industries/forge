@@ -353,3 +353,45 @@ The normal starter does not yet enable the unpublished independent front matter
 ordering plugin. After its release, follow the
 [selective adoption and rollback guide](https://github.com/rm-industries/forge/blob/main/fixtures/frontmatter-adoption/README.md)
 with the reviewed plugin version and a regenerated registry-only lockfile.
+
+## Adapting tests
+
+Your tests and scripts are owned source. Browser accessibility checks discover
+public pages from the production build, so replace example articles, About routes
+and theme colors freely. Run `npm test`, `npm run build`, `npm run validate:build`
+and `npm run test:e2e` after editing. Install Playwright browsers first when needed.
+Lighthouse audits the current internal links in `site.navigation`; include routes
+that represent your important page types and keep performance/accessibility budgets
+appropriate to your product.
+
+Keep CMS configuration/model tests, draft filtering, URL validation, unresolved-token
+checks, accessibility and deployment smoke protection. Adapt capability checks when
+intentionally removing RSS, relocating the CMS or replacing the content/theme system.
+Add keyboard/focus tests for your own interactive components. Starter navigation,
+article names and exact palette assertions are tested within Forge instead of being
+requirements for your site; Forge's starter test fixtures can serve as examples.
+
+### Check execution
+
+The project workflow keeps named checks visible on every pull request. Nested sites
+select their own directory, repository-root files, shared `scripts/`, `config/`,
+`packages/` and hidden configuration directories. Independent sibling directories
+produce a successful no-op. Root sites conservatively validate all changes. Extend
+these editable conditions when adding imports, workspace packages or other inputs
+outside the generated site; unknown changes inside an owned input always validate.
+
+Normal pull requests and pushes run browser/accessibility checks in Chromium.
+Weekly Tuesday and manually dispatched GitHub runs exercise Chromium, Firefox and
+WebKit. Lighthouse runs on pushes, weekly and manual runs, so a selected deployment
+still waits for budget validation before publishing. Pull requests avoid repeating
+that expensive audit immediately before the merge push. Local `npm run test:e2e`
+still runs all three browsers; `npm run lighthouse:ci` remains available locally.
+
+GitHub's `Validation` result fails if selection or any necessary check fails,
+gets cancelled or unexpectedly skips. Require it after observing your own workflow
+runs. GitLab uses native pipeline status, matching job/deployment change rules and
+an explicit no-op job for unaffected nested sites. To enable weekly GitLab broad
+coverage, create a pipeline schedule for your default branch in GitLab; scheduled
+and manually started pipelines run every check and browser. Neither provider
+publishes from scheduled/manual validation. Existing push-only primary-provider
+deployment and post-deployment smoke tests remain the publishing path.

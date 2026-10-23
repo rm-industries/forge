@@ -15,7 +15,9 @@ declare global {
 }
 const require = createRequire(import.meta.url);
 const { chromium } = (await import(
-  pathToFileURL(resolve(process.argv[2] ?? 'templates/default/node_modules/playwright/index.mjs')).href
+  process.argv[2]
+    ? pathToFileURL(resolve(process.argv[2])).href
+    : new URL('../../../node_modules/playwright-core/index.mjs', import.meta.url).href
 )) as typeof import('playwright-core');
 const { defineModel } = (await import(
   new URL('../../content-model/dist/index.js', import.meta.url).href

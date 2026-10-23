@@ -57,7 +57,9 @@ work around it; upgrade Markdownlint instead.
 
 Run `npm test --workspace @rm-industries/markdownlint-frontmatter` for public API
 coverage, and `npm run test:packed --workspace @rm-industries/markdownlint-frontmatter`
-for an isolated consumer test of the built npm artifact.
+for an isolated consumer test of the built npm artifact. Both run without a
+content-model checkout. Cross-package model/Sveltia compatibility is owned by
+`npm run test:root` in the repository integration suite.
 
 ## Shared content models and CLI2
 

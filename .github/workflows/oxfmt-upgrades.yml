@@ -66,8 +66,7 @@ jobs:
         if: steps.prepare.outputs.changed == 'true'
         run: |
           npm run quality
-          npm ci --prefix templates/default --ignore-scripts
-          npm exec --prefix templates/default -- playwright install --with-deps chromium firefox webkit
+          npx playwright install --with-deps chromium firefox webkit
           npm run test:browser --workspace @rm-industries/browser-oxfmt
           node packages/browser-oxfmt/test/sveltia-serialization.ts
       - name: Verify GitHub App configuration

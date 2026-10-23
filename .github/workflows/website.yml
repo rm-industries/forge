@@ -6,18 +6,27 @@ on: # yamllint disable-line rule:truthy
     branches:
       - main
     paths:
-      - 'website/**'
-      - 'docs/**'
-      - '.github/workflows/website.yml'
-      - '.github/actions/setup-project/**'
+      - website/**
+      - docs/**
+      - package.json
+      - package-lock.json
+      - .npmrc
+      - .github/actions/setup-project/**
+      - .github/workflows/website.yml
   push:
     branches:
       - main
     paths:
-      - 'website/**'
-      - 'docs/**'
-      - '.github/workflows/website.yml'
-      - '.github/actions/setup-project/**'
+      - website/**
+      - docs/**
+      - package.json
+      - package-lock.json
+      - .npmrc
+      - .github/actions/setup-project/**
+      - .github/workflows/website.yml
+  workflow_dispatch:
+  schedule:
+    - cron: '41 7 * * 1'
 
 permissions: {}
 
@@ -302,7 +311,7 @@ jobs:
           cache-dependency-path: website/package-lock.json
           working-directory: website
 
-      - name: Install supported browsers
+      - name: Install browsers
         run: npx playwright install --with-deps chromium firefox webkit
 
       - name: Download production build

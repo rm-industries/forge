@@ -1,0 +1,43 @@
+.markdownlint-frontmatter:
+  extends: .node
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"
+    - changes:
+        - packages/markdownlint-frontmatter/**/*
+        - package.json
+        - package-lock.json
+        - tsconfig.json
+        - tsconfig.verification.json
+        - .github/actions/setup-project/action.yml
+        - .github/workflows/markdownlint-frontmatter.yml
+        - .gitlab-ci.yml
+        - .gitlab/ci/setup.yml
+        - .gitlab/ci/markdownlint-frontmatter.yml
+markdownlint-frontmatter-package:
+  extends: .markdownlint-frontmatter
+  script:
+    - npm run build --workspace @rm-industries/markdownlint-frontmatter
+    - |-
+      npm pack --dry-run --ignore-scripts --json --workspace @rm-industries/markdownlint-frontmatter > /tmp/package-files.json
+      node --input-type=module - /tmp/package-files.json dist/index.js dist/index.d.ts <<'CHECK'
+      import assert from 'node:assert/strict';
+      import { readFileSync } from 'node:fs';
+      const [manifest] = JSON.parse(readFileSync(process.argv[2], 'utf8'));
+      for (const entry of process.argv.slice(3)) {
+        assert(manifest.files.some(file => file.path === entry), `Missing publishable file: ${entry}`);
+      }
+      CHECK
+markdownlint-frontmatter-runtime:
+  extends:
+    - .markdownlint-frontmatter
+    - .runtime
+  script:
+    - npm run typecheck --workspace @rm-industries/markdownlint-frontmatter
+    - npm test --workspace @rm-industries/markdownlint-frontmatter
+  artifacts:
+    when: always
+    expire_in: 7 days
+    paths:
+      - packages/markdownlint-frontmatter/test-results/unit.xml
+    reports:
+      junit: packages/markdownlint-frontmatter/test-results/unit.xml

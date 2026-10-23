@@ -50,8 +50,10 @@
     "website:test:coverage": "npm run test:coverage --prefix website",
     "quality": "npm run quality:native --workspace @rm-industries/browser-oxfmt && npm run format && npm run lint && npm run typecheck && npm test && npm run build && npm run pack",
     "verify:template": "node scripts/verify-template.ts",
-    "verify:template:static": "node scripts/verify-template-static-quality.ts",
-    "test:frontmatter:cms": "npm run build --workspace @rm-industries/content-model && npm run build --workspace @rm-industries/markdownlint-frontmatter && node scripts/verify-frontmatter-cms.ts"
+    "test:frontmatter:cms": "npm run build --workspace @rm-industries/content-model && npm run build --workspace @rm-industries/markdownlint-frontmatter && node scripts/verify-frontmatter-cms.ts",
+    "test:contracts": "vitest run --config scripts/vitest.config.ts --exclude scripts/verify-frontmatter-model.test.ts",
+    "test:integration": "vitest run --config scripts/vitest.config.ts scripts/verify-frontmatter-model.test.ts",
+    "test:template:customization": "node scripts/test-template.ts customization"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",

@@ -42,18 +42,6 @@ try {
   assert.deepEqual(Object.keys(manifest.dependencies), ['yaml']);
   assert.deepEqual(manifest.exports, { '.': { types: './dist/index.d.ts', default: './dist/index.js' } });
   assert.deepEqual(manifest.publishConfig, { access: 'public', tag: 'latest' });
-  const modelRoot = resolve(packageRoot, '../content-model');
-  execFileSync('npm', ['run', 'build'], { cwd: modelRoot, stdio: 'inherit' });
-  const modelPackOutput: unknown = JSON.parse(
-    execFileSync('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', consumer], {
-      cwd: modelRoot,
-      encoding: 'utf8',
-    }),
-  );
-  assert.ok(Array.isArray(modelPackOutput) && modelPackOutput.length === 1);
-  const modelPacked: unknown = modelPackOutput[0];
-  assert.ok(typeof modelPacked === 'object' && modelPacked !== null);
-  assert.ok('filename' in modelPacked && typeof modelPacked.filename === 'string');
   writeFileSync(join(consumer, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
   execFileSync(
     'npm',
@@ -63,7 +51,6 @@ try {
       '--no-audit',
       '--no-fund',
       join(consumer, packed.filename),
-      join(consumer, modelPacked.filename),
       'markdownlint@0.42.0',
       'typescript@7.0.2',
       'markdown-it@15.0.3',

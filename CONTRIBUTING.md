@@ -56,14 +56,25 @@ npm run test:e2e
 
 ## Continuous integration
 
-Pull requests and pushes to `main` run the repository quality gate and validate
-a copy of the default template outside the workspace on every supported Node.js
-line. Workflow syntax and security checks run when repository or
-generated-template workflow files change, and the `Automation` aggregate
-provides one result for that conditional validation. It must not be configured
-as a globally required check. These jobs use committed lockfiles and do not
-require globally installed project tools. The required contexts and evidence
-strategy are documented in [Continuous integration](docs/continuous-integration.md).
+Pull requests and pushes to `main` run root formatting, code/Markdown lint,
+spelling, documentation, types and tooling tests in parallel. `Repository quality`
+requires all seven checks to pass. Project workflows use native path filters for their
+own sources, consumed inputs and shared tooling; every project also offers weekly
+and manual validation. Review affected project results before merge. Integration
+tests have their own tooling triggers and weekly/manual workflow, without upstream
+package source fan-out. The sole proposed required context is `Repository quality`;
+replacing the historical 27 contexts remains a separately approved settings change.
+
+Use `npm run test:contracts` for root contracts, `npm run test:integration` for the
+model integration, and `npm run test:root` for both. Template customization uses
+`npm run test:template:customization`. Native GitLab project includes follow the
+same ownership through change rules; the old impact selector is removed.
+
+Workflow syntax/security and source security keep their existing responsibilities.
+Checks use committed lockfiles and require no globally installed project tools.
+Consumer YAML belongs to the generated project after bootstrap. Scope, coverage,
+evidence limits and safe rollback are documented in
+[Continuous integration](docs/continuous-integration.md).
 
 Actions are pinned to immutable commits, workflow permissions are denied by
 default, and superseded runs are cancelled. Keep these properties intact when
