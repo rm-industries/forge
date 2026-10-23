@@ -97,7 +97,7 @@ use temporary build outputs; importing the module before a build performs no I/O
 This retains representative content budgets without auditing every article or
 reintroducing a starter-specific slug.
 
-Review-fix verification passed prebuild template static/unused-code/type checks,
+Review-fix verification passed template static/unused-code/type checks before a build,
 38 template tests with full configured coverage, the public template build and
 root/nested Lighthouse URL selection against its output. Root 90 and generator
 117 tests plus root type checks, formatting and repository lint also pass. The
