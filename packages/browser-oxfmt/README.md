@@ -212,12 +212,28 @@ preserves class order while native CSS formatting stays enabled, and repository
 Oxfmt may reorder classes. Custom Tailwind configuration objects are unsupported.
 
 For a CMS serializer without filename or collection context, request
-`requireUniformPolicy:true`. It rejects nonempty `ignorePatterns`, filename overrides, EditorConfig sections
-other than `[*]`, and nested Oxfmt/EditorConfig files throughout `cwd`. Standard
-dependency directories and root build output directories are excluded; other symbolic links fail
-because their configuration cannot be proven uniform. Use a standalone project
-root, not a monorepo containing multiple independently configured sites. This
-mode must succeed before applying one resolved policy globally.
+`requireUniformPolicy:true`. It rejects nonempty `ignorePatterns`, potentially
+applicable Markdown overrides, EditorConfig sections other than `[*]`, and nested
+Oxfmt/EditorConfig files throughout `cwd`. Standard dependency directories and root
+build output directories are excluded; other symbolic links fail because their
+configuration cannot be proven uniform. Use a standalone project root, not a
+monorepo containing multiple independently configured sites. This mode must
+succeed before applying one resolved policy globally.
+
+Overrides whose filename patterns have a literal suffix incompatible with `.md`
+are safe to skip: `src/content/experience/*.json` may retain `printWidth:1` while
+Markdown uses the root policy. The proof covers possible future filenames, not
+just existing articles. `*.json*`, broad wildcards and mixed Markdown/JSON rules
+remain potentially applicable.
+
+Complete exclusions are recognized when an include pattern is also excluded,
+an exclusion covers all supported Markdown names (`*.md` or `**/*.md`) or all
+paths (`**/*` or `**`), or a literal `directory/**` exclusion covers an include's
+literal directory prefix. Wildcard/subtree exclusion proofs do not cover explicit
+hidden path segments; identical pattern exclusions remain safe. Other include/exclusion relationships are conservatively
+rejected when Markdown cannot be ruled out. Patterns and options in every rule
+are validated even when the rule is irrelevant to Markdown. Filename-specific
+resolution retains its existing ordered matching and exclusion behavior.
 
 ## Dependency and adapter ownership
 

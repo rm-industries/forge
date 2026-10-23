@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.1
+
+- Allow uniform browser policy when validated Oxfmt overrides provably cannot
+  affect supported Markdown filenames, including JSON-only width overrides.
+- Account for complete exclusions without scanning existing articles. Ambiguous
+  or potentially applicable Markdown overrides still fail with a configuration
+  diagnostic. Existing syntax, option and nested-configuration restrictions remain.
+- Keep the embedded Oxfmt engine at 0.72.0; existing consumers need no migration.
+
 ## 0.1.0
 
 - Derive serializable browser policy at build time from the installed Oxfmt

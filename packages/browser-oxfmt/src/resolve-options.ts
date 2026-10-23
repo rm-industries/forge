@@ -104,6 +104,22 @@ function patterns(value: unknown, label: string): string[] {
     return !pattern.includes('/') ? `**/${normalized}` : normalized;
   });
 }
+function couldMatchMarkdown(pattern: string): boolean {
+  const name = pattern.slice(pattern.lastIndexOf('/') + 1);
+  const wildcard = Math.max(name.lastIndexOf('*'), name.lastIndexOf('?'));
+  if (wildcard < 0) return name.endsWith('.md');
+  // Every match must end in this literal suffix, regardless of its wildcard prefix.
+  const suffix = name.slice(wildcard + 1);
+  return '.md'.endsWith(suffix) || suffix.endsWith('.md');
+}
+function excludesMarkdownMatches(include: string, exclude: string): boolean {
+  if (exclude === include) return true;
+  if (include.split('/').some((part) => part.startsWith('.'))) return false;
+  if (['**/*.md', '**/*', '**/**'].includes(exclude)) return true;
+  if (!exclude.endsWith('/**')) return false;
+  const directory = exclude.slice(0, -3);
+  return !/[*?]/.test(directory) && include.startsWith(`${directory}/`);
+}
 function normalizedOptions(values: Record<string, unknown>): ResolvedOptions {
   const options = { ...values };
   if (options.sortTailwindcss !== undefined && typeof options.sortTailwindcss !== 'boolean')
@@ -188,8 +204,6 @@ export async function resolveBrowserOptions(input: BrowserOptionsInput): Promise
     if (!Array.isArray(config.overrides)) fail('Oxfmt overrides must be an array');
     if (config.overrides.length && hostPath.split('/').some((part) => part.startsWith('.')))
       fail('Hidden Markdown paths with overrides are outside the verified glob matching contract');
-    if (input.requireUniformPolicy && config.overrides.length)
-      fail('Uniform policy cannot select filename-specific Oxfmt overrides');
     for (const item of config.overrides) {
       const override = object(item, 'Override');
       if (Object.keys(override).some((key) => !['files', 'excludeFiles', 'options'].includes(key)))
@@ -199,6 +213,18 @@ export async function resolveBrowserOptions(input: BrowserOptionsInput): Promise
         override.excludeFiles === undefined ? [] : patterns(override.excludeFiles, 'Override excludeFiles');
       const values = object(override.options, 'Override options');
       normalizedOptions(values);
+      if (input.requireUniformPolicy) {
+        if (
+          includes.some(
+            (pattern) =>
+              couldMatchMarkdown(pattern) && !excludes.some((exclude) => excludesMarkdownMatches(pattern, exclude)),
+          )
+        )
+          fail(
+            `Uniform policy cannot prove override disjoint from future Markdown (.md) targets: ${includes.join(', ')}. Use non-Markdown filename rules or exclude all matching Markdown targets.`,
+          );
+        continue;
+      }
       if (
         includes.some((pattern) => matchesGlob(hostPath, pattern)) &&
         !excludes.some((pattern) => matchesGlob(hostPath, pattern))
