@@ -15,6 +15,8 @@ on: # yamllint disable-line rule:truthy
       - 'scripts/package-workflows.test.ts'
       - 'templates/default/package.json'
       - 'templates/default/package-lock.json'
+      - 'templates/default/oxfmt.config.ts'
+      - 'templates/default/.editorconfig'
   push:
     branches: [main]
     paths:
@@ -28,6 +30,8 @@ on: # yamllint disable-line rule:truthy
       - 'scripts/package-workflows.test.ts'
       - 'templates/default/package.json'
       - 'templates/default/package-lock.json'
+      - 'templates/default/oxfmt.config.ts'
+      - 'templates/default/.editorconfig'
   workflow_dispatch:
   schedule:
     - cron: '53 7 * * 1'

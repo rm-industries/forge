@@ -81,6 +81,11 @@ it('retains browser reproducibility and restores native assets for runtime lanes
   const workflow = parse(
     readFileSync(new URL('../.github/workflows/browser-oxfmt.yml', import.meta.url), 'utf8'),
   ) as Workflow;
+  for (const event of ['push', 'pull_request']) {
+    expect((workflow.on[event] as { paths: string[] }).paths).toEqual(
+      expect.arrayContaining(['templates/default/oxfmt.config.ts', 'templates/default/.editorconfig']),
+    );
+  }
   const commands = workflow.jobs.package!.steps.map((step) => step.run ?? '').join('\n');
   expect(commands.match(/npm run build:native/g)).toHaveLength(2);
   expect(commands).toContain('quality:native');
