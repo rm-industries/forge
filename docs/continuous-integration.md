@@ -1,117 +1,93 @@
 # Continuous integration
 
-Forge separates repository quality, workflow validation, and security analysis
-so each required result has one stable purpose.
+Forge-owned GitHub workflows use native path filters and independent project checks.
+The approved [workflow design](superpowers/specs/2026-10-23-github-project-workflows-design.md)
+supersedes the earlier shared-selector and legacy no-op implementation.
 
 ## Required checks and migration
 
-GitHub repository settings still require the 27 individual Tool and Generator
-contexts recorded in the [baseline](reviews/ci-baseline-367.md). Their names and
-runtime matrix entries remain intact. Unaffected required jobs start and report
-successful no-ops; they do not disappear behind workflow path filters.
+`Repository quality` is the sole proposed required CI context. It runs on every PR
+and main push without path filters: root formatting, code/Markdown lint, spelling,
+documentation, repository TypeScript and CI contracts. Package runtime tests and
+builds belong to their own workflows. `npm run test:contracts` excludes the
+cross-package model test; `npm run test:root` retains it for local and GitLab use.
+`npm run typecheck:root` also retains integration types for local and GitLab use;
+Repository quality uses direct `npx tsc --noEmit`.
 
-`Tool validation`, `Generator validation` and `Website validation` summarize the
-complete corresponding graph on every PR. A failed selection, required prerequisite,
-cancellation or unexpected skip fails the summary. Website intentionally accepts
-unrelated site-job skips and PR/schedule/manual deployment skips; affected main
-pushes must pass deployment and deployed smoke too. The new candidate frontmatter
-check also gates the existing required Tool Pack context.
+No branch protection, environment or publication settings have been changed.
+The historical 27 contexts and exact proposed removal map are in the
+[migration map](reviews/github-workflow-migration-367.md). The branch removes their
+legacy producer jobs; the functioning workflow/protection pair on main stays in
+place until a coordinated, separately approved transition. Missing legacy checks
+on this branch are expected until that transition and can prevent merging.
 
-No protection or environment setting changed. To migrate safely after approval:
+1. Review the complete workflow change and inspect hosted project checks and
+   artifacts, including failed validation and non-production schedule/manual runs.
+2. Obtain separate approval to replace the exact 27 old requirements with
+   `Repository quality`, removing any old summary requirements if present.
+3. Coordinate settings and workflow merge so missing legacy results do not strand
+   PRs. Preserve unrelated review, security, environment and publication protections.
+4. Roll back by restoring the matching historical workflows and required-context
+   settings together. No automated settings synchronization is installed.
 
-1. Publish the reviewed branch and inspect actual GitHub check runs, including
-   unaffected work and deliberate failure/cancellation scenarios on a review branch.
-2. Keep the 27 legacy requirements while verifying the three summaries report on
-   all PRs, are GitHub Actions checks and reject necessary failures.
-3. Separately approve replacing those legacy requirements with the three summaries.
-   Preserve other review, environment and publication protections.
-4. Only after that settings change, consider removing legacy no-op runner jobs in a
-   separate reviewed change. This implementation retains them for compatibility.
-
-Rollback before protection migration is a revert of the implementation. After
-migration, restore the baseline context requirements before reverting workflows
-that emit the summaries. Keep the corresponding protection/workflow states aligned;
-no automatic settings synchronization is installed.
+Project-specific checks must be reviewed before merge; an optional failed check
+will not itself enforce branch protection. Native filters have GitHub path limits
+and require explicit updates for new shared inputs. Unknown paths have no custom
+broad fallback; weekly/manual validation provides a backstop.
 
 ## Check execution
 
-| Workflow            | Responsibility and selected inputs                                                                          | Broad coverage                               |
-| ------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| Project             | Root quality always; local package closure, inspected packs and candidate integrations                      | PR/main push; Monday 07:11 UTC; manual       |
-| Generator           | Packed CLI, isolated generated consumers and provider/tool regressions for generator/template/shared inputs | PR/main push; Monday 07:23 UTC; manual       |
-| Website             | Independent website plus docs content; build, accessibility, budgets and main-push deployment               | PR/main push; Monday 07:41 UTC; manual       |
-| Browser Oxfmt       | Native reproducibility, packed browsers and CMS serialization for browser/model/template/shared inputs      | PR; Monday 07:53 UTC; manual                 |
-| Automation/security | Workflow syntax/security, CodeQL and dependency review                                                      | Existing scoped/event and security schedules |
-| GitLab mirror       | Supplemental selected native project/generator/website child pipeline                                       | MR/default push; schedule/web admission      |
+| Workflow                  | Responsibility and primary inputs                                                                                                                | Broad cadence (UTC Monday)              |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| Repository quality        | Root static/docs/types/contracts; every PR/main push                                                                                             | 07:11; manual                           |
+| Website                   | `website/**`, consumed `docs/**`, shared locks/setup; full browsers, build, budgets and main-push deployment                                     | 07:41; manual                           |
+| Template                  | `templates/default/**`, starter fixtures and verification tooling; isolated source quality, runtime/build, full browsers, budgets, customization | 07:23; manual                           |
+| Content model             | Own package, shared locks/config/setup; types, unit tests, inspected package and supported runtimes                                              | 07:17; manual                           |
+| Create Forge              | Own package, bundled template and actual pin-source workflows; CLI scenarios and packed-generator smoke                                          | 07:23; manual                           |
+| Browser Oxfmt             | Own package and formatter configuration inputs; native reproducibility, Rust quality, packed browsers and runtime checks                         | 07:53; manual                           |
+| Markdownlint              | Own package and shared tooling; types, unit tests and isolated packed consumer                                                                   | 07:29; manual                           |
+| Model and CMS integration | Own tests/tooling and shared locks/setup; cross-package model agreement and focused CMS serialization/preservation                               | 07:59; manual                           |
+| Automation/security       | Workflow syntax/security, CodeQL and dependency review                                                                                           | Existing events/schedules               |
+| GitLab mirror             | Existing selector and native project/generator/website child pipeline                                                                            | MR/default push; schedule/web admission |
 
-Unknown paths, missing revisions or an empty change set select broad validation.
-Actual diff failures fail selection. Mixed edits union actual consumers; deleted
-paths and both sides of renames participate. Weekly/manual GitHub runs validate
-all lanes, without production deployment or publication. GitLab needs a separately
-configured weekly schedule; admitting schedule events does not create one.
-
-See [package impact](reviews/package-impact-373.md),
-[website coverage](reviews/website-ci-375.md), [GitLab routing](reviews/gitlab-impact-374.md)
-and [generated CI](reviews/generated-ci-377.md) for the consumption and failure contracts.
-The [test disposition](reviews/consumer-test-disposition-367.md) distinguishes durable
-consumer checks from Forge-owned starter assertions. Existing consumer YAML remains
-consumer-owned; no migration or regeneration is automatic.
+See the YAML for each complete input list. Published upstream source edits do not
+fan out to downstream consumers: consumers validate when their manifests/locks
+change. The CLI also validates template edits because it bundles that source.
+Integration source changes run their own workflow; ordinary upstream package edits
+do not select it. The focused CMS serialization check retains metadata/body,
+delimiter, failure-preservation and retry coverage. The separately known failing
+CMS ordering probe is not enabled and serialization success does not prove it.
+GitLab still uses its existing selector and requires a separately configured schedule.
 
 ## Runtime and evidence strategy
 
-Project CI runs repository formatting, lint, spelling and documentation on Node 26.
-Affected package work also runs root checks, then builds and packages the selected
-local workspace closure once, without
-repeating prepack hooks. The minimum Node 22 release and latest Node 22, 24 and
-26 releases run selected package types and unit tests. When content-model is
-selected, they also exercise its packaged exports. Build tooling itself uses the primary development runtime.
+Package workflows build and inspect their own candidates, then exercise supported
+runtimes without rebuilding unrelated packages. Browser runtime lanes restore native
+assets from the inspected package instead of installing Rust. Create Forge's four
+Linux Node lanes and Node 26 macOS lane consume one packed CLI for distinct behavior
+scenarios and a default generated build. Consumers install committed registry locks;
+no unpublished upstream source is substituted.
 
-When generator/template/shared inputs change, Generator CI independently packages
-create-forge once as fixture preparation.
-Its four Linux Node lanes and Node 26 macOS lane install the same CLI package,
-bootstrap one consumer per lane with the matching Node major, then run consumer
-types, unit tests and a build. No candidate content-model package is substituted:
-consumer npm ci uses the template lockfile, and a check verifies its content-model
-entry and declared version remain unchanged. Generated source also retains
-isolation checks for local dependencies, unresolved tokens and personal identifiers.
+Template validates an isolated canonical starter through `scripts/test-template.ts`.
+Its primary runtime publishes source and build archives, reused by static quality,
+build validation, browser/accessibility and Lighthouse jobs. Customization runs with
+`npm run test:template:customization`. Deliberately invalid static-tool fixtures
+remain separate regression checks. Generated workflow scans belong to Create Forge.
 
-The primary Linux Node 26 consumer provides coverage, a source archive including
-hidden configuration files, and its production artifact. Static quality,
-generated CI syntax/security, build validation, browser/accessibility and
-Lighthouse jobs restore those artifacts rather than bootstrapping or rebuilding.
-Dependencies are installed per job because jobs have isolated filesystems.
+Website source checks gate one production build. Build validation, all three
+browser projects and Lighthouse download that same immutable `website-build`
+artifact. Only main pushes upload the Pages artifact and deploy after every quality,
+artifact, browser and budget check passes. Deployed smoke follows deployment with
+its existing timeout and URL guard. PRs, schedules and manual runs do not deploy or
+publish. Browser evidence and hidden Lighthouse reports retain seven-day retention.
 
-Distinct CLI behavior scenarios run once with the shared package. Deliberately
-invalid static-tool fixtures remain separate to prove that quality tools reject
-bad input. Their isolated copies are intentional regression tests, not another
-canonical consumer validation path.
+Generated consumer CI keeps its existing cadence and provider builders: Chromium/axe
+on PRs and ordinary pushes, full browsers weekly/manually, Lighthouse on pushes and
+weekly/manual runs. Generated YAML remains consumer-owned after bootstrap.
 
-Forge's `.github/workflows/website.yml` uses an independent selector and stable
-summary. Docs-only Markdown changes retain Chromium/axe, build and Lighthouse;
-other affected changes retain the full browser matrix. Generated consumers run
-Chromium/axe on PRs and normal pushes, with the full matrix on weekly/manual runs;
-Lighthouse runs after pushes, weekly and manually. All retain the same core
-artifact ownership model:
-
-| Stage              | Owner                                                                   |
-| ------------------ | ----------------------------------------------------------------------- |
-| Source checks      | Format, code/style/Markdown lint, spelling, Knip, and Astro diagnostics |
-| Unit tests         | One coverage run alongside source checks                                |
-| Build              | One production build and an immutable build artifact upload             |
-| Artifact consumers | Build validation, selected browser tests, and Lighthouse                |
-| Deployment         | The Pages artifact packaged by the build job                            |
-| Live verification  | One Chromium smoke suite for routes, assets, and mobile overflow        |
-
-Artifact consumers depend only on the build and download its immutable output;
-they never rebuild or mutate it. Forge has no generated Markdown artifact, so a
-post-build Markdown job would add no coverage. Source Markdown remains owned by
-the source lint job. Package and generator compatibility jobs remain separate
-because they intentionally exercise multiple supported runtimes.
-
-Coverage and Lighthouse uploads run even when their producer fails. Lighthouse
-uploads explicitly include the hidden `.lighthouseci` directory. Browser
-website and generated-consumer evidence is uploaded even after successful runs. Playwright preserves failure
-traces and screenshots. Artifacts are retained for seven days.
+Earlier [verification evidence](reviews/ci-verification-379.md) is historical.
+Local graph/contracts and syntax/security checks do not establish hosted execution,
+native toolchain success, deployment, or repository-settings migration for this revision.
 
 ## Security reporting and release gates
 

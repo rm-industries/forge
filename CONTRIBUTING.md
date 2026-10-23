@@ -56,13 +56,17 @@ npm run test:e2e
 
 ## Continuous integration
 
-Pull requests and pushes to `main` run root source/documentation quality and
-select package, generator and website validation from actual consumption. Unknown
-or shared inputs receive broad validation; weekly and manual GitHub runs exercise
-all lanes. Existing required Tool/Generator contexts explicitly succeed for
-unaffected work. The three validation summaries reject selection failures,
-required failures, cancellation and unexpected skips. Protection migration remains
-a separately approved repository-settings operation.
+Pull requests and pushes to `main` always run `Repository quality` for root
+static/docs/types/contracts. Project workflows use native path filters for their
+own sources, consumed inputs and shared tooling; every project also offers weekly
+and manual validation. Review affected project results before merge. Integration
+tests have their own tooling triggers and weekly/manual workflow, without upstream
+package source fan-out. The sole proposed required context is `Repository quality`;
+replacing the historical 27 contexts remains a separately approved settings change.
+
+Use `npm run test:contracts` for root contracts, `npm run test:integration` for the
+model integration, and `npm run test:root` for both. Template customization uses
+`npm run test:template:customization`.
 
 Workflow syntax/security and source security keep their existing responsibilities.
 Checks use committed lockfiles and require no globally installed project tools.

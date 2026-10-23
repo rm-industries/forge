@@ -1,5 +1,13 @@
 # Combined CI verification and migration evidence
 
+> Historical evidence: the October 23, 2026 approved project-workflow redesign
+> supersedes the selector/no-op graph described below. Its counts, hosted results
+> and old protection proposal do not verify the new revision. See the current
+> [CI standard](../continuous-integration.md), approved
+> [design](../superpowers/specs/2026-10-23-github-project-workflows-design.md) and
+> exact proposed [migration map](github-workflow-migration-367.md). No settings
+> migration or new hosted result is claimed here.
+
 This closes the local verification slice of spec 367 without changing the parent
 spec, repository settings, production deployments, packages or existing consumers.
 The [final standard](../continuous-integration.md) contains the trigger map and the

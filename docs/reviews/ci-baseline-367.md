@@ -223,7 +223,7 @@ Source: [documentation.yml](../../.github/workflows/documentation.yml).
 
 ### Generator CI Validation
 
-Source: [generator.yml](../../.github/workflows/generator.yml).
+Historical source: [generator.yml](https://github.com/rm-industries/forge/blob/ed4a08e5422345a49c09cedfc04b0d08e8bb4b7b/.github/workflows/generator.yml).
 
 | Job ID / check                                                            | Commands or action purpose                                                                                                                                                                | Needs                  | Artifacts                                                             | Permissions                                   |
 | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | --------------------------------------------------------------------- | --------------------------------------------- |

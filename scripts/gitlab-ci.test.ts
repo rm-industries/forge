@@ -97,111 +97,21 @@ test('GitLab checks reuse the canonical consumer instead of regenerating it', ()
   }
 });
 
-const githubProject = read('../.github/workflows/project.yml');
-const githubGenerator = read('../.github/workflows/generator.yml');
-const githubWebsite = read('../.github/workflows/website.yml');
-const dependencyNames = (job: { needs?: string | (string | { job: string })[] }, prefix = '') =>
-  (typeof job.needs === 'string' ? [job.needs] : (job.needs ?? []))
-    .map((need) => (typeof need === 'string' ? need : need.job).slice(prefix.length))
-    .sort();
-
-test('mirrors project and website job coverage and dependency gates across providers', () => {
-  for (const [github, gitlab, prefix] of [
-    [githubProject.jobs, project, 'project-'],
-    [githubWebsite.jobs, website, 'website-'],
-  ] as const) {
-    expect(
-      Object.keys(gitlab)
-        .map((id) => id.slice(prefix.length))
-        .sort(),
-    ).toEqual(
-      Object.keys(github)
-        .filter((id) => !['impact', 'validation', 'frontmatter-candidate'].includes(id))
-        .sort(),
-    );
-    for (const [id, job] of Object.entries(github)) {
-      if (['impact', 'validation', 'frontmatter-candidate'].includes(id)) continue;
-      expect(dependencyNames(gitlab[`${prefix}${id}`], prefix)).toEqual(
-        dependencyNames(job as { needs?: string[] }).filter(
-          (id) => !['impact', 'validation', 'frontmatter-candidate'].includes(id),
-        ),
-      );
-      const commands = (job as { steps: { run?: string }[] }).steps
-        .filter((step) => step.run?.startsWith('npm run ') || step.run === 'npm test')
-        .map((step) => step.run?.replace(' -- --format github', ''));
-      for (const command of commands) expect(gitlab[`${prefix}${id}`].script.join('\n')).toContain(command);
-    }
-  }
-});
-
-test('mirrors generator package and validation flows while security scans stay on GitHub', () => {
-  const mirrors = {
-    package: 'generator-package',
-    quality: 'consumer-quality',
-    'validate-build': 'consumer-validate-build',
-    browser: 'consumer-browser',
-    lighthouse: 'consumer-lighthouse',
-    scenarios: 'generator-scenarios',
-    'static-tool-regressions': 'consumer-quality-tool-regressions',
-  };
-  const dependencyMapping: Record<string, string> = {
-    package: 'generator-package',
-    'consumer-compatibility': 'consumer-primary',
-  };
-  for (const [githubId, gitlabId] of Object.entries(mirrors)) {
-    const expected = dependencyNames(githubGenerator.jobs[githubId])
-      .filter((id) => !['impact', 'validation', 'frontmatter-candidate'].includes(id))
-      .map((id) => dependencyMapping[id] ?? id)
-      .sort();
-    expect(dependencyNames(generator[gitlabId])).toEqual(expected);
-  }
-  expect(Object.keys(generator).sort()).toEqual(
-    [...Object.values(mirrors), 'consumer-primary', 'consumer-compatibility'].sort(),
-  );
+test('retains independent GitLab consumer runtime and artifact contracts', () => {
   for (const id of ['consumer-primary', 'consumer-compatibility']) {
     expect(generator[id].script).toContain('npm run typecheck');
     expect(generator[id].script).toContain('npm run build');
     expect(generator[id].script).toContain('if [ "$PRIMARY" = true ]; then npm run test:coverage; else npm test; fi');
-    expect(dependencyNames(generator[id])).toEqual(['generator-package']);
+    expect(generator[id].needs).toEqual([{ job: 'generator-package', artifacts: true }]);
   }
-  for (const pipeline of [project, generator, website])
-    expect(Object.keys(pipeline).some((id) => id.includes('dependency-audit'))).toBe(false);
-  for (const job of Object.values(generator) as { script: string[] }[])
-    expect(job.script.some((command) => command.includes('content-model*.tgz'))).toBe(false);
-});
-
-test('mirrors supported Linux Node versions without multiplying one-time quality checks', () => {
-  const normalizeTag = (version: string) => version.replace('.x', '');
-  expect(project['project-compatibility'].parallel.matrix[0].NODE_VERSION).toEqual(
-    githubProject.jobs.compatibility.strategy.matrix.include.map((lane: { 'node-version': string }) =>
-      normalizeTag(lane['node-version']),
-    ),
-  );
-  const githubLanes = githubGenerator.jobs['consumer-compatibility'].strategy.matrix.include
-    .filter((lane: { os: string }) => lane.os === 'ubuntu-latest')
-    .map((lane: { node: string; major: string }) => `${normalizeTag(lane.node)}:${lane.major}`);
-  const gitlabLanes = generator['consumer-compatibility'].parallel.matrix.flatMap(
-    (lane: { NODE_VERSION: string | string[]; NODE_MAJOR: string }) =>
-      [lane.NODE_VERSION].flat().map((version) => `${version}:${lane.NODE_MAJOR}`),
-  );
-  gitlabLanes.push(
-    `${generator['consumer-primary'].variables.NODE_VERSION}:${generator['consumer-primary'].variables.NODE_MAJOR}`,
-  );
-  expect(gitlabLanes.sort()).toEqual(githubLanes.sort());
   for (const id of ['consumer-quality', 'consumer-browser', 'consumer-lighthouse', 'consumer-validate-build'])
     expect(generator[id]).not.toHaveProperty('parallel');
   expect(website['website-build'].artifacts.when).toBe('on_success');
   for (const dependency of website['website-build'].needs) expect(dependency.artifacts).toBe(false);
-});
-
-test('omits dependency vulnerability audits from publication and normal mirrored workflows', () => {
-  const release = read('../.github/workflows/package-release.yml');
-  const commands = Object.values(release.jobs)
-    .flatMap((job) => (job as { steps: { run?: string }[] }).steps.flatMap((step) => (step.run ? [step.run] : [])))
-    .join('\n');
-  expect(commands).not.toContain('npm run audit');
-  for (const workflow of [githubProject, githubGenerator, githubWebsite])
-    expect(workflow.jobs).not.toHaveProperty('dependency-audit');
+  for (const pipeline of [project, generator, website])
+    expect(Object.keys(pipeline).some((id) => id.includes('dependency-audit'))).toBe(false);
+  for (const job of Object.values(generator) as { script: string[] }[])
+    expect(job.script.some((command) => command.includes('content-model*.tgz'))).toBe(false);
 });
 
 test('admits merge requests, default pushes and broad scheduled/manual validation with failure propagation', () => {
@@ -275,4 +185,12 @@ test('does not produce an accepting child artifact after a diff failure', () => 
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
+});
+
+test('keeps vulnerability audits out of package publication commands', () => {
+  const release = read('../.github/workflows/package-release.yml');
+  const commands = Object.values(release.jobs)
+    .flatMap((job) => (job as { steps: { run?: string }[] }).steps.flatMap((step) => (step.run ? [step.run] : [])))
+    .join('\n');
+  expect(commands).not.toContain('npm run audit');
 });
