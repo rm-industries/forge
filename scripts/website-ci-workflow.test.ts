@@ -99,14 +99,14 @@ describe('generated website CI contract', () => {
   ];
 
   it('runs source checks independently and builds only after they pass', () => {
-    for (const name of sourceJobs) expect(dependencies(job(template, name))).toEqual([]);
-    expect(dependencies(job(template, 'build')).sort()).toEqual([...sourceJobs].sort());
+    for (const name of sourceJobs) expect(dependencies(job(template, name))).toEqual(['select']);
+    expect(dependencies(job(template, 'build')).sort()).toEqual(['select', ...sourceJobs].sort());
     expect(steps(template, 'build').filter((step) => step.run === 'npm run build')).toHaveLength(1);
   });
 
   it('reuses the production artifact for every build consumer', () => {
     for (const consumer of ['validate-build', 'browser-tests', 'lighthouse']) {
-      expect(dependencies(job(template, consumer))).toEqual(['build']);
+      expect(dependencies(job(template, consumer))).toEqual(['select', 'build']);
       download(template, consumer, 'build-dist', './dist');
       expect(steps(template, consumer).some((step) => step.run?.includes('npm run build'))).toBe(false);
     }
@@ -154,7 +154,11 @@ describe('Forge website CI contract', () => {
         dependencies(job(website, name))
           .filter((dependency) => dependency !== 'impact')
           .sort(),
-      ).toEqual(dependencies(job(template, name)).sort());
+      ).toEqual(
+        dependencies(job(template, name))
+          .filter((dependency) => dependency !== 'select')
+          .sort(),
+      );
     }
     expect(commands(website).filter((command) => command.includes('npm run build'))).toEqual(['npm run build']);
     expect(website.concurrency?.['cancel-in-progress']).toBe("${{ github.event_name == 'pull_request' }}");

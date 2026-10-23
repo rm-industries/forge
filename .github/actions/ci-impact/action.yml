@@ -33,6 +33,7 @@ runs:
         node-version: 26.x
     - id: select
       shell: bash
+      working-directory: ${{ github.workspace }}
       run: node scripts/ci-impact.ts
       env:
         CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}

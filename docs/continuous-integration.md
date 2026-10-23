@@ -3,39 +3,71 @@
 Forge separates repository quality, workflow validation, and security analysis
 so each required result has one stable purpose.
 
-## Required checks
+## Required checks and migration
 
-Required checks are configured in GitHub repository settings. Use the individual
-tool, package and consumer job names, including each compatibility lane.
-Tool names are prefixed to distinguish them from website checks. Path-filtered
-website/automation jobs are not globally required.
+GitHub repository settings still require the 27 individual Tool and Generator
+contexts recorded in the [baseline](reviews/ci-baseline-367.md). Their names and
+runtime matrix entries remain intact. Unaffected required jobs start and report
+successful no-ops; they do not disappear behind workflow path filters.
 
-After the CI refactor merges, replace the legacy `Project` requirement with those
-individual checks as a one-time repository administration step. Derive the names
-from the workflows and their reported GitHub check runs. No branch-protection
-payload or synchronization mechanism is stored in the repository.
+`Tool validation`, `Generator validation` and `Website validation` summarize the
+complete corresponding graph on every PR. A failed selection, required prerequisite,
+cancellation or unexpected skip fails the summary. Website intentionally accepts
+unrelated site-job skips and PR/schedule/manual deployment skips; affected main
+pushes must pass deployment and deployed smoke too. The new candidate frontmatter
+check also gates the existing required Tool Pack context.
+
+No protection or environment setting changed. To migrate safely after approval:
+
+1. Publish the reviewed branch and inspect actual GitHub check runs, including
+   unaffected work and deliberate failure/cancellation scenarios on a review branch.
+2. Keep the 27 legacy requirements while verifying the three summaries report on
+   all PRs, are GitHub Actions checks and reject necessary failures.
+3. Separately approve replacing those legacy requirements with the three summaries.
+   Preserve other review, environment and publication protections.
+4. Only after that settings change, consider removing legacy no-op runner jobs in a
+   separate reviewed change. This implementation retains them for compatibility.
+
+Rollback before protection migration is a revert of the implementation. After
+migration, restore the baseline context requirements before reverting workflows
+that emit the summaries. Keep the corresponding protection/workflow states aligned;
+no automatic settings synchronization is installed.
 
 ## Check execution
 
-Project and generator workflows run on every pull request and push to main, so
-required results cannot disappear behind workflow path filters. Project owns tool
-quality, package inspection and package compatibility. Generator owns packaged
-CLI bootstrap, consumer compatibility and generated-output checks. Job graphs retain native dependencies and artifact reuse.
+| Workflow            | Responsibility and selected inputs                                                                          | Broad coverage                               |
+| ------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| Project             | Root quality always; local package closure, inspected packs and candidate integrations                      | PR/main push; Monday 07:11 UTC; manual       |
+| Generator           | Packed CLI, isolated generated consumers and provider/tool regressions for generator/template/shared inputs | PR/main push; Monday 07:23 UTC; manual       |
+| Website             | Independent website plus docs content; build, accessibility, budgets and main-push deployment               | PR/main push; Monday 07:41 UTC; manual       |
+| Browser Oxfmt       | Native reproducibility, packed browsers and CMS serialization for browser/model/template/shared inputs      | PR; Monday 07:53 UTC; manual                 |
+| Automation/security | Workflow syntax/security, CodeQL and dependency review                                                      | Existing scoped/event and security schedules |
+| GitLab mirror       | Supplemental selected native project/generator/website child pipeline                                       | MR/default push; schedule/web admission      |
 
-Repository automation scans only committed `.github` workflows/actions and is
-path-filtered. Website validation is separately scoped to website/docs/setup
-changes. Consumer projects also use direct job dependencies without an aggregate;
-deployment waits for all project checks, then smoke-tests the deployed URL.
+Unknown paths, missing revisions or an empty change set select broad validation.
+Actual diff failures fail selection. Mixed edits union actual consumers; deleted
+paths and both sides of renames participate. Weekly/manual GitHub runs validate
+all lanes, without production deployment or publication. GitLab needs a separately
+configured weekly schedule; admitting schedule events does not create one.
+
+See [package impact](reviews/package-impact-373.md),
+[website coverage](reviews/website-ci-375.md), [GitLab routing](reviews/gitlab-impact-374.md)
+and [generated CI](reviews/generated-ci-377.md) for the consumption and failure contracts.
+The [test disposition](reviews/consumer-test-disposition-367.md) distinguishes durable
+consumer checks from Forge-owned starter assertions. Existing consumer YAML remains
+consumer-owned; no migration or regeneration is automatic.
 
 ## Runtime and evidence strategy
 
-Project CI runs repository formatting, lint, spelling, documentation and root
-checks once on Node 26. It builds and packages candidate packages once, without
+Project CI runs repository formatting, lint, spelling and documentation on Node 26.
+Affected package work also runs root checks, then builds and packages the selected
+local workspace closure once, without
 repeating prepack hooks. The minimum Node 22 release and latest Node 22, 24 and
-26 releases run package types and unit tests and exercise the packaged
-content-model exports. Build tooling itself uses the primary development runtime.
+26 releases run selected package types and unit tests. When content-model is
+selected, they also exercise its packaged exports. Build tooling itself uses the primary development runtime.
 
-Generator CI independently packages create-forge once as fixture preparation.
+When generator/template/shared inputs change, Generator CI independently packages
+create-forge once as fixture preparation.
 Its four Linux Node lanes and Node 26 macOS lane install the same CLI package,
 bootstrap one consumer per lane with the matching Node major, then run consumer
 types, unit tests and a build. No candidate content-model package is substituted:
@@ -54,16 +86,19 @@ invalid static-tool fixtures remain separate to prove that quality tools reject
 bad input. Their isolated copies are intentional regression tests, not another
 canonical consumer validation path.
 
-The path-scoped `.github/workflows/website.yml` workflow intentionally mirrors
-the generated template's workflow. It runs when website source, its workflow,
-or its shared setup action changes. The two sites use the same ownership model:
+Forge's `.github/workflows/website.yml` uses an independent selector and stable
+summary. Docs-only Markdown changes retain Chromium/axe, build and Lighthouse;
+other affected changes retain the full browser matrix. Generated consumers run
+Chromium/axe on PRs and the full matrix on pushes, weekly and manual runs;
+Lighthouse runs after pushes, weekly and manually. All retain the same core
+artifact ownership model:
 
 | Stage              | Owner                                                                   |
 | ------------------ | ----------------------------------------------------------------------- |
 | Source checks      | Format, code/style/Markdown lint, spelling, Knip, and Astro diagnostics |
 | Unit tests         | One coverage run alongside source checks                                |
 | Build              | One production build and an immutable build artifact upload             |
-| Artifact consumers | Build validation, three-browser tests, and Lighthouse                   |
+| Artifact consumers | Build validation, selected browser tests, and Lighthouse                |
 | Deployment         | The Pages artifact packaged by the build job                            |
 | Live verification  | One Chromium smoke suite for routes, assets, and mobile overflow        |
 
@@ -136,8 +171,10 @@ tracking issue.
 Create-forge internally uses TypeScript builders and provider-specific rendering
 to bootstrap consumer YAML. Generated sites own that YAML and edit it directly.
 See [CI providers](ci-providers.md) for generation, dependency pins and
-GitHub/GitLab support. Repository checks run on every change; the previous change
-routing no longer skips repository jobs.
+GitHub/GitLab support. Generated stable `Project` results reject selection/prerequisite failures and
+accept only intentional unaffected or PR-Lighthouse skips. Nested-site routing
+uses its repository-relative directory; shared workflow/setup inputs also select
+validation. See [generated CI](reviews/generated-ci-377.md) for details.
 
 ## Native GitLab validation
 
@@ -155,10 +192,12 @@ validation is supplemental and uses Linux container runners for isolated Node
 images. Server-side CI Lint and a configured runner are still
 needed to confirm it on the mirror.
 
-Website includes are scoped to website, documentation and GitLab configuration
-changes. Generator includes watch templates, package/scripts/configuration and
-CI inputs. Root project checks run for every accepted pipeline. GitLab uses
-[native includes and needs](https://docs.gitlab.com/ci/yaml/) for composition.
+A prepare job emits selected native jobs as a dynamic child configuration. The
+shared ownership selector chooses package workspaces, generator consumers and the
+website, while root static/documentation checks remain. The parent mirror trigger
+propagates child failure and cancellation. GitLab 18.2 or later is required for
+`strategy: mirror`; live server/runner behavior remains unverified. GitLab uses
+[native child pipelines and needs](https://docs.gitlab.com/ci/yaml/) for composition.
 
 GitLab stage names describe their purpose: `prepare` packages the generator
 candidate, `validate` covers source checks, `build` produces artifacts, and

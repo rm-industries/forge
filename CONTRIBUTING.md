@@ -56,14 +56,19 @@ npm run test:e2e
 
 ## Continuous integration
 
-Pull requests and pushes to `main` run the repository quality gate and validate
-a copy of the default template outside the workspace on every supported Node.js
-line. Workflow syntax and security checks run when repository or
-generated-template workflow files change, and the `Automation` aggregate
-provides one result for that conditional validation. It must not be configured
-as a globally required check. These jobs use committed lockfiles and do not
-require globally installed project tools. The required contexts and evidence
-strategy are documented in [Continuous integration](docs/continuous-integration.md).
+Pull requests and pushes to `main` run root source/documentation quality and
+select package, generator and website validation from actual consumption. Unknown
+or shared inputs receive broad validation; weekly and manual GitHub runs exercise
+all lanes. Existing required Tool/Generator contexts explicitly succeed for
+unaffected work. The three validation summaries reject selection failures,
+required failures, cancellation and unexpected skips. Protection migration remains
+a separately approved repository-settings operation.
+
+Workflow syntax/security and source security keep their existing responsibilities.
+Checks use committed lockfiles and require no globally installed project tools.
+Consumer YAML belongs to the generated project after bootstrap. Scope, coverage,
+evidence limits and safe rollback are documented in
+[Continuous integration](docs/continuous-integration.md).
 
 Actions are pinned to immutable commits, workflow permissions are denied by
 default, and superseded runs are cancelled. Keep these properties intact when
