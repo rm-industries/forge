@@ -89,7 +89,7 @@ canonical consumer validation path.
 Forge's `.github/workflows/website.yml` uses an independent selector and stable
 summary. Docs-only Markdown changes retain Chromium/axe, build and Lighthouse;
 other affected changes retain the full browser matrix. Generated consumers run
-Chromium/axe on PRs and the full matrix on pushes, weekly and manual runs;
+Chromium/axe on PRs and normal pushes, with the full matrix on weekly/manual runs;
 Lighthouse runs after pushes, weekly and manually. All retain the same core
 artifact ownership model:
 
