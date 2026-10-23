@@ -50,26 +50,33 @@ for (const name of ['content-model', 'markdownlint-frontmatter', 'browser-oxfmt'
         }
       }
     });
-    it('publishes an inspected build once and checks four Linux runtimes', () => {
+    it('builds and inspects once and checks source on four Linux runtimes', () => {
       const workflow = load();
       const primary = workflow.jobs.package!;
       const commands = primary.steps.map((step) => step.run ?? '').join('\n');
-      for (const command of ['typecheck', 'test', ...(name === 'markdownlint-frontmatter' ? [] : ['build'])])
+      for (const command of name === 'browser-oxfmt' ? ['typecheck', 'test', 'build'] : ['build'])
         expect(commands).toContain(
           `npm ${command === 'test' ? 'test' : `run ${command}`} --workspace @rm-industries/${name}`,
         );
-      expect(commands).toContain('npm pack --ignore-scripts');
-      expect(commands).toContain('tar -tzf');
-      expect(primary.steps.some((step) => step.uses?.startsWith('actions/upload-artifact@'))).toBe(true);
       const runtime = workflow.jobs.compatibility!;
-      expect(runtime.needs).toBe('package');
+      const native = name === 'browser-oxfmt';
+      expect(commands).toContain(native ? 'npm pack --ignore-scripts' : 'npm pack --dry-run --ignore-scripts --json');
+      expect(primary.steps.some((step) => step.uses?.startsWith('actions/upload-artifact@'))).toBe(native);
+      expect(runtime.needs).toBe(native ? 'package' : undefined);
       expect(runtime.strategy?.matrix.include.map((lane) => lane['node-version'])).toEqual([
         '22.22.2',
         '22.x',
         '24.x',
         '26.x',
       ]);
-      expect(runtime.steps.some((step) => step.uses?.startsWith('actions/download-artifact@'))).toBe(true);
+      expect(runtime.steps.some((step) => step.uses?.startsWith('actions/download-artifact@'))).toBe(native);
+      const runtimeCommands = runtime.steps.map((step) => step.run ?? '').join('\n');
+      for (const command of ['typecheck', 'test'])
+        expect(runtimeCommands).toContain(
+          `npm ${command === 'test' ? 'test' : `run ${command}`} --workspace @rm-industries/${name}`,
+        );
+      expect(commands).not.toContain('test:packed');
+      expect(runtimeCommands.includes('tar -xzf')).toBe(native);
       expect(runtime.steps.map((step) => step.run ?? '').join('\n')).not.toMatch(
         /npm run build|build:native|quality:native/,
       );

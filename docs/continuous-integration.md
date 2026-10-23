@@ -45,7 +45,7 @@ broad fallback; weekly/manual validation provides a backstop.
 | Content model             | Own package, shared locks/config/setup; types, unit tests, inspected package and supported runtimes                                              | 07:17; manual                           |
 | Create Forge              | Own package, bundled template and actual pin-source workflows; CLI scenarios and packed-generator smoke                                          | 07:23; manual                           |
 | Browser Oxfmt             | Own package and formatter configuration inputs; native reproducibility, Rust quality, packed browsers and runtime checks                         | 07:53; manual                           |
-| Markdownlint              | Own package and shared tooling; types, unit tests and isolated packed consumer                                                                   | 07:29; manual                           |
+| Markdownlint              | Own package and shared tooling; types, unit tests and publishable-file inspection                                                                | 07:29; manual                           |
 | Model and CMS integration | Own tests/tooling and shared locks/setup; cross-package model agreement and focused CMS serialization/preservation                               | 07:59; manual                           |
 | Automation/security       | Workflow syntax/security, CodeQL and dependency review                                                                                           | Existing events/schedules               |
 | GitLab mirror             | Existing selector and native project/generator/website child pipeline                                                                            | MR/default push; schedule/web admission |
@@ -61,8 +61,9 @@ GitLab still uses its existing selector and requires a separately configured sch
 
 ## Runtime and evidence strategy
 
-Package workflows build and inspect their own candidates, then exercise supported
-runtimes without rebuilding unrelated packages. Browser runtime lanes restore native
+Content Model and Markdownlint run source tests and typechecks on all four supported
+Linux Node lanes independently of one build and publishable-file inspection. They do
+not transport or unpack package tarballs between jobs. Browser runtime lanes restore native
 assets from the inspected package instead of installing Rust. Create Forge's four
 Linux Node lanes and Node 26 macOS lane consume one packed CLI for distinct behavior
 scenarios and a default generated build. Consumers install committed registry locks;
