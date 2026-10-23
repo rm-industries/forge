@@ -23,9 +23,6 @@ export function selectCiImpact(paths: string[] | null) {
           path.startsWith(`packages/${name}/`) || (name === 'create-forge' && path.startsWith('templates/default/')),
       ),
   );
-  // Frontmatter unit tests import the local content-model source.
-  if (selected.includes('content-model') && !selected.includes('markdownlint-frontmatter'))
-    selected.push('markdownlint-frontmatter');
   const template = broad || !!paths?.some((path) => path.startsWith('templates/default/'));
   return {
     project: selected.length > 0,
@@ -34,7 +31,7 @@ export function selectCiImpact(paths: string[] | null) {
     websiteFullBrowsers: !paths?.length || !paths.every((path) => /^docs\/.+\.md$/.test(path)),
     packages: selected.join(' '),
     native: selected.includes('browser-oxfmt'),
-    frontmatterCandidate: broad || selected.includes('content-model') || selected.includes('markdownlint-frontmatter'),
+    frontmatterCandidate: broad || selected.includes('markdownlint-frontmatter'),
     browserCandidate: broad || template || selected.includes('browser-oxfmt') || selected.includes('content-model'),
   };
 }

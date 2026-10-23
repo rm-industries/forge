@@ -8,19 +8,19 @@ separately authorized protection migration/rollback procedure. The
 
 ## Combined contract
 
-| Input/event                                         | Project and generator                                                         | Website/native/candidate coverage                                   |
-| --------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Docs Markdown only                                  | Root source/docs quality; package/generator bodies no-op                      | Website build, Chromium/axe and Lighthouse                          |
-| Website only                                        | Root quality; package/generator bodies no-op                                  | Full website browsers and budgets                                   |
-| Content-model                                       | Local model plus frontmatter source consumers; no generated registry consumer | Explicit packed frontmatter and native CMS serialization candidates |
-| Frontmatter                                         | Frontmatter package and explicit packed model compatibility                   | Independent website/generator remain unrelated                      |
-| Browser/native                                      | Native package, Rust quality and package runtime checks                       | Reproducibility, packed browsers and CMS serialization              |
-| Generator/template                                  | Packed CLI, generated source/build consumers and distinct behavior fixtures   | Template also reaches native CMS/browser candidate                  |
-| Shared/unknown, missing revisions, empty change set | Broad validation                                                              | All selected; full website browser matrix                           |
-| Mixed/deleted/renamed                               | Union of actual consumers, including both rename paths                        | Same ownership rules; no release inference                          |
-| Weekly/manual                                       | Broad project, generator, native and website validation                       | No production deployment or publication                             |
-| PR                                                  | Validation only                                                               | Website deployment/smoke intentionally skipped                      |
-| Affected main push                                  | Required selected validation                                                  | Website deployment and deployed smoke must succeed                  |
+| Input/event                                         | Project and generator                                                       | Website/native/candidate coverage                                     |
+| --------------------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Docs Markdown only                                  | Root source/docs quality; package/generator bodies no-op                    | Website build, Chromium/axe and Lighthouse                            |
+| Website only                                        | Root quality; package/generator bodies no-op                                | Full website browsers and budgets                                     |
+| Content-model                                       | Local model; no generated registry consumer                                 | Repository model/frontmatter integration and native CMS serialization |
+| Frontmatter                                         | Frontmatter package and isolated packed consumer                            | Independent website/generator remain unrelated                        |
+| Browser/native                                      | Native package, Rust quality and package runtime checks                     | Reproducibility, packed browsers and CMS serialization                |
+| Generator/template                                  | Packed CLI, generated source/build consumers and distinct behavior fixtures | Template also reaches native CMS/browser candidate                    |
+| Shared/unknown, missing revisions, empty change set | Broad validation                                                            | All selected; full website browser matrix                             |
+| Mixed/deleted/renamed                               | Union of actual consumers, including both rename paths                      | Same ownership rules; no release inference                            |
+| Weekly/manual                                       | Broad project, generator, native and website validation                     | No production deployment or publication                               |
+| PR                                                  | Validation only                                                             | Website deployment/smoke intentionally skipped                        |
+| Affected main push                                  | Required selected validation                                                | Website deployment and deployed smoke must succeed                    |
 
 GitLab reuses the same consumption selector and emits only selected native jobs.
 Its mirror trigger waits for child status. Generated standalone/nested consumers
@@ -124,3 +124,13 @@ checks before build, public build and exact root/nested URL selection. A real lo
 `lighthouse:ci` run passed all unchanged assertions across three URLs and nine
 runs. Root 90 tests, root types, formatting and repository lint also passed. The
 11-scenario packed suite was not repeated for this bounded URL-selection correction.
+
+## Package test ownership follow-up
+
+Markdownlint unit and packed-consumer checks now run without a content-model
+checkout. The former local-source integration moved to the repository test suite;
+content-model changes no longer select markdownlint package checks or its packed
+candidate. Isolation was verified by copying only the markdownlint package and
+running its public test and packed-consumer commands. No package runtime code or
+published dependency changed. The broader project-workflow and required-check
+redesign remains a separate design decision.

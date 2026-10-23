@@ -5,21 +5,22 @@ It supersedes the broad package fallback in [the first isolation step](ci-select
 Root formatting, code/Markdown lint, spelling and documentation checks still run.
 Other root tests and types run whenever package execution is selected.
 
-| Changed input                                                       | Package build, pack and runtime checks  | Other selected consumers                                                     |
-| ------------------------------------------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------- |
-| `packages/content-model/**`                                         | content-model, markdownlint-frontmatter | Explicit packed frontmatter and native CMS serialization candidates          |
-| `packages/markdownlint-frontmatter/**`                              | markdownlint-frontmatter                | Explicit packed model/frontmatter candidate                                  |
-| `packages/browser-oxfmt/**`                                         | browser-oxfmt                           | Rust quality, native reproducibility, packed browsers and CMS serialization  |
-| `packages/create-forge/**`                                          | create-forge                            | Packed CLI, isolated registry-pinned consumers and generated workflow checks |
-| `templates/default/**`                                              | create-forge                            | Generated consumers and native CMS/browser integration                       |
-| `website/**`, `docs/**`                                             | None                                    | Website, including documentation content                                     |
-| Shared root config, lock, scripts, workflows, setup, unknown inputs | All four                                | All validation lanes                                                         |
+| Changed input                                                       | Package build, pack and runtime checks | Other selected consumers                                                     |
+| ------------------------------------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------- |
+| `packages/content-model/**`                                         | content-model                          | Repository model/frontmatter integration and native CMS serialization        |
+| `packages/markdownlint-frontmatter/**`                              | markdownlint-frontmatter               | Explicit packed frontmatter candidate                                        |
+| `packages/browser-oxfmt/**`                                         | browser-oxfmt                          | Rust quality, native reproducibility, packed browsers and CMS serialization  |
+| `packages/create-forge/**`                                          | create-forge                           | Packed CLI, isolated registry-pinned consumers and generated workflow checks |
+| `templates/default/**`                                              | create-forge                           | Generated consumers and native CMS/browser integration                       |
+| `website/**`, `docs/**`                                             | None                                   | Website, including documentation content                                     |
+| Shared root config, lock, scripts, workflows, setup, unknown inputs | All four                               | All validation lanes                                                         |
 
-Frontmatter unit tests import local content-model source, so model changes select those
-tests. The explicit candidate lanes intentionally combine the local model with
-frontmatter ordering and native CMS serialization. They prove compatibility of those
-candidates; they neither substitute them into the registry-pinned generated consumer
-nor imply a consumer release. Website has no local package dependencies. Build and pack
+Frontmatter unit and packed-consumer tests use the package's public structural model
+shape without importing, building or installing content-model. Model changes no
+longer select frontmatter package checks. Cross-package model/Sveltia projection is
+owned by `scripts/verify-frontmatter-model.test.ts` in the repository suite.
+The explicit native CMS serialization candidate remains separate from package
+checks; candidate checks do not imply a downstream release. Website has no local package dependencies. Build and pack
 jobs operate on the same selected workspace list; runtime jobs inspect those artifacts
 and restore native bindings only when browser-oxfmt was built. Existing packed-consumer
 checks still install the emitted consumer's own lockfile without a candidate overlay.

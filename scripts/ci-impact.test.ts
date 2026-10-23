@@ -4,12 +4,12 @@ import { selectCiImpact } from './ci-impact.ts';
 
 test('routes actual local and copied inputs without changing registry-pinned consumers', () => {
   expect(selectCiImpact(['packages/content-model/src/index.ts'])).toMatchObject({
-    packages: 'content-model markdownlint-frontmatter',
+    packages: 'content-model',
     project: true,
     generator: false,
     website: false,
     native: false,
-    frontmatterCandidate: true,
+    frontmatterCandidate: false,
     browserCandidate: true,
   });
   expect(selectCiImpact(['packages/markdownlint-frontmatter/src/index.ts'])).toMatchObject({
@@ -41,7 +41,7 @@ test('routes actual local and copied inputs without changing registry-pinned con
   for (const path of ['docs/guide.md', 'website/src/pages/index.astro'])
     expect(selectCiImpact([path])).toMatchObject({ project: false, generator: false, website: true, packages: '' });
   expect(selectCiImpact(['website/a', 'packages/content-model/deleted.ts'])).toMatchObject({
-    packages: 'content-model markdownlint-frontmatter',
+    packages: 'content-model',
     generator: false,
     website: true,
   });
@@ -196,7 +196,7 @@ test('renames crossing ownership boundaries select both old and new consumers', 
     });
     expect(result.status).toBe(0);
     expect(readFileSync(output, 'utf8')).toContain('website=true\n');
-    expect(readFileSync(output, 'utf8')).toContain('packages=content-model markdownlint-frontmatter\n');
+    expect(readFileSync(output, 'utf8')).toContain('packages=content-model\n');
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
