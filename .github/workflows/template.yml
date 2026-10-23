@@ -1,0 +1,313 @@
+---
+name: Template
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - templates/default/**
+      - packages/create-forge/fixtures/starter-*/**
+      - scripts/test-template.ts
+      - scripts/verify-template*.ts
+      - scripts/verify-consumer-lock.ts
+      - scripts/template-workflows.test.ts
+      - .github/workflows/template.yml
+      - package.json
+      - package-lock.json
+      - .npmrc
+      - .github/actions/setup-project/**
+  push:
+    branches:
+      - main
+    paths:
+      - templates/default/**
+      - packages/create-forge/fixtures/starter-*/**
+      - scripts/test-template.ts
+      - scripts/verify-template*.ts
+      - scripts/verify-consumer-lock.ts
+      - scripts/template-workflows.test.ts
+      - .github/workflows/template.yml
+      - package.json
+      - package-lock.json
+      - .npmrc
+      - .github/actions/setup-project/**
+  workflow_dispatch: null
+  schedule:
+    - cron: 23 7 * * 1
+permissions: {}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+defaults:
+  run:
+    shell: bash
+jobs:
+  runtime:
+    name: Template runtime (${{ matrix.runtime }})
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runtime: minimum Node 22 on Ubuntu
+            os: ubuntu-latest
+            node: 22.22.2
+            major: '22'
+          - runtime: latest Node 22 on Ubuntu
+            os: ubuntu-latest
+            node: 22.x
+            major: '22'
+          - runtime: latest Node 24 on Ubuntu
+            os: ubuntu-latest
+            node: 24.x
+            major: '24'
+          - runtime: latest Node 26 on Ubuntu
+            os: ubuntu-latest
+            node: 26.x
+            major: '26'
+            primary: true
+          - runtime: latest Node 26 on macOS
+            os: macos-latest
+            node: 26.x
+            major: '26'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Prepare isolated starter with default regressions
+        run: node scripts/test-template.ts prepare "$RUNNER_TEMP/forge-template"
+      - name: Archive canonical source
+        run: tar -czf "$RUNNER_TEMP/template-source.tgz" -C "$RUNNER_TEMP/forge-template" .
+        if: matrix.primary == true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: matrix.primary == true
+        with:
+          name: template-source
+          path: ${{ runner.temp }}/template-source.tgz
+          if-no-files-found: error
+          retention-days: 7
+      - uses: $/.github/actions/setup-project
+        with:
+          node-version: ${{ matrix.node }}
+          working-directory: ${{ runner.temp }}/forge-template
+          cache-dependency-path: templates/default/package-lock.json
+      - name: Verify locked content-model
+        run: node scripts/verify-consumer-lock.ts "$RUNNER_TEMP/forge-template"
+      - name: Check template types
+        run: npm run typecheck
+        working-directory: ${{ runner.temp }}/forge-template
+      - name: Run template unit tests
+        run: if [ "$PRIMARY" = true ]; then npm run test:coverage; else npm test; fi
+        working-directory: ${{ runner.temp }}/forge-template
+        env:
+          PRIMARY: ${{ matrix.primary }}
+      - name: Build template once per runtime
+        run: npm run build
+        working-directory: ${{ runner.temp }}/forge-template
+      - name: Archive canonical production output
+        run: tar -czf "$RUNNER_TEMP/template-build.tgz" -C "$RUNNER_TEMP/forge-template" dist
+        if: matrix.primary == true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: matrix.primary == true
+        with:
+          name: template-build
+          path: ${{ runner.temp }}/template-build.tgz
+          if-no-files-found: error
+          retention-days: 7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always() && matrix.primary == true
+        with:
+          name: template-coverage
+          path: ${{ runner.temp }}/forge-template/coverage
+          if-no-files-found: error
+          retention-days: 7
+  quality:
+    name: Consumer source quality
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs:
+      - runtime
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: template-source
+          path: ${{ runner.temp }}/consumer-artifacts
+      - name: Restore the canonical template
+        run: |-
+          mkdir -p "$RUNNER_TEMP/forge-template"
+          tar -xzf "$RUNNER_TEMP/consumer-artifacts/template-source.tgz" -C "$RUNNER_TEMP/forge-template"
+      - name: Install template dependencies
+        uses: $/.github/actions/setup-project
+        with:
+          node-version: 26.x
+          working-directory: ${{ runner.temp }}/forge-template
+          cache-dependency-path: templates/default/package-lock.json
+      - name: Check template source quality
+        run: npm run quality:static
+        working-directory: ${{ runner.temp }}/forge-template
+  validate-build:
+    name: Consumer build validation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs:
+      - runtime
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: template-source
+          path: ${{ runner.temp }}/consumer-artifacts
+      - name: Restore the canonical template
+        run: |-
+          mkdir -p "$RUNNER_TEMP/forge-template"
+          tar -xzf "$RUNNER_TEMP/consumer-artifacts/template-source.tgz" -C "$RUNNER_TEMP/forge-template"
+      - name: Install template dependencies
+        uses: $/.github/actions/setup-project
+        with:
+          node-version: 26.x
+          working-directory: ${{ runner.temp }}/forge-template
+          cache-dependency-path: templates/default/package-lock.json
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: template-build
+          path: ${{ runner.temp }}/consumer-artifacts
+      - name: Restore production build
+        run: tar -xzf "$RUNNER_TEMP/consumer-artifacts/template-build.tgz" -C "$RUNNER_TEMP/forge-template"
+      - name: Validate the shared production artifact
+        run: npm run validate:build
+        working-directory: ${{ runner.temp }}/forge-template
+  browser:
+    name: Consumer browser tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs:
+      - runtime
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: template-source
+          path: ${{ runner.temp }}/consumer-artifacts
+      - name: Restore the canonical template
+        run: |-
+          mkdir -p "$RUNNER_TEMP/forge-template"
+          tar -xzf "$RUNNER_TEMP/consumer-artifacts/template-source.tgz" -C "$RUNNER_TEMP/forge-template"
+      - name: Install template dependencies
+        uses: $/.github/actions/setup-project
+        with:
+          node-version: 26.x
+          working-directory: ${{ runner.temp }}/forge-template
+          cache-dependency-path: templates/default/package-lock.json
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: template-build
+          path: ${{ runner.temp }}/consumer-artifacts
+      - name: Restore production build
+        run: tar -xzf "$RUNNER_TEMP/consumer-artifacts/template-build.tgz" -C "$RUNNER_TEMP/forge-template"
+      - name: Install supported browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+        working-directory: ${{ runner.temp }}/forge-template
+      - name: Test the shared production artifact
+        run: npm run test:e2e
+        working-directory: ${{ runner.temp }}/forge-template
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: consumer-browser-results
+          path: |-
+            ${{ runner.temp }}/forge-template/playwright-report
+            ${{ runner.temp }}/forge-template/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+        if: always()
+  lighthouse:
+    name: Consumer Lighthouse budgets
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs:
+      - runtime
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: template-source
+          path: ${{ runner.temp }}/consumer-artifacts
+      - name: Restore the canonical template
+        run: |-
+          mkdir -p "$RUNNER_TEMP/forge-template"
+          tar -xzf "$RUNNER_TEMP/consumer-artifacts/template-source.tgz" -C "$RUNNER_TEMP/forge-template"
+      - name: Install template dependencies
+        uses: $/.github/actions/setup-project
+        with:
+          node-version: 26.x
+          working-directory: ${{ runner.temp }}/forge-template
+          cache-dependency-path: templates/default/package-lock.json
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: template-build
+          path: ${{ runner.temp }}/consumer-artifacts
+      - name: Restore production build
+        run: tar -xzf "$RUNNER_TEMP/consumer-artifacts/template-build.tgz" -C "$RUNNER_TEMP/forge-template"
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: ${{ runner.temp }}/forge-template
+      - name: Audit the shared production artifact
+        run: npm run lighthouse:ci
+        working-directory: ${{ runner.temp }}/forge-template
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: consumer-lighthouse
+          path: ${{ runner.temp }}/forge-template/.lighthouseci
+          if-no-files-found: error
+          retention-days: 7
+          include-hidden-files: true
+        if: always()
+  customization:
+    name: Template customization commands
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup-project
+        with:
+          node-version: 26.x
+          working-directory: .
+          cache-dependency-path: package-lock.json
+      - name: Exercise edited template
+        run: npm run test:template:customization
+  static-tool-regressions:
+    name: Template quality tool regressions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 26.x
+          cache: npm
+          cache-dependency-path: templates/default/package-lock.json
+      - name: Verify static quality tools
+        run: npm run verify:template:static
