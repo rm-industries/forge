@@ -18,8 +18,8 @@ defaults:
   run:
     shell: bash
 jobs:
-  quality:
-    name: Repository quality
+  format:
+    name: Repository formatting
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -30,14 +30,103 @@ jobs:
       - uses: $/.github/actions/setup-project
         with:
           node-version: 26.x
-      - name: Check repository formatting, lint, spelling and documentation
+      - name: Formatting
+        run: npm run format
+  lint-code:
+    name: Repository code lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup-project
+        with:
+          node-version: 26.x
+      - name: Code lint
+        run: npm run lint:code -- --format github
+  lint-markdown:
+    name: Repository markdown lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup-project
+        with:
+          node-version: 26.x
+      - name: Markdown lint
+        run: npm run lint:markdown
+  spellcheck:
+    name: Repository spelling
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup-project
+        with:
+          node-version: 26.x
+      - name: Spelling
+        run: npm run spellcheck
+  documentation:
+    name: Repository documentation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup-project
+        with:
+          node-version: 26.x
+      - name: Documentation
+        run: npm run docs:validate
+  typecheck:
+    name: Repository typechecking
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup-project
+        with:
+          node-version: 26.x
+      - name: Typechecking
+        run: npx tsc --noEmit
+  test:
+    name: Repository tooling tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup-project
+        with:
+          node-version: 26.x
+      - name: Tooling tests
+        run: npm run test:contracts
+  quality:
+    name: Repository quality
+    if: always()
+    needs: [format, lint-code, lint-markdown, spellcheck, documentation, typecheck, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every repository check to pass
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
         run: |
-          npm run format
-          npm run lint:code -- --format github
-          npm run lint:markdown
-          npm run spellcheck
-          npm run docs:validate
-      - name: Check repository types and CI contracts
-        run: |
-          npx tsc --noEmit
-          npm run test:contracts
+          test -n "$RESULTS"
+          for result in $RESULTS; do
+            test "$result" = success
+          done
