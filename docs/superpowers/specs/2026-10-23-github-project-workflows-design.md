@@ -1,6 +1,6 @@
 # GitHub project workflows
 
-Status: proposed design for approval. This supersedes the GitHub selection and
+Status: approved by the maintainer on October 23, 2026. This supersedes the GitHub selection and
 legacy-check compatibility approach in PR 396; it does not change running CI yet.
 
 ## Intent and agreed decisions
@@ -54,7 +54,7 @@ candidate integrations belong to explicit integration validation, scheduled/manu
 or release validation where justified, rather than ordinary downstream package PR
 fan-out. Keep existing release safeguards while reorganizing validation ownership.
 
-Implementation proposal: separate repository CI-contract tests from cross-package
+Separate repository CI-contract tests from cross-package
 integration tests, so an always-running repository check does not quietly recreate
 package coupling. Cross-package integration runs on its own test/tooling changes
 and weekly/manual validation. Existing focused CMS preservation and serialization
@@ -77,7 +77,7 @@ artifact dependency is required.
 
 ## Required checks, cadence and tradeoffs
 
-Proposal for approval: retain one always-running `Repository quality` result as the
+Retain one always-running `Repository quality` result as the
 only required CI context; project-specific checks are optional in branch protection
 but must be reviewed before merging. Remove the 27 old required contexts and old
 summary requirements when migrating settings. Preserve unrelated review, security,
