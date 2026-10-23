@@ -484,3 +484,37 @@ jobs:
             website/test-results
           if-no-files-found: ignore
           retention-days: 7
+
+  validation:
+    name: Website validation
+    if: always()
+    needs:
+      [
+        impact,
+        format,
+        spellcheck,
+        lint-code,
+        lint-styles,
+        lint-markdown,
+        audit-unused,
+        typecheck,
+        unit-tests,
+        build,
+        validate-build,
+        browser-tests,
+        lighthouse,
+        deploy,
+        smoke-deployed,
+      ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require selected validation and deployment outcomes
+        working-directory: .
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          SELECTED: ${{ needs.impact.outputs.website }}
+          FULL_BROWSERS: ${{ needs.impact.outputs.full-browsers }}
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+        run: |-
+          node -e 'const n=JSON.parse(process.env.NEEDS),s=process.env.SELECTED,d=s === "true" && process.env.EVENT === "push" && process.env.REF === "refs/heads/main"; if (!["true","false"].includes(s) || !["true","false"].includes(process.env.FULL_BROWSERS) || !Object.entries(n).every(([id,j]) => j.result === (id === "impact" ? "success" : ["deploy","smoke-deployed"].includes(id) ? d ? "success" : "skipped" : s === "true" ? "success" : "skipped"))) process.exit(1)'

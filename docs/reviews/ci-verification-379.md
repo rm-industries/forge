@@ -1,0 +1,84 @@
+# Combined CI verification and migration evidence
+
+This closes the local verification slice of spec 367 without changing the parent
+spec, repository settings, production deployments, packages or existing consumers.
+The [final standard](../continuous-integration.md) contains the trigger map and the
+separately authorized protection migration/rollback procedure. The
+[baseline](ci-baseline-367.md) remains the historical live observation.
+
+## Combined contract
+
+| Input/event                                         | Project and generator                                                         | Website/native/candidate coverage                                   |
+| --------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Docs Markdown only                                  | Root source/docs quality; package/generator bodies no-op                      | Website build, Chromium/axe and Lighthouse                          |
+| Website only                                        | Root quality; package/generator bodies no-op                                  | Full website browsers and budgets                                   |
+| Content-model                                       | Local model plus frontmatter source consumers; no generated registry consumer | Explicit packed frontmatter and native CMS serialization candidates |
+| Frontmatter                                         | Frontmatter package and explicit packed model compatibility                   | Independent website/generator remain unrelated                      |
+| Browser/native                                      | Native package, Rust quality and package runtime checks                       | Reproducibility, packed browsers and CMS serialization              |
+| Generator/template                                  | Packed CLI, generated source/build consumers and distinct behavior fixtures   | Template also reaches native CMS/browser candidate                  |
+| Shared/unknown, missing revisions, empty change set | Broad validation                                                              | All selected; full website browser matrix                           |
+| Mixed/deleted/renamed                               | Union of actual consumers, including both rename paths                        | Same ownership rules; no release inference                          |
+| Weekly/manual                                       | Broad project, generator, native and website validation                       | No production deployment or publication                             |
+| PR                                                  | Validation only                                                               | Website deployment/smoke intentionally skipped                      |
+| Affected main push                                  | Required selected validation                                                  | Website deployment and deployed smoke must succeed                  |
+
+GitLab reuses the same consumption selector and emits only selected native jobs.
+Its mirror trigger waits for child status. Generated standalone/nested consumers
+own their emitted YAML: site/shared inputs select validation; unrelated nested
+repository changes can succeed without running the site. PRs retain Chromium/axe;
+weekly/manual coverage includes full browsers and Lighthouse. Current committed
+locks and primary-provider deployment restrictions remain intact.
+
+Local contracts exercise uncertainty, mixed input, deletion/rename paths, actual
+diff failure, selected workspace commands and mandatory producer/artifact edges.
+Tool/Generator summaries reject unsuccessful prerequisite statuses. Website summary
+also rejects cancellation, unexpected skips, failed selection and failed deployed
+smoke, while accepting only unrelated site and non-push deployment skips.
+Generated-provider execution tests cover the corresponding required-result policy.
+
+## Evidence and limits
+
+- Root: 90 tests; TypeScript; tracked formatting; code/Markdown lint, spelling and
+  documentation validation. Three non-native package suites: 117 generator,
+  32 content-model and 27 frontmatter tests; their type checks pass.
+- Actionlint 1.7.12 parses native workflows with only narrow documented exceptions
+  for supported same-repository action/workflow syntax. Shell/Python supplemental
+  tools were unavailable. Zizmor 1.31.1 offline scan reports no findings.
+- Packed generator evidence from ticket 377 covers 11 isolated scenarios plus
+  default starter and customized consumer unit/build/validation/Chromium commands.
+  Generated-provider syntax/security scans were also recorded in that slice.
+- Packed frontmatter/model public declarations and consumer behavior passed in 373.
+  Native serialization remains wired; the separate model-order browser probe times
+  out behind a dialog and was not added as a new failing gate. These are different
+  contracts; successful serialization does not prove the failed ordering probe.
+- Rust validation cannot start locally because the Rust compiler is unavailable. No native
+  source changed. Hosted Rust/WASM reproducibility, full hosted browser/runtime
+  lanes, live GitLab CI Lint/runner/report behavior and new GitHub protected-check
+  reporting remain unverified.
+- Reference assessments and proposed alignment issues are in
+  [consumer alignment](consumer-alignment-367.md). No reference repository was
+  mutated, deployed or migrated; its own custom scripts remain authoritative.
+
+## Counts and timings
+
+The 27 legacy required contexts remain. Conditional steps reduce expensive bodies,
+not their compatibility runner jobs. Impact, summary and candidate jobs add runner
+overhead; no reduction in total hosted runner-job count is claimed.
+
+| Docs-only work                             | Baseline execution              | Selected execution                       |
+| ------------------------------------------ | ------------------------------- | ---------------------------------------- |
+| Local package builds                       | Four workspaces                 | None                                     |
+| Package runtime lanes                      | Four                            | No-op bodies                             |
+| Generator candidate/consumer runtime lanes | One package plus five consumers | No-op bodies                             |
+| Root source/documentation quality          | Five jobs                       | Same five jobs                           |
+| Website browser projects                   | Three                           | Chromium/axe; all three on weekly/manual |
+
+This statically skips 23 historical project/generator job bodies for docs-only
+changes, including Rust quality, while retaining their existing check names.
+Generated consumer PRs also avoid two browser projects and defer Lighthouse to
+push/weekly/manual runs. These are graph-derived counts, not hosted measurements.
+Baseline samples were project 6m50s, generator 4m22s and website 5m26s on different
+successful runs. No comparable post-change hosted timing or billed-minute evidence
+exists, so no measured speedup is claimed. Publish only after approval, then inspect
+actual check names, failures/cancellations, artifacts and timings before approving
+any protection migration. GitLab requires a separately configured weekly schedule.

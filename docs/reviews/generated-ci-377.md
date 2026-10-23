@@ -65,7 +65,7 @@ advisory is excluded only for the existing intentionally disabled inactive-provi
 jobs/Pages upload. The baseline and changed GitLab-primary output each report exactly
 three `if-cond` diagnostics: `constant expression "false" in condition`. The verification
 command uses `-ignore '^constant expression "false" in condition'` and disables optional
-ShellCheck/Pyflakes integration; other Actionlint diagnostics remain enabled. Provider schemas validate
+ShellCheck/Python lint integration; other Actionlint diagnostics remain enabled. Provider schemas validate
 GitLab YAML and dependency topology; this is not GitLab CI Lint or runner execution. No consumer branch
 protections, schedules, live pipelines, deployment or production publishing are changed or claimed proven.
 No live before/after timings are available. Preserve the previous YAML to roll back selection/cadence;
