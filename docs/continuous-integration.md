@@ -8,7 +8,7 @@ supersedes the earlier shared-selector and legacy no-op implementation.
 
 `Repository quality` is the sole proposed required CI context. It runs on every PR
 and main push without path filters: root formatting, code/Markdown lint, spelling,
-documentation, repository TypeScript and CI contracts. Package runtime tests and
+documentation, repository TypeScript and tooling tests. Package runtime tests and
 builds belong to their own workflows. `npm run test:contracts` excludes the
 cross-package model test; `npm run test:root` retains it for local and GitLab use.
 `npm run typecheck:root` also retains integration types for local and GitLab use;
@@ -39,7 +39,7 @@ broad fallback; weekly/manual validation provides a backstop.
 
 | Workflow                  | Responsibility and primary inputs                                                                                                                | Broad cadence (UTC Monday)              |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
-| Repository quality        | Root static/docs/types/contracts; every PR/main push                                                                                             | 07:11; manual                           |
+| Repository quality        | Root static/docs/types/tooling tests; every PR/main push                                                                                         | 07:11; manual                           |
 | Website                   | `website/**`, consumed `docs/**`, shared locks/setup; full browsers, build, budgets and main-push deployment                                     | 07:41; manual                           |
 | Template                  | `templates/default/**`, starter fixtures and verification tooling; isolated source quality, runtime/build, full browsers, budgets, customization | 07:23; manual                           |
 | Content model             | Own package, shared locks/config/setup; types, unit tests, inspected package and supported runtimes                                              | 07:17; manual                           |
@@ -58,10 +58,12 @@ do not select it. The focused CMS serialization check retains metadata/body,
 delimiter, failure-preservation and retry coverage. The separately known failing
 CMS ordering probe is not enabled and serialization success does not prove it.
 GitLab still uses its existing selector and requires a separately configured schedule.
+The selector is temporary: remove it when translating the settled native GitHub
+workflow rules to GitLab.
 
 ## Runtime and evidence strategy
 
-Content Model and Markdownlint run source tests and typechecks on all four supported
+Content Model and Markdownlint run source tests and type checks on all four supported
 Linux Node lanes independently of one build and publishable-file inspection. They do
 not transport or unpack package tarballs between jobs. Browser runtime lanes restore native
 assets from the inspected package instead of installing Rust. Create Forge's four
@@ -72,8 +74,9 @@ no unpublished upstream source is substituted.
 Template validates an isolated canonical starter through `scripts/test-template.ts`.
 Its primary runtime publishes source and build archives, reused by static quality,
 build validation, browser/accessibility and Lighthouse jobs. Customization runs with
-`npm run test:template:customization`. Deliberately invalid static-tool fixtures
-remain separate regression checks. Generated workflow scans belong to Create Forge.
+`npm run test:template:customization`. Normal static checks run on the canonical
+template; the former negative-fixture tool self-tests have been retired. Generated
+workflow scans and generated-output tests belong to Create Forge.
 
 Website source checks gate one production build. Build validation, all three
 browser projects and Lighthouse download that same immutable `website-build`

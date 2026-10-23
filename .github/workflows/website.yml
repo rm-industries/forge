@@ -13,8 +13,6 @@ on: # yamllint disable-line rule:truthy
       - .npmrc
       - .github/actions/setup-project/**
       - .github/workflows/website.yml
-      - scripts/website-ci-workflow.test.ts
-      - scripts/final-ci-contract.test.ts
   push:
     branches:
       - main
@@ -26,8 +24,6 @@ on: # yamllint disable-line rule:truthy
       - .npmrc
       - .github/actions/setup-project/**
       - .github/workflows/website.yml
-      - scripts/website-ci-workflow.test.ts
-      - scripts/final-ci-contract.test.ts
   workflow_dispatch:
   schedule:
     - cron: '41 7 * * 1'

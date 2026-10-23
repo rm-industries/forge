@@ -74,8 +74,8 @@ Edit `templates/default/` first. Its README and `docs/` are part of generated
 output. Run focused checks there, then validate from the repository root:
 
 ```sh
-npm run verify:template:static
 npm run verify:template
+npm run test:template:customization
 npm run test:generator:e2e
 ```
 

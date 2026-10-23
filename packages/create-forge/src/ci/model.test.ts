@@ -52,6 +52,19 @@ describe('shared work and provider rendering', () => {
     expect(siteWork.build!.artifacts).toContain('dist');
     for (const work of Object.values(siteWork).filter((work) => work.browsers.length > 0))
       expect(work.needs).toContain('build');
+    const { project } = createGithubWorkflows(config, pins);
+    expect(project.jobs.build!.needs).toEqual(['select', ...siteWork.build!.needs]);
+    expect(project.jobs.build!.steps.filter((step) => 'run' in step && step.run === 'npm run build')).toHaveLength(1);
+    for (const id of ['validate-build', 'browser-tests', 'lighthouse']) {
+      const job = project.jobs[id]!;
+      expect(job.needs).toEqual(['select', 'build']);
+      expect(
+        job.steps.find((step) => 'uses' in step && step.uses.startsWith('actions/download-artifact@')),
+      ).toMatchObject({
+        with: { name: 'build-dist', path: 'website/dist' },
+      });
+      expect(job.steps.some((step) => 'run' in step && step.run.includes('npm run build'))).toBe(false);
+    }
   });
   test('filters workflow validation while keeping project and security checks unconditional', () => {
     const workflows = createGithubWorkflows(config, pins);

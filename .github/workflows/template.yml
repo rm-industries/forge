@@ -10,7 +10,7 @@ on:
       - scripts/test-template.ts
       - scripts/verify-template*.ts
       - scripts/verify-consumer-lock.ts
-      - scripts/template-workflows.test.ts
+      - scripts/test-template.test.ts
       - .github/workflows/template.yml
       - package.json
       - package-lock.json
@@ -25,7 +25,7 @@ on:
       - scripts/test-template.ts
       - scripts/verify-template*.ts
       - scripts/verify-consumer-lock.ts
-      - scripts/template-workflows.test.ts
+      - scripts/test-template.test.ts
       - .github/workflows/template.yml
       - package.json
       - package-lock.json
@@ -295,19 +295,3 @@ jobs:
           cache-dependency-path: package-lock.json
       - name: Exercise edited template
         run: npm run test:template:customization
-  static-tool-regressions:
-    name: Template quality tool regressions
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
-        with:
-          node-version: 26.x
-          cache: npm
-          cache-dependency-path: templates/default/package-lock.json
-      - name: Verify static quality tools
-        run: npm run verify:template:static

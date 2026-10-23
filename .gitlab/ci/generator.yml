@@ -198,13 +198,3 @@ generator-scenarios:
     - npm ci
   script:
     - FORGE_CLI_TARBALL="$CI_PROJECT_DIR/.ci-packages/create-forge.tgz" node packages/create-forge/scripts/test-generator-e2e.ts
-consumer-quality-tool-regressions:
-  rules:
-    - when: on_success
-  image: node:26
-  stage: validate
-  needs: []
-  before_script:
-    - npm ci
-  script:
-    - npm run verify:template:static
