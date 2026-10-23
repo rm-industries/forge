@@ -116,10 +116,50 @@ export function createGithubWorkflows(
       'retention-days': 7,
     },
   });
-  const jobs: Record<string, GithubJob> = {};
+  const jobs: Record<string, GithubJob> = {
+    select: {
+      name: 'Select site checks',
+      'runs-on': 'ubuntu-latest',
+      permissions: { contents: 'read' },
+      outputs: { affected: '${{ steps.impact.outputs.affected }}' },
+      steps: [
+        { ...checkout, with: { ...checkout.with, 'fetch-depth': 0 } },
+        {
+          uses: pins('actions/setup-node').ref,
+          with: { 'node-version': config.nodeVersion, 'package-manager-cache': false },
+        },
+        {
+          id: 'impact',
+          'working-directory': '.',
+          env: {
+            BASE_SHA: '${{ github.event.pull_request.base.sha || github.event.before }}',
+            EVENT_NAME: '${{ github.event_name }}',
+          },
+          run: `node <<'NODE'
+import { execFileSync } from 'node:child_process';
+import { appendFileSync } from 'node:fs';
+const directory = ${JSON.stringify(config.directory)};
+const base = process.env.BASE_SHA;
+let affected = true;
+if (!['schedule', 'workflow_dispatch'].includes(process.env.EVENT_NAME) && /^[a-f0-9]{40}$/u.test(base ?? '') && !/^0+$/u.test(base)) {
+  const paths = execFileSync('git', ['diff', '--name-only', '--no-renames', '-z', base, 'HEAD'], { encoding: 'utf8' }).split('\\0').filter(Boolean);
+  affected = paths.some((path) => directory === '.' || path.startsWith(directory + '/') || !path.includes('/') || path.startsWith('.') || ['scripts/', 'config/', 'packages/'].some((prefix) => path.startsWith(prefix)));
+}
+appendFileSync(process.env.GITHUB_OUTPUT, 'affected=' + affected + '\\n');
+NODE`,
+        },
+      ],
+    },
+  };
   for (const [id, work] of Object.entries(plan)) {
     const steps = setup(config.nodeVersion);
-    if (work.browsers.length) steps.push({ run: `npx playwright install --with-deps ${work.browsers.join(' ')}` });
+    if (work.browsers.length)
+      steps.push({
+        run:
+          id === 'browser-tests'
+            ? `if [ "$FULL_BROWSERS" = "true" ]; then npx playwright install --with-deps ${work.browsers.join(' ')}; else npx playwright install --with-deps chromium; fi`
+            : `npx playwright install --with-deps ${work.browsers.join(' ')}`,
+      });
     for (const need of work.needs) {
       for (const output of plan[need]!.artifacts)
         steps.push({
@@ -127,7 +167,16 @@ export function createGithubWorkflows(
           with: { name: `${need}-${output.replaceAll('/', '-')}`, path: path(output) },
         });
     }
-    steps.push(...work.commands.map((run) => ({ run: id === 'lint-code' ? `${run} -- --format github` : run })));
+    steps.push(
+      ...work.commands.map((run) => ({
+        run:
+          id === 'lint-code'
+            ? `${run} -- --format github`
+            : id === 'browser-tests'
+              ? `if [ "$FULL_BROWSERS" = "true" ]; then ${run}; else ${run} -- --project=chromium; fi`
+              : run,
+      })),
+    );
     for (const output of work.artifacts) {
       const upload = artifact([output], `${id}-${output.replaceAll('/', '-')}`);
       if (id === 'build' && 'uses' in upload) {
@@ -140,10 +189,40 @@ export function createGithubWorkflows(
       name: work.name,
       'runs-on': 'ubuntu-latest',
       permissions: { contents: 'read' },
-      ...(work.needs.length ? { needs: work.needs } : {}),
+      needs: ['select', ...work.needs],
+      if: `needs.select.outputs.affected == 'true'${id === 'lighthouse' ? " && github.event_name != 'pull_request'" : ''}`,
+      ...(id === 'browser-tests'
+        ? {
+            env: {
+              FULL_BROWSERS: "${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}",
+            },
+          }
+        : {}),
       steps,
     });
   }
+  jobs.validation = githubJobSchema.parse({
+    name: 'Validation',
+    'runs-on': 'ubuntu-latest',
+    permissions: {},
+    needs: ['select', ...Object.keys(plan)],
+    if: 'always()',
+    steps: [
+      {
+        'working-directory': '.',
+        env: { NEEDS_JSON: '${{ toJSON(needs) }}', EVENT_NAME: '${{ github.event_name }}' },
+        run: `node <<'NODE'
+const needs = JSON.parse(process.env.NEEDS_JSON);
+if (needs.select.result !== 'success' || !['true', 'false'].includes(needs.select.outputs.affected)) process.exit(1);
+for (const id of ${JSON.stringify(Object.keys(plan))}) {
+  const expected = needs.select.outputs.affected === 'false' || (id === 'lighthouse' && process.env.EVENT_NAME === 'pull_request') ? 'skipped' : 'success';
+  if (needs[id].result !== expected) process.exit(1);
+}
+console.log(needs.select.outputs.affected === 'true' ? 'Required site checks passed.' : 'No site inputs changed.');
+NODE`,
+      },
+    ],
+  });
   // Deployment consumes this run's artifacts and never executes fork-controlled code with Pages credentials.
   if (nativePages)
     jobs.build!.steps.push({
@@ -227,6 +306,11 @@ export function createGithubWorkflows(
   });
   const project = githubWorkflowSchema.parse({
     ...base('Project Continuous Integration'),
+    on: {
+      ...base('Project Continuous Integration').on,
+      schedule: [{ cron: `${config.automationMinute} 6 * * 2` }],
+      workflow_dispatch: null,
+    },
     defaults: { run: { shell: 'bash', 'working-directory': config.directory } },
     jobs,
   });

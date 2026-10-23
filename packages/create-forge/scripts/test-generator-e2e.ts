@@ -107,6 +107,31 @@ const assertGeneratedProject = async (directory: string, packageName: string, re
     if (parse(workflow).on.schedule[0].cron !== `${minute} 5 * * 1`) throw new Error('Incorrect generated schedule');
   }
   const project = parse(projectWorkflow);
+  if (!project.on.schedule?.length || !('workflow_dispatch' in project.on) || !project.jobs.validation?.if)
+    throw new Error('Consumer validation must retain scheduled/manual coverage and an unconditional required result.');
+  const selection = project.jobs.select.steps.find((step: { id?: string }) => step.id === 'impact');
+  const selectionOutput = join(fixtureDirectory, 'selection-output');
+  await writeFile(selectionOutput, '');
+  await execute('bash', ['-e', '-c', selection.run], {
+    cwd: repositoryDirectory,
+    env: { ...process.env, EVENT_NAME: 'schedule', BASE_SHA: '', GITHUB_OUTPUT: selectionOutput },
+  });
+  if ((await readFile(selectionOutput, 'utf8')) !== 'affected=true\n')
+    throw new Error('Packed consumer scheduled selection did not request broad coverage.');
+  const required = project.jobs.validation;
+  const needs = Object.fromEntries(
+    required.needs.map((id: string) => [
+      id,
+      id === 'select'
+        ? { result: 'success', outputs: { affected: 'true' } }
+        : { result: id === 'lighthouse' ? 'skipped' : 'success' },
+    ]),
+  );
+  await execute('bash', ['-e', '-c', required.steps[0].run], {
+    cwd: repositoryDirectory,
+    env: { ...process.env, EVENT_NAME: 'pull_request', NEEDS_JSON: JSON.stringify(needs) },
+  });
+
   if (
     project.on.workflow_run ||
     project.jobs.deploy.environment.name !== 'github-pages' ||
@@ -389,7 +414,7 @@ try {
     string,
     { rules?: Array<{ when?: string }> }
   >;
-  if (prefixedValidation.build?.rules?.[0]?.when !== 'on_success')
+  if (!prefixedValidation.build?.rules?.some((rule) => !rule.when || rule.when === 'on_success'))
     throw new Error('Single-environment GitLab consumer jobs must admit workflow-approved merge requests.');
   const { site: prefixedSiteConfig } = (await import(
     pathToFileURL(join(prefixedPagesDirectory, 'src', 'config', 'site.ts')).href

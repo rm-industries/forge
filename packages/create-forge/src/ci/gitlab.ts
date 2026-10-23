@@ -23,13 +23,18 @@ export function createGitlabPipeline(
     delete result['smoke-deployed'];
     for (const id of Object.keys(plan)) {
       const job = gitlabJobSchema.parse(result[id]);
-      job.rules = [
-        ...deployments.map((deployment) => ({
-          if: `$CI_COMMIT_BRANCH == ${JSON.stringify(deployment.sourceBranch)} || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == ${JSON.stringify(deployment.sourceBranch)}`,
-          variables: { PUBLIC_SITE_URL: deployment.url! },
-        })),
-        { when: 'on_success' as const, variables: { PUBLIC_SITE_URL: deployments[0]!.url! } },
-      ];
+      job.rules = job.rules!.flatMap((rule) =>
+        rule.when === 'never'
+          ? [rule]
+          : [
+              ...deployments.map((deployment) => ({
+                ...rule,
+                if: `${rule.if ? `(${rule.if}) && ` : ''}($CI_COMMIT_BRANCH == ${JSON.stringify(deployment.sourceBranch)} || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == ${JSON.stringify(deployment.sourceBranch)})`,
+                variables: { PUBLIC_SITE_URL: deployment.url! },
+              })),
+              { ...rule, variables: { PUBLIC_SITE_URL: deployments[0]!.url! } },
+            ],
+      );
       result[id] = job;
     }
     for (const deployment of deployments) {
@@ -49,7 +54,24 @@ export function createGitlabPipeline(
   const workStageNames = ['validate', 'build', 'verify'];
   const stageName = (level: number) => workStageNames[level] ?? `verify-${level - 1}`;
   const stage = (id: string) => stageName(depth(id));
-  const jobs: Record<string, GitlabJob> = {};
+  const changes = {
+    paths:
+      config.directory === '.'
+        ? ['**/*']
+        : [`${config.directory}/**/*`, '*', '.*/**/*', 'scripts/**/*', 'config/**/*', 'packages/**/*'],
+  };
+  const broad =
+    '$CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "parent_pipeline"';
+  const selectedRules = [{ if: broad }, { changes }, { when: 'never' as const }];
+  const jobs: Record<string, GitlabJob> = {
+    unaffected: {
+      image: `node:${config.nodeVersion}`,
+      stage: 'validate',
+      before_script: [],
+      rules: [{ if: broad, when: 'never' }, { changes, when: 'never' }, { when: 'on_success' }],
+      script: ["echo 'No generated site inputs changed.'"],
+    },
+  };
   for (const [id, work] of Object.entries(plan)) {
     const reports =
       id === 'unit-tests'
@@ -76,20 +98,33 @@ export function createGitlabPipeline(
       image: `node:${config.nodeVersion}`,
       stage: stage(id),
       // Jobs without rules are excluded from merge requests despite workflow admission.
-      rules: [{ when: 'on_success' }],
+      rules:
+        id === 'lighthouse'
+          ? [{ if: '$CI_PIPELINE_SOURCE == "merge_request_event"', when: 'never' }, ...selectedRules]
+          : selectedRules,
       needs: work.needs.map((job) => ({ job, artifacts: true })),
       // Node containers run as root; scope Chrome's flag to GitLab Lighthouse jobs.
       ...(id === 'lighthouse'
         ? { variables: { LHCI_COLLECT__SETTINGS__CHROME_FLAGS: '--no-sandbox --disable-dev-shm-usage --disable-gpu' } }
         : {}),
       script: [
-        ...(work.browsers.length ? [`npx playwright install --with-deps ${work.browsers.join(' ')}`] : []),
+        ...(work.browsers.length
+          ? [
+              id === 'browser-tests'
+                ? `if [ "$CI_PIPELINE_SOURCE" = "schedule" ] || [ "$CI_PIPELINE_SOURCE" = "web" ] || [ "$CI_PIPELINE_SOURCE" = "parent_pipeline" ]; then npx playwright install --with-deps ${work.browsers.join(' ')}; else npx playwright install --with-deps chromium; fi`
+                : `npx playwright install --with-deps ${work.browsers.join(' ')}`,
+            ]
+          : []),
         ...(id === 'lighthouse'
           ? [
               `export CHROME_PATH="$(node --input-type=module -e 'import { chromium } from "@playwright/test"; process.stdout.write(chromium.executablePath());')"`,
             ]
           : []),
-        ...commands,
+        ...commands.map((command) =>
+          id === 'browser-tests'
+            ? `if [ "$CI_PIPELINE_SOURCE" = "schedule" ] || [ "$CI_PIPELINE_SOURCE" = "web" ] || [ "$CI_PIPELINE_SOURCE" = "parent_pipeline" ]; then ${command}; else ${command} -- --project=chromium; fi`
+            : command,
+        ),
       ],
       ...(work.artifacts.length || reports
         ? {
@@ -114,6 +149,7 @@ export function createGitlabPipeline(
       ? [
           {
             if: `$CI_COMMIT_BRANCH == ${sourceBranch} && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "parent_pipeline")`,
+            changes,
           },
         ]
       : [{ when: 'never' as const }];
@@ -198,6 +234,7 @@ export function createGitlabPipeline(
         { if: '$CI_PIPELINE_SOURCE == "parent_pipeline"' },
         { if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS && $CI_PIPELINE_SOURCE == "push"', when: 'never' },
         { if: '$CI_PIPELINE_SOURCE == "push"' },
+        { if: '$CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"' },
       ],
     },
     stages: [...new Set(Object.keys(plan).map(depth))]

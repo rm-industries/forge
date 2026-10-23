@@ -460,7 +460,10 @@ test.each([undefined, [{ name: 'production', sourceBranch: 'main', target: 'gitl
   (deployments) => {
     const selected = generationOptionsSchema.parse({ ...config, primary: 'gitlab', deployments });
     const pipeline = createGitlabPipeline(selected);
-    for (const id of Object.keys(siteWork)) expect(pipeline[id]).toHaveProperty('rules', [{ when: 'on_success' }]);
+    for (const id of Object.keys(siteWork)) {
+      expect(pipeline[id]).toHaveProperty('rules');
+      expect(JSON.stringify(pipeline[id])).toContain('website/**/*');
+    }
     expect(pipeline.workflow.rules[0]).toHaveProperty('if', '$CI_PIPELINE_SOURCE == "merge_request_event"');
     expect(Boolean(pipeline.deploy)).toBe(deployments?.length !== 0);
   },
