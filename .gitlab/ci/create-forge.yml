@@ -1,0 +1,52 @@
+.create-forge:
+  extends: .node
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"
+    - changes:
+        - packages/create-forge/**/*
+        - templates/default/**/*
+        - scripts/verify-consumer-lock.ts
+        - .github/workflows/create-forge.yml
+        - .github/workflows/security.yml
+        - .github/workflows/automation.yml
+        - .github/workflows/website.yml
+        - tsconfig.json
+        - package.json
+        - package-lock.json
+        - .npmrc
+        - .github/actions/setup-project/**/*
+        - .gitlab-ci.yml
+        - .gitlab/ci/setup.yml
+        - .gitlab/ci/create-forge.yml
+create-forge-package:
+  extends: .create-forge
+  script:
+    - |-
+      npm run typecheck --workspace @rm-industries/create-forge
+      npm test --workspace @rm-industries/create-forge
+    - |-
+      npm run build --workspace @rm-industries/create-forge
+      mkdir -p "$CI_PROJECT_DIR/.ci-cli/forge-packages"
+      npm pack --ignore-scripts --workspace @rm-industries/create-forge --pack-destination "$CI_PROJECT_DIR/.ci-cli/forge-packages"
+      mv "$CI_PROJECT_DIR/.ci-cli/forge-packages/"*.tgz "$CI_PROJECT_DIR/.ci-cli/forge-packages/create-forge.tgz"
+      tar -tzf "$CI_PROJECT_DIR/.ci-cli/forge-packages/create-forge.tgz" > "$CI_PROJECT_DIR/.ci-cli/forge-package-files"
+      for entry in package/dist/index.mjs package/dist/template/.editorconfig package/dist/template/package-lock.json; do grep -Fx "$entry" "$CI_PROJECT_DIR/.ci-cli/forge-package-files"; done
+  artifacts:
+    when: always
+    expire_in: 7 days
+    paths:
+      - .ci-cli/forge-packages/create-forge.tgz
+      - packages/create-forge/test-results/unit.xml
+    reports:
+      junit: packages/create-forge/test-results/unit.xml
+create-forge-scenarios:
+  extends:
+    - .create-forge
+    - .runtime
+  stage: verify
+  needs:
+    - job: create-forge-package
+      artifacts: true
+  script:
+    - FORGE_CLI_TARBALL="$CI_PROJECT_DIR/.ci-cli/forge-packages/create-forge.tgz" node
+      packages/create-forge/scripts/test-generator-e2e.ts

@@ -1,7 +1,9 @@
 # GitHub project workflows
 
 Status: approved by the maintainer on October 23, 2026. This supersedes the GitHub selection and
-legacy-check compatibility approach in PR 396; it does not change running CI yet.
+legacy-check compatibility approach in PR 396. The maintainer subsequently approved
+parallel repository checks with a single required aggregate and native GitLab
+translation; see the [follow-up plan](../plans/2026-10-23-parallel-quality-and-gitlab.md).
 
 ## Intent and agreed decisions
 

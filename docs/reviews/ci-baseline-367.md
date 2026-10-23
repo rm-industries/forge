@@ -334,7 +334,7 @@ Root pipeline rules and include scopes are described above; all includes run und
 Images select independent Node versions; no GitHub token permissions apply. GitLab CI job-token
 access and protected variables are server settings whose live state was not inspected.
 
-Source: [generator.yml](../../.gitlab/ci/generator.yml).
+Source: [generator.yml](https://github.com/rm-industries/forge/blob/9661fd7/.gitlab/ci/generator.yml).
 
 | Job ID                              | Commands                                                                                                                                                                                                                                                             | Needs             | Artifacts                                                                                                      |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------- |

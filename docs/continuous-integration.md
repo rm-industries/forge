@@ -6,9 +6,12 @@ supersedes the earlier shared-selector and legacy no-op implementation.
 
 ## Required checks and migration
 
-`Repository quality` is the sole proposed required CI context. It runs on every PR
-and main push without path filters: root formatting, code/Markdown lint, spelling,
-documentation, repository TypeScript and tooling tests. Package runtime tests and
+`Repository quality` is the sole proposed required CI context. Seven independent
+jobs run root formatting, code lint, Markdown lint, spelling, documentation,
+repository TypeScript and tooling tests in parallel on every PR and main push.
+The final `Repository quality` job requires every result to succeed; failures,
+cancellations and unexpected skips cannot turn into a passing gate. Each check
+installs its locked dependencies in its own runner. Package runtime tests and
 builds belong to their own workflows. `npm run test:contracts` excludes the
 cross-package model test; `npm run test:root` retains it for local and GitLab use.
 `npm run typecheck:root` also retains integration types for local and GitLab use;
@@ -48,7 +51,7 @@ broad fallback; weekly/manual validation provides a backstop.
 | Markdownlint              | Own package and shared tooling; types, unit tests and publishable-file inspection                                                                | 07:29; manual                           |
 | Model and CMS integration | Own tests/tooling and shared locks/setup; cross-package model agreement and focused CMS serialization/preservation                               | 07:59; manual                           |
 | Automation/security       | Workflow syntax/security, CodeQL and dependency review                                                                                           | Existing events/schedules               |
-| GitLab mirror             | Existing selector and native project/generator/website child pipeline                                                                            | MR/default push; schedule/web admission |
+| GitLab mirror             | Native project includes with independent change rules                                                                                            | MR/default push; schedule/web admission |
 
 See the YAML for each complete input list. Published upstream source edits do not
 fan out to downstream consumers: consumers validate when their manifests/locks
@@ -57,9 +60,8 @@ Integration source changes run their own workflow; ordinary upstream package edi
 do not select it. The focused CMS serialization check retains metadata/body,
 delimiter, failure-preservation and retry coverage. The separately known failing
 CMS ordering probe is not enabled and serialization success does not prove it.
-GitLab still uses its existing selector and requires a separately configured schedule.
-The selector is temporary: remove it when translating the settled native GitHub
-workflow rules to GitLab.
+GitLab uses native change rules for the same project ownership. Scheduled and web
+pipelines run broad validation; a weekly schedule must be configured separately.
 
 ## Runtime and evidence strategy
 
@@ -158,32 +160,37 @@ validation. See [generated CI](reviews/generated-ci-377.md) for details.
 
 ## Native GitLab validation
 
-Forge maintains `.gitlab-ci.yml` and its project, generator and website includes
-as native YAML. These files are edited directly, without a TypeScript generation
-step. The website graph matches consumer checks and artifact reuse; GitHub remains
-the primary provider. GitLab website deployment and smoke jobs are present but
-use `when: never`. Configure Pages and the canonical site URL before enabling them.
+Forge maintains `.gitlab-ci.yml` and project-owned includes under `.gitlab/ci/` as
+ordinary native YAML. Repository formatting, code/Markdown lint, spelling,
+documentation, types and tooling tests run independently. Content Model,
+Markdownlint, Browser Formatter, Create Forge, Template, Website and model/CMS
+integration have their own change rules and explicit shared inputs.
 
-Project includes validate the tool and its supported Node versions. Generator
-includes package one CLI candidate, bootstrap per Linux runtime and reuse the
-primary consumer for quality and build-artifact checks. GitHub retains the macOS generator runner, CodeQL, dependency
-review, workflow scans, mirror synchronization and release automation. GitLab
-validation is supplemental and uses Linux container runners for isolated Node
-images. Server-side CI Lint and a configured runner are still
-needed to confirm it on the mirror.
+The custom impact selector, selection job and generated child pipeline have been
+removed. GitLab evaluates [native change rules](https://docs.gitlab.com/ci/yaml/#ruleschanges)
+for merge requests and default-branch pushes. Schedule/web rules admit broad
+validation before change rules are evaluated. Mixed changes select the applicable
+projects without published upstream source triggering downstream packages.
 
-A prepare job emits selected native jobs as a dynamic child configuration. The
-shared ownership selector chooses package workspaces, generator consumers and the
-website, while root static/documentation checks remain. The parent mirror trigger
-propagates child failure and cancellation. GitLab 18.2 or later is required for
-`strategy: mirror`; live server/runner behavior remains unverified. GitLab uses
-[native child pipelines and needs](https://docs.gitlab.com/ci/yaml/) for composition.
+Content Model and Markdownlint test source on minimum/latest Node 22, Node 24 and
+Node 26 Linux lanes, alongside one build/publishable-file inspection. Create Forge
+uses one inspected CLI tarball for its Linux scenarios and packed smoke. Template
+owns isolated starter quality, runtime/build, full browser/accessibility,
+Lighthouse and customization validation. Browser Formatter retains native
+reproducibility, package browsers and native asset reuse across runtime lanes.
+Model/CMS integration has its own tooling triggers and broad scheduled/manual runs.
 
-GitLab stage names describe their purpose: `prepare` packages the generator
-candidate, `validate` covers source checks, `build` produces artifacts, and
-`verify` checks packages or built consumers. Deployment and live verification
-use `deploy` and `smoke`. Native needs relationships preserve independent job
-flows across these stages. Generated consumer pipelines start at `validate`.
+GitHub remains the primary provider, including macOS validation, CodeQL,
+dependency review, workflow scans, mirror synchronization and release automation.
+GitLab uses Linux container runners. Its website deployment and smoke jobs remain
+disabled; no project schedule/manual run publishes or deploys. Server-side CI Lint
+and a configured runner are still needed to verify the native pipeline on the
+mirror. This change does not configure schedules or alter repository settings.
+
+Native job dependencies preserve build-artifact ownership without waiting for
+unrelated project work. The former `strategy: mirror` child-pipeline version
+requirement no longer applies. Generated consumer YAML remains separate from this
+Forge-owned workflow translation.
 
 ### Native CI reporting
 

@@ -1,5 +1,8 @@
 # GitLab mirror impact routing
 
+> Historical implementation: native project-owned change rules now replace this
+> selector/child-pipeline design. See the current [CI standard](../continuous-integration.md).
+
 [Ticket 374](https://github.com/rm-industries/forge/issues/374) reuses the
 [package consumption matrix](package-impact-373.md), rather than duplicating
 ownership with GitLab path globs. The parent admits merge requests and default-branch

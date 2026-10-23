@@ -6,7 +6,8 @@ or production action performed. This is the exact replacement for the historical
 [design](../superpowers/specs/2026-10-23-github-project-workflows-design.md).
 
 Remove each requirement below and require the one always-running `Repository quality`
-context. This is a removal/replacement map, not a claim that Repository quality
+context. That aggregate waits for all seven parallel repository checks and rejects
+unsuccessful results. This is a removal/replacement map, not a claim that Repository quality
 executes all historical work: project-specific checks become optional in protection
 and must be reviewed before merge.
 

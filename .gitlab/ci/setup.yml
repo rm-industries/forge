@@ -1,0 +1,31 @@
+.node:
+  image: node:26
+  stage: validate
+  needs: []
+  variables:
+    NODE_VERSION: '26'
+  before_script:
+    - npm ci
+.runtime:
+  parallel:
+    matrix:
+      - NODE_VERSION:
+          - 22.22.2
+          - '22'
+          - '24'
+          - '26'
+  image: node:$NODE_VERSION
+.native:
+  extends: .node
+  variables:
+    RUSTUP_TOOLCHAIN: 1.97.0
+    CARGO_TARGET_DIR: $CI_PROJECT_DIR/.browser-oxfmt-target
+  before_script:
+    - npm ci
+    - |-
+      curl --fail --silent --show-error --location --output /tmp/forge-rustup-init https://static.rust-lang.org/rustup/archive/1.28.2/x86_64-unknown-linux-gnu/rustup-init
+      echo '20a06e644b0d9bd2fbdbfd52d42540bdde820ea7df86e92e533c073da0cdd43c  /tmp/forge-rustup-init' | sha256sum --check
+      chmod +x /tmp/forge-rustup-init
+      /tmp/forge-rustup-init -y --profile minimal --default-toolchain 1.97.0 --target wasm32-unknown-unknown --component rustfmt --component clippy
+      . "$HOME/.cargo/env"
+      cargo +1.97.0 install wasm-bindgen-cli --version "$(node packages/browser-oxfmt/native/build-wasm.ts --bindings-version)" --locked

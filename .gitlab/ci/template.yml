@@ -1,0 +1,151 @@
+.template:
+  extends: .node
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"
+    - changes:
+        - templates/default/**/*
+        - packages/create-forge/fixtures/starter-*/**/*
+        - scripts/test-template.ts
+        - scripts/verify-template*.ts
+        - scripts/verify-consumer-lock.ts
+        - scripts/test-template.test.ts
+        - .github/workflows/template.yml
+        - package.json
+        - package-lock.json
+        - .npmrc
+        - .github/actions/setup-project/**/*
+        - .gitlab-ci.yml
+        - .gitlab/ci/setup.yml
+        - .gitlab/ci/template.yml
+template-primary:
+  extends: .template
+  stage: build
+  before_script: &template-prepare
+    - node scripts/test-template.ts prepare /tmp/forge-template
+    - cd /tmp/forge-template
+    - npm ci
+    - node "$CI_PROJECT_DIR/scripts/verify-consumer-lock.ts" /tmp/forge-template
+  script:
+    - mkdir -p "$CI_PROJECT_DIR/.ci-template"
+    - tar -czf "$CI_PROJECT_DIR/.ci-template/source.tgz" --exclude=node_modules --exclude=.astro -C /tmp/forge-template .
+    - npm run typecheck
+    - npm run test:coverage
+    - npm run build
+    - tar -czf "$CI_PROJECT_DIR/.ci-template/build.tgz" -C /tmp/forge-template dist
+  after_script:
+    - |-
+      mkdir -p "$CI_PROJECT_DIR/.ci-template"
+      for output in coverage test-results playwright-report .lighthouseci; do
+        if [ -d "/tmp/forge-template/$output" ]; then cp -R "/tmp/forge-template/$output" "$CI_PROJECT_DIR/.ci-template/"; fi
+      done
+  artifacts:
+    when: always
+    expire_in: 7 days
+    paths:
+      - .ci-template/source.tgz
+      - .ci-template/build.tgz
+      - .ci-template/coverage
+      - .ci-template/test-results
+    reports:
+      junit: .ci-template/test-results/unit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: .ci-template/coverage/cobertura-coverage.xml
+template-runtime:
+  extends:
+    - .template
+    - .runtime
+  stage: build
+  parallel:
+    matrix:
+      - NODE_VERSION:
+          - 22.22.2
+          - '22'
+          - '24'
+  before_script: *template-prepare
+  script:
+    - npm run typecheck
+    - npm test
+    - npm run build
+  after_script:
+    - |-
+      mkdir -p "$CI_PROJECT_DIR/.ci-template"
+      for output in coverage test-results playwright-report .lighthouseci; do
+        if [ -d "/tmp/forge-template/$output" ]; then cp -R "/tmp/forge-template/$output" "$CI_PROJECT_DIR/.ci-template/"; fi
+      done
+  artifacts:
+    when: always
+    expire_in: 7 days
+    paths:
+      - .ci-template/test-results/unit.xml
+    reports:
+      junit: .ci-template/test-results/unit.xml
+template-quality:
+  extends: .template
+  stage: verify
+  needs: &template-artifact
+    - job: template-primary
+      artifacts: true
+  before_script: &template-restore
+    - mkdir -p /tmp/forge-template
+    - tar -xzf .ci-template/source.tgz -C /tmp/forge-template
+    - cd /tmp/forge-template
+    - npm ci
+  after_script: &template-reports
+    - |-
+      mkdir -p "$CI_PROJECT_DIR/.ci-template"
+      for output in coverage test-results playwright-report .lighthouseci; do
+        if [ -d "/tmp/forge-template/$output" ]; then cp -R "/tmp/forge-template/$output" "$CI_PROJECT_DIR/.ci-template/"; fi
+      done
+  script:
+    - npm run quality:static
+template-validate-build:
+  extends: .template
+  stage: verify
+  needs: *template-artifact
+  before_script: *template-restore
+  after_script: *template-reports
+  script:
+    - tar -xzf "$CI_PROJECT_DIR/.ci-template/build.tgz" -C /tmp/forge-template
+    - npm run validate:build
+template-browser:
+  extends: .template
+  stage: verify
+  needs: *template-artifact
+  before_script: *template-restore
+  after_script: *template-reports
+  script:
+    - tar -xzf "$CI_PROJECT_DIR/.ci-template/build.tgz" -C /tmp/forge-template
+    - npx playwright install --with-deps chromium firefox webkit
+    - npm run test:e2e
+  artifacts:
+    when: always
+    expire_in: 7 days
+    paths:
+      - .ci-template/playwright-report
+      - .ci-template/test-results
+    reports:
+      junit: .ci-template/test-results/browser.xml
+template-lighthouse:
+  extends: .template
+  stage: verify
+  needs: *template-artifact
+  before_script: *template-restore
+  after_script: *template-reports
+  variables:
+    LHCI_COLLECT__SETTINGS__CHROME_FLAGS: --no-sandbox --disable-dev-shm-usage --disable-gpu
+  script:
+    - tar -xzf "$CI_PROJECT_DIR/.ci-template/build.tgz" -C /tmp/forge-template
+    - npx playwright install --with-deps chromium
+    - export CHROME_PATH="$(node --input-type=module -e 'import { chromium } from "@playwright/test";
+      process.stdout.write(chromium.executablePath());')"
+    - npm run lighthouse:ci
+  artifacts:
+    when: always
+    expire_in: 7 days
+    paths:
+      - .ci-template/.lighthouseci
+template-customization:
+  extends: .template
+  script:
+    - npm run test:template:customization

@@ -9,34 +9,18 @@ workflow:
 default:
   interruptible: true
 stages:
-  - prepare
   - validate
   - build
   - verify
   - deploy
   - smoke
-select-impact:
-  rules:
-    - when: on_success
-  image: node:26
-  stage: prepare
-  variables:
-    GIT_DEPTH: '0'
-  script:
-    - npm ci
-    - node .gitlab/ci/select.ts
-  artifacts:
-    paths:
-      - .gitlab-child.json
-    expire_in: 1 day
-mirror-validation:
-  rules:
-    - when: on_success
-  stage: validate
-  needs:
-    - select-impact
-  trigger:
-    include:
-      - artifact: .gitlab-child.json
-        job: select-impact
-    strategy: mirror
+include:
+  - local: .gitlab/ci/setup.yml
+  - local: .gitlab/ci/project.yml
+  - local: .gitlab/ci/content-model.yml
+  - local: .gitlab/ci/markdownlint-frontmatter.yml
+  - local: .gitlab/ci/browser-oxfmt.yml
+  - local: .gitlab/ci/create-forge.yml
+  - local: .gitlab/ci/template.yml
+  - local: .gitlab/ci/integration.yml
+  - local: .gitlab/ci/website.yml

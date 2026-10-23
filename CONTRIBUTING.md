@@ -56,8 +56,9 @@ npm run test:e2e
 
 ## Continuous integration
 
-Pull requests and pushes to `main` always run `Repository quality` for root
-static/docs/types/contracts. Project workflows use native path filters for their
+Pull requests and pushes to `main` run root formatting, code/Markdown lint,
+spelling, documentation, types and tooling tests in parallel. `Repository quality`
+requires all seven checks to pass. Project workflows use native path filters for their
 own sources, consumed inputs and shared tooling; every project also offers weekly
 and manual validation. Review affected project results before merge. Integration
 tests have their own tooling triggers and weekly/manual workflow, without upstream
@@ -66,7 +67,8 @@ replacing the historical 27 contexts remains a separately approved settings chan
 
 Use `npm run test:contracts` for root contracts, `npm run test:integration` for the
 model integration, and `npm run test:root` for both. Template customization uses
-`npm run test:template:customization`.
+`npm run test:template:customization`. Native GitLab project includes follow the
+same ownership through change rules; the old impact selector is removed.
 
 Workflow syntax/security and source security keep their existing responsibilities.
 Checks use committed lockfiles and require no globally installed project tools.
