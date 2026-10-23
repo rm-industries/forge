@@ -82,3 +82,26 @@ successful runs. No comparable post-change hosted timing or billed-minute eviden
 exists, so no measured speedup is claimed. Publish only after approval, then inspect
 actual check names, failures/cancellations, artifacts and timings before approving
 any protection migration. GitLab requires a separately configured weekly schedule.
+
+## Final review disposition
+
+The standards review found a documentation mismatch: generated consumers use
+Chromium on ordinary pushes as well as PRs, with full browsers weekly/manually.
+The standard now states that policy without expanding execution.
+
+The spec review found that navigation-only Lighthouse URLs omitted content-detail
+performance, SEO, script and size budgets. Lighthouse now discovers one deterministic
+nested public HTML route at invocation time, in addition to navigation. It excludes
+CMS/404 output, accepts renamed content and maps nested deployment bases. Unit tests
+use temporary build outputs; importing the module before a build performs no I/O.
+This retains representative content budgets without auditing every article or
+reintroducing a starter-specific slug.
+
+Review-fix verification passed template static/unused-code/type checks before a build,
+38 template tests with full configured coverage, the public template build and
+root/nested Lighthouse URL selection against its output. Root 90 and generator
+117 tests plus root type checks, formatting and repository lint also pass. The
+unchanged 11-scenario packed suite and full Lighthouse benchmark were not repeated.
+Independent website core verification passed static checks, 35 tests with full
+configured coverage, and its 53-page public build/validation. Hosted evidence and
+the previously recorded native/CMS limitations remain unchanged.
