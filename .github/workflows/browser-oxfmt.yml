@@ -12,10 +12,6 @@ on: # yamllint disable-line rule:truthy
       - 'tsconfig.verification.json'
       - '.github/actions/setup-project/action.yml'
       - '.github/workflows/browser-oxfmt.yml'
-      - 'templates/default/package.json'
-      - 'templates/default/package-lock.json'
-      - 'templates/default/oxfmt.config.ts'
-      - 'templates/default/.editorconfig'
   push:
     branches: [main]
     paths:
@@ -26,10 +22,6 @@ on: # yamllint disable-line rule:truthy
       - 'tsconfig.verification.json'
       - '.github/actions/setup-project/action.yml'
       - '.github/workflows/browser-oxfmt.yml'
-      - 'templates/default/package.json'
-      - 'templates/default/package-lock.json'
-      - 'templates/default/oxfmt.config.ts'
-      - 'templates/default/.editorconfig'
   workflow_dispatch:
   schedule:
     - cron: '53 7 * * 1'
@@ -79,8 +71,7 @@ jobs:
           npm run build --workspace @rm-industries/browser-oxfmt
       - name: Verify packed browsers
         run: |
-          npm ci --prefix templates/default --ignore-scripts
-          npm exec --prefix templates/default -- playwright install --with-deps chromium firefox webkit
+          npx playwright install --with-deps chromium firefox webkit
           npm run test:browser --workspace @rm-industries/browser-oxfmt
       - name: Pack and inspect tested candidate
         run: |
