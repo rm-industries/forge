@@ -12,7 +12,6 @@ on: # yamllint disable-line rule:truthy
       - 'tsconfig.verification.json'
       - '.github/actions/setup-project/action.yml'
       - '.github/workflows/content-model.yml'
-      - 'scripts/package-workflows.test.ts'
   push:
     branches: [main]
     paths:
@@ -23,7 +22,6 @@ on: # yamllint disable-line rule:truthy
       - 'tsconfig.verification.json'
       - '.github/actions/setup-project/action.yml'
       - '.github/workflows/content-model.yml'
-      - 'scripts/package-workflows.test.ts'
   workflow_dispatch:
   schedule:
     - cron: '17 7 * * 1'
