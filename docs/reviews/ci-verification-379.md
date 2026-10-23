@@ -52,9 +52,9 @@ Generated-provider execution tests cover the corresponding required-result polic
   out behind a dialog and was not added as a new failing gate. These are different
   contracts; successful serialization does not prove the failed ordering probe.
 - Rust validation cannot start locally because the Rust compiler is unavailable. No native
-  source changed. Hosted Rust/WASM reproducibility, full hosted browser/runtime
-  lanes, live GitLab CI Lint/runner/report behavior and new GitHub protected-check
-  reporting remain unverified.
+  source changed. Live GitLab CI Lint/runner/report behavior and protection migration remain
+  unverified. Hosted checks at the later `ffe7351` revision establish native and
+  runtime coverage as recorded below; each corrected revision still needs its own run.
 - Reference assessments and proposed alignment issues are in
   [consumer alignment](consumer-alignment-367.md). No reference repository was
   mutated, deployed or migrated; its own custom scripts remain authoritative.
@@ -91,10 +91,11 @@ The standard now states that policy without expanding execution.
 
 The spec review found that navigation-only Lighthouse URLs omitted content-detail
 performance, SEO, script and size budgets. Lighthouse now discovers one deterministic
-nested public HTML route at invocation time, in addition to navigation. It excludes
+nested public HTML route and its listing at invocation time, alongside the homepage. It excludes
 CMS/404 output, accepts renamed content and maps nested deployment bases. Unit tests
 use temporary build outputs; importing the module before a build performs no I/O.
-This retains representative content budgets without auditing every article or
+This retains the original bounded homepage/listing/detail budgets without auditing
+every navigation destination or article, or
 reintroducing a starter-specific slug.
 
 Review-fix verification passed template static/unused-code/type checks before a build,
@@ -105,3 +106,21 @@ unchanged 11-scenario packed suite and full Lighthouse benchmark were not repeat
 Independent website core verification passed static checks, 35 tests with full
 configured coverage, and its 53-page public build/validation. Hosted evidence and
 the previously recorded native/CMS limitations remain unchanged.
+
+## Hosted follow-up at `ffe7351`
+
+[PR 396](https://github.com/rm-industries/forge/pull/396) passed native reproducibility,
+packed browsers, CMS serialization, Tool Rust/build/pack/runtime lanes, candidate
+frontmatter and consumer browser checks. Consumer Lighthouse failed on the newly
+included About page (126,785 bytes against the unchanged 125,000-byte limit);
+Generator validation correctly propagated that failure. The original budget sample
+covered only homepage, listing and one detail. URL selection now preserves that
+bounded scope dynamically, rather than expanding to incidental navigation pages.
+Budgets and template styles remain unchanged. Local built-output URL checks cover
+root and nested bases; the corrected hosted revision still requires a rerun.
+
+The follow-up fix passed 39 template tests with full configured coverage, static
+checks before build, public build and exact root/nested URL selection. A real local
+`lighthouse:ci` run passed all unchanged assertions across three URLs and nine
+runs. Root 90 tests, root types, formatting and repository lint also passed. The
+11-scenario packed suite was not repeated for this bounded URL-selection correction.
