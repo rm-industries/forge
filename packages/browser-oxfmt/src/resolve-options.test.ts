@@ -41,7 +41,7 @@ test('derives EditorConfig width and authoritative options with separate approve
   });
   const result = await resolveBrowserOptions({ cwd, filename: 'src/content/article.md' });
   expect(result.resolvedOptions).toEqual({
-    upstreamVersion: '0.72.0',
+    upstreamVersion: '0.74.0',
     options: {
       printWidth: 120,
       tabWidth: 2,

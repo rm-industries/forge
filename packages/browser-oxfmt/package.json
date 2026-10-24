@@ -1,6 +1,6 @@
 {
   "name": "@rm-industries/browser-oxfmt",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Native Oxfmt Markdown formatting in a browser worker",
   "homepage": "https://github.com/rm-industries/forge/tree/main/packages/browser-oxfmt",
   "license": "MIT",
@@ -41,7 +41,7 @@
     "editorconfig": "3.0.2"
   },
   "peerDependencies": {
-    "oxfmt": "0.72.0"
+    "oxfmt": "0.74.0"
   },
   "peerDependenciesMeta": {
     "oxfmt": {

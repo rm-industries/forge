@@ -96,7 +96,7 @@ try {
     '--prefix',
     consumer,
     join(consumer, packed.filename),
-    'oxfmt@0.72.0',
+    'oxfmt@0.74.0',
     '--cache',
     join(consumer, 'npm-cache'),
   ]);

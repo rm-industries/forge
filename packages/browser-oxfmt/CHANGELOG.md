@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- Update the native Oxfmt engine from 0.72.0 to 0.74.0.
+
 ## 0.1.1
 
 - Allow uniform browser policy when validated Oxfmt overrides provably cannot
