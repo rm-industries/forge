@@ -1,6 +1,6 @@
 # Internal template authoring trial (#388)
 
-<!-- cspell:ignore projen Projen outdir projenrc JsonFile YamlFile readonly editGitignore -->
+<!-- cspell:ignore projen Projen outdir projenrc JsonFile YamlFile readonly editGitignore cooldowns jxmh mrhx -->
 
 The representative trial preserves the bootstrap contract, but does not remove maintenance. Retain
 static templates plus the existing typed CI writers. This is evidence for the separate authoring

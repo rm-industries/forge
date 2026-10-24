@@ -1,7 +1,7 @@
 # 0010: Retain locked template delivery after the freshness evaluation
 
 - Status: Proposed
-- Date: 2026-10-23
+- Date: 2026-10-24
 - Roadmap: [369](https://github.com/rm-industries/forge/issues/369),
   [389](https://github.com/rm-industries/forge/issues/389)
 
@@ -57,19 +57,22 @@ The [baseline](../reviews/template-baseline-385.md),
   Freshness did not introduce that known baseline defect, and no audit exception
   was added. Neither result is a clean security gate.
 - Model/CMS pins and tested peer constraints remain unchanged. Delivered tests and
-  builds cover configuration and models. On the unmodified fresh Node 24
-  consumer, all 26 Chromium browser cases and all 26 WebKit cases pass. Firefox
+  builds cover configuration and models. On the unmodified fresh-resolution
+  consumer, with browser execution under Node 26.9.0, all 26 Chromium browser cases
+  and all 26 WebKit cases pass. Firefox
   cannot launch because its profile folder is not found, including a retry with
   a private temporary directory; this is an environment limit, not an established
-  product failure. Browser-driven CMS editing/content preservation and Lighthouse
-  behavior remain unverified here.
+  product failure. A follow-up adapted the existing browser preservation probe to
+  the delivered published model/CMS versions: metadata-only, raw and rich-text saves
+  preserved the expected metadata/body, including unknown frontmatter. Real remote
+  backends, all model fields/save failures, and Lighthouse remain unverified.
 - Provider manifests parse and reference delivered commands, including standalone
   GitLab and nested dual-provider Cloudflare output. This is local evidence;
   hosted GitHub/GitLab execution, deployments, and hosted Dependabot updates were
   not demonstrated by this experiment.
 
 The evidence supports npm resolution and consumer repeatability. It does not yet
-establish Firefox/CMS preservation or live provider behavior.
+establish Firefox execution, every CMS/backend preservation path, or live provider behavior.
 The audit failures are a separate known problem requiring investigation rather
 than evidence against the resolution mechanism. Hosted and runtime coverage must
 be assessed proportionately; none of those omissions proves the candidate broken.
@@ -92,14 +95,18 @@ the shipped-lock snapshot obligation for ordinary compatible resolutions. Those
 are real simplifications. The repository template authoring lock remains, and
 template-sync still reviews
 published content-model identity, provenance, exact model/CMS compatibility and
-release intent; it cannot simply be deleted. No historical dependency-only release
-count, labor saving, or scheduled-run cost was measured. Fewer generator releases
-are plausible, but neither all release work nor dependency stewardship disappears.
+release intent; it cannot simply be deleted. A bounded inventory found six observed
+post-launch stable releases through October 14, 2026. Three contain only exact
+model/CMS pin updates, and the other three contain behavior changes; none is shown
+avoidable by lock omission alone under the preserved-pin policy. This is not a
+forecast: fewer future range-only refresh releases remain plausible. Labor saving
+and scheduled-run cost were not measured, and dependency stewardship remains.
 Monitoring can reuse existing packed-CLI and isolated-consumer checks; no new CI
 framework is inherently required. Scheduling, failure notification, triage and
-corrective-release ownership still need a concrete cost comparison. With no measured
-release-frequency or operating-cost comparison, the net benefit is unproven rather
-than established to be negative. Combined with incomplete integration confidence,
+corrective-release ownership still need a concrete cost comparison. The bounded history
+shows no eliminated observed release; future operating and release costs remain uncertain.
+The net benefit is therefore unproven rather than
+established to be negative. Combined with incomplete integration confidence,
 that is insufficient evidence to replace the working production policy now.
 
 ## Consequences and reconsideration
@@ -114,7 +121,8 @@ be remotely repaired; existing consumers must choose an update deliberately.
 No migration, schedule, production lock deletion, publishing, repository setting,
 or consumer migration is included. Adoption is not recommended, so conditional
 rollout issue drafts are not activated or required. A reconsideration proposal
-must first demonstrate CMS preservation and Firefox coverage, close proportionate runtime and
+must expand the representative CMS preservation proof and establish Firefox coverage,
+close proportionate runtime and
 provider evidence gaps, and record an explicit disposition of the
 existing audit findings without weakening the security gate. It should then
 specify relevant-PR and daily default-branch fresh-resolution checks, quiet success
@@ -126,7 +134,7 @@ Review any required replacement of ADR 0006's tested snapshot/model/peer contrac
 explicitly before adoption; preserve ADR 0004 materialization safety and ADR 0003
 installation boundaries. No exact-pin widening follows from this experiment.
 Budget roughly one further focused working day plus hosted runner time for the
-missing Firefox/CMS proofs, runtime/provider review, and a concrete
+remaining Firefox/CMS/backend coverage, runtime/provider review, and a concrete
 operating-cost estimate; audit remediation may require separate upstream work.
 That is an estimate, not authorization to extend. The shared two-working-day limit
 was not measured as exhausted; this recommendation closes the current evaluation

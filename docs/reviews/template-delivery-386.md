@@ -1,5 +1,7 @@
 # Fresh dependency delivery experiment (#386)
 
+<!-- cspell:ignore ENOENT replayable unallowlisted jxmh mrhx Projen -->
+
 ## Result and scope
 
 The packed CLI can generate a working project without a bundled template lockfile.
@@ -184,12 +186,88 @@ are local evidence, not retained project dependencies:
 `/tmp/forge-369`. The candidate tarball is under that directory's `candidate/` and
 its independently installed executable under `candidate-runner/node_modules/.bin/`.
 
+## Additional supported-runtime evidence
+
+The same independently installed packed candidate was then invoked under actual
+Node 22.22.2 and Node 24.22.1 executables, each with npm 11.19.1 on macOS arm64.
+Each generated a new project outside the CLI installation, resolved registry
+packages without workspace/local links, created its own lockfile, and passed
+`quality:core` including all 39 tests, types, formatting/lint, build and output
+validation. Node 22 bootstrap/checks took 22.081/12.507 seconds; Node 24 took
+8.970/12.166 seconds. These are individual warm-cache observations, not a runtime
+performance comparison. Installed versions were verified before each execution;
+consumer dependency trees were removed afterward. Logs and result metadata are
+`runtime-node22-*.log`, `runtime-node24-*.log`, and `runtime-results.json` under
+the same scratch directory. npm 10 was not exercised.
+
+## Browser follow-up
+
+The unmodified generated project was reinstalled from its own fresh consumer lock
+and its existing `test:e2e` command executed on the same macOS host under Node
+26.9.0. All 26 Chromium cases passed. The initial multi-engine run also encountered
+25 Firefox launch failures (`Could not find profile folder`) and 25 WebKit launch
+failures because the matching WebKit binary was not installed; one API-only case
+passed in each of those projects. The aggregate was therefore not a passing suite.
+
+Installing only matching WebKit revision 2370 into disposable experiment storage
+and rerunning the unchanged WebKit project produced 26 passing cases. A bounded
+Firefox retry with an isolated temporary profile directory still failed at browser
+launch, before an application assertion. Firefox coverage remains unverified; this
+is not evidence of a dependency-induced site regression. No browser was removed
+from the delivered configuration. Logs: `runtime-browser.log`,
+`runtime-webkit.log`, `runtime-firefox-retry.log`, and `webkit-install.log`.
+
+## Published CMS preservation follow-up
+
+Follow-up collected October 24, 2026.
+
+A disposable adaptation of the existing `scripts/verify-frontmatter-cms.ts` browser
+probe used this generated project's actually installed content-model 1.1.8 and
+Sveltia CMS 0.236.0, with Chromium. Its synthetic test-repository article retained
+unknown frontmatter and the original body through a metadata-only edit; raw Markdown
+and rich-text edits then saved the expected body and retained metadata. All three
+preservation assertions passed. The fixture used the published adapter and CMS
+bundle, not local candidate packages or a real repository/token.
+
+The adaptation reused the existing probe's seed server, public editor operations,
+and byte/value assertions. It omitted the separate repository frontmatter-order
+migration/formatter assertions, which are not part of this delivered consumer.
+Initial temporary-probe import mistakes were corrected before the passing run;
+they were not failures of the generated project. This is representative CMS
+serialization evidence, not authentication, remote Git backend, every model field,
+or all CMS save-failure paths. Scratch source and log: `cms-preservation.ts` and
+`cms-preservation.log`.
+
+## Bounded release-history comparison
+
+Follow-up collected October 24, 2026.
+
+A follow-up inspected the latest 100 GitHub release records and the generator
+changelog at the evaluation revision. Seven observed stable generator releases
+span September 3 to October 14, 2026: 1.0.0, 1.0.1, 1.0.2, 1.0.3, 1.1.1, 1.1.2,
+and 1.2.0. This is a bounded published-release inventory, not a labor-time study
+or a claim that changelog 1.1.0 was independently published.
+
+Of the six observed post-launch releases, 1.0.1, 1.1.1 and 1.1.2 contain only
+model/CMS compatibility version updates. Their exact bundled pins change, so this
+candidate explicitly would still require those releases. Version 1.0.2 also fixes
+adapter behavior, 1.0.3 adds nested generation, and 1.2.0 adds deployment behavior;
+those also remain release-worthy. Thus zero of these six observed releases is
+shown avoidable solely by omitting the lock while preserving the agreed pins and
+behavior. This does not predict zero future savings for compatible range-only
+updates: the 174 changed resolutions demonstrate a real freshness benefit.
+
+Recheck the inventory with `gh release list --repo rm-industries/forge --limit 100`
+and the versioned `packages/create-forge/CHANGELOG.md`. Reviewed synchronization
+commits also identify the exact-pin changes, including content-model 1.1.6 and 1.1.7.
+No publication was triggered, and release preparation time, daily validation cost,
+notification/triage time, and future release rates remain unmeasured.
+
 ## Remaining decision evidence
 
 Keep baseline delivery pending #387 failure/recovery and #389 operating decisions.
-This bounded experiment does not establish supported Node 22/24 compatibility,
-Linux/Windows behavior, interactive CMS preservation, browser accessibility/E2E,
-Lighthouse, hosted provider execution, or security-clean bootstrap. Broader tests
-can reuse the candidate artifact and existing suites; none is inferred from the
-successful Node 26 local run. Published older generators would retain their bundled
-ranges after any future corrective release.
+This bounded experiment does not establish Linux/Windows behavior, all CMS/backend
+preservation paths, successful Firefox execution, Lighthouse, hosted provider execution,
+or security-clean bootstrap. Broader tests can reuse the candidate artifact and existing
+suites; none is inferred from successful core checks. Published older generators
+would retain their bundled ranges after any future corrective release.
