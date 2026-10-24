@@ -6,6 +6,23 @@ Use published browser-oxfmt `0.1.2` with Oxfmt `0.74.0`, content-model
 are recorded separately. Adoption is a reviewed source change to an owned site;
 package publication does not authorize deployment or regeneration.
 
+## Integration source
+
+The starter integration uses `templates/default/scripts/sveltia-formatter.ts`
+from `templates/default/astro.config.ts`. Its Node-only Astro hooks derive a
+uniform policy with the published build helper, report the Tailwind diagnostic,
+serve allowlisted assets with appropriate MIME types in development, and copy
+the complete published module/worker/WASM tree plus `policy.json` at build time.
+Keep the asset root relative to the site's configured deployment base.
+
+`templates/default/src/pages/admin/index.astro` registers the native frontmatter
+callback before CMS initialization. It awaits Sveltia serialization first, then
+lazily imports the formatter and fetches the verified policy. Failed entry
+imports use a fresh URL on retry; rejected formatting blocks saving with an
+error explaining how to retain and retry the edit. There is no unformatted
+fallback. Review these source changes rather than copying another site's
+collection configuration.
+
 ## Ordered migration
 
 1. Commit the site's current source and lockfile. Record its working CMS save
@@ -64,8 +81,8 @@ npm run test:e2e
 Use the site's actual scripts if it has evolved. The Forge project site uses
 `npm ci --prefix website` and its own scripts/lockfile; a successful root build
 is not project-site adoption evidence. Review the source patch and actual CMS integration results before adopting it.
-The #348 template integration is being validated separately from the published
-package; no existing site is automatically updated by this release.
+The template integration and generated-consumer checks are separate from the
+published package; no existing site is automatically updated by this release.
 
 ## Rollback
 
