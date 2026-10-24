@@ -17,8 +17,8 @@ complete or that metadata tools must replace its publisher to be worthwhile.
 
 This proposed ADR awaits maintainer review. It changes no accepted policy, workflow,
 package, template, permissions or publisher settings. It neither supersedes
-[ADR 0006](0006-versioning.md) / [ADR 0008](0008-frontmatter-package.md) nor closes
-or modifies parent specification #370. No migration rollout or production publication
+[ADR 0006](0006-versioning.md) / [ADR 0008](0008-frontmatter-package.md).
+Merging the evaluation closes #370. No migration rollout or production publication
 is authorized. Release tooling remains independent of the task-runner decision.
 
 The [baseline and survey](../reviews/release-baseline-391.md),
