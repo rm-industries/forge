@@ -7,7 +7,8 @@ Tracking: [#349](https://github.com/rm-industries/forge/issues/349), part of
 
 Browser formatter **0.1.2 is published and registry-verified**. Template adoption
 and the remaining browser evidence are separate from that publication. This
-record does not close #349 or #342.
+record tracks the completed delivery in #349/#342 and the remaining device
+verification in [#407](https://github.com/rm-industries/forge/issues/407).
 
 ## Published artifact
 
@@ -101,21 +102,24 @@ objects: 26 findings, including 14 high and zero critical; production-only audit
 reports zero. This is unchanged development-tooling debt, not a passing full
 template audit or an extension of the package publication disposition.
 
-The maintainer reports testing browser-oxfmt **0.1.1 on iOS 27**, and confirms
-that macOS Safari was not tested. This is maintainer-attested iPhone validation
-of the earlier formatter version; it does not establish actual-device coverage
-for 0.1.2 or the current template candidate. Device model, site/build, detailed
-scenarios, timings and resource measurements were not supplied.
+The maintainer previously reported testing browser-oxfmt **0.1.1 on iOS 27**
+and now confirms that the current integration works on iPhone. This is
+maintainer-attested functional validation; no additional device/build identity,
+scenario-specific results, timings or resource measurements are inferred.
+macOS Safari was not tested. Remaining detailed device validation and measured
+support boundaries are tracked in [#407](https://github.com/rm-industries/forge/issues/407).
 
 | Remaining evidence                             | Current status                                                                                                                                  |
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | Current template CMS saves and recovery        | Complete: hosted Chromium/Firefox/WebKit save and recovery cases passed; root and project-path local results are recorded above.                |
 | Actual macOS Safari                            | No current actual-browser validation recorded. The publication-only waiver does not establish adoption coverage.                                |
-| Actual iPhone details                          | Maintainer attests iOS 27 with 0.1.1; 0.1.2/current-candidate device coverage and detailed scenarios remain unverified.                         |
+| Actual iPhone details                          | Maintainer confirms current integration works; precise device/build details, scenario coverage and measurements continue in #407.               |
 | Browser minimum policy                         | No new Safari/iPhone version floor declared. Establish it from actual tested environments and Forge policy.                                     |
 | Device timings/resources and background/resume | No measurements or scenario-specific attestation recorded.                                                                                      |
 | Existing-site deployment                       | Validate each site's own installation, lockfile, build, base path and CSP separately; root Forge checks do not establish project-site adoption. |
 
-Keep #349 and #342 open for maintainer disposition of the remaining evidence.
+Issues #349 and #342 are closed for implementation/release delivery. The
+remaining device and support evidence continues in #407; closure does not
+claim those checks passed.
 Use the [package release procedure](../package-releases.md) for future releases;
 0.1.2's publication evidence and exceptions are not blanket release approval.
