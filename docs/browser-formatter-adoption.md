@@ -1,28 +1,29 @@
 # Existing-site browser formatter adoption
 
-This is a maintainer-controlled migration, not a published installation recipe.
-Content-model `1.1.9` and browser-oxfmt `0.1.0` are unpublished candidates.
-Do not replace a generated project's dependencies with these versions until
-registry verification and the [release gates](reviews/browser-formatter-release.md)
-are complete. The template integration and authoritative configuration helper
-must also be validated before their source changes can be adopted.
+Use published browser-oxfmt `0.1.2` with Oxfmt `0.74.0`, content-model
+`1.1.10` and Sveltia CMS `0.251.0`. The formatter's
+[verified release and remaining evidence](reviews/browser-formatter-release.md)
+are recorded separately. Adoption is a reviewed source change to an owned site;
+package publication does not authorize deployment or regeneration.
 
 ## Ordered migration
 
 1. Commit the site's current source and lockfile. Record its working CMS save
    behavior and current package versions. Keep rollback available throughout.
-2. Adopt the published, verified content-model compatibility release first.
-   Native serialization requires Sveltia CMS `0.250.0` and content-model `1.1.9`.
-   Its peer policy preserves `>=0.193.2 <0.246.0` and adds
-   `>=0.250.0 <0.251.0`; versions `0.246`–`0.249` remain excluded.
-3. After the browser formatter release is verified, install the exact reviewed
-   browser-oxfmt version as a direct dependency of the site and commit its lock.
-   Keep Oxfmt `0.72.0` aligned with the package's engine identity. Do not rely on
-   Forge root workspaces or a global installation for the site's dependencies.
+2. Install content-model `1.1.10` and Sveltia CMS `0.251.0` together. Native
+   serialization requires the bound callback introduced in Sveltia `0.250.0`;
+   content-model `1.1.10` accepts CMS `>=0.193.2 <0.252.0`. Older compatible CMS
+   versions alone do not provide the callback required by this integration.
+3. Install browser-oxfmt `0.1.2` directly in the site, align Oxfmt exactly to
+   `0.74.0`, and commit the site's lockfile. Do not rely on Forge root workspaces
+   or a global installation for the site's dependencies.
 4. Review the template's formatter integration as a source patch. Derive browser
    options at build time from the site's authoritative Oxfmt config and
    EditorConfig; never maintain a separate handwritten browser formatting policy.
    Resolve physical Markdown host paths, not virtual fenced-code filenames.
+   Request `requireUniformPolicy: true` for the global CMS callback, which lacks
+   filename and collection context; prove the policy covers future Markdown
+   paths, not only existing articles. Use the standalone site root.
    Unsupported settings and version mismatches must fail with diagnostics.
 5. Apply only the reviewed admin/CMS serialization and asset-loading source
    changes. Preserve collection declarations, schema, field order, draft state,
@@ -41,7 +42,10 @@ must also be validated before their source changes can be adopted.
    supported fences, unknown-language preservation, repeated and large edits,
    formatter/worker failures and recovery. Confirm the failed save remains
    recoverable without losing content. Run the required desktop browser suite
-   and actual macOS Safari/iPhone Safari checks, including background/resume.
+   and record actual macOS Safari/iPhone Safari coverage, including
+   background/resume. The 0.1.2 publication waiver is limited to publication;
+   the current maintainer iPhone attestation and unspecified device details are
+   recorded in the readiness review.
 8. Review the final content diff and publish only through the site's existing
    deployment process after maintainer approval. Package installation and local
    builds do not authorize production deployment.
@@ -59,9 +63,9 @@ npm run test:e2e
 
 Use the site's actual scripts if it has evolved. The Forge project site uses
 `npm ci --prefix website` and its own scripts/lockfile; a successful root build
-is not project-site adoption evidence. Final commands and source patches must
-be reviewed with the post-publication integration. The temporary overlay and
-its harness have been removed; the default template does not yet enable browser formatting.
+is not project-site adoption evidence. Review the source patch and actual CMS integration results before adopting it.
+The #348 template integration is being validated separately from the published
+package; no existing site is automatically updated by this release.
 
 ## Rollback
 
