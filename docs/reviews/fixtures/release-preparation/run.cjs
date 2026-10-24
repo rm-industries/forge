@@ -112,6 +112,11 @@ async function changesets() {
     if (scenario === 'breaking') assert.deepEqual(Object.values(v), ['2.0.0', '2.3.0', '0.2.0', '0.4.0']);
     cs(dir, ['publish-plan', '--output', 'publish-plan.json'], readEnv);
     let plan = JSON.parse(fs.readFileSync(path.join(dir, 'publish-plan.json')));
+    if (scenario === 'docs') {
+      const status = JSON.parse(fs.readFileSync(path.join(dir, 'status.json')));
+      assert.deepEqual(status.releases, []);
+      assert.deepEqual(plan.plan, []);
+    }
     const changelogs = Object.fromEntries(
       names.map((n) => [n, fs.readFileSync(path.join(dir, `packages/${n}/CHANGELOG.md`), 'utf8')]),
     );
@@ -170,7 +175,15 @@ async function nx() {
     run(dir, process.execPath, [path.join(__dirname, 'nx-worker.cjs'), scenario]);
     const v = versions(dir);
     if (scenario === 'one') assert.deepEqual(Object.values(v), ['1.2.1', '2.3.0', '0.1.0', '0.4.0']);
-    if (scenario === 'docs') assert.deepEqual(Object.values(v), initial);
+    if (scenario === 'docs') {
+      assert.deepEqual(Object.values(v), initial);
+      const plan = JSON.parse(fs.readFileSync(path.join(dir, 'nx-result.json')));
+      assert.deepEqual(
+        Object.values(plan.version.projectsVersionData).map((project) => project.newVersion),
+        [null, null, null, null],
+      );
+      assert.deepEqual(plan.changelog.projectChangelogs, {});
+    }
     results.push({
       tool: 'Nx 24.0.1',
       scenario,
@@ -201,7 +214,12 @@ async function rp() {
     run(dir, process.execPath, [path.join(__dirname, 'rp-worker.cjs'), scenario]);
     const v = versions(dir);
     if (scenario === 'one') assert.deepEqual(Object.values(v), ['1.2.1', '2.3.0', '0.1.0', '0.4.0']);
-    if (scenario === 'docs') assert.deepEqual(Object.values(v), initial);
+    if (scenario === 'docs') {
+      assert.deepEqual(Object.values(v), initial);
+      const plan = JSON.parse(fs.readFileSync(path.join(dir, 'rp-result.json')));
+      assert.deepEqual(plan.pullRequests, []);
+      assert.deepEqual(plan.releases, []);
+    }
     results.push({
       tool: 'release-please 17.11.2',
       scenario,
