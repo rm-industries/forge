@@ -1,5 +1,7 @@
 # Template and dependency-delivery baseline
 
+<!-- cspell:ignore Projen jxmh mrhx -->
+
 Issue: [#385](https://github.com/rm-industries/forge/issues/385), parent
 [#369](https://github.com/rm-industries/forge/issues/369). Evaluation date: October 23, 2026.
 Source: `0b97262970061e2e8305c7c0c790bd0cce64dfb5`.
@@ -103,7 +105,7 @@ coverage, not implied by a successful build or YAML validation.
 - `npm run audit` **failed** on baseline high-severity advisories
   GHSA-27r3-jxmh-p828, GHSA-c475-qrg2-pj4r and GHSA-mrhx-c7xc-m3w5 in the Lighthouse CI dependency
   graph. Existing audit policy correctly detects these; no exceptions or dependency changes were made.
-- The first invocation hit a machine-local unwritable default npm cache. It reported the install
+- The first invocation hit a machine-local read-only default npm cache. It reported the install
   failure with retained project location and retry guidance. A new fixture using a writable npm cache
   succeeded. This is setup evidence, not proof of a dependency-resolution regression.
 
