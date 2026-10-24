@@ -82,10 +82,19 @@ browser cases through the published worker's error/reset/retry path. These are
 automated browser results, not actual Safari device evidence.
 
 The implementation is commit `e9ce24e611df00bf1570a2c175e041eededa55f8`, integrated
-at `322b286`. Root validation passed 49 contract tests, type checks and packed
-CLI verification. [Linux template verification](https://github.com/rm-industries/forge/actions/runs/40115782703)
-and generator end-to-end checks were still running when this record was updated;
-no final cross-engine CI result is claimed here.
+at `322b286`. [Hosted template verification](https://github.com/rm-industries/forge/actions/runs/40115782703)
+passed for that integration, including all five runtime jobs: minimum Node 22
+and latest Node 22/24/26 on Ubuntu, plus latest Node 26 on macOS. Consumer source
+quality, builds, customization, Lighthouse and browser checks passed.
+The [browser job](https://github.com/rm-industries/forge/actions/runs/40115782703/job/120936849076)
+passed all 159 tests with Chromium, Firefox and WebKit, including all 36 new CMS
+cases (12 per browser), with no skips. This completes the current template's
+automated CMS save/recovery gate.
+
+Root validation passed 49 contract tests, type checks and packed CLI verification.
+Generator end-to-end validation passed 11 isolated behavior fixtures and packed
+consumer build validation. Existing-site deployment and actual-device checks
+remain separate from these generated-consumer results.
 
 Template dependency audits before and after adoption have identical advisory
 objects: 26 findings, including 14 high and zero critical; production-only audit
@@ -100,7 +109,7 @@ scenarios, timings and resource measurements were not supplied.
 
 | Remaining evidence                             | Current status                                                                                                                                  |
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Current template CMS saves and recovery        | Local Chromium/WebKit root and project-path results are recorded above; final Linux cross-engine CI remains pending.                            |
+| Current template CMS saves and recovery        | Complete: hosted Chromium/Firefox/WebKit save and recovery cases passed; root and project-path local results are recorded above.                |
 | Actual macOS Safari                            | No current actual-browser validation recorded. The publication-only waiver does not establish adoption coverage.                                |
 | Actual iPhone details                          | Maintainer attests iOS 27 with 0.1.1; 0.1.2/current-candidate device coverage and detailed scenarios remain unverified.                         |
 | Browser minimum policy                         | No new Safari/iPhone version floor declared. Establish it from actual tested environments and Forge policy.                                     |
