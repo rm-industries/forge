@@ -2,6 +2,7 @@ import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'astro/config';
 
+import { sveltiaFormatter } from './scripts/sveltia-formatter';
 import { getDeploymentConfig } from './src/config/deployment';
 import { site } from './src/config/site';
 
@@ -9,7 +10,7 @@ const deployment = getDeploymentConfig(process.env.PUBLIC_SITE_URL ?? site.url);
 
 export default defineConfig({
   base: deployment.base,
-  integrations: [sitemap()],
+  integrations: [sitemap(), sveltiaFormatter()],
   output: 'static',
   site: deployment.site,
   trailingSlash: 'always',
