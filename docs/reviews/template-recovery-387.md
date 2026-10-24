@@ -68,10 +68,27 @@ There are no install scripts, public publication, executable replacement, or glo
 
 This demonstrates targeted correction without broad fallback or audit bypass. It does not establish
 that an existing third-party range is unsafe or that the original tests detect this synthetic behavior.
-The exact-pin correction was exercised in the scratch consumer, not a rebuilt corrective CLI tarball.
-Corrective generator packaging and production publication remain unverified: a real incident requires
-a reviewed bundled range/pin change, packed-CLI bootstrap validation, and a normal corrective release.
-The separate unmodified candidate passes `quality:core` without the added fixture.
+The first correction was exercised directly in the scratch consumer. A second rehearsal then proved
+that the correction survives the actual packed-generator delivery boundary:
+
+1. Copy the experimental installed generator into two scratch package directories. Add the same fixture
+   dependency and contract test to each bundled template. Keep the old prototype at version 1.2.0 with
+   `^1.0.0`; change the corrected prototype to version 1.2.1 with exact `1.0.0`.
+2. Pack both with `npm pack --ignore-scripts`, install each archive into a separate isolated CLI runner,
+   and verify their public `--version` output reports 1.2.0 and 1.2.1 respectively.
+3. Generate independent projects through each installed CLI, then run actual npm installation. The old
+   archive's output resolves fixture 1.0.1 and fails the public unit command. The corrected archive's
+   output resolves 1.0.0, passes all 40 unit tests, and passes full `quality:core`, including coverage,
+   type checking, production build, and seven required build-output checks.
+
+The old packed archive remains unchanged; correcting the new archive cannot remotely repair it. The
+old consumer was installed fresh; the corrected consumer reused its completed dependency tree before
+actual npm reconciliation to avoid duplicate disk usage. The first corrected prototype's full quality
+run caught unsorted package metadata introduced while adding the fixture; formatting that bundled
+manifest before repacking corrected the authoring mistake. Generated output was not reformatted to
+obtain a pass. Both archives are local experimental artifacts, never published. The separate unmodified
+candidate passes `quality:core` without the fixture. This proves the packaging/correction mechanism,
+not an actual existing dependency incident; production publication remains out of scope.
 
 ## Preserved policies and limits
 
@@ -103,3 +120,9 @@ Scratch evidence under `/tmp/forge-369/recovery/` includes `failures.mjs` for CL
 `restricted-install.log`, and `restricted-check.log`. These local artifacts are not a permanent CI
 framework or consumer obligation. Temporary dependency trees were removed after collection; generated
 source, lockfiles, and logs retain the resolved-version evidence.
+
+The packed-delivery follow-up is under `/tmp/forge-369/recovery/packed/`, including both old and corrected
+archives, CLI version logs, generated manifests/lockfiles, `old-test.log`, `corrected-test.log`, and
+`corrected-quality.log`. `packed-correction.mjs` and `packed-correction-retry.mjs` record the scratch
+procedure, with the retry formatting the corrected bundled manifest before packing. CLI runners were
+installed independently; no package was published. Consumer dependency trees were removed afterward.
