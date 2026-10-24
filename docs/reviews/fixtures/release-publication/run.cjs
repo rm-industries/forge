@@ -27,7 +27,7 @@ write(
   path.join(bin, 'npm'),
   `#!/usr/bin/env node
 const fs=require('fs'),a=process.argv.slice(2),p=process.env.STATE,s=JSON.parse(fs.readFileSync(p));
-if(a[0]==='view'){s.reads++;fs.writeFileSync(p,JSON.stringify(s));if(s.unavailable||!s.registry)process.exit(1);console.log(JSON.stringify(s.registry));}
+if(JSON.stringify(a)===JSON.stringify(['view',process.env.PACKAGE_NAME+'@'+process.env.VERSION,'--json'])){s.reads++;fs.writeFileSync(p,JSON.stringify(s));if(s.unavailable||!s.registry)process.exit(1);console.log(JSON.stringify(s.registry));}
 else if(a[0]==='publish'){s.calls.push(a);fs.writeFileSync(p,JSON.stringify(s));if(s.reject)process.exit(1);s.registry={version:process.env.VERSION,dist:{integrity:'sha512-'+require('crypto').createHash('sha512').update(fs.readFileSync(a[1])).digest('base64')}};fs.writeFileSync(p,JSON.stringify(s));}
 else process.exit(90);
 `,
@@ -36,8 +36,9 @@ write(
   path.join(bin, 'gh'),
   `#!/usr/bin/env node
 const fs=require('fs'),a=process.argv.slice(2),p=process.env.STATE,s=JSON.parse(fs.readFileSync(p));
-if(a[0]==='api'&&a[1].includes('/commits/')){if(!s.tag)process.exit(1);console.log(s.tag);}
-else {s.gh.push(a);fs.writeFileSync(p,JSON.stringify(s));}
+if(JSON.stringify(a)===JSON.stringify(['api','repos/'+process.env.GITHUB_REPOSITORY+'/commits/'+process.env.RELEASE_TAG,'--jq','.sha'])){if(!s.tag)process.exit(1);console.log(s.tag);}
+else if(JSON.stringify(a)===JSON.stringify(['api','--method','POST','repos/'+process.env.GITHUB_REPOSITORY+'/dispatches','--input','-'])){s.gh.push(a);fs.writeFileSync(p,JSON.stringify(s));}
+else {console.error('Forbidden gh command: '+a.join(' '));process.exit(90);}
 `,
 );
 write(path.join(bin, 'sleep'), '#!/bin/sh\nexit 0\n');
@@ -110,6 +111,11 @@ const fresh = scenario('fresh');
 assert.equal(fresh.result.status, 0);
 assert.equal(fresh.result.publishes, 1);
 assert.equal(fresh.result.dispatches, 1);
+assert.equal(cp.spawnSync(path.join(bin, 'gh'), ['unexpected'], { cwd: fresh.dir, env: fresh.env }).status, 90);
+assert.equal(
+  cp.spawnSync(path.join(bin, 'npm'), ['view', 'foreign@1.0.0', '--json'], { cwd: fresh.dir, env: fresh.env }).status,
+  90,
+);
 assert(fresh.state.calls[0].includes('--provenance'));
 assert(fresh.state.calls[0][1].endsWith('inspected.tgz'));
 const retry = scenario('matching-retry', { registry: { version: '1.2.1', dist: { integrity: inspectedIntegrity } } });
