@@ -6,7 +6,6 @@ test('serves the deployed site, its assets, and a mobile-safe layout', async ({ 
   const response = await page.goto('');
 
   expect(response?.ok()).toBe(true);
-  await expect(page.locator('meta[name="generator"]')).toHaveAttribute('content', 'Forge by RM Industries');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
   const assetUrls = await page

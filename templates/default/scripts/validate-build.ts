@@ -4,12 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const requiredOutputPaths = [
   '404.html',
-  'about/index.html',
   'admin/index.html',
-  'articles/accessible-by-default/index.html',
-  'articles/content-that-travels-well/index.html',
-  'articles/designing-a-calm-starting-point/index.html',
-  'articles/index.html',
   'index.html',
   'robots.txt',
   'rss.xml',

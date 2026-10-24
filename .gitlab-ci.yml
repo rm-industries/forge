@@ -5,32 +5,22 @@ workflow:
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS && $CI_PIPELINE_SOURCE == "push"
       when: never
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"
 default:
   interruptible: true
 stages:
-  - prepare
   - validate
   - build
   - verify
   - deploy
   - smoke
 include:
+  - local: .gitlab/ci/setup.yml
   - local: .gitlab/ci/project.yml
-  - local: .gitlab/ci/generator.yml
-    rules:
-      - changes:
-          - .github/**/*
-          - .gitlab/**/*
-          - .gitlab-ci.yml
-          - templates/default/**/*
-          - packages/**/*
-          - scripts/**/*
-          - '*.json'
-          - '*.ts'
+  - local: .gitlab/ci/content-model.yml
+  - local: .gitlab/ci/markdownlint-frontmatter.yml
+  - local: .gitlab/ci/browser-oxfmt.yml
+  - local: .gitlab/ci/create-forge.yml
+  - local: .gitlab/ci/template.yml
+  - local: .gitlab/ci/integration.yml
   - local: .gitlab/ci/website.yml
-    rules:
-      - changes:
-          - website/**/*
-          - docs/**/*
-          - .gitlab/ci/website.yml
-          - .gitlab-ci.yml

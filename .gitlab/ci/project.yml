@@ -1,21 +1,12 @@
 project-format:
   rules:
     - when: on_success
-  image: node:26
-  stage: validate
-  before_script:
-    - npm ci
-  needs: []
   script:
     - npm run format
+  extends: .node
 project-lint-code:
   rules:
     - when: on_success
-  image: node:26
-  stage: validate
-  before_script:
-    - npm ci
-  needs: []
   script:
     - mkdir -p test-results
     - npm run lint:code --silent -- --format gitlab > test-results/code-quality.json
@@ -26,56 +17,36 @@ project-lint-code:
     expire_in: 7 days
     reports:
       codequality: test-results/code-quality.json
+  extends: .node
 project-lint-markdown:
   rules:
     - when: on_success
-  image: node:26
-  stage: validate
-  before_script:
-    - npm ci
-  needs: []
   script:
     - npm run lint:markdown
+  extends: .node
 project-spellcheck:
   rules:
     - when: on_success
-  image: node:26
-  stage: validate
-  before_script:
-    - npm ci
-  needs: []
   script:
     - npm run spellcheck
+  extends: .node
 project-documentation:
   rules:
     - when: on_success
-  image: node:26
-  stage: validate
-  before_script:
-    - npm ci
-  needs: []
   script:
     - npm run docs:validate
+  extends: .node
 project-typecheck:
   rules:
     - when: on_success
-  image: node:26
-  stage: validate
-  before_script:
-    - npm ci
-  needs: []
   script:
-    - npm run typecheck:root
+    - npx tsc --noEmit
+  extends: .node
 project-test:
   rules:
     - when: on_success
-  image: node:26
-  stage: validate
-  before_script:
-    - npm ci
-  needs: []
   script:
-    - npm run test:root
+    - npm run test:contracts
   artifacts:
     paths:
       - test-results/unit.xml
@@ -83,129 +54,4 @@ project-test:
     expire_in: 7 days
     reports:
       junit: test-results/unit.xml
-project-native:
-  rules:
-    - when: on_success
-  image: node:26
-  stage: validate
-  before_script: &native-setup
-    - npm ci
-    - |
-      curl --fail --silent --show-error --location --output /tmp/forge-rustup-init https://static.rust-lang.org/rustup/archive/1.28.2/x86_64-unknown-linux-gnu/rustup-init
-      echo '20a06e644b0d9bd2fbdbfd52d42540bdde820ea7df86e92e533c073da0cdd43c  /tmp/forge-rustup-init' | sha256sum --check
-      chmod +x /tmp/forge-rustup-init
-      /tmp/forge-rustup-init -y --profile minimal --default-toolchain 1.97.0 --target wasm32-unknown-unknown --component rustfmt --component clippy
-      . "$HOME/.cargo/env"
-      cargo +1.97.0 install wasm-bindgen-cli --version "$(node packages/browser-oxfmt/native/build-wasm.ts --bindings-version)" --locked
-  needs: []
-  script:
-    - npm run quality:native --workspace @rm-industries/browser-oxfmt
-project-build:
-  rules:
-    - when: on_success
-  image: node:26
-  stage: build
-  before_script: *native-setup
-  needs:
-    - job: project-format
-      artifacts: false
-    - job: project-lint-code
-      artifacts: false
-    - job: project-lint-markdown
-      artifacts: false
-    - job: project-spellcheck
-      artifacts: false
-    - job: project-documentation
-      artifacts: false
-    - job: project-typecheck
-      artifacts: false
-    - job: project-test
-      artifacts: false
-    - job: project-native
-      artifacts: false
-  script:
-    - npm run build
-    - mkdir -p .ci-packages
-    - npm pack --ignore-scripts --workspaces --pack-destination .ci-packages
-  artifacts:
-    paths:
-      - packages/browser-oxfmt/dist
-      - packages/content-model/dist
-      - packages/create-forge/dist
-      - .ci-packages
-    expire_in: 7 days
-project-pack:
-  rules:
-    - when: on_success
-  image: node:26
-  stage: verify
-  before_script: []
-  needs:
-    - job: project-build
-      artifacts: true
-  script:
-    - |
-      for candidate in .ci-packages/*.tgz; do
-        tar -tzf "$candidate"
-        case "$candidate" in
-          *content-model*.tgz)
-            for entry in index astro sveltia; do
-              tar -tzf "$candidate" | grep -Fx "package/dist/$entry.js"
-              tar -tzf "$candidate" | grep -Fx "package/dist/$entry.d.ts"
-            done
-            ;;
-          *browser-oxfmt*.tgz)
-            for entry in dist/index.js dist/index.d.ts dist/worker.js dist/generated/engine.js dist/generated/engine_bg.wasm dist/generated/identity.json NOTICE.md LICENSE; do
-              tar -tzf "$candidate" | grep -Fx "package/$entry"
-            done
-            ;;
-          *create-forge*.tgz)
-            tar -tzf "$candidate" | grep -Fx 'package/dist/index.mjs'
-            tar -tzf "$candidate" | grep -Fx 'package/dist/template/package-lock.json'
-            ;;
-        esac
-      done
-project-compatibility:
-  rules:
-    - when: on_success
-  image: node:$NODE_VERSION
-  stage: verify
-  before_script:
-    - npm ci
-  needs:
-    - job: project-build
-      artifacts: true
-  script:
-    - cp -R packages/browser-oxfmt/dist/generated packages/browser-oxfmt/src/generated
-    - |
-      tar -xOf .ci-packages/*browser-oxfmt*.tgz package/NOTICE.md > packages/browser-oxfmt/NOTICE.md
-    - npm run typecheck:workspaces && npm run test:workspaces
-    - |-
-      mkdir -p "/tmp/content-model-check"
-      mkdir -p "/tmp/content-model-check/node_modules/@rm-industries/content-model"
-      tar -xzf "$CI_PROJECT_DIR/.ci-packages/"*content-model*.tgz --strip-components=1 -C "/tmp/content-model-check/node_modules/@rm-industries/content-model"
-      ln -s "$CI_PROJECT_DIR/node_modules/astro" "/tmp/content-model-check/node_modules/astro"
-      cd "/tmp/content-model-check"
-      node --input-type=module <<'CHECK'
-      import assert from "node:assert/strict";
-      import { defineModel } from "@rm-industries/content-model";
-      import { createAstroCollection } from "@rm-industries/content-model/astro";
-      import { createSveltiaCollection } from "@rm-industries/content-model/sveltia";
-      for (const exported of [defineModel, createAstroCollection, createSveltiaCollection]) assert.equal(typeof exported, "function");
-      CHECK
-  parallel:
-    matrix:
-      - NODE_VERSION:
-          - 22.22.2
-          - '22'
-          - '24'
-          - '26'
-  artifacts:
-    paths:
-      - packages/*/test-results/unit.xml
-    when: always
-    expire_in: 7 days
-    reports:
-      junit:
-        - packages/content-model/test-results/unit.xml
-        - packages/create-forge/test-results/unit.xml
+  extends: .node

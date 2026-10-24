@@ -1,7 +1,5 @@
 import assert from 'node:assert/strict';
 
-import { defineModel } from '@rm-industries/content-model';
-import { createSveltiaCollection } from '@rm-industries/content-model/sveltia';
 import rule, { frontmatterOrderFromModel } from '@rm-industries/markdownlint-frontmatter';
 import { applyFixes } from 'markdownlint';
 import { lint } from 'markdownlint/sync';
@@ -99,21 +97,9 @@ console.log(
   'Packed consumer: exact LF/CRLF fixes, body rules, unknown/optional fields, scalar styles, nested maps, comments, unsafe YAML and idempotence passed.',
 );
 
-const model = defineModel({
-  name: 'pages',
-  label: 'Pages',
-  labelSingular: 'Page',
-  folder: 'content/pages',
-  slug: '{{slug}}',
-  fields: { title: { kind: 'string', label: 'Title' }, draft: { kind: 'boolean', label: 'Draft' } },
-  body: { name: 'body', label: 'Body' },
-});
+const model = { fields: { title: {}, draft: {} }, body: { name: 'body' } };
 const modelConfig = frontmatterOrderFromModel(model);
 assert.deepEqual(modelConfig, { orderedKeys: ['title', 'draft'] });
-assert.deepEqual(
-  createSveltiaCollection(model).fields.map((field) => field.name),
-  ['title', 'draft', 'body'],
-);
 const modelSource = '---\ndraft: false\ntitle: Hello\n---\nBody\n';
 const modelErrors = lint({
   strings: { doc: modelSource },
@@ -122,4 +108,4 @@ const modelErrors = lint({
 }).doc;
 assert.ok(modelErrors, 'Markdownlint must return the requested document');
 assert.equal(applyFixes(modelSource, modelErrors), '---\ntitle: Hello\ndraft: false\n---\nBody\n');
-console.log('Packed public content-model/Sveltia projection passed.');
+console.log('Packed public model-shape projection passed.');

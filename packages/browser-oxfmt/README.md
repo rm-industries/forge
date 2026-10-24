@@ -62,10 +62,13 @@ relative WASM/bindings assets; copying only the entry module is insufficient.
 
 ```sh
 npm run build --workspace @rm-industries/browser-oxfmt
-PLAYWRIGHT_MODULE=/absolute/path/to/playwright/index.mjs npm run test:browser --workspace @rm-industries/browser-oxfmt
+npx playwright install --with-deps chromium firefox webkit
+npm run test:browser --workspace @rm-industries/browser-oxfmt
 ```
 
-The browser check installs the actual tarball in an isolated temporary consumer,
+The browser check uses root Playwright tooling and package-owned consumer policy
+fixtures; it does not install or read the template. `PLAYWRIGHT_MODULE` can override
+the browser module when needed. It installs the actual tarball in an isolated temporary consumer,
 then runs all 215 supported-version comparisons and idempotence checks in Chromium,
 Firefox, and WebKit. Five Tailwind differences per browser are required and
 reported. It also checks project paths, ordinary and isolated deployment

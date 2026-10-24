@@ -1,7 +1,19 @@
 # GitHub is primary. Configure Pages/site URL before replacing the deployment never rules.
-website-format:
+.website:
   rules:
-    - when: on_success
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"
+    - changes:
+        - website/**/*
+        - docs/**/*
+        - package.json
+        - package-lock.json
+        - .npmrc
+        - .github/actions/setup-project/**/*
+        - .github/workflows/website.yml
+        - .gitlab-ci.yml
+        - .gitlab/ci/setup.yml
+        - .gitlab/ci/website.yml
+website-format:
   image: node:26
   stage: validate
   script:
@@ -10,9 +22,8 @@ website-format:
   before_script:
     - cd 'website'
     - npm ci
+  extends: .website
 website-spellcheck:
-  rules:
-    - when: on_success
   image: node:26
   stage: validate
   script:
@@ -21,9 +32,8 @@ website-spellcheck:
   before_script:
     - cd 'website'
     - npm ci
+  extends: .website
 website-lint-code:
-  rules:
-    - when: on_success
   image: node:26
   stage: validate
   script:
@@ -44,9 +54,8 @@ website-lint-code:
     expire_in: 7 days
     reports:
       codequality: website/test-results/code-quality.json
+  extends: .website
 website-lint-styles:
-  rules:
-    - when: on_success
   image: node:26
   stage: validate
   script:
@@ -55,9 +64,8 @@ website-lint-styles:
   before_script:
     - cd 'website'
     - npm ci
+  extends: .website
 website-lint-markdown:
-  rules:
-    - when: on_success
   image: node:26
   stage: validate
   script:
@@ -66,9 +74,8 @@ website-lint-markdown:
   before_script:
     - cd 'website'
     - npm ci
+  extends: .website
 website-audit-unused:
-  rules:
-    - when: on_success
   image: node:26
   stage: validate
   script:
@@ -77,9 +84,8 @@ website-audit-unused:
   before_script:
     - cd 'website'
     - npm ci
+  extends: .website
 website-typecheck:
-  rules:
-    - when: on_success
   image: node:26
   stage: validate
   script:
@@ -88,9 +94,8 @@ website-typecheck:
   before_script:
     - cd 'website'
     - npm ci
+  extends: .website
 website-unit-tests:
-  rules:
-    - when: on_success
   image: node:26
   stage: validate
   script:
@@ -110,9 +115,8 @@ website-unit-tests:
   before_script:
     - cd 'website'
     - npm ci
+  extends: .website
 website-build:
-  rules:
-    - when: on_success
   image: node:26
   stage: build
   script:
@@ -142,9 +146,8 @@ website-build:
   before_script:
     - cd 'website'
     - npm ci
+  extends: .website
 website-validate-build:
-  rules:
-    - when: on_success
   image: node:26
   stage: verify
   script:
@@ -155,9 +158,8 @@ website-validate-build:
   before_script:
     - cd 'website'
     - npm ci
+  extends: .website
 website-browser-tests:
-  rules:
-    - when: on_success
   image: node:26
   stage: verify
   script:
@@ -177,14 +179,12 @@ website-browser-tests:
   before_script:
     - cd 'website'
     - npm ci
+  extends: .website
 website-lighthouse:
-  rules:
-    - when: on_success
   image: node:26
   stage: verify
   script:
     - npx playwright install --with-deps chromium
-    # Container images use the browser installed by Playwright.
     - |
       export CHROME_PATH="$(node --input-type=module -e 'import { chromium } from "@playwright/test"; process.stdout.write(chromium.executablePath());')"
     - npm run lighthouse:ci
@@ -202,6 +202,7 @@ website-lighthouse:
   # Node containers run Chrome as root.
   variables:
     LHCI_COLLECT__SETTINGS__CHROME_FLAGS: --no-sandbox --disable-dev-shm-usage --disable-gpu
+  extends: .website
 website-deploy:
   image: node:26
   stage: deploy

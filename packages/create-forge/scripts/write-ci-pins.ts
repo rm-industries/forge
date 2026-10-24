@@ -14,8 +14,7 @@ const actionDefaultsPath = join(packageDirectory, 'dist/ci-actions.json');
 const actionDefaults: Record<string, { ref: string; version?: string }> = {};
 const maintained: Record<string, string> = {};
 for (const path of [
-  '.github/workflows/project.yml',
-  '.github/workflows/generator.yml',
+  '.github/workflows/create-forge.yml',
   '.github/workflows/security.yml',
   '.github/workflows/automation.yml',
   '.github/workflows/website.yml',

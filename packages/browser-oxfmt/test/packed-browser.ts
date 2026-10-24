@@ -19,7 +19,7 @@ const { format: reference } = await import(
   pathToFileURL(process.env.OXFMT_MODULE ?? join(root, 'node_modules/oxfmt/dist/index.js')).href
 );
 const browsers = await import(
-  pathToFileURL(process.env.PLAYWRIGHT_MODULE ?? join(root, 'templates/default/node_modules/playwright/index.mjs')).href
+  pathToFileURL(process.env.PLAYWRIGHT_MODULE ?? join(root, 'node_modules/playwright-core/index.mjs')).href
 );
 const cases = await createCases(reference);
 const { build: viteBuild } = await import(
@@ -101,8 +101,9 @@ try {
     join(consumer, 'npm-cache'),
   ]);
   // Resolve the installed package against a standalone consumer's actual policy.
-  await writeFile(join(consumer, 'oxfmt.config.ts'), await readFile(join(root, 'templates/default/oxfmt.config.ts')));
-  await writeFile(join(consumer, '.editorconfig'), await readFile(join(root, 'templates/default/.editorconfig')));
+  for (const name of ['oxfmt.config.ts', '.editorconfig']) {
+    await writeFile(join(consumer, name), await readFile(new URL(`./fixtures/consumer/${name}`, import.meta.url)));
+  }
   const consumerRequire = createRequire(join(consumer, 'package.json'));
   const { resolveBrowserOptions } = await import(
     pathToFileURL(consumerRequire.resolve('@rm-industries/browser-oxfmt/build')).href
