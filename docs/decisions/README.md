@@ -4,18 +4,19 @@ This directory records decisions that define Forge's architectural baseline. A
 decision is immutable once accepted: material changes require a new ADR that
 supersedes the old one.
 
-| ADR                                           | Decision                                                | Status   |
-| --------------------------------------------- | ------------------------------------------------------- | -------- |
-| [0001](0001-repository-layout.md)             | Repository layout and ownership                         | Accepted |
-| [0002](0002-one-template-v1.md)               | One template in v1                                      | Accepted |
-| [0003](0003-npm-workspaces.md)                | npm workspaces                                          | Accepted |
-| [0004](0004-template-materialization.md)      | Safe template materialization                           | Accepted |
-| [0005](0005-shared-content-model.md)          | Publishable, integration-neutral content model          | Accepted |
-| [0006](0006-versioning.md)                    | Independent package versioning                          | Accepted |
-| [0007](0007-project-website.md)               | Isolated Forge project website                          | Accepted |
-| [0008](0008-frontmatter-package.md)           | Independent frontmatter lint package; extends 0003/0006 | Accepted |
-| [0009](0009-retain-npm-orchestration.md)      | Retain npm after Vite+ evaluation                       | Proposed |
-| [0011](0011-template-authoring-evaluation.md) | Retain static templates and typed CI authoring          | Proposed |
+| ADR                                            | Decision                                                | Status   |
+| ---------------------------------------------- | ------------------------------------------------------- | -------- |
+| [0001](0001-repository-layout.md)              | Repository layout and ownership                         | Accepted |
+| [0002](0002-one-template-v1.md)                | One template in v1                                      | Accepted |
+| [0003](0003-npm-workspaces.md)                 | npm workspaces                                          | Accepted |
+| [0004](0004-template-materialization.md)       | Safe template materialization                           | Accepted |
+| [0005](0005-shared-content-model.md)           | Publishable, integration-neutral content model          | Accepted |
+| [0006](0006-versioning.md)                     | Independent package versioning                          | Accepted |
+| [0007](0007-project-website.md)                | Isolated Forge project website                          | Accepted |
+| [0008](0008-frontmatter-package.md)            | Independent frontmatter lint package; extends 0003/0006 | Accepted |
+| [0009](0009-retain-npm-orchestration.md)       | Retain npm after Vite+ evaluation                       | Proposed |
+| [0010](0010-dependency-delivery-evaluation.md) | Retain locked template delivery                         | Proposed |
+| [0011](0011-template-authoring-evaluation.md)  | Retain static templates and typed CI authoring          | Proposed |
 
 These records implement the Forge roadmap, beginning with
 [FGE-001](https://github.com/rm-industries/forge/issues/1), and follow the
