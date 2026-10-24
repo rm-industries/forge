@@ -61,6 +61,37 @@ existing-site integration. The [package contract](../../packages/browser-oxfmt/R
 remains authoritative for policy validation, language boundaries, lazy workers,
 asset layout, CSP and the approved preservation of Tailwind class order.
 
+The #348 integration uses `templates/default/scripts/sveltia-formatter.ts`,
+its Astro configuration, and the admin page's native serialize-first callback.
+The generated starter pins the published versions above. An isolated generated
+installation completed `npm ci` without a Rust toolchain and passed
+`quality:core`: formatting, lint, spelling, Knip, types, 100% coverage, build and
+built-output validation. The isolated suite passed 45 tests across 17 files, with 100% statements,
+branches, functions and lines in its configured coverage scope; development
+HTTP asset handling was also checked. These checks do not deploy an existing site.
+
+The implemented suite, `templates/default/tests/cms-formatting.spec.ts`, covers
+CLI parity, lazy workers, CSP and MIME types, invalid policies, actual CMS
+metadata/raw/rich-text saves, repeated and large edits, policy download/version/
+configuration failures, module/worker/WASM load failures, and runtime traps.
+It checks retained file bytes and unsaved body/metadata, then retry and reopen.
+Local Chromium and WebKit runs passed 22 cases at the default base before the
+final configuration/body assertions, then all 24 cases at `/forge/` (12 per
+browser). A refined actual WASM-trap probe subsequently passed both focused
+browser cases through the published worker's error/reset/retry path. These are
+automated browser results, not actual Safari device evidence.
+
+The implementation is commit `e9ce24e611df00bf1570a2c175e041eededa55f8`, integrated
+at `322b286`. Root validation passed 49 contract tests, type checks and packed
+CLI verification. [Linux template verification](https://github.com/rm-industries/forge/actions/runs/40115782703)
+and generator end-to-end checks were still running when this record was updated;
+no final cross-engine CI result is claimed here.
+
+Template dependency audits before and after adoption have identical advisory
+objects: 26 findings, including 14 high and zero critical; production-only audit
+reports zero. This is unchanged development-tooling debt, not a passing full
+template audit or an extension of the package publication disposition.
+
 The maintainer reports testing browser-oxfmt **0.1.1 on iOS 27**, and confirms
 that macOS Safari was not tested. This is maintainer-attested iPhone validation
 of the earlier formatter version; it does not establish actual-device coverage
@@ -69,7 +100,7 @@ scenarios, timings and resource measurements were not supplied.
 
 | Remaining evidence                             | Current status                                                                                                                                  |
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Current template CMS saves and recovery        | Integration and renewed automated evidence are tracked in #348; package parity alone does not prove CMS saves.                                  |
+| Current template CMS saves and recovery        | Local Chromium/WebKit root and project-path results are recorded above; final Linux cross-engine CI remains pending.                            |
 | Actual macOS Safari                            | No current actual-browser validation recorded. The publication-only waiver does not establish adoption coverage.                                |
 | Actual iPhone details                          | Maintainer attests iOS 27 with 0.1.1; 0.1.2/current-candidate device coverage and detailed scenarios remain unverified.                         |
 | Browser minimum policy                         | No new Safari/iPhone version floor declared. Establish it from actual tested environments and Forge policy.                                     |
