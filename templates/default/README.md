@@ -11,6 +11,36 @@ The template's `.editorconfig` shares UTF-8, LF, final-newline, two-space, and
 120-column settings with supported editors and Oxfmt. `oxfmt.config.ts` contains
 only formatter-specific behavior such as quote and import ordering.
 
+## CMS save formatting
+
+The admin editor first uses Sveltia's native Markdown serialization, then formats
+that output with the published browser formatter in a lazy, self-hosted worker.
+The first save downloads the worker and WebAssembly; opening the editor does not.
+Builds derive its policy from this project's Oxfmt configuration and
+`.editorconfig`, requiring one uniform Markdown policy. Rebuild and redeploy after
+changing that policy. Unsupported settings or incompatible engine versions fail
+the build rather than silently changing the formatting policy.
+
+Formatting failures display an error, preserve the stored article and keep edits
+in the editor. Retry Save after resolving the error; copy edits before reloading.
+The generated site needs no Rust toolchain, formatting service, Git hook or
+post-save formatting commit. Browser formatting preserves Tailwind class order;
+repository Oxfmt can still reorder classes. Native CSS formatting remains enabled.
+Field-order rules, Astro semantic validation and Markdown linting remain separate
+checks; formatting does not replace them.
+
+Deploy the complete `dist/admin/formatter/` directory, including its relative
+worker and generated WASM assets. Serve JavaScript as JavaScript and `.wasm` as
+`application/wasm`. A custom Content Security Policy must allow same-origin module
+scripts, workers and fetches, and `script-src 'wasm-unsafe-eval'` for WebAssembly.
+Broad JavaScript `unsafe-eval` is unnecessary. The asset URLs respect the site's
+configured project base path. Preserve the CMS's other style, image and font
+permissions when adding a CSP.
+
+To roll back this integration, remove the `registerCustomFormat` call in
+`src/pages/admin/index.astro` and `sveltiaFormatter()` from `astro.config.ts`;
+Sveltia will then save using its native serialization without browser formatting.
+
 ## Start here
 
 The generated documentation is organized by task:

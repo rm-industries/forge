@@ -11,10 +11,38 @@ import { site } from '../../config/site';
     <meta name="robots" content="noindex, nofollow" />
     <SeoHead title="Content Manager" description={`Content management for ${site.name}.`} canonicalPath="/admin/" />
     <script>
-      import { init } from '@sveltia/cms';
+      import type { ResolvedOptions } from '@rm-industries/browser-oxfmt';
+      import { init, registerCustomFormat } from '@sveltia/cms';
 
       import { sveltiaConfig } from '../../integrations/sveltia/config';
       import { registerSveltiaPreviews } from '../../integrations/sveltia/previews';
+
+      const formatterRoot = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/admin/formatter`;
+      let importAttempt = 0;
+
+      registerCustomFormat('frontmatter', 'md', {
+        async toFile(data, { serialize }) {
+          try {
+            const source = await serialize(data);
+            const formatterUrl = `${formatterRoot}/index.js?attempt=${importAttempt}`;
+            const formatter: typeof import('@rm-industries/browser-oxfmt') = await import(
+              /* @vite-ignore */ formatterUrl
+            ).catch((error: unknown) => {
+              importAttempt += 1;
+              throw error;
+            });
+            const response = await fetch(`${formatterRoot}/policy.json`);
+            if (!response.ok) throw new Error(`Unable to load formatter policy (${response.status})`);
+            const policy: ResolvedOptions = await response.json();
+            return await formatter.format(source, 'article.md', policy);
+          } catch (cause) {
+            throw new Error(
+              `Article formatting failed: ${cause instanceof Error ? cause.message : String(cause)}. Your edits are still in the editor. Retry Save; copy your edits before reloading.`,
+              { cause },
+            );
+          }
+        },
+      });
 
       registerSveltiaPreviews();
       init({ config: sveltiaConfig });
