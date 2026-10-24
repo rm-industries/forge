@@ -16,6 +16,8 @@ supersedes the old one.
 | [0008](0008-frontmatter-package.md)      | Independent frontmatter lint package; extends 0003/0006 | Accepted |
 | [0009](0009-retain-npm-orchestration.md) | Retain npm after Vite+ evaluation                       | Proposed |
 
+| [0010](0010-dependency-delivery-evaluation.md) | Retain locked template delivery | Proposed |
+
 These records implement the Forge roadmap, beginning with
 [FGE-001](https://github.com/rm-industries/forge/issues/1), and follow the
 project roadmap represented by their linked work items.
