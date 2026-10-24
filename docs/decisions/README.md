@@ -17,6 +17,7 @@ supersedes the old one.
 | [0009](0009-retain-npm-orchestration.md)       | Retain npm after Vite+ evaluation                       | Proposed |
 | [0010](0010-dependency-delivery-evaluation.md) | Retain locked template delivery                         | Proposed |
 | [0011](0011-template-authoring-evaluation.md)  | Retain static templates and typed CI authoring          | Proposed |
+| [0012](0012-release-management-evaluation.md)  | Retain Forge release orchestration after evaluation     | Proposed |
 
 These records implement the Forge roadmap, beginning with
 [FGE-001](https://github.com/rm-industries/forge/issues/1), and follow the
