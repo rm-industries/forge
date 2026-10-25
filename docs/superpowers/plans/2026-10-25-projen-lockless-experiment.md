@@ -121,7 +121,7 @@ Use existing public consumer commands rather than another permanent CI framework
       from Task 1. Expected: registry-only dependencies and passing consumer checks; document platform limits.
 - [x] Run the delivered CMS preservation/browser tests with published dependencies, including native serialization,
       metadata/raw/rich saves and formatter failure/recovery. Exercise Chromium, Firefox and WebKit where supported;
-record
+      record
       unavailable lanes explicitly.
 - [x] Run Lighthouse and dependency audits for the representative consumers. Report real failures and baseline/candidate
       differences; no new exceptions or weakened checks.
@@ -130,7 +130,7 @@ record
       public contract and lock replay.
 - [x] Reuse existing workflow schemas and security validation for both providers. Exercise hosted execution on an
       isolated experimental branch where authorized access exists, without deployment. If provider execution is
-unavailable,
+      unavailable,
       record the gap and constrain the recommendation.
 - [x] Preserve useful logs and tarballs until review; commit only compact evidence and fixture corrections.
 
@@ -151,5 +151,5 @@ unavailable,
       production source, root lock, release settings and published packages remain unchanged.
 - [ ] Request one fresh whole-branch review against this plan and the approved design; fix consequential findings with
       relevant regression checks. Commit the final report and open an evidence-only PR; leave merge and production
-adoption
+      adoption
       to the maintainer.
