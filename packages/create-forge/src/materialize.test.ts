@@ -476,3 +476,47 @@ test('experimental lockless template materializes without a shipped lock and val
   expect(manifest).toMatchObject({ name: options.packageName, version: '0.0.0', private: true });
   await expect(access(join(result.projectRoot, 'package-lock.json'))).rejects.toMatchObject({ code: 'ENOENT' });
 });
+
+test.each([false, true])('restores Cloudflare lock after later failure (existing=%s)', async (existing) => {
+  const { fixture, template } = await createFixture();
+  await mkdir(join(fixture, 'cloudflare'));
+  await writeFile(
+    join(fixture, 'cloudflare/package.json'),
+    JSON.stringify({ devDependencies: { wrangler: '^4.150.0' } }),
+  );
+  const destination = join(fixture, options.destination);
+  const lock = join(destination, 'package-lock.json');
+  if (existing) {
+    await mkdir(destination);
+    await writeFile(lock, 'original lock');
+  }
+  await expect(
+    materializeProject(
+      {
+        ...options,
+        deployments: [
+          {
+            name: 'production',
+            sourceBranch: 'main',
+            target: 'cloudflare-pages',
+            project: 'example',
+            url: 'https://example.com',
+          },
+        ],
+      },
+      {
+        cwd: fixture,
+        templateDirectory: template,
+        confirmOverwrite: async () => true,
+        execute: async () => {
+          await writeFile(lock, 'resolved lock');
+        },
+        generateCi: async () => {
+          throw new Error('renderer failed');
+        },
+      },
+    ),
+  ).rejects.toThrow(rendererRollbackMessagePattern);
+  if (existing) expect(await readFile(lock, 'utf8')).toBe('original lock');
+  else await expect(access(lock)).rejects.toHaveProperty('code', 'ENOENT');
+});

@@ -361,6 +361,17 @@ export const materializeProject = async (options: GeneratorOptions, context: Mat
       context.onFileCopied?.(target);
     }
     assertNotAborted(context.signal);
+    if (cloudflareVersion) {
+      const lock = join(projectRoot, 'package-lock.json');
+      const existing = await getPathStat(lock);
+      if (existing) {
+        if (existing.isSymbolicLink() || !existing.isFile())
+          throw new Error(`Unsafe destination entry ${lock}: expected a regular file.`);
+        const backup = join(backupDirectory, 'package-lock.json');
+        await copyFile(lock, backup);
+        backups.set(lock, backup);
+      } else createdFiles.add(lock);
+    }
     const ciConfig = await customizeTemplate(
       projectRoot,
       repositoryRoot,
