@@ -4,8 +4,8 @@ This policy implements
 [FGE-003](https://github.com/rm-industries/forge/issues/3) and the versioning
 decision in [ADR 0006](decisions/0006-versioning.md).
 
-- Status: Initial policy for the `0.x` release line
-- Effective: 2026-08-18
+- Status: create-forge 2.0 and active repository/template policy
+- Effective: 2026-10-25
 - Applies to: `@rm-industries/create-forge`, `@rm-industries/content-model`,
   `@rm-industries/markdownlint-frontmatter`, and
   `templates/default`
@@ -29,17 +29,21 @@ for lifecycle status.
 
 | Runtime                                                                         | Support                                                                | Required declaration and evidence                                                                                                       |
 | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Node.js `22.22.2` through the latest 22.x release                               | Minimum supported LTS line                                             | Package engines use `^22.22.2`; CI tests `22.22.2` and the latest 22.x patch. Node 22.22.2 includes a supported npm 10.9.x release.     |
+| Node.js `22.23.4` through the latest 22.x release                               | Minimum supported LTS line                                             | Package engines use `^22.23.4`; CI tests `22.23.4` and the latest 22.x patch. Node 22.23.4 includes a supported npm 10.9.x release.     |
 | Node.js 24.x                                                                    | Preferred LTS line                                                     | Package engines use `^24.0.0`; CI tests the latest 24.x patch.                                                                          |
 | Node.js 26.x                                                                    | Supported Current line                                                 | Package engines use `^26.0.0`; CI tests the latest 26.x patch. Support continues when the line becomes LTS.                             |
 | Node.js 20 and earlier, odd-numbered EOL lines, and experimental/nightly builds | Unsupported                                                            | Engines and documentation must not imply support.                                                                                       |
 | npm 10.9.x and 11.x                                                             | Supported                                                              | Package engines use `^10.9.0 \|\| ^11.0.0`; CI covers the npm version bundled with each tested Node line and the minimum Node/npm pair. |
 | Other package managers                                                          | Unsupported for repository, generator, and generated-project workflows | Users may experiment, but defects must reproduce with npm and the committed npm lockfile.                                               |
 
-The Node engine expression for published packages and generated projects is
-`^22.22.2 || ^24.0.0 || ^26.0.0`. The npm engine expression is
+The Node engine expression for create-forge 2.0, repository tooling, the website,
+and newly generated projects is
+`^22.23.4 || ^24.0.0 || ^26.0.0`. The npm engine expression is
 `^10.9.0 || ^11.0.0`. Root and template documentation must state the same
-minimums.
+minimums. Independently released, unchanged content-model, browser-oxfmt and
+frontmatter lint packages retain their published `^22.22.2 || ^24.0.0 || ^26.0.0`
+engine contract and existing package compatibility lanes. This generator release
+does not republish those libraries or raise their minimums.
 
 Only the minimum Node/npm combination and the latest patched release of each
 supported Node major need separate blocking jobs. A release must not be made

@@ -72,8 +72,11 @@ try {
   const generatedDirectory = join(invocationDirectory, 'generated-site');
   const generatedMetadata = JSON.parse(await readFile(join(generatedDirectory, 'package.json'), 'utf8')) as {
     name?: string;
+    engines: { node: string };
     dependencies: Record<string, string>;
   };
+  if (generatedMetadata.engines.node !== '^22.23.4 || ^24.0.0 || ^26.0.0')
+    throw new Error('Installed generator must deliver the approved Node 22.23.4 minimum.');
   if (
     generatedMetadata.dependencies['@rm-industries/content-model'] !== '^1.1.10' ||
     generatedMetadata.dependencies['@sveltia/cms'] !== '>=0.251.0 <1.0.0'

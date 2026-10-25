@@ -10,7 +10,7 @@
   parallel:
     matrix:
       - NODE_VERSION:
-          - 22.22.2
+          - 22.23.4
           - '22'
           - '24'
           - '26'

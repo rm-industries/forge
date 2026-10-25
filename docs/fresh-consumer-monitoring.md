@@ -64,13 +64,15 @@ runs the runtime-only probe; omitting the argument preserves daily coverage.
 Weekly evidence also retains the hidden `.lighthouseci` reports. Browser or
 Lighthouse failure fails the probe; audit failures are not converted to success.
 
-Rahul is the initial failure triage owner. Enable native GitHub Actions failure
-notifications for this repository in Rahul's account, then observe an authorized
-hosted failing rehearsal and record the run link and received notification before
-release activation is accepted. No notification bot, issue creation, or success
-message is added. Notification receipt is an external observation: local tests and
-workflow YAML cannot prove delivery. Delivery has not been verified by this change;
-account settings and hosted rehearsal remain a release handoff requirement.
+Rahul is the initial failure triage owner. Native GitHub failure notification
+channel delivery was verified in the linked inbox for this repository's failing
+PR 419 Create Forge/Template runs on 2026-10-25. This proves channel delivery,
+not receipt from a fresh-consumer scheduled invocation. After the separately
+authorized first 2.0 publication, observe the first active daily and weekly stable
+runs, verify their recorded registry identity, and confirm delivery for the first
+relevant failure. Keep this schedule-specific observation in the release handoff.
+No notification bot, issue creation, settings change, or success message is added.
+Local tests and workflow YAML cannot prove notification receipt.
 
 `quality:core` is not an audit gate. Monitoring success does not waive required
 release audits, protected manual publication, or review of corrective releases.

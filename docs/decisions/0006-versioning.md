@@ -14,7 +14,14 @@ updatable without regenerating or overwriting that source.
 ## Decision
 
 Apply semantic versioning to the published `@rm-industries/create-forge`
-package. Each release contains a tested snapshot of the default template. The
+package. Each release contains tested, versioned source for the default template. From
+create-forge 2.0.0, this source declares curated dependency ranges without a
+delivered lockfile: npm resolves dependencies at creation time and the consumer
+owns the resulting lock. The authoring lock remains committed and tested.
+Generator version identifies source and range policy, not an immutable dependency
+graph. Compatible authoring lock refreshes within unchanged ranges carry no
+generator release intent; source, range, pin and runtime changes retain release
+review. See [ADR 0010](0010-dependency-delivery-evaluation.md). The
 generator's `--version` reports the package version, and generated metadata or
 release evidence records that source version where practical.
 
