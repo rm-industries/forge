@@ -88,6 +88,11 @@ const assertGeneratedProject = async (directory: string, packageName: string, re
     throw new Error('CI authoring files must not be delivered to consumers');
   const consumer = JSON.parse(await readFile(join(directory, 'package.json'), 'utf8'));
   if (
+    consumer.dependencies['@rm-industries/browser-oxfmt'] !== '^0.1.2' ||
+    consumer.devDependencies.oxfmt !== '>=0.74.0 <1.0.0'
+  )
+    throw new Error('Generated projects must allow compatible formatter pair updates');
+  if (
     consumer.scripts['ci:generate'] ||
     consumer.scripts['ci:check'] ||
     consumer.devDependencies.yaml ||

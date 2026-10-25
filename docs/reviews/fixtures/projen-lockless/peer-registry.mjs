@@ -8,17 +8,31 @@ import { promisify } from 'node:util';
 
 const execute = promisify(execFile);
 
-export async function resolveFixture({ host, peer, optional = false, multiple = false, generatorVersion }) {
+export async function resolveFixture({
+  host,
+  peer,
+  optional = false,
+  multiple = false,
+  generatorVersion,
+  formatter = false,
+}) {
   const root = await mkdtemp(join(tmpdir(), 'forge-peer-fixture-'));
+  const hostName = formatter ? 'fixture-oxfmt' : 'fixture-host';
+  const modelName = formatter ? 'fixture-browser-oxfmt' : 'fixture-model';
+  const hostVersions = formatter ? ['0.74.0', '0.75.0', '0.76.0'] : ['1.0.0', '1.5.0', '2.0.0'];
+  const modelVersions = formatter ? ['0.1.2', '0.1.3', '0.2.0'] : ['1.0.0', '1.1.0'];
+  const rootRange = formatter ? '^0.1.2' : '^1.0.0';
   const packages = {
-    'fixture-host': ['1.0.0', '1.5.0', '2.0.0'].map((version) => ({ name: 'fixture-host', version })),
-    'fixture-model': (multiple || generatorVersion ? ['1.0.0', '1.1.0'] : ['1.0.0']).map((version) => ({
-      name: 'fixture-model',
+    [hostName]: hostVersions.map((version) => ({ name: hostName, version })),
+    [modelName]: (multiple || generatorVersion ? modelVersions : [modelVersions[0]]).map((version) => ({
+      name: modelName,
       version,
       type: 'module',
       exports: './index.mjs',
-      peerDependencies: { 'fixture-host': multiple && version === '1.1.0' ? '^2.0.0' : peer },
-      ...(optional ? { peerDependenciesMeta: { 'fixture-host': { optional: true } } } : {}),
+      peerDependencies: {
+        [hostName]: multiple && version !== modelVersions[0] ? (formatter ? '0.76.0' : '^2.0.0') : peer,
+      },
+      ...(optional ? { peerDependenciesMeta: { [hostName]: { optional: true } } } : {}),
     })),
     ...(generatorVersion
       ? {
@@ -66,17 +80,19 @@ export async function resolveFixture({ host, peer, optional = false, multiple = 
       const stage = join(root, pkg.name, pkg.version);
       await mkdir(join(stage, 'package'), { recursive: true });
       await writeFile(join(stage, 'package/package.json'), JSON.stringify(pkg));
-      if (pkg.name === 'fixture-model')
+      if (pkg.name === modelName)
         await writeFile(
           join(stage, 'package/index.mjs'),
-          `export const preservesMetadata = ${pkg.version === '1.0.0'};\n`,
+          formatter
+            ? `export const format = ${pkg.version === modelVersions[0] ? "source => source.replace('=', ' = ') + '\\n'" : "() => ''"};\n`
+            : `export const preservesMetadata = ${pkg.version === modelVersions[0]};\n`,
         );
       if (pkg.name === 'fixture-generator') {
         const manifest = {
           name: 'generated-fixture',
           version: '1.0.0',
           private: true,
-          dependencies: { 'fixture-model': pkg.version === '1.0.0' ? '^1.0.0' : '1.0.0', 'fixture-host': host },
+          dependencies: { [modelName]: pkg.version === '1.0.0' ? rootRange : modelVersions[0], [hostName]: host },
         };
         await writeFile(
           join(stage, 'package/create.mjs'),
@@ -97,7 +113,7 @@ export async function resolveFixture({ host, peer, optional = false, multiple = 
         name: 'fixture-consumer',
         version: '1.0.0',
         private: true,
-        dependencies: { 'fixture-model': '^1.0.0', ...(host ? { 'fixture-host': host } : {}) },
+        dependencies: { [modelName]: rootRange, ...(host ? { [hostName]: host } : {}) },
       }),
     );
     const args = [
@@ -144,7 +160,9 @@ export async function resolveFixture({ host, peer, optional = false, multiple = 
             [
               '--input-type=module',
               '--eval',
-              "import assert from 'node:assert/strict';import {preservesMetadata} from 'fixture-model';assert.equal(preservesMetadata,true);",
+              formatter
+                ? `import assert from 'node:assert/strict';import {format} from '${modelName}';assert.equal(format('const value=1;'),'const value = 1;\\n');`
+                : `import assert from 'node:assert/strict';import {preservesMetadata} from '${modelName}';assert.equal(preservesMetadata,true);`,
             ],
             { cwd: consumer },
           );
