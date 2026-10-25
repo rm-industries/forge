@@ -55,7 +55,7 @@ describe('completion output', () => {
 
       Next steps
         cd "site with spaces"
-        npm install
+        npm install # creates your lockfile; use npm ci for later installs
         npm run dev
       "
     `);

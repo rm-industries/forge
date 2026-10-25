@@ -155,26 +155,13 @@ const customizeTemplate = async (
   const projectDirectory = relativeProjectDirectory.split(sep).join('/') || '.';
   const dependabotDirectory = projectDirectory === '.' ? '/' : `/${projectDirectory}`;
   const packagePath = join(projectRoot, 'package.json');
-  const packageLockPath = join(projectRoot, 'package-lock.json');
   const packageMetadata = JSON.parse(await readFile(packagePath, 'utf8')) as Record<string, unknown>;
-  const packageLock = JSON.parse(await readFile(packageLockPath, 'utf8')) as {
-    name?: string;
-    packages?: Record<string, Record<string, unknown>>;
-  };
-  if (
-    packageMetadata.name !== templateTokens.packageName ||
-    packageLock.name !== templateTokens.packageName ||
-    packageLock.packages?.['']?.name !== templateTokens.packageName
-  ) {
+  if (packageMetadata.name !== templateTokens.packageName) {
     throw new Error('Packaged template contains unexpected package metadata tokens.');
   }
   packageMetadata.name = options.packageName;
   packageMetadata.version = '0.0.0';
   packageMetadata.private = true;
-  packageLock.name = options.packageName;
-  if (!packageLock.packages?.['']) throw new Error('Packaged template lockfile is missing its root package metadata.');
-  packageLock.packages[''].name = options.packageName;
-  packageLock.packages[''].version = '0.0.0';
   if (cloudflareVersion) {
     // Deployment invokes the locked executable by path, outside Knip's module graph.
     const knip = (packageMetadata.knip ?? {}) as { ignoreDependencies?: string[] };
@@ -188,7 +175,6 @@ const customizeTemplate = async (
     };
   }
   await writeFile(packagePath, `${JSON.stringify(packageMetadata, undefined, 2)}\n`);
-  await writeFile(packageLockPath, `${JSON.stringify(packageLock, undefined, 2)}\n`);
 
   const siteConfigPath = join(projectRoot, 'src', 'config', 'site.ts');
   let siteConfig = await readFile(siteConfigPath, 'utf8');
@@ -242,6 +228,7 @@ const customizeTemplate = async (
         arguments: [
           'install',
           '--package-lock-only',
+          '--package-lock=true',
           '--ignore-scripts',
           '--no-audit',
           '--no-fund',
@@ -375,6 +362,17 @@ export const materializeProject = async (options: GeneratorOptions, context: Mat
       context.onFileCopied?.(target);
     }
     assertNotAborted(context.signal);
+    if (cloudflareVersion) {
+      const lock = join(projectRoot, 'package-lock.json');
+      const existing = await getPathStat(lock);
+      if (existing) {
+        if (existing.isSymbolicLink() || !existing.isFile())
+          throw new Error(`Unsafe destination entry ${lock}: expected a regular file.`);
+        const backup = join(backupDirectory, 'package-lock.json');
+        await copyFile(lock, backup);
+        backups.set(lock, backup);
+      } else createdFiles.add(lock);
+    }
     const ciConfig = await customizeTemplate(
       projectRoot,
       repositoryRoot,

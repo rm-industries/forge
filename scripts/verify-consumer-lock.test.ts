@@ -15,9 +15,7 @@ test('accepts locked registry dependencies and rejects a substituted content-mod
     const lock = JSON.parse(await readFile(join(directory, 'package-lock.json'), 'utf8'));
     lock.packages['node_modules/@rm-industries/content-model'].version = '0.0.0';
     await writeFile(join(directory, 'package-lock.json'), JSON.stringify(lock));
-    await expect(verifyConsumerLock(directory)).rejects.toThrow(
-      'Consumer must retain the template content-model lock entry',
-    );
+    await expect(verifyConsumerLock(directory)).rejects.toThrow('Consumer model must satisfy its declaration');
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
