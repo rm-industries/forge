@@ -74,3 +74,25 @@ dependencies and replaying npm ci preserved consumer lock SHA-256
 `7be12e20ea45b3733175afb2981ab35665db72e19a09ce6ae52204771fb9114c`.
 
 Additional integration, Projen gate and maintenance results follow below.
+
+## Projen checkpoint: stop the cosmetic authoring candidate
+
+The approved stop condition applies: this bounded slice exposes no existing policy
+or writer that Projen can remove without moving the same maintained rules into a
+new representation. The model/CMS ranges already have one starter-manifest owner;
+published content-model peer metadata owns a different, tested compatibility rule.
+CI consumes npm commands and consumer locks rather than duplicating those ranges.
+Dependabot's CMS grouping exception is review policy, not another version-range owner.
+
+A fresh executable probe of Projen 0.104.14 requested the specialized Dependabot
+component's INCREASE strategy and weekly updates. Its synthesized file still used
+lockfile-only and included only the npm ecosystem. Preserving Forge's existing
+manifest updates and GitHub Actions policy requires overrides or generic YAML,
+retaining the policy objects and adding synthesis/export responsibilities. This is
+a result about the pinned component and bounded slice, not all possible Projen uses.
+
+No third Projen CLI tarball, cosmetic adapter, synthesis framework or claimed
+production-code deletion was produced. The committed private fixture lock and
+policy probe make the observation reproducible; Projen is absent from production
+dependencies. Lockless/range validation continues independently. This checkpoint
+was reached before the estimated first focused day; the budget was not exhausted.
