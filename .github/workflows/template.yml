@@ -79,6 +79,8 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: ${{ matrix.node }}
+      - name: Install authoring verification dependencies
+        run: npm ci
       - name: Prepare isolated starter with default regressions
         run: node scripts/test-template.ts prepare "$RUNNER_TEMP/forge-template"
       - name: Archive canonical source

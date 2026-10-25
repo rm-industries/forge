@@ -10,6 +10,16 @@ import { assertStarterIsolation, findLocalDependencies } from './verify-template
 export async function verifyConsumerLock(directory: string) {
   const consumer = JSON.parse(await readFile(resolve(directory, 'package-lock.json'), 'utf8'));
   const manifest = JSON.parse(await readFile(resolve(directory, 'package.json'), 'utf8'));
+  for (const [path, entry] of Object.entries(consumer.packages) as [
+    string,
+    { link?: boolean; resolved?: string; integrity?: string },
+  ][]) {
+    if (!path) continue;
+    assert.ok(
+      !entry.link && /^https?:\/\//u.test(entry.resolved ?? '') && entry.integrity,
+      `Consumer lock must contain published registry packages: ${path}`,
+    );
+  }
   const model = consumer.packages['node_modules/@rm-industries/content-model'];
   const cms = consumer.packages['node_modules/@sveltia/cms'];
   assert.ok(model && cms, 'Consumer must lock published model and CMS packages');
@@ -19,6 +29,10 @@ export async function verifyConsumerLock(directory: string) {
   );
   assert.ok(satisfies(cms.version, manifest.dependencies['@sveltia/cms']));
   assert.ok(satisfies(cms.version, model.peerDependencies['@sveltia/cms']));
+  assert.ok(
+    satisfies(consumer.packages['node_modules/astro']?.version ?? '', model.peerDependencies.astro),
+    'Consumer Astro must satisfy the model peer requirement',
+  );
   const browser = consumer.packages['node_modules/@rm-industries/browser-oxfmt'];
   const cli = consumer.packages['node_modules/oxfmt'];
   assert.ok(browser && cli, 'Consumer must lock published browser and CLI formatter packages');
