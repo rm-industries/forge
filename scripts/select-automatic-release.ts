@@ -23,16 +23,6 @@ const releaseSources = {
       'packages/content-model/CHANGELOG.md',
     ],
   },
-  'create-forge': {
-    branch: 'automation/template-content-model',
-    files: [
-      'package-lock.json',
-      'packages/create-forge/package.json',
-      'packages/create-forge/CHANGELOG.md',
-      'templates/default/package.json',
-      'templates/default/package-lock.json',
-    ],
-  },
 } as const;
 
 export function selectAutomaticRelease({
@@ -42,7 +32,6 @@ export function selectAutomaticRelease({
   sha,
   files,
   versions,
-  templateVersions,
 }: {
   pullRequest: PullRequest;
   repository: string;
@@ -50,7 +39,6 @@ export function selectAutomaticRelease({
   sha: string;
   files: string[];
   versions: Record<'content-model' | 'create-forge', { previous: string; current: string }>;
-  templateVersions: string[];
 }) {
   if (!commitShaPattern.test(sha)) throw new Error('Release commit must be a full SHA.');
   if (
@@ -65,17 +53,12 @@ export function selectAutomaticRelease({
     return undefined;
   for (const [slug, source] of Object.entries(releaseSources)) {
     const packageSlug = slug as keyof typeof releaseSources;
-    const matchesBranch =
-      packageSlug === 'content-model'
-        ? pullRequest.head.ref.startsWith(source.branch)
-        : pullRequest.head.ref === source.branch;
-    if (!matchesBranch || !files.length || files.some((file) => !(source.files as readonly string[]).includes(file)))
-      continue;
     if (
-      packageSlug === 'create-forge' &&
-      (templateVersions.length !== 2 || templateVersions.some((version) => !valid(version) || prerelease(version)))
+      !pullRequest.head.ref.startsWith(source.branch) ||
+      !files.length ||
+      files.some((file) => !(source.files as readonly string[]).includes(file))
     )
-      return undefined;
+      continue;
     if (
       !files.includes(`packages/${packageSlug}/package.json`) ||
       !files.includes(`packages/${packageSlug}/CHANGELOG.md`)
@@ -141,13 +124,6 @@ function run() {
     sha,
     files,
     versions,
-    templateVersions: (() => {
-      const dependencies = JSON.parse(readFileSync('templates/default/package.json', 'utf8')).dependencies as Record<
-        string,
-        string
-      >;
-      return ['@rm-industries/content-model', '@sveltia/cms'].map((name) => dependencies[name] ?? '');
-    })(),
   });
   if (selected) {
     const previousVersion = versions[selected].previous;
@@ -166,19 +142,9 @@ function run() {
     execFileSync('git', ['fetch', '--no-tags', '--depth=1', 'origin', releasedSha], {
       stdio: ['ignore', 'ignore', 'inherit'],
     });
-    const changes = execFileSync(
-      'git',
-      [
-        'diff',
-        '--name-only',
-        releasedSha,
-        'HEAD',
-        '--',
-        `packages/${selected}`,
-        ...(selected === 'create-forge' ? ['templates/default'] : []),
-      ],
-      { encoding: 'utf8' },
-    )
+    const changes = execFileSync('git', ['diff', '--name-only', releasedSha, 'HEAD', '--', `packages/${selected}`], {
+      encoding: 'utf8',
+    })
       .trim()
       .split('\n');
     if (requiresManualBaseline(selected, changes)) {
