@@ -1,0 +1,106 @@
+---
+name: Fresh consumer
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - packages/create-forge/**
+      - templates/default/**
+      - scripts/fresh-consumer*
+      - scripts/verify-consumer-lock.ts
+      - .github/workflows/fresh-consumer.yml
+      - package.json
+      - package-lock.json
+  schedule:
+    - cron: 43 8 * * *
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Artifact selection rehearsal
+        type: choice
+        options: [candidate, stable]
+        default: stable
+permissions: {}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+defaults:
+  run:
+    shell: bash
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      state: ${{ steps.select.outputs.state }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup-project
+        with:
+          node-version: 26.x
+          working-directory: .
+          cache-dependency-path: package-lock.json
+      - name: Select candidate or published stable once
+        id: select
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REQUESTED_TARGET: ${{ inputs.target }}
+          npm_config_cache: ${{ runner.temp }}/npm-cache
+        run: |-
+          target=stable
+          if [[ "$EVENT_NAME" == pull_request ]]; then target=candidate; fi
+          if [[ "$EVENT_NAME" == workflow_dispatch ]]; then target="$REQUESTED_TARGET"; fi
+          case "$target" in
+            candidate)
+              npm run build --workspace @rm-industries/create-forge
+              mkdir -p "$RUNNER_TEMP/packed"
+              npm pack --ignore-scripts --workspace @rm-industries/create-forge --pack-destination "$RUNNER_TEMP/packed"
+              node scripts/fresh-consumer.ts select candidate "$RUNNER_TEMP/selection" "$RUNNER_TEMP/packed/"*.tgz
+              ;;
+            stable) node scripts/fresh-consumer.ts select stable "$RUNNER_TEMP/selection" ;;
+            *) echo 'Invalid artifact target' >&2; exit 1 ;;
+          esac
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: fresh-selection
+          path: ${{ runner.temp }}/selection
+          if-no-files-found: error
+          retention-days: 7
+  daily:
+    needs: select
+    if: needs.select.outputs.state == 'active'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup-project
+        with:
+          node-version: 26.x
+          working-directory: .
+          cache-dependency-path: package-lock.json
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: fresh-selection
+          path: ${{ runner.temp }}/selection
+      - name: Validate isolated public consumer and Chromium CMS formatting
+        env:
+          npm_config_cache: ${{ runner.temp }}/npm-cache
+        run: node scripts/fresh-consumer.ts validate "$RUNNER_TEMP/selection" "$RUNNER_TEMP/fresh-daily"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: fresh-daily-evidence
+          path: |
+            ${{ runner.temp }}/fresh-daily/*.json
+            ${{ runner.temp }}/fresh-daily/*.log
+            ${{ runner.temp }}/fresh-daily/consumer/playwright-report
+            ${{ runner.temp }}/fresh-daily/consumer/test-results
+          if-no-files-found: error
+          retention-days: 7
