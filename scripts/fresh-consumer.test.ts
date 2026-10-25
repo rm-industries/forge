@@ -134,3 +134,20 @@ test('fresh candidate rejects bundled consumer snapshots', async () => {
     }),
   ).rejects.toThrow(/must not bundle/);
 });
+
+test('weekly acceptance retains supported runtimes and reserves full browser budgets for primary Ubuntu', async () => {
+  const { freshConsumerMatrix } = await import('./fresh-consumer.ts');
+  expect(freshConsumerMatrix('weekly')).toEqual({
+    include: [
+      { os: 'ubuntu-latest', node: '22.23.4', npm: '10.9.0', probe: 'quality' },
+      { os: 'ubuntu-latest', node: '22.x', npm: '11', probe: 'quality' },
+      { os: 'ubuntu-latest', node: '24.x', npm: '11', probe: 'quality' },
+      { os: 'ubuntu-latest', node: '26.x', npm: '11', probe: 'weekly' },
+      { os: 'macos-latest', node: '26.x', npm: '11', probe: 'quality' },
+    ],
+  });
+  expect(freshConsumerMatrix('daily')).toEqual({
+    include: [{ os: 'ubuntu-latest', node: '26.x', npm: '11', probe: 'daily' }],
+  });
+  expect(() => freshConsumerMatrix('invalid')).toThrow(/Invalid coverage/);
+});
