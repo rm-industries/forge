@@ -37,8 +37,11 @@ peer-upgrade tests also pass.
 The real consumer's `quality:core` passed. Its delivered CMS formatter suite checks
 actual CLI/browser output parity, article and embedded-language formatting,
 idempotence, configuration rejection, metadata/raw/rich saves, persistence and
-retry after policy/module/worker/WASM failures. Browser results and final
-integration checks are recorded with the implementation handoff.
+retry after policy/module/worker/WASM failures. All 12 Chromium and all 12
+WebKit checks passed on macOS. Firefox could not
+launch its temporary profile (including a retry using a canonical temporary
+path), so local Firefox behavior is unverified and requires the hosted lane.
+Final integration checks are recorded with the implementation handoff.
 
 The separate `formatter-peer-resolution.test.mjs` uses the existing localhost
 registry and real synthetic tarballs. Seven cases characterize compatible exact
@@ -64,3 +67,9 @@ It cannot repair metadata in an already published generator or alter existing
 projects and their locks. No package publication, native formatter rebuild or Rust
 installation was performed for this declaration change. Release audit requirements
 remain unchanged; a successful install is not a security waiver.
+
+The initial fresh graph also selected unrelated Astro 7.4.2, whose published
+Node requirement rejects the supported minimum Node 22.22.2. npm 10 lock replay
+preserved the lock, but running the actual Astro package binary under that
+runtime failed. This formatter ticket does not change Astro policy; final
+integration acceptance needs the separately reviewed correction.
