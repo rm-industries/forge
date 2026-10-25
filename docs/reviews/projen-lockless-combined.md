@@ -117,8 +117,10 @@ was reached before the estimated first focused day; the budget was not exhausted
 
 ## Hosted runtime and consumer evidence
 
-[Hosted run 40149801110](https://github.com/rm-industries/forge/actions/runs/40149801110)
-passed on experimental branch commit `123688eca7c43ea36d32d93b65a8d2054e8bc778`.
+[Corrected hosted run 40151392110](https://github.com/rm-industries/forge/actions/runs/40151392110)
+passed on experimental branch commit `56f2039`. It repeats the initial
+[successful rehearsal](https://github.com/rm-industries/forge/actions/runs/40149801110)
+after the Cloudflare rollback correction.
 That branch is a disposable validation input, not a merge candidate. The evidence
 branch keeps production source and workflows unchanged.
 
@@ -135,7 +137,7 @@ lock without changing its hash. Version output above is observed, not inferred
 from the matrix's floating Node labels. The hosted artifact independently verified
 the intended ranges, exact browser-oxfmt 0.1.2/Oxfmt 0.74.0 coupling, no template
 lock, and no Projen consumer dependency. Its SHA-512 is
-`sha512-3Y/7Ws1I2xInfF+FY0Ren4hznb7Oyksf1cb3pzj54ROUg8QfZEKDWuotK/vbIMSOARNocptW/4tWuvWGQZqirg==`.
+`sha512-meKbMnwq8qKkQbLkiOU6RzmBnOgI4qXsK/Ak9rYqh98oDRbW88tuV8jZCZMJBAqJ2bG8LO3Cg+yhTkN/M+XU7w==`.
 
 The Ubuntu Node 26 lane passed all 114 delivered browser cases across Chromium,
 Firefox and WebKit, including actual CMS save/preservation/recovery paths, and

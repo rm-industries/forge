@@ -149,7 +149,6 @@ Use existing public consumer commands rather than another permanent CI framework
       adoption; describe rollback and any remaining hosted/platform/security gaps.
 - [x] Run focused document formatting, Markdown lint, spelling, link validation and raw git diff --check. Verify
       production source, root lock, release settings and published packages remain unchanged.
-- [ ] Request one fresh whole-branch review against this plan and the approved design; fix consequential findings with
+- [x] Request one fresh whole-branch review against this plan and the approved design; fix consequential findings with
       relevant regression checks. Commit the final report and open an evidence-only PR; leave merge and production
-      adoption
-      to the maintainer.
+      adoption to the maintainer.
