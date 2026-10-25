@@ -1,7 +1,7 @@
 # Fresh consumer monitoring
 
 The Fresh consumer workflow checks relevant pull requests using their packed CLI
-candidate. Its daily schedule resolves npm `latest` once and downloads that exact
+candidate. Its daily and weekly schedules resolve npm `latest` once and download that exact
 published artifact; it never builds main as a replacement for stable. Both paths
 record package name, version, source identity and SHA-512 integrity in
 `identity.json`, alongside the selected tarball. Every validation checks that hash
@@ -14,7 +14,8 @@ cannot activate monitoring. A prerelease on `latest` fails selection. Schedules
 may execute before publication to report inactivity; no consumer acceptance is
 reported for the old locked release.
 
-Use the manual workflow's `candidate` or `stable` target to rehearse either path.
+Use the manual workflow's `candidate` or `stable` target and `daily` or `weekly`
+coverage to rehearse either path. Relevant pull requests use daily coverage.
 The same commands work locally, with new, absolute output directories:
 
 ```sh
@@ -46,8 +47,22 @@ versions, lock hash, the resolved consumer lock, and browser failure reports.
 Workflow artifacts expire after seven days. Local output retains the consumer and
 runner for investigation; remove these scratch directories after collecting evidence.
 The selection directory can be shared across independent runtime consumers; each
-validation requires its own fresh output directory. Broader weekly coverage can
-extend the consumer probe phase while retaining this selection contract.
+validation requires its own fresh output directory.
+
+Daily coverage uses Ubuntu Node 26/npm 11 and the focused Chromium CMS formatter
+suite. The Monday weekly run uses Ubuntu Node 22.23.4/npm 10, latest Node 22/npm 11,
+Node 24/npm 11, Node 26/npm 11, and macOS Node 26/npm 11. Every lane installs the
+same selected tarball, validates isolation and peers, records its own runtime and
+lock identity, replays that lock and runs consumer quality. Only the primary
+Ubuntu Node 26 lane runs the complete delivered Chromium, Firefox and WebKit
+suite plus Lighthouse budget assertions. Each lane keeps separate evidence;
+failures do not cancel the remaining lanes.
+
+To rehearse weekly locally, append `weekly` to the validation command. `quality`
+runs the runtime-only probe; omitting the argument preserves daily coverage.
+`node scripts/fresh-consumer.ts plan weekly` prints the workflow runtime matrix.
+Weekly evidence also retains the hidden `.lighthouseci` reports. Browser or
+Lighthouse failure fails the probe; audit failures are not converted to success.
 
 Rahul is the initial failure triage owner. Enable native GitHub Actions failure
 notifications for this repository in Rahul's account, then observe an authorized

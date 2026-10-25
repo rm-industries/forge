@@ -20,6 +20,22 @@ type Selection = {
   source: string;
 };
 
+export function freshConsumerMatrix(coverage: string) {
+  assert.ok(coverage === 'daily' || coverage === 'weekly', 'Invalid coverage');
+  return {
+    include:
+      coverage === 'weekly'
+        ? [
+            { os: 'ubuntu-latest', node: '22.23.4', npm: '10', probe: 'quality' },
+            { os: 'ubuntu-latest', node: '22.x', npm: '11', probe: 'quality' },
+            { os: 'ubuntu-latest', node: '24.x', npm: '11', probe: 'quality' },
+            { os: 'ubuntu-latest', node: '26.x', npm: '11', probe: 'weekly' },
+            { os: 'macos-latest', node: '26.x', npm: '11', probe: 'quality' },
+          ]
+        : [{ os: 'ubuntu-latest', node: '26.x', npm: '11', probe: 'daily' }],
+  };
+}
+
 export async function selectGenerator(options: {
   target: 'candidate' | 'stable';
   output: string;
@@ -103,7 +119,8 @@ function run(command: string, args: string[], cwd: string, log: string) {
   assert.equal(result.status, 0, `${command} failed (${result.status}): ${result.error?.message ?? log}`);
 }
 
-export async function validateFreshConsumer(selectionDirectory: string, output: string) {
+export async function validateFreshConsumer(selectionDirectory: string, output: string, probe = 'daily') {
+  assert.ok(['daily', 'weekly', 'quality'].includes(probe), 'Invalid consumer probe');
   const identity: Selection = JSON.parse(await readFile(join(selectionDirectory, 'identity.json'), 'utf8'));
   assert.equal(identity.state, 'active', 'Inactive stable selection is not freshness acceptance');
   const tarball = resolve(selectionDirectory, 'create-forge.tgz');
@@ -116,7 +133,11 @@ export async function validateFreshConsumer(selectionDirectory: string, output: 
   await mkdir(runner);
   await writeFile(
     join(output, 'runtime.json'),
-    JSON.stringify({ node: process.version, npm: execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim() }),
+    JSON.stringify({
+      node: process.version,
+      npm: execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim(),
+      probe,
+    }),
   );
   run('npm', ['install', '--prefix', runner, '--ignore-scripts', '--no-audit', '--no-fund', tarball], output, log);
   run(
@@ -182,18 +203,33 @@ export async function validateFreshConsumer(selectionDirectory: string, output: 
   run('npm', ['ci', '--no-audit', '--no-fund'], consumer, log);
   assert.deepEqual(await readFile(lockPath), lockBytes, 'npm ci changed selected consumer lock');
   run('npm', ['run', 'quality:core'], consumer, log);
-  run('npm', ['exec', '--', 'playwright', 'install', '--with-deps', 'chromium'], consumer, log);
-  run(
-    'npm',
-    ['run', 'test:e2e', '--', 'tests/cms-formatting.spec.ts', '--project=chromium', '--workers=2'],
-    consumer,
-    log,
-  );
+  if (probe !== 'quality') {
+    const browsers = probe === 'weekly' ? ['chromium', 'firefox', 'webkit'] : ['chromium'];
+    run('npm', ['exec', '--', 'playwright', 'install', '--with-deps', ...browsers], consumer, log);
+    run(
+      'npm',
+      [
+        'run',
+        'test:e2e',
+        '--',
+        ...(probe === 'daily' ? ['tests/cms-formatting.spec.ts', '--project=chromium'] : []),
+        '--workers=2',
+      ],
+      consumer,
+      log,
+    );
+    if (probe === 'weekly') run('npm', ['run', 'lighthouse:ci'], consumer, log);
+  }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const [mode, target, output, candidate] = process.argv.slice(2);
-  if (mode === 'select') {
+  if (mode === 'plan') {
+    assert.ok(target, 'Coverage is required');
+    const matrix = JSON.stringify(freshConsumerMatrix(target));
+    console.log(matrix);
+    if (process.env.GITHUB_OUTPUT) await appendFile(process.env.GITHUB_OUTPUT, `matrix=${matrix}\n`);
+  } else if (mode === 'select') {
     assert.ok(target === 'candidate' || target === 'stable');
     assert.ok(output);
     const identity = await selectGenerator({
@@ -215,6 +251,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   } else {
     assert.equal(mode, 'validate');
     assert.ok(target && output);
-    await validateFreshConsumer(resolve(target), resolve(output));
+    await validateFreshConsumer(resolve(target), resolve(output), candidate);
   }
 }
