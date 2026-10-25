@@ -1,6 +1,7 @@
 # `@rm-industries/create-forge`
 
-The stable Forge project initializer. npm resolves the primary command to this
+The stable Forge project initializer. Version 2.0 requires Node 22.23.4 or newer
+on Node 22, or Node 24/26, with npm 10.9 or 11. npm resolves the primary command to this
 scoped package:
 
 ```sh
@@ -248,3 +249,12 @@ creation runs `npm install` and validates the resulting project lock before opti
 Git initialization. Ordinary `--no-install` creation leaves no lock: run `npm install`
 before using `npm ci`. Cloudflare retains its networked lockfile-only preflight.
 Installation failures preserve generated source; retry `npm install` in that directory.
+
+New dependencies resolve inside the bundled ranges and their published peers. npm
+may report a peer conflict instead of searching every older compatible package;
+inspect the reported package/peer versions rather than forcing an invalid graph.
+Commit the resulting lockfile and review later updates in your own project.
+A newer generator never migrates existing source or locks. Old generator versions
+retain their own ranges and pins, so a corrective release cannot remotely repair
+them; choose a reviewed newer generator for new sites or update an existing site's
+own dependencies deliberately.

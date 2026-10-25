@@ -168,3 +168,27 @@ For the independent frontmatter plugin, use the
 [release readiness report](frontmatter-release-readiness.md) and
 [manual handoff](package-releases.md#frontmatter-plugin-release-handoff).
 Local preparation does not replace the required protected workflow dry run.
+
+## create-forge 2.0 corrective delivery
+
+Consult the [2.0 readiness record](reviews/create-forge-2.0-readiness.md) and
+[monitoring handoff](fresh-consumer-monitoring.md). Keep source and range changes
+in reviewed generator releases; an authoring lock refresh inside unchanged ranges
+must not create generator release intent. The 2.0 runtime floor is Node 22.23.4
+on Node 22; independent unchanged libraries retain their published engines.
+
+For a permitted upstream regression, reproduce the failing public behavior in an
+isolated installed-CLI consumer. Review a correction that temporarily pins the
+affected pair to known-working published versions, explain when to remove the
+pin, and rerun peer, quality, CMS and formatter checks plus required audits. Pack
+and test the corrective generator itself; editing a consumer by hand does not
+prove what a new generator delivers. Old generators and existing sites retain
+their original metadata and require deliberate owner action.
+
+For delivery rollback, the known locked create-forge 1.3.0 release remains the
+fallback for new projects. Test its actual packed artifact and consumer lock
+replay before recommending it. Returning a future generator to bundled-lock
+delivery requires a reviewed source change, tested snapshot, semver assessment
+and the same protected publication/audit gates. Never move public dist-tags or
+rewrite consumer files automatically. The rollback artifact's older source and
+security state require review; its existence is not a publication exception.

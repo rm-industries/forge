@@ -53,7 +53,7 @@ jobs:
         include:
           - runtime: minimum Node 22 on Ubuntu
             os: ubuntu-latest
-            node: 22.22.2
+            node: 22.23.4
             major: '22'
           - runtime: latest Node 22 on Ubuntu
             os: ubuntu-latest
