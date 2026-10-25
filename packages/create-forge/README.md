@@ -242,3 +242,9 @@ Generated sites include deployment setup in their `README.md` with their selecte
 branches, primary CI, workflow locations and provider setup requirements. The guide
 records bootstrap choices; it is consumer-owned documentation, not retained Forge
 configuration. Update it alongside the YAML when changing deployment behavior.
+
+The generator bundles versioned template source without a template lockfile. Normal
+creation runs `npm install` and validates the resulting project lock before optional
+Git initialization. Ordinary `--no-install` creation leaves no lock: run `npm install`
+before using `npm ci`. Cloudflare retains its networked lockfile-only preflight.
+Installation failures preserve generated source; retry `npm install` in that directory.

@@ -16,24 +16,26 @@ test('runs real npm and Git setup in a clean temporary project', async () => {
   const fixture = await mkdtemp(join(tmpdir(), 'create-forge-process-'));
   fixtures.push(fixture);
   await mkdir(join(fixture, 'project'));
-  await mkdir(join(fixture, 'dependency'));
   const destination = join(fixture, 'project');
-  await writeFile(join(fixture, 'dependency', 'package.json'), '{"name":"fixture-dependency","version":"1.0.0"}\n');
   await writeFile(
     join(destination, 'package.json'),
-    '{"name":"process-fixture","private":true,"dependencies":{"fixture-dependency":"file:../dependency"}}\n',
+    '{"name":"process-fixture","private":true,"dependencies":{"is-number":"7.0.0"}}\n',
   );
 
   const options = { install: true, git: true } as GeneratorOptions;
   await runProjectSetup(options, {
     projectRoot: destination,
     repositoryRoot: destination,
-    environment: { ...process.env, npm_config_dry_run: 'false' },
+    environment: {
+      ...process.env,
+      npm_config_package_lock: 'false',
+      npm_config_package_lock_only: 'true',
+      npm_config_dry_run: 'true',
+    },
   });
 
-  await expect(
-    access(join(destination, 'node_modules', 'fixture-dependency', 'package.json')),
-  ).resolves.toBeUndefined();
+  await expect(access(join(destination, 'node_modules', 'is-number', 'package.json'))).resolves.toBeUndefined();
+  await expect(access(join(destination, 'package-lock.json'))).resolves.toBeUndefined();
   await expect(access(join(destination, '.git', 'HEAD'))).resolves.toBeUndefined();
   await expect(access(join(destination, '.git', 'index'))).rejects.toMatchObject({ code: 'ENOENT' });
 });

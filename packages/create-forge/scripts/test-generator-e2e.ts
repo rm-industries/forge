@@ -1,5 +1,6 @@
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -31,8 +32,8 @@ const exists = async (path: string) => {
   }
 };
 
-const runGenerator = async (executable: string, cwd: string, args: string[]) => {
-  return execute(executable, args, { cwd, maxBuffer: 10 * 1024 * 1024 });
+const runGenerator = async (executable: string, cwd: string, args: string[], environment = process.env) => {
+  return execute(executable, args, { cwd, env: environment, maxBuffer: 10 * 1024 * 1024 });
 };
 
 const assertGeneratedProject = async (directory: string, packageName: string, repositoryDirectory = directory) => {
@@ -46,7 +47,9 @@ const assertGeneratedProject = async (directory: string, packageName: string, re
     deploymentGuide.includes('<!-- Forge inserts')
   )
     throw new Error('The default generated project must include its completed deployment setup guide.');
-  const lockfile = await readFile(join(directory, 'package-lock.json'), 'utf8');
+  const lockfile = (await exists(join(directory, 'package-lock.json')))
+    ? await readFile(join(directory, 'package-lock.json'), 'utf8')
+    : '';
   const gitignore = await readFile(join(directory, '.gitignore'), 'utf8');
   const siteConfig = await readFile(join(directory, 'src', 'config', 'site.ts'), 'utf8');
   const prefix = deriveCiPrefix(relative(repositoryDirectory, directory));
@@ -171,8 +174,78 @@ try {
   });
   const executable = join(runnerDirectory, 'node_modules', '.bin', 'create-forge');
 
+  // Exercise npm itself at its network boundary, preserving source after either failure.
+  const failureName = 'registry-failure-site';
+  try {
+    await execute(executable, [failureName, '--yes', '--no-git'], {
+      cwd: projectsDirectory,
+      env: {
+        ...process.env,
+        npm_config_registry: 'http://127.0.0.1:1',
+        npm_config_fetch_retries: '0',
+        npm_config_audit: 'false',
+      },
+    });
+    throw new Error('Registry failure unexpectedly succeeded.');
+  } catch (error) {
+    const failure = error as { code?: number; stdout?: string };
+    if (
+      failure.code !== 1 ||
+      !failure.stdout?.includes('generated project remains') ||
+      failure.stdout.includes('✓ Created')
+    )
+      throw error;
+  }
+  await access(join(projectsDirectory, failureName, 'package.json'));
+
+  const interruptName = 'interrupted-site';
+  let interruptChild: ReturnType<typeof spawn> | undefined;
+  const registry = createServer((_request, response) => {
+    interruptChild?.kill('SIGINT');
+    response.destroy();
+  });
+  await new Promise<void>((resolve) => registry.listen(0, '127.0.0.1', resolve));
+  try {
+    const address = registry.address();
+    if (!address || typeof address === 'string') throw new Error('Missing registry address');
+    const result = await new Promise<{ code: number | null; output: string }>((resolve, reject) => {
+      let output = '';
+      const timeout = setTimeout(() => {
+        interruptChild?.kill('SIGKILL');
+        reject(new Error('Interrupted installation timed out'));
+      }, 30000);
+      interruptChild = spawn(executable, [interruptName, '--yes', '--no-git'], {
+        cwd: projectsDirectory,
+        env: { ...process.env, npm_config_registry: `http://127.0.0.1:${address.port}`, npm_config_audit: 'false' },
+      });
+      interruptChild.stdout?.on('data', (chunk) => {
+        output += chunk;
+      });
+      interruptChild.once('error', (error) => {
+        clearTimeout(timeout);
+        reject(error);
+      });
+      interruptChild.once('close', (code) => {
+        clearTimeout(timeout);
+        resolve({ code, output });
+      });
+    });
+    if (result.code !== 130 || !result.output.includes('retry npm install') || result.output.includes('✓ Created'))
+      throw new Error(`Interrupted installation lost recovery status: ${JSON.stringify(result)}`);
+    await access(join(projectsDirectory, interruptName, 'package.json'));
+  } finally {
+    registry.closeAllConnections();
+    await new Promise<void>((resolve, reject) => registry.close((error) => (error ? reject(error) : resolve())));
+  }
+
+  console.log('Verified actual registry failure and SIGINT recovery.');
   const defaultDirectory = join(projectsDirectory, 'default-site');
-  const { stdout: defaultOutput } = await runGenerator(executable, projectsDirectory, ['default-site', '--yes']);
+  const { stdout: defaultOutput } = await runGenerator(executable, projectsDirectory, ['default-site', '--yes'], {
+    ...process.env,
+    npm_config_package_lock: 'false',
+    npm_config_package_lock_only: 'true',
+    npm_config_dry_run: 'true',
+  });
   if (!defaultOutput.includes('Dependencies: installed') || !defaultOutput.includes('Git repository: initialized')) {
     throw new Error('Default fixture did not report completed installation and Git setup.');
   }
@@ -185,9 +258,15 @@ try {
   await access(join(defaultDirectory, '.github', 'workflows', 'project.yml'));
   await access(join(defaultDirectory, '.github', 'workflows', 'security.yml'));
 
+  const originalLock = await readFile(join(defaultDirectory, 'package-lock.json'), 'utf8');
   await execute('npm', ['ci'], { cwd: defaultDirectory, maxBuffer: 20 * 1024 * 1024 });
+  if ((await readFile(join(defaultDirectory, 'package-lock.json'), 'utf8')) !== originalLock)
+    throw new Error('npm ci changed the consumer lock');
+  await execute('npm', ['run', 'quality:core'], { cwd: defaultDirectory, maxBuffer: 20 * 1024 * 1024 });
   await execute('npm', ['run', 'build'], { cwd: defaultDirectory, maxBuffer: 20 * 1024 * 1024 });
   await execute('npm', ['run', 'validate:build'], { cwd: defaultDirectory, maxBuffer: 20 * 1024 * 1024 });
+
+  await rm(join(defaultDirectory, 'node_modules'), { recursive: true, force: true });
 
   const explicitDirectory = join(projectsDirectory, 'explicit-site');
   await runGenerator(executable, projectsDirectory, [
@@ -304,6 +383,7 @@ try {
   await execute('npm', ['run', 'build'], { cwd: nestedDirectory, maxBuffer: 20 * 1024 * 1024 });
   await execute('npm', ['run', 'validate:build'], { cwd: nestedDirectory, maxBuffer: 20 * 1024 * 1024 });
   await access(join(nestedDirectory, 'dist', 'index.html'));
+  await rm(join(nestedDirectory, 'node_modules'), { recursive: true, force: true });
 
   const noInstallDirectory = join(projectsDirectory, 'no-install-site');
   const { stdout: noInstallOutput } = await runGenerator(executable, projectsDirectory, [
@@ -313,6 +393,8 @@ try {
     '--no-git',
   ]);
   await assertGeneratedProject(noInstallDirectory, 'no-install-site');
+  if (await exists(join(noInstallDirectory, 'package-lock.json')))
+    throw new Error('Ordinary no-install creation must not deliver a lockfile.');
   if (
     (await exists(join(noInstallDirectory, 'node_modules'))) ||
     (await exists(join(noInstallDirectory, '.git'))) ||
@@ -479,7 +561,7 @@ try {
   }
 
   console.log(
-    `Verified ${tarball} across 11 isolated generator behavior fixtures and packed consumer build validation.`,
+    `Verified ${tarball} across 13 isolated generator behavior fixtures and packed consumer build validation.`,
   );
 } finally {
   await rm(fixtureDirectory, { recursive: true, force: true });
