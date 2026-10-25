@@ -128,6 +128,9 @@ publishedAt: 2026-01-01
 tags:
   - preserved
 draft: true
+customMetadata:
+  nested:
+    - keep-unknown
 ---
 
 Original **body**.
@@ -250,6 +253,7 @@ for (const mode of [
     expect(saved).toContain(`draft: ${expectedDraft}`);
     expect(saved).toContain('publishedAt: 2026-01-01');
     expect(saved).toContain('  - preserved');
+    expect(saved).toContain('customMetadata:\n  nested:\n    - keep-unknown');
     if (mode === 'raw') {
       expect(saved.match(/Long\s+article\s+prose/g)).toHaveLength(1000);
       expect(saved).toContain('After delimiter.');

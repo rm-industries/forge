@@ -21,6 +21,7 @@ template-primary:
   extends: .template
   stage: build
   before_script: &template-prepare
+    - npm ci
     - node scripts/test-template.ts prepare /tmp/forge-template
     - cd /tmp/forge-template
     - npm ci

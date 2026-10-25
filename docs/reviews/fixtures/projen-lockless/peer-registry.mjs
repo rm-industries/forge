@@ -69,7 +69,7 @@ export async function resolveFixture({ host, peer, optional = false, multiple = 
       if (pkg.name === 'fixture-model')
         await writeFile(
           join(stage, 'package/index.mjs'),
-          `export const preservesMetadata = ${pkg.version === '1.0.0'};\n`,
+          `export const saveContent = (content) => ${pkg.version === '1.0.0' ? 'structuredClone(content)' : '({ body: content.body })'};\n`,
         );
       if (pkg.name === 'fixture-generator') {
         const manifest = {
@@ -144,7 +144,7 @@ export async function resolveFixture({ host, peer, optional = false, multiple = 
             [
               '--input-type=module',
               '--eval',
-              "import assert from 'node:assert/strict';import {preservesMetadata} from 'fixture-model';assert.equal(preservesMetadata,true);",
+              "import assert from 'node:assert/strict';import {saveContent} from 'fixture-model';const content={metadata:{title:'Kept title',unknown:{nested:['kept']}},body:'Original **body**.\\n'};assert.deepEqual(saveContent(content),content);",
             ],
             { cwd: consumer },
           );
