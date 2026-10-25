@@ -30,7 +30,8 @@ create-forge-package:
       npm pack --ignore-scripts --workspace @rm-industries/create-forge --pack-destination "$CI_PROJECT_DIR/.ci-cli/forge-packages"
       mv "$CI_PROJECT_DIR/.ci-cli/forge-packages/"*.tgz "$CI_PROJECT_DIR/.ci-cli/forge-packages/create-forge.tgz"
       tar -tzf "$CI_PROJECT_DIR/.ci-cli/forge-packages/create-forge.tgz" > "$CI_PROJECT_DIR/.ci-cli/forge-package-files"
-      for entry in package/dist/index.mjs package/dist/template/.editorconfig package/dist/template/package-lock.json; do grep -Fx "$entry" "$CI_PROJECT_DIR/.ci-cli/forge-package-files"; done
+      for entry in package/dist/index.mjs package/dist/template/.editorconfig package/dist/template/package.json; do grep -Fx "$entry" "$CI_PROJECT_DIR/.ci-cli/forge-package-files"; done
+      if grep -Fx package/dist/template/package-lock.json "$CI_PROJECT_DIR/.ci-cli/forge-package-files"; then echo "Template lock must not be shipped" >&2; exit 1; fi
   artifacts:
     when: always
     expire_in: 7 days
