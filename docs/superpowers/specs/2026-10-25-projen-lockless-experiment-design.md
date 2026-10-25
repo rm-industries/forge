@@ -2,7 +2,8 @@
 
 <!-- cspell:ignore Projen -->
 
-Status: Proposed design; implementation awaits design review.
+Status: Approved by the maintainer; bounded experiment implemented. See the
+[evidence and recommendation](../../reviews/projen-lockless-combined.md).
 
 ## Intent and agreed scope
 

@@ -1,3 +1,4 @@
+// cspell:ignore ERESOLVE
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
@@ -43,4 +44,18 @@ test('newer model with an incompatible peer does not guarantee backtracking to a
   t.diagnostic(
     'Model 1.0.0 with host 1.5.0 would satisfy the manifest, but npm selected model 1.1.0 and rejected its peer.',
   );
+});
+
+test('a permitted upstream behavior regression fails the generated consumer contract', async () => {
+  const result = await resolveFixture({ host: '^1.0.0', peer: '^1.0.0', generatorVersion: '1.0.0' });
+  assert.equal(result.code, 0, result.error);
+  assert.equal(result.contractCode, 1);
+  assert.equal(result.versions['node_modules/fixture-model'], '1.1.0');
+});
+
+test('a corrected packed generator pins the working upstream and restores the consumer contract', async () => {
+  const result = await resolveFixture({ host: '^1.0.0', peer: '^1.0.0', generatorVersion: '1.0.1' });
+  assert.equal(result.code, 0, result.error);
+  assert.equal(result.contractCode, 0);
+  assert.equal(result.versions['node_modules/fixture-model'], '1.0.0');
 });

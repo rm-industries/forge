@@ -1,3 +1,4 @@
+// cspell:ignore Projen projenrc mergify
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { createRequire } from 'node:module';

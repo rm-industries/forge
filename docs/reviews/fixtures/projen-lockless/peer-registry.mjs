@@ -8,16 +8,28 @@ import { promisify } from 'node:util';
 
 const execute = promisify(execFile);
 
-export async function resolveFixture({ host, peer, optional = false, multiple = false }) {
+export async function resolveFixture({ host, peer, optional = false, multiple = false, generatorVersion }) {
   const root = await mkdtemp(join(tmpdir(), 'forge-peer-fixture-'));
   const packages = {
     'fixture-host': ['1.0.0', '1.5.0', '2.0.0'].map((version) => ({ name: 'fixture-host', version })),
-    'fixture-model': (multiple ? ['1.0.0', '1.1.0'] : ['1.0.0']).map((version) => ({
+    'fixture-model': (multiple || generatorVersion ? ['1.0.0', '1.1.0'] : ['1.0.0']).map((version) => ({
       name: 'fixture-model',
       version,
+      type: 'module',
+      exports: './index.mjs',
       peerDependencies: { 'fixture-host': multiple && version === '1.1.0' ? '^2.0.0' : peer },
       ...(optional ? { peerDependenciesMeta: { 'fixture-host': { optional: true } } } : {}),
     })),
+    ...(generatorVersion
+      ? {
+          'fixture-generator': ['1.0.0', '1.0.1'].map((version) => ({
+            name: 'fixture-generator',
+            version,
+            type: 'module',
+            bin: { 'create-fixture': './create.mjs' },
+          })),
+        }
+      : {}),
   };
   const tarballs = new Map();
   const server = createServer((request, response) => {
@@ -54,6 +66,23 @@ export async function resolveFixture({ host, peer, optional = false, multiple = 
       const stage = join(root, pkg.name, pkg.version);
       await mkdir(join(stage, 'package'), { recursive: true });
       await writeFile(join(stage, 'package/package.json'), JSON.stringify(pkg));
+      if (pkg.name === 'fixture-model')
+        await writeFile(
+          join(stage, 'package/index.mjs'),
+          `export const preservesMetadata = ${pkg.version === '1.0.0'};\n`,
+        );
+      if (pkg.name === 'fixture-generator') {
+        const manifest = {
+          name: 'generated-fixture',
+          version: '1.0.0',
+          private: true,
+          dependencies: { 'fixture-model': pkg.version === '1.0.0' ? '^1.0.0' : '1.0.0', 'fixture-host': host },
+        };
+        await writeFile(
+          join(stage, 'package/create.mjs'),
+          `import {writeFileSync} from 'node:fs';writeFileSync(process.argv[2],${JSON.stringify(JSON.stringify(manifest))});\n`,
+        );
+      }
       const filename = `${pkg.name}-${pkg.version}.tgz`;
       await execute('tar', ['-czf', join(root, filename), '-C', stage, 'package']);
       tarballs.set(filename, await readFile(join(root, filename)));
@@ -73,7 +102,7 @@ export async function resolveFixture({ host, peer, optional = false, multiple = 
     );
     const args = [
       'install',
-      '--package-lock-only',
+      ...(generatorVersion ? [] : ['--package-lock-only']),
       '--ignore-scripts',
       '--no-audit',
       '--no-fund',
@@ -85,15 +114,48 @@ export async function resolveFixture({ host, peer, optional = false, multiple = 
     const command = process.env.NPM_CLI ? process.execPath : 'npm';
     if (process.env.NPM_CLI) args.unshift(process.env.NPM_CLI);
     try {
-      await execute(command, args, {
-        cwd: root,
-        env: { ...process.env, npm_config_cache: join(root, 'cache') },
-        timeout: 30000,
-        maxBuffer: 1024 * 1024,
-      });
-      const lock = JSON.parse(await readFile(join(root, 'package-lock.json'), 'utf8'));
+      const runNpm = (cwd, arguments_ = args) =>
+        execute(command, arguments_, {
+          cwd,
+          env: { ...process.env, npm_config_cache: join(root, 'cache') },
+          timeout: 30000,
+          maxBuffer: 1024 * 1024,
+        });
+      let consumer = root;
+      if (generatorVersion) {
+        const runner = join(root, 'runner');
+        consumer = join(root, 'consumer');
+        await mkdir(runner);
+        await mkdir(consumer);
+        await writeFile(join(runner, 'package.json'), JSON.stringify({ name: 'fixture-runner', private: true }));
+        await runNpm(runner, [...args, `fixture-generator@${generatorVersion}`]);
+        await execute(process.execPath, [
+          join(runner, 'node_modules/fixture-generator/create.mjs'),
+          join(consumer, 'package.json'),
+        ]);
+      }
+      await runNpm(consumer);
+      const lock = JSON.parse(await readFile(join(consumer, 'package-lock.json'), 'utf8'));
+      let contractCode;
+      if (generatorVersion) {
+        try {
+          await execute(
+            process.execPath,
+            [
+              '--input-type=module',
+              '--eval',
+              "import assert from 'node:assert/strict';import {preservesMetadata} from 'fixture-model';assert.equal(preservesMetadata,true);",
+            ],
+            { cwd: consumer },
+          );
+          contractCode = 0;
+        } catch (error) {
+          contractCode = error.code;
+        }
+      }
       return {
         code: 0,
+        ...(generatorVersion ? { contractCode } : {}),
         versions: Object.fromEntries(Object.entries(lock.packages).map(([path, pkg]) => [path, pkg.version])),
       };
     } catch (error) {

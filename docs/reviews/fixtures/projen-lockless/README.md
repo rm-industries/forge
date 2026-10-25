@@ -29,6 +29,14 @@ running each once with strict peers and once without. Run
 `node --test projen-policy.test.mjs` to reproduce the specialized Dependabot
 component's policy mismatch. It synthesizes only into its own temporary directory.
 
+Repeat the peer command under the supported Node executables for the runtime matrix.
+The two correction cases install and invoke old/corrected packed fixture generators;
+they deliberately use a synthetic public behavior assertion, not the real CMS.
+
+Set `FORGE_CLI_EXE` to the absolute installed candidate CLI JavaScript entry and run
+`node --test recovery.test.mjs` for actual network-failure and SIGINT recovery.
+Those integration cases are explicitly skipped if the entry is not supplied.
+
 ## Candidate reproduction
 
 Export commit `adde4f1392a4911f1c73e9091a5f882f02cc9f80` into a new temporary source
@@ -60,3 +68,14 @@ it. Cloudflare retains its existing networked lockfile-only preflight.
 
 The Projen gate is recorded separately in the report. No cosmetic synthesis adapter
 or third Projen tarball is retained if no maintained policy/writer can be removed.
+
+## Hosted rehearsal
+
+Apply `hosted.patch` only on an isolated experimental branch after the candidate
+patches. It temporarily replaces the existing Create Forge workflow that supports manual dispatch
+workflow with a read-only packaging/consumer matrix. Dispatch create-forge.yml
+against that branch; do not merge it. The evidence PR contains only patch files,
+fixtures and reports, not active production workflow changes.
+
+The hosted audit step captures the failing audit JSON as an observation; workflow
+success does not imply a clean audit. No audit allowlist or severity threshold changes.
