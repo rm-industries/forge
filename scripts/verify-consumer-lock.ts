@@ -33,6 +33,15 @@ export async function verifyConsumerLock(directory: string) {
     satisfies(consumer.packages['node_modules/astro']?.version ?? '', model.peerDependencies.astro),
     'Consumer Astro must satisfy the model peer requirement',
   );
+  const browser = consumer.packages['node_modules/@rm-industries/browser-oxfmt'];
+  const cli = consumer.packages['node_modules/oxfmt'];
+  assert.ok(browser && cli, 'Consumer must lock published browser and CLI formatter packages');
+  assert.ok(
+    satisfies(browser.version, manifest.dependencies['@rm-industries/browser-oxfmt']),
+    'Consumer browser must satisfy its declaration',
+  );
+  assert.ok(satisfies(cli.version, manifest.devDependencies.oxfmt), 'Consumer CLI must satisfy its declaration');
+  assert.equal(cli.version, browser.peerDependencies.oxfmt, 'Consumer CLI must match the browser engine peer');
   assert.deepEqual(findLocalDependencies(manifest), [], 'Consumer dependencies must resolve from registries');
 }
 

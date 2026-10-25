@@ -53,3 +53,37 @@ test('rejects an installed Astro host outside the model package peer requirement
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test('rejects a CLI engine that differs from the browser package exact peer', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'forge-formatter-lock-'));
+  try {
+    for (const file of ['package.json', 'package-lock.json'])
+      await copyFile(new URL(`../templates/default/${file}`, import.meta.url), join(directory, file));
+    const lock = JSON.parse(await readFile(join(directory, 'package-lock.json'), 'utf8'));
+    lock.packages['node_modules/oxfmt'].version = '0.75.0';
+    await writeFile(join(directory, 'package-lock.json'), JSON.stringify(lock));
+    await expect(verifyConsumerLock(directory)).rejects.toThrow('Consumer CLI must match the browser engine peer');
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('accepts a later paired patch but excludes browser 0.2', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'forge-formatter-patch-'));
+  try {
+    for (const file of ['package.json', 'package-lock.json'])
+      await copyFile(new URL(`../templates/default/${file}`, import.meta.url), join(directory, file));
+    const lock = JSON.parse(await readFile(join(directory, 'package-lock.json'), 'utf8'));
+    const browser = lock.packages['node_modules/@rm-industries/browser-oxfmt'];
+    browser.version = '0.1.3';
+    browser.peerDependencies.oxfmt = '0.75.0';
+    lock.packages['node_modules/oxfmt'].version = '0.75.0';
+    await writeFile(join(directory, 'package-lock.json'), JSON.stringify(lock));
+    await verifyConsumerLock(directory);
+    browser.version = '0.2.0';
+    await writeFile(join(directory, 'package-lock.json'), JSON.stringify(lock));
+    await expect(verifyConsumerLock(directory)).rejects.toThrow('Consumer browser must satisfy its declaration');
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
