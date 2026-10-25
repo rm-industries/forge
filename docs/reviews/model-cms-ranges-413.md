@@ -50,6 +50,16 @@ package directories resolve inside the consumer and are not symlinks.
   including metadata, raw/rich body edits, second saves and failure/retry paths.
   `final-cms-chromium.log` records all 12 cases passing again with the delivered
   nested unknown-frontmatter assertion, including retry and repeated saves.
+- `installed-cli-e2e-bounded.log` passes all 13 isolated installed-generator
+  fixtures, real installation/replay, consumer core quality and build validation.
+  Registry waits were bounded with a 30-second fetch timeout and no retries.
+  An earlier unbounded attempt was stopped during a slow installation; the
+  bounded rerun did not reproduce a failure, so its network/cache cause remains
+  unproven and no production workaround was added.
+- After merging formatter ranges from integration `982364f`,
+  `merged-root-tests.log` passes 55 tests, `merged-peer-tests.log` passes all 15
+  model/formatter registry cases, and packed-package verification, root types
+  and focused lint pass. Both pairs and both CMS assertions were preserved.
 - `consumer-ci-replay.log` records a clean `npm ci` replay. The consumer lock is
   byte-identical before and after, SHA-256
   `18053a7b59d949cbb56bafd967e0781c1e0a87fcf4341d2f551d461f6618fc6c`.
