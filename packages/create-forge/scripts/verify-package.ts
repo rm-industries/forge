@@ -72,7 +72,13 @@ try {
   const generatedDirectory = join(invocationDirectory, 'generated-site');
   const generatedMetadata = JSON.parse(await readFile(join(generatedDirectory, 'package.json'), 'utf8')) as {
     name?: string;
+    dependencies: Record<string, string>;
   };
+  if (
+    generatedMetadata.dependencies['@rm-industries/content-model'] !== '^1.1.10' ||
+    generatedMetadata.dependencies['@sveltia/cms'] !== '>=0.251.0 <1.0.0'
+  )
+    throw new Error('Installed generator must deliver the approved model/CMS ranges.');
   const generatedSiteConfig = await readFile(join(generatedDirectory, 'src', 'config', 'site.ts'), 'utf8');
   if (generatedMetadata.name !== 'generated-site' || generatedSiteConfig.includes(templateTokenPrefix)) {
     throw new Error('Installed executable did not produce normalized, fully resolved project metadata.');

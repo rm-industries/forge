@@ -85,7 +85,7 @@ export async function resolveFixture({
           join(stage, 'package/index.mjs'),
           formatter
             ? `export const format = ${pkg.version === modelVersions[0] ? "source => source.replace('=', ' = ') + '\\n'" : "() => ''"};\n`
-            : `export const preservesMetadata = ${pkg.version === modelVersions[0]};\n`,
+            : `export const saveContent = (content) => ${pkg.version === modelVersions[0] ? 'structuredClone(content)' : '({ body: content.body })'};\n`,
         );
       if (pkg.name === 'fixture-generator') {
         const manifest = {
@@ -162,7 +162,7 @@ export async function resolveFixture({
               '--eval',
               formatter
                 ? `import assert from 'node:assert/strict';import {format} from '${modelName}';assert.equal(format('const value=1;'),'const value = 1;\\n');`
-                : `import assert from 'node:assert/strict';import {preservesMetadata} from '${modelName}';assert.equal(preservesMetadata,true);`,
+                : `import assert from 'node:assert/strict';import {saveContent} from '${modelName}';const content={metadata:{title:'Kept title',unknown:{nested:['kept']}},body:'Original **body**.\\n'};assert.deepEqual(saveContent(content),content);`,
             ],
             { cwd: consumer },
           );
