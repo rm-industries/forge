@@ -46,7 +46,9 @@ const assertGeneratedProject = async (directory: string, packageName: string, re
     deploymentGuide.includes('<!-- Forge inserts')
   )
     throw new Error('The default generated project must include its completed deployment setup guide.');
-  const lockfile = await readFile(join(directory, 'package-lock.json'), 'utf8');
+  const lockfile = (await exists(join(directory, 'package-lock.json')))
+    ? await readFile(join(directory, 'package-lock.json'), 'utf8')
+    : '';
   const gitignore = await readFile(join(directory, '.gitignore'), 'utf8');
   const siteConfig = await readFile(join(directory, 'src', 'config', 'site.ts'), 'utf8');
   const prefix = deriveCiPrefix(relative(repositoryDirectory, directory));
@@ -189,6 +191,8 @@ try {
   await execute('npm', ['run', 'build'], { cwd: defaultDirectory, maxBuffer: 20 * 1024 * 1024 });
   await execute('npm', ['run', 'validate:build'], { cwd: defaultDirectory, maxBuffer: 20 * 1024 * 1024 });
 
+  await rm(join(defaultDirectory, 'node_modules'), { recursive: true, force: true });
+
   const explicitDirectory = join(projectsDirectory, 'explicit-site');
   await runGenerator(executable, projectsDirectory, [
     'explicit-site',
@@ -304,6 +308,7 @@ try {
   await execute('npm', ['run', 'build'], { cwd: nestedDirectory, maxBuffer: 20 * 1024 * 1024 });
   await execute('npm', ['run', 'validate:build'], { cwd: nestedDirectory, maxBuffer: 20 * 1024 * 1024 });
   await access(join(nestedDirectory, 'dist', 'index.html'));
+  await rm(join(nestedDirectory, 'node_modules'), { recursive: true, force: true });
 
   const noInstallDirectory = join(projectsDirectory, 'no-install-site');
   const { stdout: noInstallOutput } = await runGenerator(executable, projectsDirectory, [

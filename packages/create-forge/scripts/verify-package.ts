@@ -89,9 +89,14 @@ try {
   await access(
     join(fixtureDirectory, 'node_modules', '@rm-industries', 'create-forge', 'dist', 'template', '.editorconfig'),
   );
-  await access(
-    join(fixtureDirectory, 'node_modules', '@rm-industries', 'create-forge', 'dist', 'template', 'package-lock.json'),
-  );
+  try {
+    await access(
+      join(fixtureDirectory, 'node_modules', '@rm-industries', 'create-forge', 'dist', 'template', 'package-lock.json'),
+    );
+    throw new Error('Experimental lockless package must not ship a template lockfile.');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
 
   console.log(`Verified ${packResult.filename} in an isolated invocation fixture.`);
 } finally {

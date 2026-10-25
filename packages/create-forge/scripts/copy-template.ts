@@ -14,6 +14,7 @@ const excludedNames = new Set([
   'coverage',
   'dist',
   'node_modules',
+  'package-lock.json',
   'playwright-report',
   'test-results',
 ]);
@@ -26,7 +27,7 @@ await cp(sourceDirectory, destinationDirectory, {
 });
 await rename(join(destinationDirectory, '.gitignore'), join(destinationDirectory, '.gitignore.template'));
 
-for (const filename of ['package.json', 'package-lock.json']) {
+for (const filename of ['package.json']) {
   const path = join(destinationDirectory, filename);
   const metadata = JSON.parse(await readFile(path, 'utf8')) as {
     name?: string;

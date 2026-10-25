@@ -54,10 +54,6 @@ const createTemplate = async (fixture: string) => {
     `${JSON.stringify({ name: templateTokens.packageName, version: '9.9.9', private: false }, undefined, 2)}\n`,
   );
   await writeFile(
-    join(template, 'package-lock.json'),
-    `${JSON.stringify({ name: templateTokens.packageName, version: '9.9.9', packages: { '': { name: templateTokens.packageName, version: '9.9.9' } } }, undefined, 2)}\n`,
-  );
-  await writeFile(
     join(template, 'src', 'config', 'site.ts'),
     `export const site = {\n  name: '${templateTokens.siteName}',\n  description: '${templateTokens.description}',\n  author: '${templateTokens.author}',\n  url: '${templateTokens.url}',\n  repository: '${templateTokens.repository}',\n};\n`,
   );
@@ -470,4 +466,13 @@ test('rolls back existing files when Cloudflare dependency resolution fails', as
   ).rejects.toThrow('Cloudflare dependency resolution failed');
   expect(await readFile(join(destination, 'package.json'), 'utf8')).toBe('existing package');
   await expect(access(join(destination, 'package-lock.json'))).rejects.toHaveProperty('code', 'ENOENT');
+});
+
+test('experimental lockless template materializes without a shipped lock and validates identity', async () => {
+  const { fixture, template } = await createFixture();
+  await rm(join(template, 'package-lock.json'), { force: true });
+  const result = await materializeProject(options, { templateDirectory: template, generateCi, cwd: fixture });
+  const manifest = JSON.parse(await readFile(join(result.projectRoot, 'package.json'), 'utf8'));
+  expect(manifest).toMatchObject({ name: options.packageName, version: '0.0.0', private: true });
+  await expect(access(join(result.projectRoot, 'package-lock.json'))).rejects.toMatchObject({ code: 'ENOENT' });
 });
