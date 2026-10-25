@@ -2,6 +2,24 @@
 
 All notable changes to `@rm-industries/create-forge` are documented here.
 
+## 1.3.0
+
+- Format CMS saves after Sveltia's native serialization using published browser-oxfmt
+  0.1.2 and a lazy, self-hosted worker. Derive options from the project's Oxfmt and
+  EditorConfig policy at build time; reject unsupported policies and preserve unsaved
+  edits when formatting fails. Browser formatting preserves Tailwind class order.
+- Bootstrap with content-model 1.1.10, Sveltia CMS 0.251.0 and matching Oxfmt 0.74.0.
+  Include development and production formatter assets with project-path support.
+- Generate affected-site checks and an aggregate validation result for GitHub CI,
+  with Chromium pull-request checks and full scheduled/manual browser coverage.
+  Apply corresponding path-aware GitLab rules and keep deployment inputs intact.
+- Update starter dependencies and Markdownlint CLI2 integration. Keep starter identity
+  fixtures separate from consumer tests so customized routes and content retain
+  useful validation.
+- Existing generated projects remain owned source and are not modified by this release.
+  Adopt formatter wiring and dependency changes through a reviewed source/lockfile
+  migration; existing content needs no schema or field-order migration.
+
 ## 1.2.0
 
 - Configure named deployment environments through repeatable `--deployment` inputs,
