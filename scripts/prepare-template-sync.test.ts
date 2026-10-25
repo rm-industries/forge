@@ -1,115 +1,126 @@
 import { describe, expect, test } from 'vitest';
 
-import { applyTemplateSync, createTemplateSyncPlan, prepareGeneratorPatch } from './prepare-template-sync.ts';
+import { createTemplateSyncPlan } from './prepare-template-sync.ts';
 
 const templateManifest = {
   dependencies: {
-    '@rm-industries/content-model': '0.1.0-alpha.0',
-    '@sveltia/cms': '0.193.2',
-    astro: '^7.2.3',
+    '@rm-industries/content-model': '^1.1.10',
+    '@sveltia/cms': '>=0.251.0 <1.0.0',
+    '@rm-industries/browser-oxfmt': '^0.1.2',
+  },
+  devDependencies: { oxfmt: '>=0.74.0 <1.0.0' },
+};
+const templateLock = {
+  packages: {
+    'node_modules/@rm-industries/content-model': { version: '1.1.10' },
+    'node_modules/@sveltia/cms': { version: '0.251.0' },
+    'node_modules/@rm-industries/browser-oxfmt': { version: '0.1.2' },
+    'node_modules/oxfmt': { version: '0.74.0' },
   },
 };
-
 const registryMetadata = {
   name: '@rm-industries/content-model',
-  version: '0.2.0-alpha.0',
-  peerDependencies: { '@sveltia/cms': '>=0.203.2 <0.204.0' },
+  version: '1.1.11',
+  peerDependencies: { '@sveltia/cms': '>=0.251.0 <0.253.0' },
   dist: {
     integrity: 'sha512-example',
     attestations: { provenance: { predicateType: 'https://slsa.dev/provenance/v1' } },
   },
 };
-
 const publication = {
   packageName: '@rm-industries/content-model',
-  version: '0.2.0-alpha.0',
-  releaseTag: 'content-model-v0.2.0-alpha.0',
+  version: '1.1.11',
+  releaseTag: 'content-model-v1.1.11',
   publication: { registryIntegrity: 'sha512-example', verified: true },
 };
+const input = {
+  templateManifest,
+  templateLock,
+  registryMetadata,
+  integrationVersions: ['0.251.0', '0.252.0', '1.0.0'],
+  publication,
+};
 
-describe('template publication synchronization', () => {
-  test('prepares a generator patch only when the shipped template changes', () => {
-    const plan = createTemplateSyncPlan({
-      templateManifest,
-      registryMetadata,
-      integrationVersions: ['0.203.2'],
-      publication,
-    });
-    const manifest = { version: '1.0.3' };
-    const changelog = '# Changelog\n\n## 1.0.3\n\n- Previous release.\n';
-    const release = prepareGeneratorPatch(manifest, changelog, plan);
-    expect(release.manifest.version).toBe('1.0.4');
-    expect(release.changelog).toContain('content-model 0.2.0-alpha.0 and Sveltia CMS 0.203.2');
-    expect(prepareGeneratorPatch(manifest, changelog, { ...plan, changed: false })).toEqual({ manifest, changelog });
-    expect(() => prepareGeneratorPatch(manifest, '# Empty changelog', plan)).toThrow('no release sections');
-  });
-  test('selects the latest published integration inside the declared peer range', () => {
-    const plan = createTemplateSyncPlan({
-      templateManifest,
-      registryMetadata,
-      integrationVersions: ['0.203.2', '0.203.5', '0.204.0-rc.1', '0.204.0'],
-      publication,
-    });
-
-    expect(plan).toMatchObject({
+describe('compatible authoring refresh', () => {
+  test('selects the verified model and newest host inside both unchanged ranges using lock selections', () => {
+    expect(createTemplateSyncPlan(input)).toMatchObject({
       changed: true,
-      contentModel: { previousVersion: '0.1.0-alpha.0', version: '0.2.0-alpha.0' },
-      integration: { peerRange: '>=0.203.2 <0.204.0', version: '0.203.5' },
-      releaseTag: 'content-model-v0.2.0-alpha.0',
+      package: { name: '@rm-industries/content-model', previousVersion: '1.1.10', version: '1.1.11' },
+      integration: { name: '@sveltia/cms', previousVersion: '0.251.0', version: '0.252.0' },
     });
-    expect(applyTemplateSync(templateManifest, plan)).toEqual({
-      dependencies: {
-        '@rm-industries/content-model': '0.2.0-alpha.0',
-        '@sveltia/cms': '0.203.5',
-        astro: '^7.2.3',
+    expect(
+      createTemplateSyncPlan({
+        ...input,
+        registryMetadata: { ...registryMetadata, version: '1.1.10' },
+        publication: undefined,
+        integrationVersions: ['0.251.0'],
+      }).changed,
+    ).toBe(false);
+  });
+  test('refreshes the browser package with its exact embedded engine inside the CLI range', () => {
+    const plan = createTemplateSyncPlan({
+      ...input,
+      publication: undefined,
+      registryMetadata: {
+        ...registryMetadata,
+        name: '@rm-industries/browser-oxfmt',
+        version: '0.1.3',
+        peerDependencies: { oxfmt: '0.75.0' },
       },
+      integrationVersions: ['0.74.0', '0.75.0', '0.76.0'],
+    });
+    expect(plan).toMatchObject({
+      package: { name: '@rm-industries/browser-oxfmt', version: '0.1.3' },
+      integration: { name: 'oxfmt', section: 'devDependencies', version: '0.75.0' },
     });
   });
-
-  test('rejects an unverified publication result', () => {
+  test('rejects out-of-range publication, invalid provenance and disjoint peer constraints', () => {
     expect(() =>
       createTemplateSyncPlan({
-        templateManifest,
-        registryMetadata,
-        integrationVersions: ['0.203.2'],
-        publication: { ...publication, publication: { ...publication.publication, verified: false } },
+        ...input,
+        publication: undefined,
+        registryMetadata: { ...registryMetadata, version: '2.0.0' },
       }),
-    ).toThrow(/not verified/);
-  });
-
-  test('rejects registry integrity that differs from the publication', () => {
+    ).toThrow(/outside the template range/);
     expect(() =>
       createTemplateSyncPlan({
-        templateManifest,
-        registryMetadata,
-        integrationVersions: ['0.203.2'],
-        publication: {
-          ...publication,
-          publication: { ...publication.publication, registryIntegrity: 'sha512-other' },
-        },
+        ...input,
+        registryMetadata: { ...registryMetadata, dist: { integrity: 'sha512-example' } },
+      }),
+    ).toThrow(/provenance/);
+    expect(() => createTemplateSyncPlan({ ...input, integrationVersions: ['1.0.0'] })).toThrow(/No published/);
+    expect(() =>
+      createTemplateSyncPlan({ ...input, publication: { ...publication, publication: { verified: false } } }),
+    ).toThrow(/not verified/);
+    expect(() =>
+      createTemplateSyncPlan({
+        ...input,
+        publication: { ...publication, publication: { verified: true, registryIntegrity: 'sha512-other' } },
       }),
     ).toThrow(/integrity do not match/);
-  });
-
-  test('rejects a release tag that differs from the registry version', () => {
+    expect(() =>
+      createTemplateSyncPlan({ ...input, publication: { ...publication, releaseTag: 'content-model-v1.1.12' } }),
+    ).toThrow(/release tag/);
     expect(() =>
       createTemplateSyncPlan({
-        templateManifest,
-        registryMetadata,
-        integrationVersions: ['0.203.2'],
-        publication: { ...publication, releaseTag: 'content-model-v0.3.0-alpha.0' },
+        ...input,
+        publication: undefined,
+        registryMetadata: {
+          ...registryMetadata,
+          name: '@rm-industries/browser-oxfmt',
+          version: '0.2.0',
+          peerDependencies: { oxfmt: '0.75.0' },
+        },
+        integrationVersions: ['0.75.0'],
       }),
-    ).toThrow(/release tag does not match/);
+    ).toThrow(/outside the template range/);
   });
-
-  test('rejects integration versions outside the peer range', () => {
-    expect(() =>
+  test('honors exact corrective pins and the host ceiling', () => {
+    expect(
       createTemplateSyncPlan({
-        templateManifest,
-        registryMetadata,
-        integrationVersions: ['0.204.0'],
-        publication,
-      }),
-    ).toThrow(/No published/);
+        ...input,
+        templateManifest: { dependencies: { '@rm-industries/content-model': '1.1.11', '@sveltia/cms': '0.251.0' } },
+      }).integration.version,
+    ).toBe('0.251.0');
   });
 });

@@ -21,14 +21,20 @@ test('keeps manual publication gated while reviewed automatic patches use their 
   expect(tag.run).not.toContain('--force');
 });
 
-test('synchronizes and releases a generator patch behind normal required checks', () => {
+test('automatically merges only lock refreshes after designated validation of the resulting PR HEAD', () => {
   const steps = synchronize.jobs.synchronize.steps as { name: string; run?: string }[];
-  expect(steps.find((step) => step.name === 'Enable checked synchronization auto-merge')!.run).toContain(
-    '--auto --squash',
-  );
-  expect(steps.find((step) => step.name === 'Enable checked synchronization auto-merge')!.run).toContain(
-    'prerelease(process.env.CONTENT_MODEL)',
-  );
+  const merge = steps.find((step) => step.name === 'Enable checked synchronization auto-merge')!.run!;
+  expect(merge).toContain('Validate authoring refresh');
+  expect(merge).toContain('check-runs');
+  expect(merge).toContain('head_sha');
+  expect(merge).toContain('--match-head-commit');
+  expect(merge).toContain('--auto --squash');
+  expect(synchronize.jobs['validate-refresh'].name).toBe('Validate authoring refresh');
+  expect(JSON.stringify(synchronize.jobs['validate-refresh'])).toContain('npm run verify:template');
+  expect(JSON.stringify(synchronize.jobs['validate-refresh'])).toContain('npm run test:generator:e2e');
+  const push = steps.find((step) => step.name === 'Push synchronization branch')!.run!;
+  expect(push).toContain('git add package-lock.json templates/default/package-lock.json');
+  expect(push).not.toContain('packages/create-forge/package.json');
 });
 
 test('packs the planned release instead of inferring a package from the triggering branch', () => {
@@ -60,7 +66,8 @@ test('limits publication permissions and retains provenance', () => {
   expect(release.jobs.prepare.permissions).not.toHaveProperty('id-token');
   const steps = release.jobs.publish.steps as { name: string; run?: string; if?: string }[];
   expect(steps.find((step) => step.name === 'Publish with provenance')!.run).toContain('--provenance');
-  expect(steps.find((step) => step.name === 'Dispatch published content model')!.if).toContain("== 'content-model'");
+  expect(steps.find((step) => step.name === 'Dispatch published dependency')!.if).toContain("== 'content-model'");
+  expect(steps.find((step) => step.name === 'Dispatch published dependency')!.if).toContain("== 'browser-oxfmt'");
 });
 
 test('fresh monitoring shares one selection across daily and weekly coverage with retained reports', () => {

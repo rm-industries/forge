@@ -5,17 +5,29 @@ on: # yamllint disable-line rule:truthy
   repository_dispatch:
     types:
       - content-model-published
+      - browser-oxfmt-published
+  pull_request:
+    branches: [main]
+    paths:
+      - package-lock.json
+      - templates/default/package-lock.json
   workflow_dispatch:
     inputs:
+      package:
+        description: Published reusable package
+        required: true
+        default: content-model
+        type: choice
+        options: [content-model, browser-oxfmt]
       version:
-        description: Published @rm-industries/content-model version
+        description: Exact published package version
         required: true
         type: string
 
 permissions: {}
 
 concurrency:
-  group: published-template-synchronization
+  group: published-template-synchronization-${{ github.event.pull_request.number || 'prepare' }}
   cancel-in-progress: false
 
 defaults:
@@ -24,11 +36,13 @@ defaults:
 
 jobs:
   synchronize:
-    name: Synchronize published content model
+    if: github.event_name != 'pull_request'
+    name: Synchronize published dependency
     runs-on: ubuntu-latest
 
     permissions:
       actions: read
+      checks: read
       contents: read
 
     steps:
@@ -46,6 +60,8 @@ jobs:
       - name: Resolve verified publication
         id: source
         env:
+          INPUT_PACKAGE: ${{ inputs.package }}
+          EVENT_PACKAGE: ${{ github.event.client_payload.package }}
           EXPECTED_RELEASE_TAG: ${{ github.event.client_payload.release_tag }}
           EXPECTED_VERSION: ${{ github.event.client_payload.version }}
           GH_TOKEN: ${{ github.token }}
@@ -54,21 +70,29 @@ jobs:
         run: |
           sync_directory="${RUNNER_TEMP}/forge-template-sync"
           mkdir "$sync_directory"
+          slug="${INPUT_PACKAGE:-${EVENT_PACKAGE:-content-model}}"
+          case "$slug" in
+            content-model) host='@sveltia/cms' ;;
+            browser-oxfmt) host='oxfmt' ;;
+            *) echo 'Unsupported refresh package'; exit 1 ;;
+          esac
+          echo "slug=$slug" >> "$GITHUB_OUTPUT"
+          echo "host=$host" >> "$GITHUB_OUTPUT"
           if [[ "$GITHUB_EVENT_NAME" == 'repository_dispatch' ]]; then
             if [[ ! "$SOURCE_RUN_ID" =~ ^[0-9]+$ ]]; then
               echo '::error title=Invalid source run::The publication dispatch did not provide a numeric workflow run ID.'
               exit 1
             fi
             artifact_name=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts" \
-              --jq '[.artifacts[] | select(.expired == false and (.name | startswith("published-content-model-")))] | if length == 1 then .[0].name else empty end')
+              --jq "[.artifacts[] | select(.expired == false and (.name | startswith(\"published-${slug}-\")))] | if length == 1 then .[0].name else empty end")
             if [[ -z "$artifact_name" ]]; then
               echo 'eligible=false' >> "$GITHUB_OUTPUT"
-              echo '::notice title=No content-model publication::The completed release did not expose one verified content-model result.'
+              echo '::notice title=No approved publication::The completed release did not expose one verified reusable-package result.'
               exit 0
             fi
             gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$artifact_name" --dir "${sync_directory}/source"
             publication="${sync_directory}/source/published.json"
-            version=$(jq -er 'select(.packageName == "@rm-industries/content-model" and .publication.verified == true) | .version' "$publication")
+            version=$(jq -er --arg name "@rm-industries/${slug}" 'select(.packageName == $name and .publication.verified == true) | .version' "$publication")
             release_tag=$(jq -er .releaseTag "$publication")
             if [[ "$release_tag" != "$EXPECTED_RELEASE_TAG" || "$version" != "$EXPECTED_VERSION" ]]; then
               echo '::error title=Publication dispatch mismatch::The dispatch payload does not match the verified publication artifact.'
@@ -91,10 +115,12 @@ jobs:
         if: steps.source.outputs.eligible == 'true'
         env:
           VERSION: ${{ steps.source.outputs.version }}
+          PACKAGE: ${{ steps.source.outputs.slug }}
+          HOST: ${{ steps.source.outputs.host }}
         run: |
           sync_directory="${RUNNER_TEMP}/forge-template-sync"
-          npm view "@rm-industries/content-model@${VERSION}" --json > "${sync_directory}/content-model.json"
-          npm view '@sveltia/cms' versions --json > "${sync_directory}/sveltia-versions.json"
+          npm view "@rm-industries/${PACKAGE}@${VERSION}" --json > "${sync_directory}/package.json"
+          npm view "$HOST" versions --json > "${sync_directory}/peer-versions.json"
 
       - name: Prepare template synchronization
         if: steps.source.outputs.eligible == 'true'
@@ -102,10 +128,8 @@ jobs:
         env:
           PUBLICATION: ${{ steps.source.outputs.publication }}
         run: |
-          previous_generator=$(node --print "require('./packages/create-forge/package.json').version")
-          echo "previous-generator=$previous_generator" >> "$GITHUB_OUTPUT"
           sync_directory="${RUNNER_TEMP}/forge-template-sync"
-          arguments=(--metadata "${sync_directory}/content-model.json" --peer-versions "${sync_directory}/sveltia-versions.json" --write --output "${sync_directory}/plan.json")
+          arguments=(--metadata "${sync_directory}/package.json" --peer-versions "${sync_directory}/peer-versions.json" --write --output "${sync_directory}/plan.json")
           if [[ -n "$PUBLICATION" ]]; then
             arguments+=(--publication "$PUBLICATION")
           fi
@@ -113,9 +137,9 @@ jobs:
           plan=$(<"${sync_directory}/plan.json")
           {
             echo "changed=$(jq -r .changed <<< "$plan")"
-            echo "content-model=$(jq -r .contentModel.version <<< "$plan")"
+            echo "package-version=$(jq -r .package.version <<< "$plan")"
             echo "integration=$(jq -r .integration.version <<< "$plan")"
-            echo "integrity=$(jq -r .contentModel.integrity <<< "$plan")"
+            echo "integrity=$(jq -r .package.integrity <<< "$plan")"
             echo "peer-range=$(jq -r .integration.peerRange <<< "$plan")"
             echo "release-tag=$(jq -r .releaseTag <<< "$plan")"
           } >> "$GITHUB_OUTPUT"
@@ -124,24 +148,25 @@ jobs:
             echo ''
             echo '| Item | Value |'
             echo '| --- | --- |'
-            echo "| Content model | $(jq -r .contentModel.previousVersion <<< "$plan") → $(jq -r .contentModel.version <<< "$plan") |"
-            echo "| Sveltia CMS | $(jq -r .integration.previousVersion <<< "$plan") → $(jq -r .integration.version <<< "$plan") |"
+            echo "| Reusable package | $(jq -r .package.previousVersion <<< "$plan") → $(jq -r .package.version <<< "$plan") |"
+            echo "| Integration host | $(jq -r .integration.previousVersion <<< "$plan") → $(jq -r .integration.version <<< "$plan") |"
             echo "| Published peer range | $(jq -r .integration.peerRange <<< "$plan") |"
-            echo "| Registry integrity | $(jq -r .contentModel.integrity <<< "$plan") |"
+            echo "| Registry integrity | $(jq -r .package.integrity <<< "$plan") |"
             echo "| Change required | $(jq -r .changed <<< "$plan") |"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Regenerate standalone template lockfile
+      - name: Refresh authoring dependencies
         if: steps.prepare.outputs.changed == 'true'
-        run: npm run template:sync:lockfile
-
-      - name: Refresh generator lockfile and dependencies
-        if: steps.prepare.outputs.changed == 'true'
+        env:
+          PACKAGE: ${{ steps.source.outputs.slug }}
         run: |-
+          if [[ "$PACKAGE" == 'content-model' ]]; then
+            npm update @sveltia/cms --package-lock-only --ignore-scripts
+          fi
           npm install --package-lock-only --ignore-scripts
           npm ci
           npm ci --prefix templates/default
-          npx oxfmt --write package-lock.json packages/create-forge/package.json packages/create-forge/CHANGELOG.md templates/default/package.json templates/default/package-lock.json
+          npx oxfmt --write package-lock.json templates/default/package-lock.json
 
       - name: Install generated-project browsers
         if: steps.prepare.outputs.changed == 'true'
@@ -185,20 +210,27 @@ jobs:
         run: echo "id=$(gh api "/users/${APP_SLUG}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
 
       - name: Push synchronization branch
+        id: push
         if: steps.prepare.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
           APP_USER_ID: ${{ steps.app-user.outputs.id }}
-          CONTENT_MODEL: ${{ steps.prepare.outputs.content-model }}
+          PACKAGE_VERSION: ${{ steps.prepare.outputs.package-version }}
+          PACKAGE: ${{ steps.source.outputs.slug }}
         run: |
-          branch='automation/template-content-model'
+          branch="automation/template-${PACKAGE}"
           git config user.name "${APP_SLUG}[bot]"
           git config user.email "${APP_USER_ID}+${APP_SLUG}[bot]@users.noreply.github.com"
           gh auth setup-git
           git switch -C "$branch"
-          git add package-lock.json packages/create-forge/package.json packages/create-forge/CHANGELOG.md templates/default/package.json templates/default/package-lock.json
-          git commit -m "chore: synchronize content model ${CONTENT_MODEL}"
+          changed_files=$(git diff --name-only)
+          if [[ -z "$changed_files" ]] || grep -Ev '^(package-lock\.json|templates/default/package-lock\.json)$' <<< "$changed_files"; then
+            echo 'Only authoring locks may change in a compatible refresh'; exit 1
+          fi
+          git add package-lock.json templates/default/package-lock.json
+          git commit -m "chore: refresh ${PACKAGE} ${PACKAGE_VERSION} authoring locks"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           remote_commit=$(git ls-remote --heads origin "$branch" | cut -f1)
           if [[ -n "$remote_commit" ]]; then
             git push --force-with-lease="refs/heads/${branch}:${remote_commit}" origin "HEAD:refs/heads/${branch}"
@@ -210,25 +242,26 @@ jobs:
         if: steps.prepare.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          CONTENT_MODEL: ${{ steps.prepare.outputs.content-model }}
+          PACKAGE_VERSION: ${{ steps.prepare.outputs.package-version }}
+          PACKAGE: ${{ steps.source.outputs.slug }}
           INTEGRATION: ${{ steps.prepare.outputs.integration }}
           INTEGRITY: ${{ steps.prepare.outputs.integrity }}
           PEER_RANGE: ${{ steps.prepare.outputs.peer-range }}
           RELEASE_TAG: ${{ steps.prepare.outputs.release-tag }}
           SOURCE_URL: ${{ steps.source.outputs.source-url }}
         run: |
-          branch='automation/template-content-model'
+          branch="automation/template-${PACKAGE}"
           pull_request=$(gh pr list --head "$branch" --state open --json number --jq '.[0].number')
-          npm_url="https://www.npmjs.com/package/@rm-industries/content-model/v/${CONTENT_MODEL}"
+          npm_url="https://www.npmjs.com/package/@rm-industries/${PACKAGE}/v/${PACKAGE_VERSION}"
           release_url="https://github.com/${GITHUB_REPOSITORY}/releases/tag/${RELEASE_TAG}"
           body_file="${RUNNER_TEMP}/automation-pr-body.md"
           printf '%s\n' \
             '## Summary' \
             '' \
-            "- update the standalone template to @rm-industries/content-model ${CONTENT_MODEL}" \
-            "- update @sveltia/cms to ${INTEGRATION}, selected from the published peer range ${PEER_RANGE}" \
+            "- refresh authoring locks for @rm-industries/${PACKAGE} ${PACKAGE_VERSION}" \
+            "- resolve the compatible host ${INTEGRATION} within unchanged consumer and published peer ranges ${PEER_RANGE}" \
             '- regenerate the standalone template lockfile from public registry artifacts' \
-            '- prepare a create-forge patch release containing the updated template' \
+            '- retain delivered declarations, create-forge version and changelog; no generator publication intent' \
             '- validate the isolated template, packed generator, and generated project before creating this PR' \
             '' \
             '## Publication evidence' \
@@ -240,12 +273,12 @@ jobs:
             '' \
             'Generated by the publication synchronization automation tracked in #95.' \
             '' \
-            'Automatic merge waits for required project and generated-consumer checks.' > "$body_file"
+            'Automatic merge requires successful designated authoring-refresh validation on the resulting PR HEAD, plus required project checks.' > "$body_file"
           if [[ -n "$pull_request" ]]; then
-            gh pr edit "$pull_request" --title "Synchronize template with content-model ${CONTENT_MODEL}" --body-file "$body_file"
+            gh pr edit "$pull_request" --title "Refresh ${PACKAGE} ${PACKAGE_VERSION} authoring locks" --body-file "$body_file"
             pull_request_url=$(gh pr view "$pull_request" --json url --jq .url)
           else
-            pull_request_url=$(gh pr create --head "$branch" --base main --title "Synchronize template with content-model ${CONTENT_MODEL}" --body-file "$body_file")
+            pull_request_url=$(gh pr create --head "$branch" --base main --title "Refresh ${PACKAGE} ${PACKAGE_VERSION} authoring locks" --body-file "$body_file")
           fi
           echo "- ✅ Synchronization pull request: ${pull_request_url}" >> "$GITHUB_STEP_SUMMARY"
           echo "::notice title=Template synchronization pull request::${pull_request_url}"
@@ -258,13 +291,69 @@ jobs:
 
       - name: Enable checked synchronization auto-merge
         if: steps.prepare.outputs.changed == 'true'
+        timeout-minutes: 60
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          CONTENT_MODEL: ${{ steps.prepare.outputs.content-model }}
-          PREVIOUS_GENERATOR: ${{ steps.prepare.outputs.previous-generator }}
+          PACKAGE: ${{ steps.source.outputs.slug }}
+          EXPECTED_HEAD: ${{ steps.push.outputs.sha }}
+          GH_READ_TOKEN: ${{ github.token }}
         run: |-
-          if node --input-type=module -e 'import { prerelease } from "semver"; process.exit((prerelease(process.env.CONTENT_MODEL) || prerelease(process.env.PREVIOUS_GENERATOR)) ? 1 : 0)'; then
-            gh pr merge automation/template-content-model --auto --squash
-          else
-            echo 'Prerelease synchronization remains available for manual review and publication.'
+          branch="automation/template-${PACKAGE}"
+          # Required branch checks alone may be permissive; require this workflow's designated evidence.
+          for attempt in {1..120}; do
+            current_head=$(gh pr view "$branch" --json headRefOid --jq .headRefOid)
+            test "$current_head" = "$EXPECTED_HEAD"
+            checks=$(GH_TOKEN="$GH_READ_TOKEN" gh api "repos/${GITHUB_REPOSITORY}/commits/${EXPECTED_HEAD}/check-runs?check_name=Validate%20authoring%20refresh&per_page=100")
+            result=$(jq -r --arg sha "$EXPECTED_HEAD" '[.check_runs[] | select(.name == "Validate authoring refresh" and .head_sha == $sha and .app.slug == "github-actions")] | sort_by(.id) | last | if .status == "completed" then .conclusion else "pending" end' <<< "$checks")
+            if [[ "$result" == 'success' ]]; then
+              gh pr merge "$branch" --auto --squash --match-head-commit "$EXPECTED_HEAD"
+              exit 0
+            fi
+            if [[ "$result" != 'pending' ]]; then
+              echo "Designated refresh validation failed: $result"; exit 1
+            fi
+            sleep 30
+          done
+          echo 'Timed out waiting for designated PR HEAD validation'; exit 1
+
+  validate-refresh:
+    name: Validate authoring refresh
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (github.head_ref == 'automation/template-content-model' || github.head_ref == 'automation/template-browser-oxfmt')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout resulting pull request
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Require lock-only refresh
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          files=$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}")
+          if [[ -z "$files" ]] || grep -Ev '^(package-lock\.json|templates/default/package-lock\.json)$' <<< "$files"; then
+            echo 'Compatible refreshes may change only authoring locks'; exit 1
           fi
+          node --input-type=module -e 'import { execFileSync } from "node:child_process"; import assert from "node:assert/strict"; for (const path of ["package-lock.json", "templates/default/package-lock.json"]) { const read = sha => JSON.parse(execFileSync("git", ["show", `${sha}:${path}`], {encoding:"utf8"})); assert.deepEqual(read(process.env.HEAD_SHA).packages[""], read(process.env.BASE_SHA).packages[""]); }'
+      - name: Setup project dependencies
+        uses: $/.github/actions/setup-project
+        with:
+          node-version: 26.8.1
+          native: 'true'
+      - name: Install standalone dependencies
+        run: npm ci --prefix templates/default
+      - name: Install generated-project browsers
+        working-directory: templates/default
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Validate resulting authoring refresh
+        run: |
+          node scripts/verify-consumer-lock.ts templates/default
+          npm run quality
+          npm run verify:template
+          npm run test:generator:e2e
