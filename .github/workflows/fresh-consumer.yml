@@ -8,6 +8,9 @@ on:
       - templates/default/**
       - scripts/fresh-consumer*
       - scripts/verify-consumer-lock.ts
+      - scripts/verify-template.ts
+      - .github/actions/setup-project/**
+      - .npmrc
       - .github/workflows/fresh-consumer.yml
       - package.json
       - package-lock.json
