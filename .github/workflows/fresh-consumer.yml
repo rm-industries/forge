@@ -38,7 +38,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: $/.github/actions/setup-project
+      - uses: ./.github/actions/setup-project
         with:
           node-version: 26.x
           working-directory: .
@@ -80,7 +80,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: $/.github/actions/setup-project
+      - uses: ./.github/actions/setup-project
         with:
           node-version: 26.x
           working-directory: .
