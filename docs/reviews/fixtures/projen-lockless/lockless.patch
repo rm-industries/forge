@@ -57,6 +57,24 @@
  
    const siteConfigPath = join(projectRoot, 'src', 'config', 'site.ts');
    let siteConfig = await readFile(siteConfigPath, 'utf8');
+@@ -375,6 +361,17 @@
+       context.onFileCopied?.(target);
+     }
+     assertNotAborted(context.signal);
++    if (cloudflareVersion) {
++      const lock = join(projectRoot, 'package-lock.json');
++      const existing = await getPathStat(lock);
++      if (existing) {
++        if (existing.isSymbolicLink() || !existing.isFile())
++          throw new Error(`Unsafe destination entry ${lock}: expected a regular file.`);
++        const backup = join(backupDirectory, 'package-lock.json');
++        await copyFile(lock, backup);
++        backups.set(lock, backup);
++      } else createdFiles.add(lock);
++    }
+     const ciConfig = await customizeTemplate(
+       projectRoot,
+       repositoryRoot,
 --- a/packages/create-forge/src/materialize.test.ts
 +++ b/packages/create-forge/src/materialize.test.ts
 @@ -52,10 +52,6 @@
@@ -70,7 +88,7 @@
    );
    await writeFile(
      join(template, 'src', 'config', 'site.ts'),
-@@ -471,3 +467,12 @@
+@@ -471,3 +467,56 @@
    expect(await readFile(join(destination, 'package.json'), 'utf8')).toBe('existing package');
    await expect(access(join(destination, 'package-lock.json'))).rejects.toHaveProperty('code', 'ENOENT');
  });
@@ -82,6 +100,50 @@
 +  const manifest = JSON.parse(await readFile(join(result.projectRoot, 'package.json'), 'utf8'));
 +  expect(manifest).toMatchObject({ name: options.packageName, version: '0.0.0', private: true });
 +  await expect(access(join(result.projectRoot, 'package-lock.json'))).rejects.toMatchObject({ code: 'ENOENT' });
++});
++
++test.each([false, true])('restores Cloudflare lock after later failure (existing=%s)', async (existing) => {
++  const { fixture, template } = await createFixture();
++  await mkdir(join(fixture, 'cloudflare'));
++  await writeFile(
++    join(fixture, 'cloudflare/package.json'),
++    JSON.stringify({ devDependencies: { wrangler: '^4.150.0' } }),
++  );
++  const destination = join(fixture, options.destination);
++  const lock = join(destination, 'package-lock.json');
++  if (existing) {
++    await mkdir(destination);
++    await writeFile(lock, 'original lock');
++  }
++  await expect(
++    materializeProject(
++      {
++        ...options,
++        deployments: [
++          {
++            name: 'production',
++            sourceBranch: 'main',
++            target: 'cloudflare-pages',
++            project: 'example',
++            url: 'https://example.com',
++          },
++        ],
++      },
++      {
++        cwd: fixture,
++        templateDirectory: template,
++        confirmOverwrite: async () => true,
++        execute: async () => {
++          await writeFile(lock, 'resolved lock');
++        },
++        generateCi: async () => {
++          throw new Error('renderer failed');
++        },
++      },
++    ),
++  ).rejects.toThrow(rendererRollbackMessagePattern);
++  if (existing) expect(await readFile(lock, 'utf8')).toBe('original lock');
++  else await expect(access(lock)).rejects.toHaveProperty('code', 'ENOENT');
 +});
 --- a/packages/create-forge/scripts/test-generator-e2e.ts
 +++ b/packages/create-forge/scripts/test-generator-e2e.ts

@@ -23,9 +23,13 @@ The multiple-model test deliberately expects ERESOLVE: npm does not guarantee
 backtracking to every older compatible model version. All other assertions exercise
 the selected lock entries, absence of optional peers or a concrete conflict.
 
-For the recorded npm matrix, set NPM_CLI to this directory's
-`node_modules/npm10/bin/npm-cli.js` and then `node_modules/npm11/bin/npm-cli.js`,
-running each once with strict peers and once without. Run
+For the recorded npm matrix, create a separate temporary tooling directory and run
+`npm install --ignore-scripts --no-audit --no-fund npm10@npm:npm@10.9.4 npm11@npm:npm@11.19.1`
+there. Set NPM_CLI to its absolute `node_modules/npm10/bin/npm-cli.js` and then
+`node_modules/npm11/bin/npm-cli.js`, running each once with strict peers and once without.
+These pinned npm executables have known bundled dependency audit findings; use only for this
+controlled localhost experiment, not as general-purpose package managers. They are excluded
+from the committed fixture dependency graph, which audits clean. Run
 `node --test projen-policy.test.mjs` to reproduce the specialized Dependabot
 component's policy mismatch. It synthesizes only into its own temporary directory.
 

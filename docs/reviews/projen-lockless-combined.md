@@ -49,8 +49,7 @@ are installed and executed from the local registry, not published publicly.
 
 A real fresh lock with content-model ^1.1.10 and Sveltia >=0.251.0 <1.0.0 selected
 content-model 1.1.10 and Sveltia 0.251.0. The published model peer was
-
-> =0.193.2 <0.252.0. This is the currently available pair, not a simulated future upgrade.
+`>=0.193.2 <0.252.0`. This is the currently available pair, not a simulated future upgrade.
 
 ## Packed delivery candidates
 
@@ -61,13 +60,23 @@ not a claim of byte identity with npm's published 1.3.0 artifact.
 | Candidate        | Compressed bytes | Shipped lock | Model/CMS policy           | Installed CLI scenarios              |
 | ---------------- | ---------------: | ------------ | -------------------------- | ------------------------------------ |
 | Baseline         |          242,794 | Yes          | Exact pins                 | 11 scenarios and consumer build pass |
-| Lockless control |          115,706 | No           | Exact pins                 | Same 11 scenarios and build pass     |
-| Lockless ranges  |          115,714 | No           | ^1.1.10 / >=0.251.0 <1.0.0 | Same 11 scenarios and build pass     |
+| Lockless control |          115,863 | No           | Exact pins                 | Same 11 scenarios and build pass     |
+| Lockless ranges  |          115,871 | No           | ^1.1.10 / >=0.251.0 <1.0.0 | Same 11 scenarios and build pass     |
 
-The candidate-only generator suite passed 118 tests in 14 files versus baseline 117. The new missing-lock
+Local comparison artifact identities after the rollback correction:
+
+- Baseline (242,794 bytes): `sha512-lhrq5Rd4lIIbaGtiWa7qyUsLTvHAAYoy6dkYcDGCC8ED5E3X8OiV8ndMDQichun9sQ5vMWIolrg6UFZqM+XJHQ==`
+- Control (115,863 bytes): `sha512-jqa0+PjTJo5moZnmKUel8cozSVHUpJkkjv2hkNFvbwf7v6Jj1RuGYSZF6aicUNRzYBA+zh8lZH0pW6xhCIn2qA==`
+- Ranged (115,871 bytes): `sha512-joCbt5U0ssweh5fu3tDRGVUYvINC9PfVCpBFzDRaRAxSlUp/0EnSYkC0lghriGhipW8Swdn5jRPFrtksVZb6Vw==`
+
+The candidate-only generator suite passed 120 tests in 14 files versus baseline 117. The new missing-lock
 materialization assertion first failed with ENOENT,
 then passed after removing only the lock assumptions. Manifest token validation,
-collision handling and rollback remain. The installed package verifier likewise
+collision handling and rollback remain. Independent review found that the first candidate
+omitted Cloudflare's generated lock from rollback tracking. Two regression cases failed
+before the correction: a newly created lock survived a later renderer failure, and an
+existing lock was not restored. The corrected candidate validates the lock destination
+and registers its backup or creation before resolution; both cases now pass. The installed package verifier likewise
 first failed on its snapshot-specific lock expectation, then passed with the
 explicit no-shipped-lock contract.
 
@@ -180,8 +189,8 @@ are checked separately from pre-existing untracked machine metadata.
 
 ## Maintenance result and operating cost
 
-Lockless packaging/materialization removes 13 net production source lines in the
-candidate: copy-template changes by +2/-1 and materialize by +1/-15. Two manifest
+Lockless packaging/materialization removes 1 net production source line in the
+candidate: copy-template changes by +2/-1 and materialize by +13/-15. Two manifest
 values change. Snapshot-specific verifiers need replacement assertions; registry
 isolation, materialization safety, provider writers and consumer validation remain.
 The private experiment tooling/lock is measurement infrastructure, not a proposed
@@ -232,3 +241,21 @@ cannot be remotely repaired by a new Forge release; a permitted upstream regress
 may require an upstream fix, a corrected generator or deliberate consumer pinning.
 The packed synthetic correction rehearsal proves a targeted response, not automatic
 recovery or prevention of every possible upstream regression.
+
+## Independent review boundaries
+
+The single final review requested changes for Cloudflare rollback, corrected with two
+regression tests. It also requested retained local artifact hashes and an inline peer
+range; both are corrected here. No second review is claimed.
+
+Review declined to judge full Projen synthesis (the approved early stop), generated hosted
+workflow operational permissions/deployments/CMS/devices (outside the consumer rehearsal),
+local Firefox/native Rust checks (unavailable as noted), and exploitability of npm tooling
+findings. These remain explicit limits, not passing evidence. The temporary npm 10/11
+tooling graph had 24 affected packages (17 high, one critical); moving those executables
+to scratch does not remove their vulnerabilities. The committed Projen-only fixture graph
+has zero audit findings. No production dependency or audit exception was changed.
+
+Raw whitespace checking of the branch reports blank context lines inside the retained
+unified patch. Those single-space context prefixes are required patch syntax; checks of
+the applied candidate and non-patch changes pass. No production whitespace failure is waived.
