@@ -300,7 +300,7 @@ jobs:
         run: |-
           branch="automation/template-${PACKAGE}"
           # Required branch checks alone may be permissive; require this workflow's designated evidence.
-          for attempt in {1..120}; do
+          for ((attempt = 0; attempt < 120; attempt++)); do
             current_head=$(gh pr view "$branch" --json headRefOid --jq .headRefOid)
             test "$current_head" = "$EXPECTED_HEAD"
             checks=$(GH_TOKEN="$GH_READ_TOKEN" gh api "repos/${GITHUB_REPOSITORY}/commits/${EXPECTED_HEAD}/check-runs?check_name=Validate%20authoring%20refresh&per_page=100")
@@ -340,7 +340,7 @@ jobs:
           if [[ -z "$files" ]] || grep -Ev '^(package-lock\.json|templates/default/package-lock\.json)$' <<< "$files"; then
             echo 'Compatible refreshes may change only authoring locks'; exit 1
           fi
-          node --input-type=module -e 'import { execFileSync } from "node:child_process"; import assert from "node:assert/strict"; for (const path of ["package-lock.json", "templates/default/package-lock.json"]) { const read = sha => JSON.parse(execFileSync("git", ["show", `${sha}:${path}`], {encoding:"utf8"})); assert.deepEqual(read(process.env.HEAD_SHA).packages[""], read(process.env.BASE_SHA).packages[""]); }'
+          node --input-type=module -e 'import { execFileSync } from "node:child_process"; import assert from "node:assert/strict"; for (const path of ["package-lock.json", "templates/default/package-lock.json"]) { const read = sha => JSON.parse(execFileSync("git", ["show", sha + ":" + path], {encoding:"utf8"})); assert.deepEqual(read(process.env.HEAD_SHA).packages[""], read(process.env.BASE_SHA).packages[""]); }'
       - name: Setup project dependencies
         uses: $/.github/actions/setup-project
         with:

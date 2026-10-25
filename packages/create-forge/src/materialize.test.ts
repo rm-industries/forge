@@ -569,3 +569,50 @@ test.each(['symlink', 'directory'])(
     await expect(access(lock)).resolves.toBeUndefined();
   },
 );
+
+test.each([
+  ['symlink', false],
+  ['directory', false],
+  ['symlink', true],
+  ['directory', true],
+] as const)('rejects unsafe ordinary lock destination (%s, install=%s) before resolution', async (kind, install) => {
+  const { fixture, template } = await createFixture();
+  const destination = join(fixture, options.destination);
+  await mkdir(destination);
+  const sentinel = join(fixture, 'sentinel');
+  await writeFile(sentinel, 'preserve');
+  const lock = join(destination, 'package-lock.json');
+  if (kind === 'symlink') await symlink(sentinel, lock);
+  else await mkdir(lock);
+  let resolved = false;
+  await expect(
+    materializeProject(
+      { ...options, install },
+      {
+        cwd: fixture,
+        templateDirectory: template,
+        confirmOverwrite: async () => true,
+        generateCi,
+        execute: async () => {
+          resolved = true;
+        },
+      },
+    ),
+  ).rejects.toThrow(unsafeDestinationMessagePattern);
+  expect(resolved).toBe(false);
+  expect(await readFile(sentinel, 'utf8')).toBe('preserve');
+  await expect(access(lock)).resolves.toBeUndefined();
+});
+
+test.each([false, true])('preserves an ordinary existing regular lock (install=%s)', async (install) => {
+  const { fixture, template } = await createFixture();
+  const destination = join(fixture, options.destination);
+  await mkdir(destination);
+  const lock = join(destination, 'package-lock.json');
+  await writeFile(lock, 'existing lock');
+  await materializeProject(
+    { ...options, install },
+    { cwd: fixture, templateDirectory: template, confirmOverwrite: async () => true, generateCi },
+  );
+  expect(await readFile(lock, 'utf8')).toBe('existing lock');
+});
