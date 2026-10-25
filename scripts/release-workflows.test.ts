@@ -69,3 +69,20 @@ test('limits publication permissions and retains provenance', () => {
   expect(steps.find((step) => step.name === 'Dispatch published dependency')!.if).toContain("== 'content-model'");
   expect(steps.find((step) => step.name === 'Dispatch published dependency')!.if).toContain("== 'browser-oxfmt'");
 });
+
+test('fresh monitoring shares one selection across daily and weekly coverage with retained reports', () => {
+  const workflow = read('fresh-consumer');
+  expect(workflow.on.schedule).toContainEqual({ cron: '23 7 * * 1' });
+  expect(workflow.on.workflow_dispatch.inputs.coverage.options).toEqual(['daily', 'weekly']);
+  const consumer = workflow.jobs.consumer;
+  expect(consumer.needs).toBe('select');
+  expect(consumer.strategy['fail-fast']).toBe(false);
+  expect(consumer.strategy.matrix).toBe('${{ fromJSON(needs.select.outputs.matrix) }}');
+  const steps = consumer.steps as { name?: string; uses?: string; run?: string; with?: Record<string, unknown> }[];
+  expect(steps.find((step) => step.uses?.startsWith('actions/download-artifact@'))!.with!.name).toBe('fresh-selection');
+  expect(steps.find((step) => step.name === 'Validate isolated public consumer')!.run).toContain('"$PROBE"');
+  const reports = steps.find((step) => step.uses?.startsWith('actions/upload-artifact@'))!;
+  expect(reports.with!['include-hidden-files']).toBe(true);
+  expect(reports.with!.path).toContain('/consumer/.lighthouseci');
+  expect(workflow.permissions).toEqual({});
+});
