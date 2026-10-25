@@ -50,7 +50,7 @@ The selection directory can be shared across independent runtime consumers; each
 validation requires its own fresh output directory.
 
 Daily coverage uses Ubuntu Node 26/npm 11 and the focused Chromium CMS formatter
-suite. The Monday weekly run uses Ubuntu Node 22.23.4/npm 10, latest Node 22/npm 11,
+suite. The Monday weekly run uses Ubuntu Node 22.23.4/npm 10.9.0, latest Node 22/npm 11,
 Node 24/npm 11, Node 26/npm 11, and macOS Node 26/npm 11. Every lane installs the
 same selected tarball, validates isolation and peers, records its own runtime and
 lock identity, replays that lock and runs consumer quality. Only the primary

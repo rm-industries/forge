@@ -26,7 +26,7 @@ export function freshConsumerMatrix(coverage: string) {
     include:
       coverage === 'weekly'
         ? [
-            { os: 'ubuntu-latest', node: '22.23.4', npm: '10', probe: 'quality' },
+            { os: 'ubuntu-latest', node: '22.23.4', npm: '10.9.0', probe: 'quality' },
             { os: 'ubuntu-latest', node: '22.x', npm: '11', probe: 'quality' },
             { os: 'ubuntu-latest', node: '24.x', npm: '11', probe: 'quality' },
             { os: 'ubuntu-latest', node: '26.x', npm: '11', probe: 'weekly' },
