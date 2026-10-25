@@ -200,7 +200,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       target,
       output: resolve(output),
       ...(candidate ? { candidate: resolve(candidate) } : {}),
-      source: process.env.GITHUB_SHA ?? execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
+      source:
+        target === 'candidate'
+          ? (process.env.GITHUB_SHA ?? execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim())
+          : '',
     });
     console.log(JSON.stringify(identity));
     if (process.env.GITHUB_OUTPUT) await appendFile(process.env.GITHUB_OUTPUT, `state=${identity.state}\n`);
