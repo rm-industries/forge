@@ -25,11 +25,9 @@ describe('published documentation links', () => {
     const html = await renderLinks(
       '/',
       'docs/getting-started.md',
-      '[Policy](support-policy.md#nodejs-and-npm) [CLI](../packages/create-forge/src/index.ts)',
+      '[Contribute](../CONTRIBUTING.md#local-development) [CLI](../packages/create-forge/src/index.ts)',
     );
-    expect(html).toContain(
-      'href="https://github.com/rm-industries/forge/blob/main/docs/support-policy.md#nodejs-and-npm"',
-    );
+    expect(html).toContain('href="https://github.com/rm-industries/forge/blob/main/CONTRIBUTING.md#local-development"');
     expect(html).toContain(
       'href="https://github.com/rm-industries/forge/blob/main/packages/create-forge/src/index.ts"',
     );

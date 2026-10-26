@@ -32,6 +32,7 @@ cards, and article typography in both color schemes. Then run:
 
 ```sh
 npm run lint:css
+npm run build
 npm run test:e2e
 npm run lighthouse:ci
 ```
@@ -81,5 +82,5 @@ navigation, themes, components, or interaction:
 The CMS interface is supplied by Sveltia and is outside the template's public
 site audit. Evaluate that interface with the people who will edit the site.
 
-See the [accessibility review checklist](../accessibility-checklist.md) and
-[performance budget](../performance-budget.md) for the enforced baseline.
+See the [accessibility review checklist](../templates/default/docs/accessibility-checklist.md) and
+[performance budget](../templates/default/docs/performance-budget.md) for the enforced baseline.

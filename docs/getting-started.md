@@ -27,16 +27,17 @@ npm run dev
 
 The initializer asks for project and site identity, the production URL and
 repository details. It installs dependencies with `npm install` and initializes
-Git unless you disable those steps. Your first install creates your project's
-own `package-lock.json`; commit it alongside the generated source.
+Git unless you disable those steps. Keep the resulting consumer-owned
+`package-lock.json` with the generated source. The published generator can include a reviewed bootstrap lock; your
+installation and later dependency changes remain your project's responsibility.
 
 Astro prints the development address, normally `http://localhost:4321`. Stop it
 with `Control+C`.
 
 If you choose `--no-install`, run `npm install` before starting development.
 Use `npm ci` for later clean installs once your project has a committed lock.
-Some provider selections still resolve lock metadata with `--no-install` and
-therefore need registry access. See the
+Cloudflare Pages selection resolves Wrangler lock metadata even with
+`--no-install` and therefore needs registry access. See the
 [initializer reference](../packages/create-forge/README.md) for flags and
 provider-specific requirements.
 
