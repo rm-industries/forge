@@ -44,7 +44,7 @@
     "@rm-industries/browser-oxfmt": "0.1.2",
     "@rm-industries/content-model": "1.1.10",
     "@sveltia/cms": "0.251.0",
-    "astro": "^7.4.0"
+    "astro": "^7.4.2"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
