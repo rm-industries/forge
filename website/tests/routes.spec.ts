@@ -13,6 +13,8 @@ test('serves every baseline page with configured canonical and social metadata',
 
     await expect(page.locator('meta[name="generator"]')).toHaveAttribute('content', 'Forge by RM Industries');
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', canonicalUrl);
+    await expect(page.locator('meta[property="og:type"]')).toHaveAttribute('content', 'website');
+    await expect(page.locator('meta[property^="article:"]')).toHaveCount(0);
     await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute('content', site.name);
     await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', canonicalUrl);
     await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image');

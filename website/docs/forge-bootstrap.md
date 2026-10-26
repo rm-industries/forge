@@ -49,8 +49,7 @@ binaries, reports, and build output remain ignored and are not committed.
 ## Maintenance and upgrades
 
 This directory is owned website source, not a generated cache. Do not rerun the
-generator over it. Normal npm dependency updates, including compatible
-`@rm-industries/content-model` releases, update this project's manifest and
+generator over it. Normal npm dependency updates update this project's manifest and
 lockfile through reviewed pull requests. Future Forge template improvements are
 adopted selectively through a dedicated migration issue and pull request so
 local content and configuration cannot be overwritten.
