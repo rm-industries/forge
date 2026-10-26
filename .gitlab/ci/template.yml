@@ -21,9 +21,10 @@ template-primary:
   extends: .template
   stage: build
   before_script: &template-prepare
+    - npm ci
     - node scripts/test-template.ts prepare /tmp/forge-template
     - cd /tmp/forge-template
-    - npm ci
+    - npm install
     - node "$CI_PROJECT_DIR/scripts/verify-consumer-lock.ts" /tmp/forge-template
   script:
     - mkdir -p "$CI_PROJECT_DIR/.ci-template"
@@ -59,7 +60,7 @@ template-runtime:
   parallel:
     matrix:
       - NODE_VERSION:
-          - 22.22.2
+          - 22.23.4
           - '22'
           - '24'
   before_script: *template-prepare

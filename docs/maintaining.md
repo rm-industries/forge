@@ -98,8 +98,9 @@ requirements, licenses, lifecycle scripts, and package contents.
 - Astro and Sveltia compatibility is declared narrowly as content-model peers.
   Use the [peer-upgrade workflow](peer-upgrade-automation.md) rather than widening
   a peer range without a tested content-model release.
-- Template synchronization consumes only a verified published content-model
-  result; see [template synchronization](template-synchronization.md).
+- The template has no committed lock or npm Dependabot entry. Fresh-install
+  validation and monitoring cover compatible resolutions; see
+  [template maintenance](template-synchronization.md).
 - Major, pre-1.0 minor, peer-range, build, and deployment updates require focused
   review even when Dependabot can install them.
 

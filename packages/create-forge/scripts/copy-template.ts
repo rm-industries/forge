@@ -14,6 +14,7 @@ const excludedNames = new Set([
   'coverage',
   'dist',
   'node_modules',
+  'package-lock.json',
   'playwright-report',
   'test-results',
 ]);
@@ -26,16 +27,10 @@ await cp(sourceDirectory, destinationDirectory, {
 });
 await rename(join(destinationDirectory, '.gitignore'), join(destinationDirectory, '.gitignore.template'));
 
-for (const filename of ['package.json', 'package-lock.json']) {
-  const path = join(destinationDirectory, filename);
-  const metadata = JSON.parse(await readFile(path, 'utf8')) as {
-    name?: string;
-    packages?: Record<string, { name?: string }>;
-  };
-  metadata.name = templateTokens.packageName;
-  if (metadata.packages?.['']) metadata.packages[''].name = templateTokens.packageName;
-  await writeFile(path, `${JSON.stringify(metadata, undefined, 2)}\n`);
-}
+const packagePath = join(destinationDirectory, 'package.json');
+const metadata = JSON.parse(await readFile(packagePath, 'utf8')) as { name?: string };
+metadata.name = templateTokens.packageName;
+await writeFile(packagePath, `${JSON.stringify(metadata, undefined, 2)}\n`);
 
 const siteConfigPath = join(destinationDirectory, 'src', 'config', 'site.ts');
 const tokenizedSiteConfig = (await readFile(siteConfigPath, 'utf8'))

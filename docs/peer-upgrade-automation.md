@@ -19,13 +19,12 @@ Friday preparation runs roughly three days before Monday's normal Dependabot
 updates. No routine dependency schedules or cooldown settings change.
 
 After a reviewed compatibility PR merges, the package release workflow publishes
-the content-model patch, verifies npm integrity and provenance, and triggers
-published template synchronization. That synchronization pins the published
-content model and newest stable supported Sveltia version, prepares a create-forge
-patch and changelog, and enables auto-merge behind the required project and
-consumer checks. Its merge then publishes create-forge through the same release
-workflow. If Sveltia is already supported, the weekly workflow synchronizes the
-currently published content model without creating an unnecessary model release.
+the content-model patch and verifies npm integrity and provenance. Compatible
+publications require no template lock refresh or generator release: template CI
+and the published-stable monitor resolve dependencies freshly. If Sveltia is
+already supported, the workflow makes no compatibility PR or package release.
+Browser formatter engine peers remain exact. See
+[template maintenance](template-synchronization.md).
 
 ## GitHub App setup
 
@@ -99,20 +98,18 @@ appropriate minor or major release manually.
 ## Automatic publication boundary
 
 Only merged, same-repository PRs from the configured GitHub App and the existing
-peer/template automation branches qualify. Automatic publication requires a
-stable, consecutive patch version, the expected metadata/lockfile/changelog file
-set, and an already published predecessor. Unreleased package implementation or
-shipped template changes since that predecessor require a separate manual
-baseline release. Reviewed dependency updates, including action pins mirrored
-from Forge workflows at build time, may accompany these patches; the workflow
-job definitions themselves are not shipped to consumers. Stable generator
-publication excludes prerelease template
-pins. Every publication retains the quality, tarball identity, registry
-integrity and provenance gates. Existing tags are verified rather than replaced.
+`automation/peer-*` compatibility branches qualify for automatic content-model
+publication. Automatic publication requires a stable, consecutive patch version,
+the expected metadata/lockfile/changelog file set and an already published
+predecessor. Unreleased package implementation since that predecessor requires a
+separate manual baseline release. Every publication retains quality, tarball
+identity, registry integrity and provenance gates. Existing tags are verified
+rather than replaced.
 
-The first create-forge baseline is prepared separately as 1.1.0 to account for the
-new CI features. Publish that reviewed release through the existing manual tag
-and approval process before relying on unattended generator patches.
+Authoring-lock refreshes for either dependency pair are excluded from automatic
+generator publication. Source, range and compatibility-policy changes require
+review and release assessment; create-forge publication remains a separate
+protected maintainer action.
 
 Manual package tags retain the `npm-release` environment and its reviewer gate.
 Automatic main-branch patches use `npm-release-auto`, restricted to the `main`
@@ -121,8 +118,8 @@ a preparation-only operation.
 
 ## One-time trusted publisher setup
 
-Keep the existing npm publisher connection for manual releases. For both
-`@rm-industries/content-model` and `@rm-industries/create-forge`, add another GitHub
+Keep the existing npm publisher connection for manual releases. For
+`@rm-industries/content-model`, add another GitHub
 trusted publisher connection with these values:
 
 - Organization: `rm-industries`.
@@ -138,8 +135,8 @@ release are ready. No long-lived npm token is required.
 See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/).
 
 Review the weekly compatibility PR and merge it after its checks pass. The
-publication, stable template PR auto-merge and generator publication then proceed
-without further publication approvals. An incompatible peer, failed consumer
+content-model publication and validated authoring-lock PR merge then proceed
+without further publication approvals. Generator publication remains independent. An incompatible peer, failed consumer
 check, missing baseline or registry mismatch stops the chain and
 leaves the relevant workflow/PR for investigation. Retry failed workflow jobs for
 an approved commit; immutable tags and registry integrity checks make publication

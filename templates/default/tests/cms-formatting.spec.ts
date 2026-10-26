@@ -25,6 +25,7 @@ const test = base.extend({
 // WebKit persistent storage is process-shared.
 test.describe.configure({ mode: 'serial' });
 
+const cliVersion: string = JSON.parse(readFileSync('node_modules/oxfmt/package.json', 'utf8')).version;
 const articleFolder = 'src/content/articles';
 const articles = readdirSync(articleFolder, { recursive: true })
   .filter((filename): filename is string => typeof filename === 'string' && filename.endsWith('.md'))
@@ -112,12 +113,18 @@ test('the deployed worker uses scoped WebAssembly CSP, correct MIME types, and r
         errors.push(error instanceof Error ? error.message : String(error));
       }
     }
-    return { formatted, errors, tailwind: engine.capabilities.tailwindClassSorting };
+    return {
+      formatted,
+      errors,
+      tailwind: engine.capabilities.tailwindClassSorting,
+      upstreamVersion: engine.upstreamVersion,
+    };
   }, root);
   expect(result.formatted).toContain('class="p-4 flex bg-red-500"');
   expect(result.tailwind).toBe(false);
   expect(result.errors).toHaveLength(2);
-  expect(result.errors[0]).toContain('Oxfmt 0.74.0 resolved options are required');
+  expect(result.upstreamVersion).toBe(cliVersion);
+  expect(result.errors[0]).toContain(`Oxfmt ${cliVersion} resolved options are required`);
   expect(result.errors[1]).toMatch(/unsupported|unknown/i);
 });
 
@@ -128,6 +135,9 @@ publishedAt: 2026-01-01
 tags:
   - preserved
 draft: true
+customMetadata:
+  nested:
+    - keep-unknown
 ---
 
 Original **body**.
@@ -250,6 +260,7 @@ for (const mode of [
     expect(saved).toContain(`draft: ${expectedDraft}`);
     expect(saved).toContain('publishedAt: 2026-01-01');
     expect(saved).toContain('  - preserved');
+    expect(saved).toContain('customMetadata:\n  nested:\n    - keep-unknown');
     if (mode === 'raw') {
       expect(saved.match(/Long\s+article\s+prose/g)).toHaveLength(1000);
       expect(saved).toContain('After delimiter.');

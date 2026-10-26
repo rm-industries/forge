@@ -71,10 +71,9 @@ Prerelease package versions publish under `next`; stable versions publish under
 `next`. Publishing stable `1.0.0` moves `latest` only when the stable tag workflow
 succeeds; it does not require manually changing npm dist-tags.
 
-For a content-model release, confirm the post-publication template synchronization
-uses the verified publication result and opens a tested template PR. Do not merge
-that PR until the newly published version and peer range pass generated-project
-checks.
+For a content-model release, confirm registry verification and generated-project
+compatibility evidence. Compatible template ranges resolve fresh publications
+without a synchronization PR. Range corrections still require review.
 
 ## Complete a checkpoint release
 
@@ -168,3 +167,27 @@ For the independent frontmatter plugin, use the
 [release readiness report](frontmatter-release-readiness.md) and
 [manual handoff](package-releases.md#frontmatter-plugin-release-handoff).
 Local preparation does not replace the required protected workflow dry run.
+
+## create-forge 2.0 corrective delivery
+
+Consult the [2.0 readiness record](reviews/create-forge-2.0-readiness.md) and
+[monitoring handoff](fresh-consumer-monitoring.md). Keep source and range changes
+in reviewed generator releases; fresh resolutions inside unchanged ranges
+need no generator commit or release. The 2.0 runtime floor is Node 22.23.4
+on Node 22; independent unchanged libraries retain their published engines.
+
+For a permitted upstream regression, reproduce the failing public behavior in an
+isolated installed-CLI consumer. Review a correction that temporarily pins the
+affected pair to known-working published versions, explain when to remove the
+pin, and rerun peer, quality, CMS and formatter checks plus required audits. Pack
+and test the corrective generator itself; editing a consumer by hand does not
+prove what a new generator delivers. Old generators and existing sites retain
+their original metadata and require deliberate owner action.
+
+For delivery rollback, the known locked create-forge 1.3.0 release remains the
+fallback for new projects. Test its actual packed artifact and consumer lock
+replay before recommending it. Returning a future generator to bundled-lock
+delivery requires a reviewed source change, tested snapshot, semver assessment
+and the same protected publication/audit gates. Never move public dist-tags or
+rewrite consumer files automatically. The rollback artifact's older source and
+security state require review; its existence is not a publication exception.

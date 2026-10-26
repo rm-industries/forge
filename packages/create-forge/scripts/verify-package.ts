@@ -72,7 +72,16 @@ try {
   const generatedDirectory = join(invocationDirectory, 'generated-site');
   const generatedMetadata = JSON.parse(await readFile(join(generatedDirectory, 'package.json'), 'utf8')) as {
     name?: string;
+    engines: { node: string };
+    dependencies: Record<string, string>;
   };
+  if (generatedMetadata.engines.node !== '^22.23.4 || ^24.0.0 || ^26.0.0')
+    throw new Error('Installed generator must deliver the approved Node 22.23.4 minimum.');
+  if (
+    generatedMetadata.dependencies['@rm-industries/content-model'] !== '^1.1.10' ||
+    generatedMetadata.dependencies['@sveltia/cms'] !== '>=0.251.0 <1.0.0'
+  )
+    throw new Error('Installed generator must deliver the approved model/CMS ranges.');
   const generatedSiteConfig = await readFile(join(generatedDirectory, 'src', 'config', 'site.ts'), 'utf8');
   if (generatedMetadata.name !== 'generated-site' || generatedSiteConfig.includes(templateTokenPrefix)) {
     throw new Error('Installed executable did not produce normalized, fully resolved project metadata.');
@@ -89,9 +98,14 @@ try {
   await access(
     join(fixtureDirectory, 'node_modules', '@rm-industries', 'create-forge', 'dist', 'template', '.editorconfig'),
   );
-  await access(
-    join(fixtureDirectory, 'node_modules', '@rm-industries', 'create-forge', 'dist', 'template', 'package-lock.json'),
-  );
+  try {
+    await access(
+      join(fixtureDirectory, 'node_modules', '@rm-industries', 'create-forge', 'dist', 'template', 'package-lock.json'),
+    );
+    throw new Error('Generator package must not ship a template lockfile.');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
 
   console.log(`Verified ${packResult.filename} in an isolated invocation fixture.`);
 } finally {

@@ -5,7 +5,6 @@ import { parse } from 'yaml';
 
 const read = (name: string) =>
   parse(readFileSync(new URL(`../.github/workflows/${name}.yml`, import.meta.url), 'utf8'));
-const synchronize = read('template-sync');
 const release = read('package-release');
 
 test('keeps manual publication gated while reviewed automatic patches use their own environment', () => {
@@ -19,16 +18,6 @@ test('keeps manual publication gated while reviewed automatic patches use their 
   const tag = steps.find((step) => step.name === 'Ensure immutable package tag')!;
   expect(tag.run).toContain('test "$existing_sha" = "$GITHUB_SHA"');
   expect(tag.run).not.toContain('--force');
-});
-
-test('synchronizes and releases a generator patch behind normal required checks', () => {
-  const steps = synchronize.jobs.synchronize.steps as { name: string; run?: string }[];
-  expect(steps.find((step) => step.name === 'Enable checked synchronization auto-merge')!.run).toContain(
-    '--auto --squash',
-  );
-  expect(steps.find((step) => step.name === 'Enable checked synchronization auto-merge')!.run).toContain(
-    'prerelease(process.env.CONTENT_MODEL)',
-  );
 });
 
 test('packs the planned release instead of inferring a package from the triggering branch', () => {
@@ -60,5 +49,21 @@ test('limits publication permissions and retains provenance', () => {
   expect(release.jobs.prepare.permissions).not.toHaveProperty('id-token');
   const steps = release.jobs.publish.steps as { name: string; run?: string; if?: string }[];
   expect(steps.find((step) => step.name === 'Publish with provenance')!.run).toContain('--provenance');
-  expect(steps.find((step) => step.name === 'Dispatch published content model')!.if).toContain("== 'content-model'");
+});
+
+test('fresh monitoring shares one selection across daily and weekly coverage with retained reports', () => {
+  const workflow = read('fresh-consumer');
+  expect(workflow.on.schedule).toContainEqual({ cron: '23 7 * * 1' });
+  expect(workflow.on.workflow_dispatch.inputs.coverage.options).toEqual(['daily', 'weekly']);
+  const consumer = workflow.jobs.consumer;
+  expect(consumer.needs).toBe('select');
+  expect(consumer.strategy['fail-fast']).toBe(false);
+  expect(consumer.strategy.matrix).toBe('${{ fromJSON(needs.select.outputs.matrix) }}');
+  const steps = consumer.steps as { name?: string; uses?: string; run?: string; with?: Record<string, unknown> }[];
+  expect(steps.find((step) => step.uses?.startsWith('actions/download-artifact@'))!.with!.name).toBe('fresh-selection');
+  expect(steps.find((step) => step.name === 'Validate isolated public consumer')!.run).toContain('"$PROBE"');
+  const reports = steps.find((step) => step.uses?.startsWith('actions/upload-artifact@'))!;
+  expect(reports.with!['include-hidden-files']).toBe(true);
+  expect(reports.with!.path).toContain('/consumer/.lighthouseci');
+  expect(workflow.permissions).toEqual({});
 });

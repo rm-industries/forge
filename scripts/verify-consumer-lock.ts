@@ -3,26 +3,58 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { satisfies } from 'semver';
+
 import { assertStarterIsolation, findLocalDependencies } from './verify-template.ts';
 
 export async function verifyConsumerLock(directory: string) {
-  const template = JSON.parse(
-    await readFile(new URL('../templates/default/package-lock.json', import.meta.url), 'utf8'),
-  );
   const consumer = JSON.parse(await readFile(resolve(directory, 'package-lock.json'), 'utf8'));
   const manifest = JSON.parse(await readFile(resolve(directory, 'package.json'), 'utf8'));
-  const contentModelPath = 'node_modules/@rm-industries/content-model';
-  assert.ok(template.packages[contentModelPath], 'Template must lock content-model');
-  assert.deepEqual(
-    consumer.packages[contentModelPath],
-    template.packages[contentModelPath],
-    'Consumer must retain the template content-model lock entry',
+  for (const [path, entry] of Object.entries(consumer.packages) as [
+    string,
+    { link?: boolean; resolved?: string; integrity?: string; inBundle?: boolean },
+  ][]) {
+    if (!path) continue;
+    const boundary = path.lastIndexOf('/node_modules/');
+    const owner = boundary < 0 ? undefined : consumer.packages[path.slice(0, boundary)];
+    const bundled =
+      entry.inBundle === true &&
+      owner &&
+      (owner.inBundle === true ||
+        (Array.isArray(owner.bundleDependencies) &&
+          owner.bundleDependencies.includes(path.slice(boundary + '/node_modules/'.length))));
+    const registrySource = entry.resolved?.startsWith('https://registry.npmjs.org/') ?? false;
+    // Bundled contents are authenticated by their enclosing registry tarball.
+    assert.ok(
+      path.startsWith('node_modules/') &&
+        !path.split('/').includes('..') &&
+        !entry.link &&
+        (bundled ? !entry.resolved || registrySource : registrySource && entry.integrity),
+      `Consumer lock must contain published registry packages: ${path}`,
+    );
+  }
+  const model = consumer.packages['node_modules/@rm-industries/content-model'];
+  const cms = consumer.packages['node_modules/@sveltia/cms'];
+  assert.ok(model && cms, 'Consumer must lock published model and CMS packages');
+  assert.ok(
+    satisfies(model.version, manifest.dependencies['@rm-industries/content-model']),
+    'Consumer model must satisfy its declaration',
   );
-  assert.equal(
-    manifest.dependencies['@rm-industries/content-model'],
-    template.packages[''].dependencies['@rm-industries/content-model'],
-    'Consumer must retain the declared content-model version',
+  assert.ok(satisfies(cms.version, manifest.dependencies['@sveltia/cms']));
+  assert.ok(satisfies(cms.version, model.peerDependencies['@sveltia/cms']));
+  assert.ok(
+    satisfies(consumer.packages['node_modules/astro']?.version ?? '', model.peerDependencies.astro),
+    'Consumer Astro must satisfy the model peer requirement',
   );
+  const browser = consumer.packages['node_modules/@rm-industries/browser-oxfmt'];
+  const cli = consumer.packages['node_modules/oxfmt'];
+  assert.ok(browser && cli, 'Consumer must lock published browser and CLI formatter packages');
+  assert.ok(
+    satisfies(browser.version, manifest.dependencies['@rm-industries/browser-oxfmt']),
+    'Consumer browser must satisfy its declaration',
+  );
+  assert.ok(satisfies(cli.version, manifest.devDependencies.oxfmt), 'Consumer CLI must satisfy its declaration');
+  assert.equal(cli.version, browser.peerDependencies.oxfmt, 'Consumer CLI must match the browser engine peer');
   assert.deepEqual(findLocalDependencies(manifest), [], 'Consumer dependencies must resolve from registries');
 }
 

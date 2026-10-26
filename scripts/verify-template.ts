@@ -26,6 +26,7 @@ const excludedNames = new Set([
   'coverage',
   'dist',
   'node_modules',
+  'package-lock.json',
   'playwright-report',
   'test-results',
 ]);
@@ -160,7 +161,7 @@ const verifyTemplate = async () => {
     });
 
     await assertTemplateState(copiedDirectory);
-    await run('npm', ['ci'], copiedDirectory);
+    await run('npm', ['install'], copiedDirectory);
     await run('npm', ['run', 'quality:core'], copiedDirectory);
     console.log('Standalone template verification passed.');
   } finally {

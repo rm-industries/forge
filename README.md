@@ -11,7 +11,7 @@ Forge is maintained by [RM Industries](https://github.com/rm-industries).
 
 ## Requirements
 
-- Node.js `22.22.2` or newer within the 22.x line, Node.js 24.x, or Node.js
+- Node.js `22.23.4` or newer within the 22.x line, Node.js 24.x, or Node.js
   26.x;
 - npm 10.9.x or 11.x; and
 - Git, unless project initialization is disabled with `--no-git`.

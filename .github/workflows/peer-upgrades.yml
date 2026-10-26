@@ -212,21 +212,3 @@ jobs:
         run: |
           echo '::notice title=Peer range current::The registry version is already covered by the content-model peer range.'
           echo '- ✅ No compatibility update is required.' >> "$GITHUB_STEP_SUMMARY"
-    outputs:
-      changed: ${{ steps.prepare.outputs.changed }}
-      dependency: ${{ steps.prepare.outputs.dependency }}
-  synchronize-compatible:
-    name: Synchronize an already supported Sveltia release
-    needs: prepare
-    if: needs.prepare.outputs.changed == 'false' && needs.prepare.outputs.dependency == '@sveltia/cms'
-    runs-on: ubuntu-latest
-    permissions:
-      actions: write
-      contents: read
-    steps:
-      - name: Trigger published template synchronization
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |-
-          version=$(npm view '@rm-industries/content-model@latest' version)
-          gh workflow run template-sync.yml --ref main --field "version=$version"

@@ -54,7 +54,7 @@ Before the first browser formatter publication, the maintainer must explicitly
 add `browser-oxfmt-v*` to the protected environment's allowed tag patterns and
 configure that npm package's trusted publisher. Source support alone does not
 configure these shared settings. Browser formatter changes do not qualify for
-the existing automatic peer/template patch publication flows; they require
+the existing automatic peer patch publication flow; they require
 reviewed package tags and the manual environment approval.
 
 No npm token is stored in GitHub. npm exchanges the GitHub OIDC identity for a
@@ -73,10 +73,12 @@ tarball.
 5. Approve the `npm-release` environment deployment.
 6. Inspect the workflow summary, npm version and integrity, provenance, GitHub
    prerelease, and the `published-*` result artifact.
-7. For content-model releases, allow the template synchronization tracked by
-   #95 to consume the verified result only after registry verification succeeds.
+7. For content-model and browser formatter releases, compatible template ranges
+   resolve new publications during fresh installation and monitoring. No lock-only
+   synchronization PR or generator release is needed. Source or range corrections
+   require separate review and release assessment.
 
-The downstream workflow and recovery process are documented in
+Template dependency maintenance is documented in
 [`template-synchronization.md`](template-synchronization.md).
 
 Example:

@@ -4,8 +4,8 @@ This policy implements
 [FGE-003](https://github.com/rm-industries/forge/issues/3) and the versioning
 decision in [ADR 0006](decisions/0006-versioning.md).
 
-- Status: Initial policy for the `0.x` release line
-- Effective: 2026-08-18
+- Status: create-forge 2.0 and active repository/template policy
+- Effective: 2026-10-25
 - Applies to: `@rm-industries/create-forge`, `@rm-industries/content-model`,
   `@rm-industries/markdownlint-frontmatter`, and
   `templates/default`
@@ -29,17 +29,21 @@ for lifecycle status.
 
 | Runtime                                                                         | Support                                                                | Required declaration and evidence                                                                                                       |
 | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Node.js `22.22.2` through the latest 22.x release                               | Minimum supported LTS line                                             | Package engines use `^22.22.2`; CI tests `22.22.2` and the latest 22.x patch. Node 22.22.2 includes a supported npm 10.9.x release.     |
+| Node.js `22.23.4` through the latest 22.x release                               | Minimum supported LTS line                                             | Package engines use `^22.23.4`; CI tests `22.23.4` and the latest 22.x patch. Node 22.23.4 includes a supported npm 10.9.x release.     |
 | Node.js 24.x                                                                    | Preferred LTS line                                                     | Package engines use `^24.0.0`; CI tests the latest 24.x patch.                                                                          |
 | Node.js 26.x                                                                    | Supported Current line                                                 | Package engines use `^26.0.0`; CI tests the latest 26.x patch. Support continues when the line becomes LTS.                             |
 | Node.js 20 and earlier, odd-numbered EOL lines, and experimental/nightly builds | Unsupported                                                            | Engines and documentation must not imply support.                                                                                       |
 | npm 10.9.x and 11.x                                                             | Supported                                                              | Package engines use `^10.9.0 \|\| ^11.0.0`; CI covers the npm version bundled with each tested Node line and the minimum Node/npm pair. |
 | Other package managers                                                          | Unsupported for repository, generator, and generated-project workflows | Users may experiment, but defects must reproduce with npm and the committed npm lockfile.                                               |
 
-The Node engine expression for published packages and generated projects is
-`^22.22.2 || ^24.0.0 || ^26.0.0`. The npm engine expression is
+The Node engine expression for create-forge 2.0, repository tooling, the website,
+and newly generated projects is
+`^22.23.4 || ^24.0.0 || ^26.0.0`. The npm engine expression is
 `^10.9.0 || ^11.0.0`. Root and template documentation must state the same
-minimums.
+minimums. Independently released, unchanged content-model, browser-oxfmt and
+frontmatter lint packages retain their published `^22.22.2 || ^24.0.0 || ^26.0.0`
+engine contract and existing package compatibility lanes. This generator release
+does not republish those libraries or raise their minimums.
 
 Only the minimum Node/npm combination and the latest patched release of each
 supported Node major need separate blocking jobs. A release must not be made
@@ -110,7 +114,9 @@ narrower editor baseline without narrowing the public site's baseline.
 
 ### Version ranges and lockfiles
 
-- Commit npm lockfiles for the root workspace and standalone default template.
+- Commit npm lockfiles for the root workspace and website. The standalone default
+  template has no committed lock; template CI resolves one freshly and shares it
+  across downstream jobs. Generated projects commit and replay their own locks.
 - Use normal semver ranges for stable direct dependencies when compatible
   updates are covered by tests. Lockfiles provide reproducible installations.
 - Treat pre-1.0 dependencies as potentially breaking at every minor release. Use
@@ -269,7 +275,7 @@ Every release checkpoint must record evidence for the following checklist:
 - [ ] The content-model matrix covers every declared Astro and Sveltia peer
       range.
 - [ ] A copied template installs, checks, builds, and tests outside the
-      workspace from its committed lockfile.
+      workspace from its manifest, recording and replaying the resolved lock.
 - [ ] Playwright runs the committed Chromium, Firefox, and WebKit versions, and
       any required Safari smoke test is recorded.
 - [ ] Documentation states the same runtime, operating-system, browser, and
