@@ -21,6 +21,18 @@ describe('published documentation links', () => {
     ).toContain(`href="${base}docs/getting-started/?view=full#prepare-your-tools"`);
   });
 
+  it.each(['/', '/forge/'])(
+    'links canonical package sources through their registered routes under %s',
+    async (base) => {
+      const html = await renderLinks(
+        base,
+        'packages/browser-oxfmt/README.md',
+        '[Model](../content-model/README.md#model-language)',
+      );
+      expect(html).toContain(`href="${base}docs/content-model/#model-language"`);
+    },
+  );
+
   it('keeps unregistered Markdown and source references on GitHub', async () => {
     const html = await renderLinks(
       '/',

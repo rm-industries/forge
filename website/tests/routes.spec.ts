@@ -93,3 +93,24 @@ test('publishes only selected documentation and retires the competing tutorial',
   expect(xml).not.toContain('/docs/support-policy/');
   expect(xml).not.toContain('/forge/get-started/');
 });
+
+test('connects all four packages to their canonical references', async ({ page }) => {
+  await page.goto(resolvePreviewPath('/packages/'));
+  const references = page.getByRole('link', { name: 'Reference', exact: true });
+  await expect(references).toHaveCount(4);
+  for (const [index, slug] of [
+    'create-forge',
+    'content-model',
+    'browser-oxfmt',
+    'markdownlint-frontmatter',
+  ].entries()) {
+    await expect(references.nth(index)).toHaveAttribute('href', resolvePreviewPath(`/docs/${slug}/`));
+    await page.goto(resolvePreviewPath(`/docs/${slug}/`));
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'View source on GitHub' })).toHaveAttribute(
+      'href',
+      `https://github.com/rm-industries/forge/blob/main/packages/${slug}/README.md`,
+    );
+    await page.goto(resolvePreviewPath('/packages/'));
+  }
+});

@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 
 import { afterEach, describe, expect, test } from 'vitest';
 
+import { documentation } from '../src/config/documentation';
 import { validateBuild } from './validate-build';
 
 const requiredPaths = [
@@ -25,7 +26,7 @@ const fixtures: string[] = [];
 const createFixture = async () => {
   const fixture = await mkdtemp(join(tmpdir(), 'forge-build-output-'));
   fixtures.push(fixture);
-  for (const path of requiredPaths) {
+  for (const path of new Set([...requiredPaths, ...documentation.map(({ id }) => `docs/${id}/index.html`)])) {
     const output = join(fixture, path);
     await mkdir(dirname(output), { recursive: true });
     await writeFile(output, path.endsWith('.html') ? '<!doctype html><main>Forge</main>' : 'Forge\n');
