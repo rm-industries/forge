@@ -6,16 +6,12 @@ interface Props {
   title?: string;
   description?: string;
   canonicalPath?: string;
-  type?: 'article' | 'website';
-  publishedTime?: string;
 }
 
 const {
   title,
   description = site.description,
   canonicalPath = Astro.url.pathname,
-  type = 'website',
-  publishedTime,
 } = Astro.props;
 
 const normalizedPath = (() => {
@@ -39,9 +35,8 @@ const socialImageUrl = resolveCanonicalHref(site.socialImage, site.url);
 <meta property="og:title" content={pageTitle} />
 <meta property="og:description" content={description} />
 <meta property="og:url" content={canonicalUrl} />
-<meta property="og:type" content={type} />
+<meta property="og:type" content="website" />
 <meta property="og:image" content={socialImageUrl} />
-{publishedTime && <meta property="article:published_time" content={publishedTime} />}
 
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content={pageTitle} />

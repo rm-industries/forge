@@ -1,6 +1,6 @@
 # Lighthouse performance budget
 
-Lighthouse CI protects the generated site's public-page baseline. Run
+Lighthouse CI protects the Forge project website's public-page baseline. Run
 `npm run lighthouse:ci` after changes that can affect rendering, assets,
 metadata, or client behavior. The command builds the production site, collects
 three reports per route from Astro's preview server, and evaluates the median
@@ -13,7 +13,7 @@ their production-relative locations.
 - `/` represents the landing-page layout and card content.
 - `/features/` represents a denser reusable-component route and typography.
 
-The about and custom 404 pages reuse the same public layout with smaller or
+The remaining product and custom 404 pages reuse the same public layout with smaller or
 equivalent resource profiles and remain covered by browser and accessibility
 tests.
 
@@ -34,7 +34,7 @@ variance while still failing a meaningful regression.
 
 | Resource | Maximum bytes | Rationale                                                           |
 | -------- | ------------: | ------------------------------------------------------------------- |
-| Script   |             0 | The public template ships no client JavaScript.                     |
+| Script   |             0 | The public website ships no client JavaScript.                      |
 | Total    |       170,000 | Approximately 10% headroom above the measured 154,453-byte maximum. |
 
 The 2026-09-08 project-website baseline used Lighthouse 12.6.1 and three CI
