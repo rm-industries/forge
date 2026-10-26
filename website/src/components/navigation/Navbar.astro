@@ -13,6 +13,9 @@ interface Props {
 
 const { brand, brandHref = '/', links, currentPath } = Astro.props;
 const resolvedBrandHref = resolveSiteHref(brandHref);
+// The tutorial is nested under Docs; select the most specific navigation link.
+const currentHref = links.toSorted((left, right) => right.href.length - left.href.length)
+  .find((item) => isCurrentPath(currentPath, resolveSiteHref(item.href), item.href === '/'))?.href;
 ---
 
 <div class="navbar min-h-0 p-0">
@@ -25,7 +28,7 @@ const resolvedBrandHref = resolveSiteHref(brandHref);
       {
         links.map((item) => {
           const href = resolveSiteHref(item.href);
-          const isCurrent = isCurrentPath(currentPath, href, item.href === '/');
+          const isCurrent = item.href === currentHref;
 
           return (
             <li>
@@ -47,7 +50,7 @@ const resolvedBrandHref = resolveSiteHref(brandHref);
           {
             links.map((item) => {
               const href = resolveSiteHref(item.href);
-              const isCurrent = isCurrentPath(currentPath, href, item.href === '/');
+              const isCurrent = item.href === currentHref;
 
               return (
                 <li>

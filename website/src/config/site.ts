@@ -85,7 +85,7 @@ export const site = defineSiteConfig({
   socialImage: '/social-card.svg',
   navigation: [
     { label: 'Home', href: '/' },
-    { label: 'Get started', href: '/get-started/' },
+    { label: 'Get started', href: '/docs/getting-started/' },
     { label: 'Features', href: '/features/' },
     { label: 'Packages', href: '/packages/' },
     { label: 'Docs', href: '/docs/' },

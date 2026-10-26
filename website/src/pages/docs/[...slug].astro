@@ -2,8 +2,10 @@
 import { getCollection, render, type CollectionEntry } from 'astro:content';
 
 import Container from '../../components/ui/Container.astro';
+import { resolveSiteHref } from '../../lib/paths';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { documentationGroup, documentationTitle } from '../../lib/documentation';
+import { documentation as publications } from '../../config/documentation';
+import { documentationHref, documentationPublication, documentationTitle } from '../../lib/documentation';
 
 export const getStaticPaths = async () =>
   (await getCollection('documentation')).map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
@@ -15,15 +17,25 @@ interface Props {
 const { entry } = Astro.props;
 const { Content } = await render(entry);
 const title = documentationTitle(entry);
-const sourcePath = entry.filePath?.replace(/^.*?docs\//u, 'docs/') ?? `docs/${entry.id}.md`;
+const publication = documentationPublication(entry.id);
+const index = publications.findIndex(({ id }) => id === entry.id);
+const neighbors = [
+  { label: 'Previous', publication: publications[index - 1] },
+  { label: 'Next', publication: publications[index + 1] },
+];
+const entries = await getCollection('documentation');
 ---
 
 <BaseLayout {title} description={`Forge documentation: ${title}.`} canonicalPath={`/docs/${entry.id}/`}>
   <Container class="pb-20">
     <div class="mb-8 flex flex-wrap items-center justify-between gap-4 border-t border-base-300 pt-6">
-      <span class="font-mono text-sm font-medium tracking-[0.12em] text-primary uppercase">{documentationGroup(entry.id)}</span>
-      <a class="link link-hover font-mono text-sm" href={`https://github.com/rm-industries/forge/blob/main/${sourcePath}`}>View source on GitHub ↗</a>
+      <span class="font-mono text-sm font-medium tracking-[0.12em] text-primary uppercase">{publication.section}</span>
+      <a class="link link-hover font-mono text-sm" href={`https://github.com/rm-industries/forge/blob/main/${publication.source}`}>View source on GitHub ↗</a>
     </div>
     <article class="prose prose-lg max-w-4xl"><Content /></article>
+    <nav aria-label="Documentation navigation" class="mt-12 flex flex-wrap justify-between gap-6 border-t border-base-300 pt-6">
+      <a class="link link-hover" href={resolveSiteHref('/docs/')}>All documentation</a>
+      {neighbors.map(({ label, publication: neighbor }) => neighbor && <a class="link link-hover" rel={label === 'Next' ? 'next' : 'prev'} href={resolveSiteHref(documentationHref(neighbor.id))}>{label}: {documentationTitle(entries.find(({ id }) => id === neighbor.id)!)}</a>)}
+    </nav>
   </Container>
 </BaseLayout>

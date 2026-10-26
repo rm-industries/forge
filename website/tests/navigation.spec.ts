@@ -4,11 +4,10 @@ import { resolvePreviewPath, resolvePreviewUrl } from './preview';
 
 const primaryRoutes = [
   { path: '/', current: 'Home' },
-  { path: '/get-started/', current: 'Get started' },
+  { path: '/docs/getting-started/', current: 'Get started' },
   { path: '/features/', current: 'Features' },
   { path: '/packages/', current: 'Packages' },
   { path: '/docs/', current: 'Docs' },
-  { path: '/docs/decisions/0001-repository-layout/', current: 'Docs' },
   { path: '/project/', current: 'Project' },
 ] as const;
 
@@ -43,8 +42,8 @@ test('uses primary navigation to move between pages and identify the current pag
   await expect(navigation.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
 
   await navigation.getByRole('link', { name: 'Get started' }).click();
-  await expect(page).toHaveURL(resolvePreviewUrl('/get-started/'));
-  await expect(page.getByRole('heading', { level: 1, name: 'Create a Forge site.' })).toBeVisible();
+  await expect(page).toHaveURL(resolvePreviewUrl('/docs/getting-started/'));
+  await expect(page.getByRole('heading', { level: 1, name: 'Create a Forge site' })).toBeVisible();
   await expect(
     page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link', { name: 'Get started' }),
   ).toHaveAttribute('aria-current', 'page');
