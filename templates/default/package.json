@@ -47,8 +47,8 @@
     "astro": "^7.4.0"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.10",
-    "@axe-core/playwright": "^4.13.0",
+    "@astrojs/check": "^0.9.12",
+    "@axe-core/playwright": "^4.14.0",
     "@catppuccin/daisyui": "^2.1.1",
     "@catppuccin/palette": "^1.8.0",
     "@lhci/cli": "0.15.1",
@@ -59,7 +59,7 @@
     "audit-ci": "7.1.0",
     "cspell": "^10.4.0",
     "daisyui": "^5.7.50",
-    "knip": "^6.41.0",
+    "knip": "^6.42.0",
     "markdownlint-cli2": "0.24.0",
     "oxfmt": "0.74.0",
     "oxlint": "^1.88.0",
