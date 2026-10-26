@@ -12,7 +12,6 @@ export default defineConfig({
     '.lighthouseci',
   ],
   overrides: [
-    { filename: 'docs/reviews/browser-formatter-release.md', words: ['Clippy'] },
     { filename: 'packages/browser-oxfmt/src/worker.test.ts', words: ['unstub'] },
     { filename: ['.github/**', '.gitlab/**'], words: ['rustup', 'clippy', 'bindgen', 'RUSTUP'] },
     {

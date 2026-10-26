@@ -3,7 +3,8 @@
 This standalone Astro project serves Forge's product pages and consumer
 documentation at <https://www.rm-industries.com/forge/>. It is owned source,
 excluded from the root npm workspace. Adopt template improvements selectively;
-do not regenerate over this directory.
+do not regenerate over this directory. It was originally bootstrapped from
+published create-forge `1.0.0`; subsequent changes are reviewed source migrations.
 
 ## Local development
 
