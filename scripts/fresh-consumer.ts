@@ -50,7 +50,9 @@ export async function selectGenerator(options: {
   let source = options.source ?? '';
   let integrity: string;
   if (options.target === 'stable') {
-    const response = await fetcher('https://registry.npmjs.org/@rm-industries%2fcreate-forge/latest');
+    const response = await fetcher('https://registry.npmjs.org/@rm-industries%2fcreate-forge/latest', {
+      redirect: 'error',
+    });
     assert.ok(response.ok, `Registry metadata failed: ${response.status}`);
     const metadata = (await response.json()) as {
       name: string;
@@ -68,7 +70,7 @@ export async function selectGenerator(options: {
     assert.equal(url.origin, 'https://registry.npmjs.org', 'Stable artifact must come from npm registry');
     integrity = metadata.dist.integrity;
     assert.match(integrity, /^sha512-[A-Za-z0-9+/]+={0,2}$/);
-    const artifact = await fetcher(source);
+    const artifact = await fetcher(source, { redirect: 'error' });
     assert.ok(artifact.ok, `Artifact download failed: ${artifact.status}`);
     bytes = new Uint8Array(await artifact.arrayBuffer());
     assert.equal(hash(bytes), integrity, 'Registry artifact integrity mismatch');

@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtemp, mkdir, writeFile, rm, readFile } from 'node:fs/promises';
+import { access, mkdtemp, mkdir, writeFile, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -151,3 +151,58 @@ test('weekly acceptance retains supported runtimes and reserves full browser bud
   });
   expect(() => freshConsumerMatrix('invalid')).toThrow(/Invalid coverage/);
 });
+
+test('registry selection forbids redirects on metadata and artifact requests', async () => {
+  const candidate = await fixture('2.0.0');
+  const requests: RequestInit[] = [];
+  await selectGenerator({
+    target: 'stable',
+    output: join(candidate.root, 'selected'),
+    fetcher: async (url, init) => {
+      requests.push(init ?? {});
+      return new Response(
+        String(url).endsWith('/latest')
+          ? JSON.stringify({
+              name: '@rm-industries/create-forge',
+              version: '2.0.0',
+              dist: { tarball: 'https://registry.npmjs.org/candidate.tgz', integrity: candidate.integrity },
+            })
+          : candidate.bytes,
+      );
+    },
+  });
+  expect(requests).toHaveLength(2);
+  for (const request of requests) expect(request.redirect).toBe('error');
+});
+
+test.each(['foreign-origin', 'corrupt'])(
+  'rejects untrusted registry data before writing an artifact (%s)',
+  async (kind) => {
+    const candidate = await fixture('2.0.0');
+    const output = join(candidate.root, 'selected');
+    await expect(
+      selectGenerator({
+        target: 'stable',
+        output,
+        fetcher: async (url) =>
+          new Response(
+            String(url).endsWith('/latest')
+              ? JSON.stringify({
+                  name: '@rm-industries/create-forge',
+                  version: '2.0.0',
+                  dist: {
+                    tarball:
+                      kind === 'foreign-origin'
+                        ? 'https://example.com/candidate.tgz'
+                        : 'https://registry.npmjs.org/candidate.tgz',
+                    integrity: kind === 'corrupt' ? 'sha512-YmFk' : candidate.integrity,
+                  },
+                })
+              : candidate.bytes,
+          ),
+      }),
+    ).rejects.toThrow(kind === 'foreign-origin' ? /must come from npm registry/ : /integrity mismatch/);
+    await expect(access(join(output, 'create-forge.tgz'))).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(access(join(output, 'identity.json'))).rejects.toMatchObject({ code: 'ENOENT' });
+  },
+);
