@@ -12,11 +12,24 @@ export async function verifyConsumerLock(directory: string) {
   const manifest = JSON.parse(await readFile(resolve(directory, 'package.json'), 'utf8'));
   for (const [path, entry] of Object.entries(consumer.packages) as [
     string,
-    { link?: boolean; resolved?: string; integrity?: string },
+    { link?: boolean; resolved?: string; integrity?: string; inBundle?: boolean },
   ][]) {
     if (!path) continue;
+    const boundary = path.lastIndexOf('/node_modules/');
+    const owner = boundary < 0 ? undefined : consumer.packages[path.slice(0, boundary)];
+    const bundled =
+      entry.inBundle === true &&
+      owner &&
+      (owner.inBundle === true ||
+        (Array.isArray(owner.bundleDependencies) &&
+          owner.bundleDependencies.includes(path.slice(boundary + '/node_modules/'.length))));
+    const registrySource = entry.resolved?.startsWith('https://registry.npmjs.org/') ?? false;
+    // Bundled contents are authenticated by their enclosing registry tarball.
     assert.ok(
-      !entry.link && /^https?:\/\//u.test(entry.resolved ?? '') && entry.integrity,
+      path.startsWith('node_modules/') &&
+        !path.split('/').includes('..') &&
+        !entry.link &&
+        (bundled ? !entry.resolved || registrySource : registrySource && entry.integrity),
       `Consumer lock must contain published registry packages: ${path}`,
     );
   }

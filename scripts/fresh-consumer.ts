@@ -152,19 +152,9 @@ export async function validateFreshConsumer(selectionDirectory: string, output: 
   await copyFile(lockPath, join(output, 'package-lock.json'));
   await verifyConsumerLock(consumer);
   const lock = JSON.parse(lockBytes.toString());
-  for (const [path, entry] of Object.entries(lock.packages) as [
-    string,
-    { link?: boolean; resolved?: string; integrity?: string },
-  ][]) {
+  // verifyConsumerLock already validates registry origins and bundled ancestry.
+  for (const path of Object.keys(lock.packages)) {
     if (!path) continue;
-    assert.ok(path.startsWith('node_modules/') && !path.split('/').includes('..'), `Unsafe lock path: ${path}`);
-    assert.ok(
-      !entry.link &&
-        entry.resolved &&
-        new URL(entry.resolved).origin === 'https://registry.npmjs.org' &&
-        entry.integrity,
-      `Non-registry lock entry: ${path}`,
-    );
     // Optional platform packages need not be installed on this runner.
     try {
       assert.ok(!(await lstat(join(consumer, path))).isSymbolicLink(), `Linked consumer package: ${path}`);

@@ -112,3 +112,71 @@ test('accepts a later paired patch but excludes browser 0.2', async () => {
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test.each(['declared', 'nested'])('accepts a registry tarball’s bundled dependency (%s)', async (kind) => {
+  const directory = await mkdtemp(join(tmpdir(), 'forge-bundled-lock-'));
+  try {
+    await prepareConsumer(directory);
+    const lock = JSON.parse(await readFile(join(directory, 'package-lock.json'), 'utf8'));
+    const owner = 'node_modules/@tailwindcss/oxide-wasm32-wasi';
+    lock.packages[owner] = {
+      version: '4.3.3',
+      resolved: 'https://registry.npmjs.org/@tailwindcss/oxide-wasm32-wasi/-/oxide-wasm32-wasi-4.3.3.tgz',
+      integrity: 'sha512-fixture',
+      bundleDependencies: ['@emnapi/core'],
+    };
+    const bundled = `${owner}/node_modules/@emnapi/core`;
+    lock.packages[bundled] = { version: '1.11.1', inBundle: true, optional: true };
+    if (kind === 'nested') lock.packages[`${bundled}/node_modules/tslib`] = { version: '2.8.1', inBundle: true };
+    await writeFile(join(directory, 'package-lock.json'), JSON.stringify(lock));
+    await expect(verifyConsumerLock(directory)).resolves.toBeUndefined();
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test.each([
+  'undeclared',
+  'no-integrity',
+  'link',
+  'file',
+  'top-level',
+  'path-escape',
+  'missing-owner',
+  'foreign-registry',
+  'malformed-declaration',
+])('rejects an unsafe bundled lock entry (%s)', async (kind) => {
+  const directory = await mkdtemp(join(tmpdir(), 'forge-unsafe-bundle-'));
+  try {
+    await prepareConsumer(directory);
+    const lock = JSON.parse(await readFile(join(directory, 'package-lock.json'), 'utf8'));
+    const owner = 'node_modules/bundler';
+    lock.packages[owner] = {
+      version: '1.0.0',
+      resolved: 'https://registry.npmjs.org/bundler/-/bundler-1.0.0.tgz',
+      integrity: 'sha512-fixture',
+      bundleDependencies: ['bundled'],
+    };
+    let path = `${owner}/node_modules/bundled`;
+    const entry = {
+      version: '1.0.0',
+      inBundle: true,
+      link: kind === 'link',
+      ...(kind === 'file' ? { resolved: 'file:../outside' } : {}),
+    };
+    if (kind === 'undeclared') lock.packages[owner].bundleDependencies = [];
+    if (kind === 'malformed-declaration') lock.packages[owner].bundleDependencies = 'bundled';
+    if (kind === 'no-integrity') delete lock.packages[owner].integrity;
+    if (kind === 'foreign-registry') lock.packages[owner].resolved = 'https://example.com/bundler.tgz';
+    if (kind === 'missing-owner') delete lock.packages[owner];
+    if (kind === 'top-level') path = 'node_modules/bundled';
+    if (kind === 'path-escape') path = `${owner}/node_modules/../bundled`;
+    lock.packages[path] = entry;
+    await writeFile(join(directory, 'package-lock.json'), JSON.stringify(lock));
+    await expect(verifyConsumerLock(directory)).rejects.toThrow(
+      'Consumer lock must contain published registry packages',
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
