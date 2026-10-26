@@ -22,7 +22,6 @@ export default defineConfig({
           rewriteDocumentationLinks,
           {
             base: isLocalDevelopment ? '/' : (deployment.base ?? '/'),
-            docsDirectory: fileURLToPath(new URL('../docs/', import.meta.url)),
             repositoryDirectory: fileURLToPath(new URL('../', import.meta.url)),
           },
         ],

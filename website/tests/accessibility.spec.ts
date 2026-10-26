@@ -6,7 +6,7 @@ import { resolvePreviewPath } from './preview';
 
 const publicRoutes = [
   { name: 'home', path: '/' },
-  { name: 'get started', path: '/get-started/' },
+  { name: 'get started', path: '/docs/getting-started/' },
   { name: 'features', path: '/features/' },
   { name: 'packages', path: '/packages/' },
   { name: 'documentation', path: '/docs/' },

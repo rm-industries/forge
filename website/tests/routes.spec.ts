@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { site } from '../src/config/site';
 import { resolvePreviewPath, resolvePreviewUrl } from './preview';
 
-const routes = ['/', '/get-started/', '/features/', '/packages/', '/docs/', '/project/', '/about/', '/404/'];
+const routes = ['/', '/docs/getting-started/', '/features/', '/packages/', '/docs/', '/project/', '/about/', '/404/'];
 
 test('serves every baseline page with configured canonical and social metadata', async ({ page }) => {
   for (const route of routes) {
@@ -74,4 +74,22 @@ test('helps visitors recover from a missing page', async ({ page }) => {
   await page.getByRole('link', { name: 'Return home' }).click();
   await expect(page).toHaveURL(resolvePreviewUrl('/'));
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+});
+
+test('publishes only selected documentation and retires the competing tutorial', async ({ page, request }) => {
+  await page.goto(resolvePreviewPath('/docs/'));
+  await expect(page.getByRole('link', { name: 'Create a Forge site', exact: true })).toHaveAttribute(
+    'href',
+    resolvePreviewPath('/docs/getting-started/'),
+  );
+  await expect(page.getByRole('link', { name: 'Compatibility and support policy', exact: true })).toHaveCount(0);
+  for (const route of ['/docs/support-policy/', '/get-started/']) {
+    const response = await request.get(resolvePreviewPath(route));
+    expect(response.status()).toBe(404);
+  }
+  const sitemap = await request.get(resolvePreviewPath('/sitemap-0.xml'));
+  const xml = await sitemap.text();
+  expect(xml).toContain('/docs/getting-started/');
+  expect(xml).not.toContain('/docs/support-policy/');
+  expect(xml).not.toContain('/forge/get-started/');
 });

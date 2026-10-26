@@ -2,12 +2,14 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { documentation } from '../src/config/documentation.ts';
+
 const requiredOutputPaths = [
   '404.html',
   'about/index.html',
   'docs/index.html',
   'features/index.html',
-  'get-started/index.html',
+  'docs/getting-started/index.html',
   'index.html',
   'packages/index.html',
   'project/index.html',
@@ -41,6 +43,23 @@ export const validateBuild = async (outputDirectory: string) => {
   const missingPaths = requiredOutputPaths.filter((path) => !files.includes(path));
   if (missingPaths.length > 0) {
     throw new Error(`Build output is missing required paths:\n${missingPaths.join('\n')}`);
+  }
+
+  const documentationPaths = documentation.map(({ id }) => `docs/${id}/index.html`);
+  const unexpectedPaths = files.filter(
+    (path) =>
+      (path.startsWith('docs/') &&
+        path.endsWith('/index.html') &&
+        path !== 'docs/index.html' &&
+        !documentationPaths.includes(path)) ||
+      path === 'get-started/index.html' ||
+      /^(?:admin|articles)(?:\/|$)|^(?:rss|feed|atom)\.xml$/u.test(path),
+  );
+  const missingDocuments = documentationPaths.filter((path) => !files.includes(path));
+  if (unexpectedPaths.length || missingDocuments.length) {
+    throw new Error(
+      `Build documentation differs from publication registry:\n${[...unexpectedPaths, ...missingDocuments].join('\n')}`,
+    );
   }
 
   for (const path of files) {

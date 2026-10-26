@@ -2,6 +2,8 @@ import { dirname, relative, resolve, sep } from 'node:path';
 
 import type { RehypePlugin } from '@astrojs/markdown-remark';
 
+import { documentation } from '../src/config/documentation.ts';
+import { documentationHref } from '../src/lib/documentation.ts';
 import { resolveSiteHref } from '../src/lib/paths';
 
 interface Node {
@@ -16,29 +18,26 @@ interface File {
 
 interface Options {
   base: string;
-  docsDirectory: string;
   repositoryDirectory: string;
 }
 
 const createDocumentationLinkRewriter =
-  ({ base, docsDirectory, repositoryDirectory }: Options) =>
+  ({ base, repositoryDirectory }: Options) =>
   (tree: Node, file: File) => {
-    if (!file.path || !resolve(file.path).startsWith(resolve(docsDirectory) + sep)) return;
+    if (!file.path || !documentation.some(({ source }) => resolve(repositoryDirectory, source) === resolve(file.path!)))
+      return;
 
     const visit = (node: Node) => {
       const href = node.tagName === 'a' ? node.properties?.href : undefined;
-      if (href && !/^(?:[a-z]+:|\/|#)/iu.test(href)) {
-        const [path, suffix = ''] = href.split(/(?=[?#])/u, 2);
+      if (href && !/^(?:[a-z]+:|\/|#|\?)/iu.test(href)) {
+        const [, path, suffix] = /^([^?#]+)(.*)$/u.exec(href)!;
         const target = resolve(dirname(file.path!), path);
-        const docsPath = relative(docsDirectory, target).replaceAll(sep, '/');
+        const repositoryPath = relative(repositoryDirectory, target).replaceAll(sep, '/');
+        const publication = documentation.find(({ source }) => source === repositoryPath);
 
-        if (path.endsWith('.md') && !docsPath.startsWith('../')) {
-          const slug = docsPath.replace(/(?:^|\/)README\.md$/u, '').replace(/\.md$/u, '');
-          node.properties!.href = `${resolveSiteHref(`/docs/${slug ? `${slug}/` : ''}`, base)}${suffix}`;
-        } else {
-          const repositoryPath = relative(repositoryDirectory, target).replaceAll(sep, '/');
-          node.properties!.href = `https://github.com/rm-industries/forge/blob/main/${repositoryPath}${suffix}`;
-        }
+        node.properties!.href = publication
+          ? `${resolveSiteHref(documentationHref(publication.id), base)}${suffix}`
+          : `https://github.com/rm-industries/forge/blob/main/${repositoryPath}${suffix}`;
       }
 
       node.children?.forEach(visit);
