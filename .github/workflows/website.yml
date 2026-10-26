@@ -7,7 +7,20 @@ on: # yamllint disable-line rule:truthy
       - main
     paths:
       - website/**
-      - docs/**
+      - docs/getting-started.md
+      - docs/configuration.md
+      - docs/content-and-cms.md
+      - docs/themes-and-accessibility.md
+      - docs/deployment.md
+      - docs/ci-providers.md
+      - docs/quality-and-troubleshooting.md
+      - docs/upgrades.md
+      - docs/support-policy.md
+      - docs/browser-formatter-adoption.md
+      - packages/create-forge/README.md
+      - packages/content-model/README.md
+      - packages/browser-oxfmt/README.md
+      - packages/markdownlint-frontmatter/README.md
       - package.json
       - package-lock.json
       - .npmrc
@@ -18,7 +31,20 @@ on: # yamllint disable-line rule:truthy
       - main
     paths:
       - website/**
-      - docs/**
+      - docs/getting-started.md
+      - docs/configuration.md
+      - docs/content-and-cms.md
+      - docs/themes-and-accessibility.md
+      - docs/deployment.md
+      - docs/ci-providers.md
+      - docs/quality-and-troubleshooting.md
+      - docs/upgrades.md
+      - docs/support-policy.md
+      - docs/browser-formatter-adoption.md
+      - packages/create-forge/README.md
+      - packages/content-model/README.md
+      - packages/browser-oxfmt/README.md
+      - packages/markdownlint-frontmatter/README.md
       - package.json
       - package-lock.json
       - .npmrc

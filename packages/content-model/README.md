@@ -1,8 +1,8 @@
 # `@rm-industries/content-model`
 
 Integration-neutral content collection definitions and validation for Forge.
-Astro and Sveltia adapters are separate package entry points introduced by the
-adapter milestones; the core module imports neither integration.
+Astro and Sveltia adapters use separate package entry points; the core module
+imports neither integration.
 
 Install the stable package from npm:
 
@@ -22,10 +22,11 @@ import { createAstroCollections } from '@rm-industries/content-model/astro';
 import { createSveltiaCollection } from '@rm-industries/content-model/sveltia';
 ```
 
-The package is bundled as native ESM for publication. Source files therefore
-use relative imports without file extensions, which keeps editor-generated
-imports conventional while the build resolves internal modules into the
-published entry point. Oxlint enforces this convention in the package source.
+The package uses native ESM and ships TypeScript declarations. Core and adapters
+share one package version; other Forge packages are independently versioned.
+Node `^22.22.2 || ^24.0.0 || ^26.0.0` and npm `^10.9.0 || ^11.0.0` are supported.
+The current Astro peer is `^7.2.3` and Sveltia peer is `>=0.193.2 <0.252.0`;
+inspect the installed manifest before selecting peers for another release.
 
 ## Model language
 
@@ -176,3 +177,27 @@ const collections = createSveltiaCollections(models, () => ({
     context.path.endsWith('.description') ? { ...field, hint: 'Shown in collection cards.' } : field,
 }));
 ```
+
+## Core validation and adapter use
+
+`defineModel` and `defineModels` validate and return typed definitions.
+`defineFields` accepts field entries and rejects duplicate keys.
+`validateContentModel` and `validateContentModels` can validate existing objects;
+invalid models throw `ContentModelValidationError` with a model path.
+
+For Astro, export `createAstroCollections(models)` from your content configuration.
+`createAstroCollection(model)` builds one collection and `createAstroSchema`
+provides the schema separately. Assets require Astro's image schema context;
+unsupported adapter inputs throw `AstroContentAdapterError`. The generated schema
+owns content validation, including conditional requirements and date conversion.
+The Markdown body remains separate from frontmatter fields.
+
+For Sveltia, `createSveltiaCollection` and `createSveltiaCollections` produce CMS
+collection configuration. They preserve model field order, but cannot enforce
+conditional requirements that the CMS cannot represent. Keep Astro validation as
+the enforcement boundary. Apply adapter options for presentation instead of
+mutating the shared model or returned adapter output.
+
+Use the [frontmatter ordering rule](../markdownlint-frontmatter/README.md) when
+Markdownlint should enforce the model's metadata order; the content-model package
+does not format Markdown or reorder source files itself.

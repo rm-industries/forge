@@ -1,7 +1,11 @@
 # `@rm-industries/create-forge`
 
-The stable Forge project initializer. npm resolves the primary command to this
-scoped package:
+The Forge project initializer. This reference describes the intended create-forge
+2.0 generation contract. The published stable release is currently 1.3.0; check
+[available versions](https://www.npmjs.com/package/@rm-industries/create-forge?activeTab=versions)
+before requesting 2.0. Its examples apply once that version is available.
+
+npm resolves the primary command to this scoped package:
 
 ```sh
 npm create @rm-industries/forge
@@ -52,6 +56,48 @@ and Git setup ran or was skipped, and only the commands still needed to start
 development. Output remains readable when color is disabled and contains no
 telemetry or promotional messages.
 
+## CLI inputs and defaults
+
+Use the interactive prompts, `--yes` defaults, or explicit flags. Non-interactive
+execution without `--yes` requires a destination and every identity/install/Git
+value; incomplete input fails before generation. `--help` and `--version` are
+available without creating a project.
+
+| Input                    | Flag                           | Default with `--yes`                                         |
+| ------------------------ | ------------------------------ | ------------------------------------------------------------ |
+| Destination              | positional directory           | Current directory (`.`)                                      |
+| Package name             | `--name`                       | Destination basename                                         |
+| Site name                | `--site-name`                  | Humanized package name                                       |
+| Description              | `--description`                | `A content-driven website built with Forge`                  |
+| Author                   | `--author`                     | Empty                                                        |
+| Canonical URL            | `--url`                        | `https://example.com`                                        |
+| Repository               | `--repository`                 | Empty; otherwise `owner/repository`                          |
+| Dependency install       | `--install` / `--no-install`   | Enabled                                                      |
+| Git initialization       | `--git` / `--no-git`           | Enabled                                                      |
+| Repository root          | `--repository-root`            | Destination                                                  |
+| Workflow filename prefix | `--ci-prefix`                  | Derived from nested project path; none for a standalone site |
+| CI providers             | `--ci-providers`               | `github`                                                     |
+| Primary CI               | `--primary-ci`                 | GitHub when enabled, otherwise GitLab                        |
+| Generated CI Node major  | `--node-version`               | `26` (also accepts `22` or `24`)                             |
+| Deployment environments  | Repeatable `--deployment` JSON | Primary provider's default Pages deployment                  |
+
+For example, after 2.0 is published:
+
+```sh
+npm create @rm-industries/forge@2.0.0 my-site -- --yes --site-name 'My site' --url https://example.com
+```
+
+Review defaults before deploying; the example URL and empty repository are
+placeholders. `--no-install` skips installation, while provider-specific lockfile
+resolution can still require network access as described below. Install with
+`npm install` when preparing a new consumer dependency graph and commit your
+project's lockfile. Use `npm ci` to reproduce that graph afterward. Keep generated
+files as owned source; regeneration is not an upgrade strategy.
+
+The CLI and generated projects support Node `^22.22.2 || ^24.0.0 || ^26.0.0` and
+npm `^10.9.0 || ^11.0.0`. The Forge website's Node 26-only tooling does not narrow
+these runtime contracts.
+
 ## CI generation
 
 Select providers during bootstrap with `--ci-providers github,gitlab` or
@@ -87,9 +133,8 @@ GitLab deployments serialize using an environment/target resource group. GitHub
 project workflows for a custom source branch disable npm caching to keep
 artifact-producing installs independent.
 
-The flag is repeatable, but multiple environments and parallel GitLab Pages remain
-rejected until their subsequent implementation reviews. A friendlier
-input syntax can replace JSON later without introducing a retained Forge config.
+The flag is repeatable. See [multiple deployment environments](#multiple-deployment-environments)
+for branch and destination constraints.
 
 ### Prefixed GitLab Pages
 
@@ -172,47 +217,7 @@ build time. Consumer Dependabot keeps the resulting YAML up to date independentl
 See [CI generation](../../docs/ci-providers.md) for provider behavior, pin provenance
 and nested repository ownership.
 
-## Package verification
-
-From the Forge repository root, build and inspect every workspace package:
-
-```sh
-npm run quality
-```
-
-To build this package, create its actual tarball, install it into an isolated OS
-temporary directory, and exercise the installed executable:
-
-```sh
-npm run verify:package --workspace @rm-industries/create-forge
-```
-
-The verification confirms `--help`, `--version`, and packaged template assets,
-then removes the temporary fixture.
-
-To exercise the packed CLI across the complete generator fixture matrix:
-
-```sh
-npm run test:generator:e2e
-```
-
-This exercises default, fully specified, scoped-name, current-directory,
-nested-project, GitLab-only, combined-provider, no-install, Cloudflare and conflict scenarios
-in temporary directories. The Cloudflare scenario resolves dependencies through the registry,
-verifies a locked install and unused-dependency checks, and runs the installed Wrangler
-version command without accessing Cloudflare. The default and nested scenarios verify installation;
-conflicts must preserve existing files. The nested custom-URL scenario gets one
-targeted production build and artifact validation, without repeating the full
-consumer quality suite. CI supplies the already packaged CLI
-through `FORGE_CLI_TARBALL`, so these scenarios do not rebuild or repack it.
-
-Generator CI builds and packages the CLI once. Each supported Node lane installs
-that same package, bootstraps once with its selected Node major, and runs consumer
-types, unit tests and a production build. The primary Node 26 lane records coverage
-and shares its generated source and build artifacts with static quality, generated
-workflow syntax/security, build validation, browser and Lighthouse checks. macOS
-also exercises bootstrap and runtime checks. Content-model is installed from the
-consumer lockfile; candidate content-model validation belongs to project CI.
+## Generated CI runtime
 
 Consumers run one Node major in CI, selected with `--node-version 22`,
 `--node-version 24`, or `--node-version 26` (the default). Forge retains its

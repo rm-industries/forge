@@ -10,6 +10,14 @@ export const documentation = [
   { id: 'upgrades', source: 'docs/upgrades.md', section: 'Guides' },
   { id: 'support-policy', source: 'docs/support-policy.md', section: 'Guides' },
   { id: 'browser-formatter-adoption', source: 'docs/browser-formatter-adoption.md', section: 'Guides' },
+  { id: 'create-forge', source: 'packages/create-forge/README.md', section: 'Package reference' },
+  { id: 'content-model', source: 'packages/content-model/README.md', section: 'Package reference' },
+  { id: 'browser-oxfmt', source: 'packages/browser-oxfmt/README.md', section: 'Package reference' },
+  {
+    id: 'markdownlint-frontmatter',
+    source: 'packages/markdownlint-frontmatter/README.md',
+    section: 'Package reference',
+  },
 ] as const;
 
 export const documentationSources = documentation.map(({ source }) => source);
