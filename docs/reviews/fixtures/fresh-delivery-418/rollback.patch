@@ -1,0 +1,102 @@
+# cspell:ignore astrojs knip
+--- a/packages/create-forge/scripts/copy-template.ts
++++ b/packages/create-forge/scripts/copy-template.ts
+@@ -14,7 +14,6 @@
+   'coverage',
+   'dist',
+   'node_modules',
+-  'package-lock.json',
+   'playwright-report',
+   'test-results',
+ ]);
+@@ -31,6 +30,13 @@
+ const metadata = JSON.parse(await readFile(packagePath, 'utf8')) as { name?: string };
+ metadata.name = templateTokens.packageName;
+ await writeFile(packagePath, `${JSON.stringify(metadata, undefined, 2)}\n`);
++
++const lockPath = join(destinationDirectory, 'package-lock.json');
++const lock = JSON.parse(await readFile(lockPath, 'utf8'));
++lock.name = templateTokens.packageName;
++lock.packages[''].name = templateTokens.packageName;
++await writeFile(lockPath, `${JSON.stringify(lock, undefined, 2)}\n`);
++
+
+ const siteConfigPath = join(destinationDirectory, 'src', 'config', 'site.ts');
+ const tokenizedSiteConfig = (await readFile(siteConfigPath, 'utf8'))
+--- a/packages/create-forge/src/materialize.ts
++++ b/packages/create-forge/src/materialize.ts
+@@ -175,6 +175,16 @@
+     };
+   }
+   await writeFile(packagePath, `${JSON.stringify(packageMetadata, undefined, 2)}\n`);
++
++  const lockPath = join(projectRoot, 'package-lock.json');
++  const lock = JSON.parse(await readFile(lockPath, 'utf8'));
++  if (lock.name !== templateTokens.packageName || lock.packages?.['']?.name !== templateTokens.packageName)
++    throw new Error('Packaged template contains unexpected lock metadata tokens.');
++  lock.name = options.packageName;
++  lock.packages[''].name = options.packageName;
++  lock.packages[''].version = '0.0.0';
++  await writeFile(lockPath, `${JSON.stringify(lock, undefined, 2)}\n`);
++
+
+   const siteConfigPath = join(projectRoot, 'src', 'config', 'site.ts');
+   let siteConfig = await readFile(siteConfigPath, 'utf8');
+--- a/packages/create-forge/package.json
++++ b/packages/create-forge/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "@rm-industries/create-forge",
+-  "version": "2.0.0",
++  "version": "2.0.1-rollback.0",
+   "description": "Scaffold accessible, content-driven Astro websites with Sveltia CMS and production-ready tooling",
+   "keywords": [
+     "accessibility",
+--- a/templates/default/package.json
++++ b/templates/default/package.json
+@@ -41,9 +41,9 @@
+     "@astrojs/sitemap": "^3.7.4",
+     "@fontsource/fira-code": "^5.3.0",
+     "@fontsource/fira-sans": "^5.3.0",
+-    "@rm-industries/browser-oxfmt": "^0.1.2",
+-    "@rm-industries/content-model": "^1.1.10",
+-    "@sveltia/cms": ">=0.251.0 <1.0.0",
++    "@rm-industries/browser-oxfmt": "0.1.2",
++    "@rm-industries/content-model": "1.1.10",
++    "@sveltia/cms": "0.251.0",
+     "astro": "^7.4.0"
+   },
+   "devDependencies": {
+@@ -61,7 +61,7 @@
+     "daisyui": "^5.7.50",
+     "knip": "^6.41.0",
+     "markdownlint-cli2": "0.24.0",
+-    "oxfmt": ">=0.74.0 <1.0.0",
++    "oxfmt": "0.74.0",
+     "oxlint": "^1.88.0",
+     "stylelint": "^17.16.0",
+     "stylelint-config-standard": "^40.0.0",
+--- a/templates/default/package-lock.json
++++ b/templates/default/package-lock.json
+@@ -12,9 +12,9 @@
+         "@astrojs/sitemap": "^3.7.4",
+         "@fontsource/fira-code": "^5.3.0",
+         "@fontsource/fira-sans": "^5.3.0",
+-        "@rm-industries/browser-oxfmt": "^0.1.2",
+-        "@rm-industries/content-model": "^1.1.10",
+-        "@sveltia/cms": ">=0.251.0 <1.0.0",
++        "@rm-industries/browser-oxfmt": "0.1.2",
++        "@rm-industries/content-model": "1.1.10",
++        "@sveltia/cms": "0.251.0",
+         "astro": "^7.4.0"
+       },
+       "devDependencies": {
+@@ -32,7 +32,7 @@
+         "daisyui": "^5.7.50",
+         "knip": "^6.41.0",
+         "markdownlint-cli2": "0.24.0",
+-        "oxfmt": ">=0.74.0 <1.0.0",
++        "oxfmt": "0.74.0",
+         "oxlint": "^1.88.0",
+         "stylelint": "^17.16.0",
+         "stylelint-config-standard": "^40.0.0",
