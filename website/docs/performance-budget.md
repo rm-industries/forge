@@ -2,7 +2,7 @@
 
 Lighthouse CI protects the Forge project website's public-page baseline. Run
 `npm run lighthouse:ci` after changes that can affect rendering, assets,
-metadata, or client behavior. The command builds the production site, collects
+metadata, or client behavior. Build first with `npm run build`. The command collects
 three reports per route from Astro's preview server, and evaluates the median
 result. The typed runner derives Astro's optional deployment base from
 `src/config/site.ts`, ensuring project-path assets and routes are measured at
@@ -11,7 +11,8 @@ their production-relative locations.
 ## Enforced routes
 
 - `/` represents the landing-page layout and card content.
-- `/features/` represents a denser reusable-component route and typography.
+- `/docs/getting-started/` represents the canonical tutorial and prose layout.
+- `/packages/` represents package cards and long package names.
 
 The remaining product and custom 404 pages reuse the same public layout with smaller or
 equivalent resource profiles and remain covered by browser and accessibility

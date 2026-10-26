@@ -7,12 +7,25 @@ import { resolvePreviewPath } from './preview';
 const publicRoutes = [
   { name: 'home', path: '/' },
   { name: 'get started', path: '/docs/getting-started/' },
-  { name: 'features', path: '/features/' },
   { name: 'packages', path: '/packages/' },
   { name: 'documentation', path: '/docs/' },
   { name: 'project', path: '/project/' },
-  { name: 'about', path: '/about/' },
   { name: 'not found', path: '/does-not-exist/' },
+  ...[
+    'configuration',
+    'content-and-cms',
+    'themes-and-accessibility',
+    'deployment',
+    'ci-providers',
+    'quality-and-troubleshooting',
+    'upgrades',
+    'support-policy',
+    'browser-formatter-adoption',
+    'create-forge',
+    'content-model',
+    'browser-oxfmt',
+    'markdownlint-frontmatter',
+  ].map((id) => ({ name: id, path: `/docs/${id}/` })),
 ] as const;
 
 const analyzePage = async (page: Page) => {

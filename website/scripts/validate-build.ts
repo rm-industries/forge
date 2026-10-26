@@ -6,9 +6,7 @@ import { documentation } from '../src/config/documentation.ts';
 
 const requiredOutputPaths = [
   '404.html',
-  'about/index.html',
   'docs/index.html',
-  'features/index.html',
   'docs/getting-started/index.html',
   'index.html',
   'packages/index.html',
@@ -46,14 +44,14 @@ export const validateBuild = async (outputDirectory: string) => {
   }
 
   const documentationPaths = documentation.map(({ id }) => `docs/${id}/index.html`);
+  const allowedHtml = new Set<string>([
+    ...requiredOutputPaths.filter((path) => path.endsWith('.html')),
+    ...documentationPaths,
+  ]);
   const unexpectedPaths = files.filter(
     (path) =>
-      (path.startsWith('docs/') &&
-        path.endsWith('/index.html') &&
-        path !== 'docs/index.html' &&
-        !documentationPaths.includes(path)) ||
-      path === 'get-started/index.html' ||
-      /^(?:admin|articles)(?:\/|$)|^(?:rss|feed|atom)\.xml$/u.test(path),
+      (path.endsWith('.html') && !allowedHtml.has(path)) ||
+      /^(?:admin|articles)(?:\/|$)|^(?:rss|feed|atom)\.(?:xml|json)$/u.test(path),
   );
   const missingDocuments = documentationPaths.filter((path) => !files.includes(path));
   if (unexpectedPaths.length || missingDocuments.length) {

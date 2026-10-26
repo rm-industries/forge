@@ -14,6 +14,11 @@ import ForgeBrand from '../ui/ForgeBrand.astro';
       <p>© {new Date().getFullYear()} {site.name}</p>
     </aside>
 
+    <nav aria-label="Project information">
+      <h2>Project</h2>
+      <a href={resolveSiteHref('/project/')} class="link link-hover">Project</a>
+    </nav>
+
     {
       site.socialLinks.length > 0 && (
         <nav aria-label="Social links">

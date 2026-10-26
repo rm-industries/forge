@@ -9,9 +9,7 @@ import { validateBuild } from './validate-build';
 
 const requiredPaths = [
   '404.html',
-  'about/index.html',
   'docs/index.html',
-  'features/index.html',
   'docs/getting-started/index.html',
   'index.html',
   'packages/index.html',
@@ -64,6 +62,17 @@ describe('generated build validation', () => {
       const output = join(fixture, path);
       await mkdir(dirname(output), { recursive: true });
       await writeFile(output, 'Unexpected application output');
+      await expect(validateBuild(fixture)).rejects.toThrow(path);
+    },
+  );
+
+  test.each(['about/index.html', 'features/index.html', 'unexpected/index.html', 'docs/readme/index.html'])(
+    'rejects unexpected public HTML: %s',
+    async (path) => {
+      const fixture = await createFixture();
+      const output = join(fixture, path);
+      await mkdir(dirname(output), { recursive: true });
+      await writeFile(output, '<h1>Unexpected publication</h1>');
       await expect(validateBuild(fixture)).rejects.toThrow(path);
     },
   );
