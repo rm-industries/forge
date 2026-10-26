@@ -60,7 +60,7 @@
     "@sveltia/cms": "^0.251.0",
     "@types/node": "^22.20.1",
     "@types/semver": "^7.8.0",
-    "astro": "^7.3.8",
+    "astro": "^7.4.0",
     "audit-ci": "7.1.0",
     "cspell": "^10.4.0",
     "markdownlint": "0.42.0",
