@@ -1,24 +1,4 @@
-# Getting started and site configuration
-
-This guide takes a newly generated Forge project from installation to a branded
-local site. Run every command from the project root.
-
-## Install and start the site
-
-Use a supported Node.js and npm version from the `engines` field in
-`package.json`, then install the committed dependency graph:
-
-```sh
-npm ci
-npm run dev
-```
-
-Astro prints the local address, normally `http://localhost:4321`. Stop the
-server with `Control+C`.
-
-Use `npm ci`, rather than `npm install`, when reproducing the committed project.
-Use `npm install <package>` only when deliberately changing dependencies and
-commit both `package.json` and `package-lock.json` afterward.
+# Configure and customize your site
 
 ## Change the site identity
 
@@ -46,7 +26,7 @@ export const site = defineSiteConfig({
 Use the complete production URL for `url`. A GitHub Pages project site includes
 its repository path, for example `https://example.github.io/example-site`.
 Root-hosted and custom-domain sites use only their origin. The
-[GitHub Pages guide](../github-pages.md) explains each form.
+[GitHub Pages guide](deployment.md) explains each form.
 
 Keep `repository` in `owner/repository` form. An empty value is valid while a
 repository does not exist, but configure it before using the deployed CMS.

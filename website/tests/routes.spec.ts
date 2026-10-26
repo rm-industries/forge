@@ -82,16 +82,45 @@ test('publishes only selected documentation and retires the competing tutorial',
     'href',
     resolvePreviewPath('/docs/getting-started/'),
   );
-  await expect(page.getByRole('link', { name: 'Compatibility and support policy', exact: true })).toHaveCount(0);
-  for (const route of ['/docs/support-policy/', '/get-started/']) {
+  await expect(page.getByRole('link', { name: 'Maintainer release guide', exact: true })).toHaveCount(0);
+  for (const route of ['/docs/releasing/', '/get-started/']) {
     const response = await request.get(resolvePreviewPath(route));
     expect(response.status()).toBe(404);
   }
   const sitemap = await request.get(resolvePreviewPath('/sitemap-0.xml'));
   const xml = await sitemap.text();
   expect(xml).toContain('/docs/getting-started/');
-  expect(xml).not.toContain('/docs/support-policy/');
+  expect(xml).not.toContain('/docs/releasing/');
   expect(xml).not.toContain('/forge/get-started/');
+});
+
+test('follows the complete generated-site guide journey in reading order', async ({ page }) => {
+  const journey = [
+    ['getting-started', 'Create a Forge site'],
+    ['configuration', 'Configure and customize your site'],
+    ['content-and-cms', 'Content and CMS editing'],
+    ['themes-and-accessibility', 'Themes and accessibility'],
+    ['deployment', 'Deploy your site'],
+    ['ci-providers', 'Generated CI'],
+    ['quality-and-troubleshooting', 'Quality checks and troubleshooting'],
+    ['upgrades', 'Maintain and upgrade your site'],
+    ['support-policy', 'Compatibility and support'],
+    ['browser-formatter-adoption', 'Existing-site browser formatter adoption'],
+  ];
+  await page.goto(resolvePreviewPath('/docs/getting-started/'));
+  for (let index = 0; index < journey.length; index += 1) {
+    const [id, title] = journey[index]!;
+    await expect(page).toHaveURL(resolvePreviewUrl(`/docs/${id}/`));
+    await expect(page.getByRole('heading', { level: 1, name: title, exact: true })).toBeVisible();
+    if (index > 0) {
+      await expect(
+        page.getByRole('link', { name: `Previous: ${journey[index - 1]![1]}`, exact: true }),
+      ).toHaveAttribute('href', resolvePreviewPath(`/docs/${journey[index - 1]![0]}/`));
+    }
+    if (index + 1 < journey.length) {
+      await page.getByRole('link', { name: `Next: ${journey[index + 1]![1]}`, exact: true }).click();
+    }
+  }
 });
 
 test('connects all four packages to their canonical references', async ({ page }) => {

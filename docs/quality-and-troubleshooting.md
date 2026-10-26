@@ -1,4 +1,4 @@
-# Quality checks, dependency updates, and troubleshooting
+# Quality checks and troubleshooting
 
 Forge provides fast focused commands and one complete release-blocking command.
 Run commands from the generated project root.
@@ -25,7 +25,7 @@ requesting review. The complete pipeline stops at the first failure.
 ### Installation fails
 
 Confirm the Node.js and npm versions satisfy `package.json`, then retry the
-committed graph:
+committed graph (use `npm install` for a fresh `--no-install` project without a lock):
 
 ```sh
 npm ci
@@ -61,16 +61,16 @@ Install the browser version required by the committed Playwright package when
 working on a new machine:
 
 ```sh
-npx playwright install chromium
+npx playwright install chromium firefox webkit
 ```
 
-Rerun `npm run test:e2e`. Screenshots and traces are written to
+Run `npm run build` first, then rerun `npm run test:e2e`. Screenshots and traces are written to
 `test-results/`; the HTML report is written to `playwright-report/`. Both are
 generated and ignored. CI retains them for failed runs.
 
 ### Lighthouse fails
 
-Run `npm run lighthouse:ci` and inspect `.lighthouseci/`. Confirm the test used
+Run `npm run build` followed by `npm run lighthouse:ci` and inspect `.lighthouseci/`. Confirm the test used
 the production build, then compare the failing route and resource type with
 `docs/performance-budget.md`. Optimize the change or document a deliberately
 reviewed budget revision; do not raise a threshold only to pass CI.
@@ -86,7 +86,7 @@ the validator when introducing a route that is part of the public contract.
 Open the `Project Continuous Integration` workflow first. Deployment depends
 directly on every applicable website source and artifact check. If they pass,
 inspect the `github-pages` environment, Pages source, branch restrictions, URL
-configuration, and deploy job. Follow the [GitHub Pages guide](../github-pages.md)
+configuration, and deploy job. Follow the [GitHub Pages guide](deployment.md)
 rather than bypassing a failed dependency.
 
 ## Review dependency updates
@@ -100,11 +100,13 @@ Dependabot proposes npm and GitHub Actions updates. Before merging one:
 5. run `npm run audit`, `npm run quality`, and any affected manual check; and
 6. review the project checks and all security findings before merging.
 
-CodeQL and dependency findings report through GitHub code scanning and
-Dependabot alerts rather than blocking ordinary pull requests. Actionlint and
-Zizmor block workflow changes with syntax or security defects. `npm run audit`
-remains an explicit release gate and must pass—or use a reviewed, justified,
-time-bounded exception—before publishing a release.
+Generated GitHub dependency review fails on introduced high or critical
+vulnerabilities. Consumers choose which individual checks to require in branch
+protection; the separate security workflow does not gate deployment. CodeQL
+findings and Dependabot alerts still need review. Actionlint and Zizmor report
+workflow syntax and security defects. Run the explicit registry-backed
+`npm run audit` policy separately from deterministic quality checks. A justified
+exception must be narrow, reviewed and time-bounded.
 
 Do not widen `@rm-industries/content-model` peer compatibility inside a
 generated project. Forge publishes tested content-model compatibility first,

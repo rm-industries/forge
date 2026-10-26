@@ -2,7 +2,7 @@
 
 Use published browser-oxfmt `0.1.2` with Oxfmt `0.74.0`, content-model
 `1.1.10` and Sveltia CMS `0.251.0`. The formatter's
-[verified release and remaining evidence](reviews/browser-formatter-release.md)
+[release prerequisites](../README.md#release-prerequisites)
 are recorded separately. Adoption is a reviewed source change to an owned site;
 package publication does not authorize deployment or regeneration.
 
@@ -60,9 +60,8 @@ collection configuration.
    formatter/worker failures and recovery. Confirm the failed save remains
    recoverable without losing content. Run the required desktop browser suite
    and record actual macOS Safari/iPhone Safari coverage, including
-   background/resume. The 0.1.2 publication waiver is limited to publication;
-   the current maintainer iPhone attestation and unspecified device details are
-   recorded in the readiness review.
+   background/resume. Record actual device, browser, timing and recovery evidence; a prior
+   package release does not establish compatibility for your site.
 8. Review the final content diff and publish only through the site's existing
    deployment process after maintainer approval. Package installation and local
    builds do not authorize production deployment.
@@ -78,9 +77,9 @@ npm run validate:build
 npm run test:e2e
 ```
 
-Use the site's actual scripts if it has evolved. The Forge project site uses
-`npm ci --prefix website` and its own scripts/lockfile; a successful root build
-is not project-site adoption evidence. Review the source patch and actual CMS integration results before adopting it.
+Use the site's actual scripts if it has evolved. Review the source patch and
+actual CMS integration results before adopting it. The Forge project website
+has no CMS application and cannot establish CMS adoption evidence.
 The template integration and generated-consumer checks are separate from the
 published package; no existing site is automatically updated by this release.
 
