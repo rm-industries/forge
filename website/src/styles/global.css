@@ -59,6 +59,8 @@ main {
 }
 
 .prose {
+  overflow-wrap: anywhere;
+
   --tw-prose-body: var(--color-base-content);
   --tw-prose-headings: var(--color-base-content);
   --tw-prose-lead: var(--color-base-content);
@@ -79,7 +81,12 @@ main {
   --tw-prose-td-borders: var(--color-base-300);
 }
 
+.prose table {
+  table-layout: fixed;
+}
+
 .prose a {
+  font-weight: 600;
   text-decoration: underline;
   text-decoration-thickness: 0.125rem;
   text-underline-offset: 0.1875rem;

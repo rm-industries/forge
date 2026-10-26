@@ -43,7 +43,7 @@ import { resolveSiteHref } from '../lib/paths';
           <Eyebrow>One command</Eyebrow>
           <h2 id="features-title" class="text-[clamp(2.25rem,5vw,4rem)] leading-none font-bold tracking-[-0.045em]">A complete content site, not an empty scaffold</h2>
         </div>
-        <p class="max-w-xl self-end text-lg leading-relaxed">Run <code>npm create @rm-industries/forge</code> with Node.js 22.22.2 or newer on a supported line.</p>
+        <p class="max-w-xl self-end text-lg leading-relaxed">The guide describes the intended create-forge 2.0 release. Check availability before choosing a version. Generated sites support Node.js 22.22.2 or newer on the supported 22, 24, and 26 lines.</p>
       </div>
 
       <div class="grid gap-6 md:grid-cols-3">
@@ -62,8 +62,12 @@ import { resolveSiteHref } from '../lib/paths';
         <Card size="lg">
           <div class="border-primary border-l-4 pl-3 font-mono text-sm font-bold">03 / Quality</div>
           <h3 class="card-title text-2xl">Production evidence</h3>
-          <p>Formatting, linting, types, coverage, browser accessibility, Lighthouse, security analysis, and Pages deployment are connected.</p>
+          <p>Formatting, linting, types, coverage, browser accessibility, and Lighthouse validate the site. Separate security checks support reviewed dependency and workflow updates.</p>
         </Card>
+      </div>
+      <div class="grid gap-6 md:grid-cols-2">
+        <Card size="lg"><h3 class="card-title text-2xl">Content ready to publish</h3><p>Generated sites include Markdown articles, Sveltia editing, RSS, canonical and social metadata, a sitemap, and base-aware routes. The Forge project website focuses on product documentation.</p></Card>
+        <Card size="lg"><h3 class="card-title text-2xl">Native automation you own</h3><p>Choose GitHub Actions, GitLab CI, or both, with GitHub Pages, GitLab Pages, or Cloudflare Pages deployment. Configure provider permissions, review security checks, and maintain the generated YAML as your source.</p></Card>
       </div>
 
     </section>
@@ -72,9 +76,9 @@ import { resolveSiteHref } from '../lib/paths';
       <div class="card-body items-start gap-5 p-8 sm:p-12">
         <div class="font-mono text-sm font-medium tracking-[0.12em] uppercase">Owned source</div>
         <h2 id="start-title" class="card-title max-w-3xl text-[clamp(2.25rem,5vw,4rem)] leading-none tracking-[-0.045em]">Forge creates the project. You control its future.</h2>
-        <p>The generator does not manage or overwrite an existing site. Update shared content-model behavior through npm and adopt template improvements as reviewed migrations.</p>
+        <p>The initializer, content-model library, browser formatter, and frontmatter lint rule have independent versions and responsibilities. The generator does not manage or overwrite an existing site. Update shared content-model behavior through npm and adopt template improvements as reviewed migrations.</p>
         <div class="card-actions">
-          <a href={resolveSiteHref('/features/')} class="btn btn-primary">Explore the features</a>
+          <a href={resolveSiteHref('/packages/')} class="btn btn-primary">Explore the packages</a>
           <a href={resolveSiteHref('/docs/')} class="btn btn-outline">Read the documentation</a>
         </div>
       </div>

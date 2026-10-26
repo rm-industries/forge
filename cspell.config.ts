@@ -60,6 +60,7 @@ export default defineConfig({
     'rahulmohandas',
     'SLSA',
     'subpaths',
+    'Shiki',
     'Sveltia',
     'unreviewed',
     'viewports',

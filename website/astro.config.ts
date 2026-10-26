@@ -16,6 +16,7 @@ export default defineConfig({
   base: isLocalDevelopment ? undefined : deployment.base,
   integrations: [sitemap()],
   markdown: {
+    shikiConfig: { theme: 'catppuccin-mocha' },
     processor: unified({
       rehypePlugins: [
         [

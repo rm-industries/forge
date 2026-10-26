@@ -3,7 +3,23 @@ import { expect, test } from '@playwright/test';
 import { site } from '../src/config/site';
 import { resolvePreviewPath, resolvePreviewUrl } from './preview';
 
-const routes = ['/', '/docs/getting-started/', '/features/', '/packages/', '/docs/', '/project/', '/about/', '/404/'];
+const documentIds = [
+  'getting-started',
+  'configuration',
+  'content-and-cms',
+  'themes-and-accessibility',
+  'deployment',
+  'ci-providers',
+  'quality-and-troubleshooting',
+  'upgrades',
+  'support-policy',
+  'browser-formatter-adoption',
+  'create-forge',
+  'content-model',
+  'browser-oxfmt',
+  'markdownlint-frontmatter',
+];
+const routes = ['/', '/packages/', '/docs/', '/project/', '/404/', ...documentIds.map((id) => `/docs/${id}/`)];
 
 test('serves every baseline page with configured canonical and social metadata', async ({ page }) => {
   for (const route of routes) {
@@ -83,15 +99,38 @@ test('publishes only selected documentation and retires the competing tutorial',
     resolvePreviewPath('/docs/getting-started/'),
   );
   await expect(page.getByRole('link', { name: 'Maintainer release guide', exact: true })).toHaveCount(0);
-  for (const route of ['/docs/releasing/', '/get-started/']) {
+  for (const route of [
+    '/get-started/',
+    '/about/',
+    '/features/',
+    '/docs/releasing/',
+    '/docs/reviews/1.0-release/',
+    '/docs/decisions/0001-repository-layout/',
+    '/docs/readme/',
+    '/admin/',
+    '/articles/',
+    '/rss.xml',
+  ]) {
     const response = await request.get(resolvePreviewPath(route));
     expect(response.status()).toBe(404);
+    expect(await response.text()).toContain('That page is not here.');
   }
   const sitemap = await request.get(resolvePreviewPath('/sitemap-0.xml'));
   const xml = await sitemap.text();
-  expect(xml).toContain('/docs/getting-started/');
-  expect(xml).not.toContain('/docs/releasing/');
-  expect(xml).not.toContain('/forge/get-started/');
+  const publishedUrls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/gu)].map((match) => match[1]);
+  expect(publishedUrls.toSorted()).toEqual(
+    ['/', '/docs/', '/packages/', '/project/', ...documentIds.map((id) => `/docs/${id}/`)]
+      .map((path) => new URL(path.slice(1), site.url).href)
+      .toSorted(),
+  );
+  const documentationLinks = await page
+    .locator('main a[href]')
+    .evaluateAll((links) =>
+      links
+        .map((link) => link.getAttribute('href'))
+        .filter((href) => href?.includes('/docs/') && !href.endsWith('/docs/')),
+    );
+  expect(documentationLinks).toEqual(documentIds.map((id) => resolvePreviewPath(`/docs/${id}/`)));
 });
 
 test('follows the complete generated-site guide journey in reading order', async ({ page }) => {
@@ -141,5 +180,47 @@ test('connects all four packages to their canonical references', async ({ page }
       `https://github.com/rm-industries/forge/blob/main/packages/${slug}/README.md`,
     );
     await page.goto(resolvePreviewPath('/packages/'));
+  }
+});
+
+test('keeps every documentation neighbor and source link usable', async ({ page, request }) => {
+  for (let index = 0; index < documentIds.length; index += 1) {
+    await page.goto(resolvePreviewPath(`/docs/${documentIds[index]}/`));
+    const navigation = page.getByRole('navigation', { name: 'Documentation navigation' });
+    await expect(navigation.locator('a[rel="prev"]')).toHaveCount(index === 0 ? 0 : 1);
+    await expect(navigation.locator('a[rel="next"]')).toHaveCount(index + 1 === documentIds.length ? 0 : 1);
+    if (index > 0)
+      await expect(navigation.locator('a[rel="prev"]')).toHaveAttribute(
+        'href',
+        resolvePreviewPath(`/docs/${documentIds[index - 1]}/`),
+      );
+    if (index + 1 < documentIds.length)
+      await expect(navigation.locator('a[rel="next"]')).toHaveAttribute(
+        'href',
+        resolvePreviewPath(`/docs/${documentIds[index + 1]}/`),
+      );
+    await expect(page.getByRole('link', { name: 'View source on GitHub' })).toHaveAttribute(
+      'href',
+      /^https:\/\/github\.com\/rm-industries\/forge\/blob\/main\//u,
+    );
+    expect((await request.get(resolvePreviewPath(`/docs/${documentIds[index]}/`))).ok()).toBe(true);
+  }
+});
+
+test('keeps product and documentation content readable at 320 pixels', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  for (const route of routes) {
+    await page.goto(resolvePreviewPath(route));
+    const overflow = await page.locator('main').evaluate((main) => {
+      const viewport = document.documentElement.clientWidth;
+      return [...main.querySelectorAll('h1,h2,h3,p,table,pre')]
+        .filter((element) => {
+          const bounds = element.getBoundingClientRect();
+          // Code and tables may scroll inside their own bounded containers.
+          return bounds.right > viewport + 1 || bounds.left < -1;
+        })
+        .map((element) => element.tagName + ': ' + element.textContent?.slice(0, 60));
+    });
+    expect(overflow, route).toEqual([]);
   }
 });
