@@ -5,6 +5,24 @@
 Status: **blocked for publication**. This is an unpublished candidate; no package,
 release tag, public dist-tag, consumer file or shared setting was changed.
 
+## Subsequent authoring-policy change
+
+On 2026-10-26 the maintainer requested removal of the template authoring lock and
+its npm Dependabot updates. The template-sync workflow and lock-only refresh path
+were removed as obsolete. The evidence below records the prior implementation;
+[template maintenance](../template-synchronization.md) describes the current policy.
+The delivered package already excluded that lock; generated consumers still own
+and replay their locks. Follow-up validation passes 55 tooling contracts, root
+verification types, workflow syntax, package inspection, fresh standalone quality
+(45 tests with canonical starter regressions) and unchanged consumer-lock replay.
+Repacking produces the identical local integrity and unpacked tar hash recorded
+below, preserving the hosted final-artifact evidence.
+
+The local `verify:template` command has a pre-existing stale URL-default assertion
+and fails before installation. Follow-up acceptance instead uses the public
+isolated preparation command followed by actual installation, lock/peer checks,
+clean replay and consumer quality. That separate verifier assertion is unchanged.
+
 ## Final candidate
 
 Source: `7bdf8869ecc51ec467a34b54be8ef8a01a5ebdb4`, including the final reviewed

@@ -83,6 +83,9 @@ jobs:
         run: npm ci
       - name: Prepare isolated starter with default regressions
         run: node scripts/test-template.ts prepare "$RUNNER_TEMP/forge-template"
+      - name: Resolve fresh template dependencies
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+        working-directory: ${{ runner.temp }}/forge-template
       - name: Archive canonical source
         run: tar -czf "$RUNNER_TEMP/template-source.tgz" -C "$RUNNER_TEMP/forge-template" .
         if: matrix.primary == true
@@ -97,7 +100,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           working-directory: ${{ runner.temp }}/forge-template
-          cache-dependency-path: templates/default/package-lock.json
+          cache-dependency-path: templates/default/package.json
       - name: Verify locked content-model
         run: node scripts/verify-consumer-lock.ts "$RUNNER_TEMP/forge-template"
       - name: Check template types
@@ -152,7 +155,7 @@ jobs:
         with:
           node-version: 26.x
           working-directory: ${{ runner.temp }}/forge-template
-          cache-dependency-path: templates/default/package-lock.json
+          cache-dependency-path: templates/default/package.json
       - name: Check template source quality
         run: npm run quality:static
         working-directory: ${{ runner.temp }}/forge-template
@@ -180,7 +183,7 @@ jobs:
         with:
           node-version: 26.x
           working-directory: ${{ runner.temp }}/forge-template
-          cache-dependency-path: templates/default/package-lock.json
+          cache-dependency-path: templates/default/package.json
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: template-build
@@ -214,7 +217,7 @@ jobs:
         with:
           node-version: 26.x
           working-directory: ${{ runner.temp }}/forge-template
-          cache-dependency-path: templates/default/package-lock.json
+          cache-dependency-path: templates/default/package.json
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: template-build
@@ -260,7 +263,7 @@ jobs:
         with:
           node-version: 26.x
           working-directory: ${{ runner.temp }}/forge-template
-          cache-dependency-path: templates/default/package-lock.json
+          cache-dependency-path: templates/default/package.json
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: template-build

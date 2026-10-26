@@ -291,20 +291,3 @@ jobs:
           path: .release/published.json
           if-no-files-found: error
           retention-days: 90
-
-      - name: Dispatch published dependency
-        if: needs.prepare.outputs.package-slug == 'content-model' || needs.prepare.outputs.package-slug == 'browser-oxfmt'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PACKAGE: ${{ needs.prepare.outputs.package-slug }}
-          RELEASE_TAG: ${{ needs.prepare.outputs.release-tag }}
-          VERSION: ${{ needs.prepare.outputs.version }}
-        run: |
-          jq -n \
-            --arg event_type "${PACKAGE}-published" \
-            --arg package "$PACKAGE" \
-            --arg release_tag "$RELEASE_TAG" \
-            --arg source_run_id "$GITHUB_RUN_ID" \
-            --arg version "$VERSION" \
-            '{event_type: $event_type, client_payload: {package: $package, release_tag: $release_tag, source_run_id: $source_run_id, version: $version}}' \
-            | gh api --method POST "repos/${GITHUB_REPOSITORY}/dispatches" --input -

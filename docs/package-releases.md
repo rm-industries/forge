@@ -73,13 +73,12 @@ tarball.
 5. Approve the `npm-release` environment deployment.
 6. Inspect the workflow summary, npm version and integrity, provenance, GitHub
    prerelease, and the `published-*` result artifact.
-7. For content-model and browser formatter releases, allow the existing template
-   synchronization to consume the verified result only after registry verification
-   succeeds. Compatible refreshes update authoring locks within unchanged ranges
-   and do not bump or publish create-forge. Source or range corrections require
-   separate review and release assessment.
+7. For content-model and browser formatter releases, compatible template ranges
+   resolve new publications during fresh installation and monitoring. No lock-only
+   synchronization PR or generator release is needed. Source or range corrections
+   require separate review and release assessment.
 
-The downstream workflow and recovery process are documented in
+Template dependency maintenance is documented in
 [`template-synchronization.md`](template-synchronization.md).
 
 Example:

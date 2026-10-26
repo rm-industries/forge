@@ -15,8 +15,9 @@ evidence, with its original limitations; it is not final 2.0 acceptance.
 
 Version template source, ranges and pins with the generator, while resolving new
 projects' dependencies freshly through npm. Omit the delivered template lock;
-retain repository and template authoring locks. Normal creation must install and
-validate a consumer lock before Git initialization or success. Ordinary no-install
+retain root and website locks. Following the 2026-10-26 maintainer decision, the
+template authoring lock and its refresh automation are removed. Normal creation
+must install and validate a consumer lock before Git initialization or success. Ordinary no-install
 output requires `npm install` before `npm ci`; Cloudflare retains its networked
 lockfile-only preflight. Consumer CI continues to replay its own committed lock.
 
@@ -27,8 +28,9 @@ A formatter package owns its exact engine/options/assets contract even when the
 consumer permits compatible package updates. Preserve ADR 0003 installation
 isolation and ADR 0004 path safety, collision checks and rollback.
 
-Compatible authoring refreshes inside unchanged ranges update reviewed locks
-without generator bumps, changelog release intent or automatic publication.
+Compatible resolutions inside unchanged ranges need no generator commit,
+changelog release intent or automatic publication. Dependabot npm updates for the
+lockless template are disabled; fresh-install CI and monitoring cover its graph.
 Source, range, pin, runtime and compatibility changes still require release review.
 Removing the ordinary no-install lock and raising Node 22 to 22.23.4 require 2.0.0.
 Independent unchanged library release contracts keep their existing engines.

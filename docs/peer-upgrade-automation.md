@@ -19,15 +19,12 @@ Friday preparation runs roughly three days before Monday's normal Dependabot
 updates. No routine dependency schedules or cooldown settings change.
 
 After a reviewed compatibility PR merges, the package release workflow publishes
-the content-model patch, verifies npm integrity and provenance, and triggers
-published template synchronization. That synchronization refreshes authoring
-locks within unchanged template ranges, validates the resulting PR HEAD and may
-automatically merge the lock-only PR. It does not change create-forge's version
-or changelog and cannot request its publication. Browser formatter publication
-uses the same verified refresh path with its exact engine peer. If Sveltia is
-already supported, the weekly workflow refreshes the currently published content
-model without creating an unnecessary model release. See
-[the refresh contract](template-synchronization.md).
+the content-model patch and verifies npm integrity and provenance. Compatible
+publications require no template lock refresh or generator release: template CI
+and the published-stable monitor resolve dependencies freshly. If Sveltia is
+already supported, the workflow makes no compatibility PR or package release.
+Browser formatter engine peers remain exact. See
+[template maintenance](template-synchronization.md).
 
 ## GitHub App setup
 

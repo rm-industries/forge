@@ -114,7 +114,9 @@ narrower editor baseline without narrowing the public site's baseline.
 
 ### Version ranges and lockfiles
 
-- Commit npm lockfiles for the root workspace and standalone default template.
+- Commit npm lockfiles for the root workspace and website. The standalone default
+  template has no committed lock; template CI resolves one freshly and shares it
+  across downstream jobs. Generated projects commit and replay their own locks.
 - Use normal semver ranges for stable direct dependencies when compatible
   updates are covered by tests. Lockfiles provide reproducible installations.
 - Treat pre-1.0 dependencies as potentially breaking at every minor release. Use
@@ -273,7 +275,7 @@ Every release checkpoint must record evidence for the following checklist:
 - [ ] The content-model matrix covers every declared Astro and Sveltia peer
       range.
 - [ ] A copied template installs, checks, builds, and tests outside the
-      workspace from its committed lockfile.
+      workspace from its manifest, recording and replaying the resolved lock.
 - [ ] Playwright runs the committed Chromium, Firefox, and WebKit versions, and
       any required Safari smoke test is recorded.
 - [ ] Documentation states the same runtime, operating-system, browser, and

@@ -39,8 +39,9 @@ and installed package isolation, and records the four model/CMS/formatter packag
 versions. It checks the full peer graph with `npm ls`, removes consumer dependencies,
 replays `npm ci`, and requires byte-identical lock output. It then runs the public
 `quality:core` and delivered Chromium CMS formatting suite, including save and
-recovery. It does not overlay authoring tests or local packages. Existing authoring
-and generated lock-based CI remain separate.
+recovery. It does not overlay authoring tests or local packages. Root and website
+checks retain committed locks. Template CI resolves a fresh lock and shares it
+across downstream jobs; generated-project CI replays its consumer-owned lock.
 
 Evidence includes runtime identity, generator identity, command output, selected
 versions, lock hash, the resolved consumer lock, and browser failure reports.

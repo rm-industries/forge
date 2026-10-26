@@ -263,3 +263,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/vim,node,astro,linux,macos,windows,visualstudiocode
+
+# Template authoring installs are disposable; generated projects own their locks.
+/templates/default/package-lock.json

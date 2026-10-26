@@ -71,10 +71,9 @@ Prerelease package versions publish under `next`; stable versions publish under
 `next`. Publishing stable `1.0.0` moves `latest` only when the stable tag workflow
 succeeds; it does not require manually changing npm dist-tags.
 
-For a content-model release, confirm the post-publication template synchronization
-uses the verified publication result and opens a tested template PR. Do not merge
-that PR until the newly published version and peer range pass generated-project
-checks.
+For a content-model release, confirm registry verification and generated-project
+compatibility evidence. Compatible template ranges resolve fresh publications
+without a synchronization PR. Range corrections still require review.
 
 ## Complete a checkpoint release
 
@@ -173,8 +172,8 @@ Local preparation does not replace the required protected workflow dry run.
 
 Consult the [2.0 readiness record](reviews/create-forge-2.0-readiness.md) and
 [monitoring handoff](fresh-consumer-monitoring.md). Keep source and range changes
-in reviewed generator releases; an authoring lock refresh inside unchanged ranges
-must not create generator release intent. The 2.0 runtime floor is Node 22.23.4
+in reviewed generator releases; fresh resolutions inside unchanged ranges
+need no generator commit or release. The 2.0 runtime floor is Node 22.23.4
 on Node 22; independent unchanged libraries retain their published engines.
 
 For a permitted upstream regression, reproduce the failing public behavior in an
