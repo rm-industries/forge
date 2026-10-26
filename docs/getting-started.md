@@ -71,4 +71,3 @@ Generated files are your application source. Do not regenerate over an existing
 project: update npm dependencies deliberately and migrate template improvements
 with review of your own changes. Each Forge package is independently versioned;
 a generator update does not rewrite an existing application.
-
