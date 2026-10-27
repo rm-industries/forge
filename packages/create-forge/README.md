@@ -94,7 +94,7 @@ resolution can still require network access as described below. Install with
 project's lockfile. Use `npm ci` to reproduce that graph afterward. Keep generated
 files as owned source; regeneration is not an upgrade strategy.
 
-The CLI and generated projects support Node `^22.22.2 || ^24.0.0 || ^26.0.0` and
+The CLI and generated projects support Node `^22.23.4 || ^24.0.0 || ^26.0.0` and
 npm `^10.9.0 || ^11.0.0`. The Forge website's Node 26-only tooling does not narrow
 these runtime contracts.
 
@@ -247,3 +247,20 @@ Generated sites include deployment setup in their `README.md` with their selecte
 branches, primary CI, workflow locations and provider setup requirements. The guide
 records bootstrap choices; it is consumer-owned documentation, not retained Forge
 configuration. Update it alongside the YAML when changing deployment behavior.
+
+## Fresh dependency delivery
+
+The generator bundles versioned template source without a template lockfile. Normal
+creation runs `npm install` and validates the resulting project lock before optional
+Git initialization. Ordinary `--no-install` creation leaves no lock: run `npm install`
+before using `npm ci`. Cloudflare retains its networked lockfile-only preflight.
+Installation failures preserve generated source; retry `npm install` in that directory.
+
+New dependencies resolve inside the bundled ranges and their published peers. npm
+may report a peer conflict instead of searching every older compatible package;
+inspect the reported package/peer versions rather than forcing an invalid graph.
+Commit the resulting lockfile and review later updates in your own project.
+A newer generator never migrates existing source or locks. Old generator versions
+retain their own ranges and pins, so a corrective release cannot remotely repair
+them; choose a reviewed newer generator for new sites or update an existing site's
+own dependencies deliberately.

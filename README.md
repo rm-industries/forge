@@ -18,9 +18,11 @@ and follow the reference matching the version you install.
 npm create @rm-industries/forge
 ```
 
-Generated projects support Node.js `^22.22.2 || ^24.0.0 || ^26.0.0` and npm
+The create-forge 2.0 generator, repository tooling and new generated projects
+support Node.js `^22.23.4 || ^24.0.0 || ^26.0.0` and npm
 `^10.9.0 || ^11.0.0`. Git is optional with `--no-git`. The standalone Forge
-website requires Node 26 for its tooling. See [compatibility and support](docs/support-policy.md)
+website requires Node 26 for its tooling. Unchanged independently released
+libraries retain their published Node 22.22.2 minimum; inspect each package's engines. See [compatibility and support](docs/support-policy.md)
 for platform, browser and peer requirements, and [quality and troubleshooting](docs/quality-and-troubleshooting.md)
 for installation or validation failures.
 
@@ -42,13 +44,22 @@ and the [browser formatter adoption guide](docs/browser-formatter-adoption.md).
 
 ## Architecture
 
-Root npm workspaces discover `packages/*`. `templates/default/` and `website/`
-are independent projects with committed locks; neither may depend on workspace
-hoisting or unpublished local packages. The template is copied into the CLI at
-build time. The website is owned source, not a second template or an installed
-generator dependency. Keep the existing npm orchestration, static template and
-typed CI builders; the discarded tooling and dependency-delivery experiments
-introduced no supported replacement.
+Root npm workspaces discover `packages/*`. The root and standalone website
+retain committed authoring locks. The independent `templates/default/` has no
+committed or delivered lock; neither standalone project may depend on workspace
+hoisting or unpublished local packages. From create-forge 2.0 the CLI bundles
+versioned template source and reviewed ranges. Creation resolves published
+packages freshly and validates the consumer-owned lock before optional Git
+initialization. Ordinary `--no-install` leaves no lock; Cloudflare keeps its
+networked lockfile-only preflight. Consumers commit and replay their own locks.
+
+A generator version identifies source and range policy, not an immutable
+dependency graph. Compatible resolutions within unchanged ranges need no
+source commit or generator release. Source, range, corrective pin and runtime
+changes require review and release assessment. Keep existing npm orchestration,
+static template and typed CI builders; the discarded tooling experiments
+introduce no supported replacement. The website is owned source,
+not a second template or an installed generator dependency.
 
 The generator validates inputs and destination boundaries before copying regular
 files. Preserve symlink protections, overwrite confirmation, backups, rollback,
@@ -94,7 +105,7 @@ its own boundary:
 ```sh
 npm ci
 npm ci --prefix website
-npm ci --prefix templates/default
+npm install --prefix templates/default
 npm run quality
 npm run verify:template
 npm run test:template:customization
@@ -108,7 +119,10 @@ tests, builds and package inspection. `test:contracts` checks root contracts;
 `test:integration` checks cross-package model integration; `test:root` retains
 both. Packed CLI fixtures validate actual installed output outside the workspace,
 including failure preservation and provider configuration. CI shares one inspected
-CLI through `FORGE_CLI_TARBALL` across runtime consumers; the primary Node 26
+CLI through `FORGE_CLI_TARBALL` across runtime consumers. Template CI resolves
+one fresh lock and shares it with downstream jobs for `npm ci` replay, without
+committing that disposable authoring lock. Generated-project CI replays its own
+consumer lock. The primary Node 26
 consumer also supplies its build to static/browser/budget jobs. Cloudflare fixtures
 verify the installed Wrangler command without contacting Cloudflare. Test each declared
 peer and supported runtime when changing compatibility. Install the committed
@@ -233,7 +247,10 @@ not actual Safari certification; functional iPhone attestation does not supply
 unrecorded timings, device identity or minimum-version guarantees.
 
 Frontmatter changes must preserve public-rule, isolated packed-consumer,
-CLI2 adoption and CMS ordering/preservation checks:
+CLI2 adoption and CMS ordering/preservation checks. The retained adoption verifier
+currently expects a disposable local template lock; follow the
+[fixture prerequisite](fixtures/frontmatter-adoption/README.md) before running it
+from a clean checkout. This does not restore a committed template lock:
 
 ```sh
 npm test --workspace @rm-industries/markdownlint-frontmatter
@@ -244,7 +261,8 @@ npm run test:frontmatter:cms
 
 Keep [`fixtures/frontmatter-adoption/`](fixtures/frontmatter-adoption/README.md)
 and its callers. Publication and normal starter activation are distinct:
-registry dependencies/configuration/locks require their own reviewed adoption.
+registry dependencies and configuration require their own reviewed adoption,
+with a fresh template resolution and a committed lock in each generated consumer.
 Do not add an unavailable registry version or local overlay to the normal starter.
 
 ### Recovery
@@ -258,6 +276,26 @@ recovery. Deprecation requires authorization, a safe replacement and verified
 registry message. Generated-source fixes need manual remediation instructions
 because newer generators do not modify existing sites.
 
+### Corrective fresh delivery and rollback
+
+A permitted upstream version can still regress public behavior. Reproduce the
+failure through an isolated installed CLI, review temporary pins to known-working
+published model/CMS or browser/Oxfmt versions, and state when those pins can be
+removed. Pack and test the corrective generator itself; a manually repaired
+consumer does not prove the delivered fix. Rerun peers, quality, CMS/formatter
+checks and required audits. Old generators and existing sites retain their own
+metadata and need deliberate owner action.
+
+The locked create-forge 1.3.0 artifact is a fallback for new-project delivery only
+after its actual packed artifact, security state and unchanged consumer lock
+replay are reviewed. Returning a future generator to bundled-lock delivery needs
+a reviewed source change, tested snapshot, semver assessment and protected
+publication/audit gates. Never move public tags/dist-tags or rewrite consumer
+files automatically. Recorded rehearsal artifacts are evidence, not publication
+exceptions. Retain final prepare-only artifact identity, current quality and
+security evidence before the first protected 2.0 publication; documentation and
+monitoring setup do not authorize it.
+
 ## Dependency automation and monitoring
 
 Maintainers review Dependabot alerts, CodeQL/Zizmor findings, failed scheduled
@@ -266,28 +304,31 @@ review. Keep action pins immutable, permissions least-privileged, secrets away
 from untrusted PR code, and network findings separate from deterministic quality.
 Report vulnerabilities privately through [SECURITY.md](SECURITY.md).
 
-Peer automation resolves exact registry versions, reinstalls the proposed lock
+Peer automation resolves exact registry versions, reinstalls the proposed root lock
 and tests core/adapters before extending conservative peer bounds. An
 incompatible peer update is rejected with a recorded reason, not a widened
 range to force installation. API/migration changes need the appropriate manual
-release. Successful verified content-model publication alone can trigger
-published-template synchronization, which verifies exact identity, integrity,
-provenance and compatible Sveltia selection before preparing a lock update and
-standalone/generated-consumer checks. Downstream handoff requires
-`publication.verified: true`; a preparation artifact is insufficient.
+release. Compatible content-model/CMS and browser-oxfmt/Oxfmt publications resolve
+inside the template's existing ranges during fresh installation and monitoring.
+The template-sync workflow, preparer and automatic lock-only PR path are removed;
+compatible publication needs no template commit or automatic generator release.
+Template npm Dependabot updates are disabled; root, website, Cargo and action
+updates remain active. Template source, range and corrective pin changes require
+review and a generator release assessment. Package-owned peer and exact embedded
+engine contracts remain enforced.
 
-Peer and template automation converge on one branch/PR per update. Validation
+Peer automation converges on one branch/PR per update. Validation
 must finish before creating the short-lived Contents/PR-scoped App token using
 `PEER_UPGRADE_APP_CLIENT_ID` and `PEER_UPGRADE_APP_PRIVATE_KEY`; never expose it
 to PR code or substitute a personal token. Retry registry, validation or API
 failures rather than bypassing checks or creating competing branches.
 
-Only reviewed merged same-repository App peer/template patches qualify for
-publication without a second approval: exact merge SHA, expected file set,
+Only reviewed merged same-repository App `automation/peer-*` content-model
+patches qualify for publication without a second approval: exact merge SHA, expected file set,
 consecutive stable patch, published predecessor and no unreviewed baseline
-implementation/template changes. These use main-only `npm-release-auto`;
-ordinary tags retain `npm-release` review. Mixed features, prereleases and
-browser/frontmatter releases stay manual. Preserve both trusted-publisher
+implementation changes. These use main-only `npm-release-auto`;
+ordinary tags retain `npm-release` review. Create-forge, mixed features,
+prereleases and browser/frontmatter releases stay manual. Preserve both trusted-publisher
 identities and their separate permissions.
 
 Browser Oxfmt Engine Updates coordinates npm Oxfmt, Rust revision, engine/options,
@@ -315,6 +356,59 @@ and Rust checks, plus `npm run test:browser --workspace @rm-industries/browser-o
 for isolated packed Chromium/Firefox/WebKit verification. Preserve locked Cargo
 resolution, source/toolchain/asset hashes and license notices. Reproducibility
 checks compare canonical-host builds; they do not claim cross-host byte identity.
+
+### Fresh consumer monitoring
+
+The **Fresh consumer** workflow uses the packed candidate for relevant pull
+requests. Daily and weekly stable runs resolve npm `latest` once, download that
+exact published artifact, and record package/version/source identity with
+SHA-512 integrity in `identity.json`. Every validation rechecks the artifact
+hash. A registry/manifest mismatch fails; a failing stable is never replaced
+with unpublished main. Stable monitoring activates only for a published stable
+version at least 2.0.0. Earlier stable versions report `inactive`, which is not
+freshness acceptance; a prerelease on `latest` fails selection.
+
+Rehearse the manual workflow with candidate/stable selection and daily/weekly
+coverage, or use new absolute output directories locally:
+
+```sh
+node scripts/fresh-consumer.ts select candidate /tmp/forge-selection /tmp/create-forge.tgz
+node scripts/fresh-consumer.ts select stable /tmp/forge-stable-selection
+node scripts/fresh-consumer.ts validate /tmp/forge-selection /tmp/forge-evidence
+node scripts/fresh-consumer.ts plan weekly
+```
+
+The candidate command requires an inspected packed CLI. Select either candidate
+or stable and validate its matching selection directory; these commands do not
+publish or change tags. Selection may be shared across runtime lanes, but each
+validation requires its own new output directory. Append `weekly` to validation
+for the complete browser/Lighthouse probe, or `quality` for a runtime-only probe.
+
+Validation installs the selected CLI outside the repository and invokes its
+public command with normal installation. It verifies registry-only isolation,
+model/CMS and browser/Oxfmt versions and peers with `npm ls`, removes installed
+dependencies, and requires byte-identical lock replay with `npm ci`. Consumer
+`quality:core` and the delivered Chromium CMS formatting/save/recovery tests
+follow without local package overlays or substituted authoring tests.
+
+Daily coverage uses Ubuntu Node 26/npm 11. Monday weekly coverage uses Ubuntu
+Node 22.23.4/npm 10.9.0, latest Node 22/npm 11, Node 24/npm 11, Node 26/npm 11,
+and macOS Node 26/npm 11. All lanes use the same selected artifact, record their
+own lock/runtime identity, replay their locks and run consumer quality; failures
+do not cancel remaining lanes. The primary Ubuntu Node 26 lane also runs all
+three delivered browsers and Lighthouse. Browser and budget failures fail the
+probe; `quality:core` is not an audit gate and monitoring never waives release audits.
+
+Keep generator/runtime identity, commands, resolved pair versions, lock/hash,
+browser failures and hidden Lighthouse reports. Hosted artifacts expire after
+seven days; collect required evidence before expiry and remove local scratch
+consumers after investigation. Rahul owns failure triage. Native GitHub failure
+channel delivery was verified for PR 419 on 2026-10-25, not a scheduled
+fresh-consumer failure. After the separately authorized first 2.0 publication,
+observe the first active daily and weekly stable runs, verify their registry
+identity, and confirm delivery of the first relevant failure. Record this
+schedule-specific observation in release evidence; local tests cannot prove
+notification receipt. No notification bot or settings change is implied.
 
 ## Contributing and support
 

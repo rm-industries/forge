@@ -5,10 +5,13 @@ Forge supports declared and tested combinations. Check each installed package's
 
 ## Node.js and npm
 
-The generator and generated sites support Node.js `^22.22.2 || ^24.0.0 || ^26.0.0`
+The create-forge 2.0 generator, repository tooling and newly generated sites support Node.js `^22.23.4 || ^24.0.0 || ^26.0.0`
 and npm `^10.9.0 || ^11.0.0`. Use a patched supported release. Other package
 managers, older Node versions and experimental builds are unsupported.
-The Forge project website separately requires Node 26 for build tooling; this
+Independently released content-model, browser-oxfmt and frontmatter lint packages
+retain their published `^22.22.2 || ^24.0.0 || ^26.0.0` contracts; inspect each
+installed package's engines before upgrading. The Forge project website
+separately requires Node 26 for build tooling; this
 does not change generated sites or visitor browser requirements.
 
 ## Platforms and browsers
@@ -31,7 +34,10 @@ CMS saves, including Safari and mobile background/resume behavior; see the
 
 ## Dependencies and versions
 
-Keep generated-site manifests and locks together. Content-model declares tested
+The template has no committed or delivered lock. New projects resolve reviewed
+ranges with `npm install`, then own and commit the resulting lock for `npm ci`
+replay. Root and website authoring locks remain committed. Keep generated-site
+manifests and locks together. Content-model declares tested
 Astro and Sveltia peers; pre-1.0 Sveltia minor updates can break compatibility.
 Do not widen a peer range merely to install an update. Native action pins use
 full immutable SHAs with readable version comments.

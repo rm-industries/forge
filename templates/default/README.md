@@ -3,7 +3,11 @@
 This directory is a standalone Astro project and is intentionally excluded from
 the parent npm workspace. Install and run all commands from this directory.
 
-Install dependencies with `npm ci`, then use the local scripts below. Every
+Use Node 22.23.4 or newer on Node 22, or Node 24/26, with npm 10.9 or 11.
+
+Normal creation installs dependencies and creates your project lockfile. If you used
+`--no-install`, run `npm install` first to create it; use `npm ci` for later installs.
+Then use the local scripts below. Every
 command resolves tools from this project's dependencies; no global installation
 is required.
 

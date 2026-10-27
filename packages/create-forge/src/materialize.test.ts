@@ -54,10 +54,6 @@ const createTemplate = async (fixture: string) => {
     `${JSON.stringify({ name: templateTokens.packageName, version: '9.9.9', private: false }, undefined, 2)}\n`,
   );
   await writeFile(
-    join(template, 'package-lock.json'),
-    `${JSON.stringify({ name: templateTokens.packageName, version: '9.9.9', packages: { '': { name: templateTokens.packageName, version: '9.9.9' } } }, undefined, 2)}\n`,
-  );
-  await writeFile(
     join(template, 'src', 'config', 'site.ts'),
     `export const site = {\n  name: '${templateTokens.siteName}',\n  description: '${templateTokens.description}',\n  author: '${templateTokens.author}',\n  url: '${templateTokens.url}',\n  repository: '${templateTokens.repository}',\n};\n`,
   );
@@ -422,6 +418,7 @@ test('resolves Cloudflare in the site lockfile without copying a tools package',
       arguments: [
         'install',
         '--package-lock-only',
+        '--package-lock=true',
         '--ignore-scripts',
         '--no-audit',
         '--no-fund',
@@ -470,4 +467,152 @@ test('rolls back existing files when Cloudflare dependency resolution fails', as
   ).rejects.toThrow('Cloudflare dependency resolution failed');
   expect(await readFile(join(destination, 'package.json'), 'utf8')).toBe('existing package');
   await expect(access(join(destination, 'package-lock.json'))).rejects.toHaveProperty('code', 'ENOENT');
+});
+
+test('bundled source template materializes without a shipped lock and validates identity', async () => {
+  const { fixture, template } = await createFixture();
+  await rm(join(template, 'package-lock.json'), { force: true });
+  const result = await materializeProject(options, { templateDirectory: template, generateCi, cwd: fixture });
+  const manifest = JSON.parse(await readFile(join(result.projectRoot, 'package.json'), 'utf8'));
+  expect(manifest).toMatchObject({ name: options.packageName, version: '0.0.0', private: true });
+  await expect(access(join(result.projectRoot, 'package-lock.json'))).rejects.toMatchObject({ code: 'ENOENT' });
+});
+
+test.each([false, true])('restores Cloudflare lock after later failure (existing=%s)', async (existing) => {
+  const { fixture, template } = await createFixture();
+  await mkdir(join(fixture, 'cloudflare'));
+  await writeFile(
+    join(fixture, 'cloudflare/package.json'),
+    JSON.stringify({ devDependencies: { wrangler: '^4.150.0' } }),
+  );
+  const destination = join(fixture, options.destination);
+  const lock = join(destination, 'package-lock.json');
+  if (existing) {
+    await mkdir(destination);
+    await writeFile(lock, 'original lock');
+  }
+  await expect(
+    materializeProject(
+      {
+        ...options,
+        deployments: [
+          {
+            name: 'production',
+            sourceBranch: 'main',
+            target: 'cloudflare-pages',
+            project: 'example',
+            url: 'https://example.com',
+          },
+        ],
+      },
+      {
+        cwd: fixture,
+        templateDirectory: template,
+        confirmOverwrite: async () => true,
+        execute: async () => {
+          await writeFile(lock, 'resolved lock');
+        },
+        generateCi: async () => {
+          throw new Error('renderer failed');
+        },
+      },
+    ),
+  ).rejects.toThrow(rendererRollbackMessagePattern);
+  const recovered = await readFile(lock, 'utf8').catch((error) => error.code);
+  expect(recovered).toBe(existing ? 'original lock' : 'ENOENT');
+});
+
+test.each(['symlink', 'directory'])(
+  'rejects unsafe Cloudflare lock destination (%s) before resolution',
+  async (kind) => {
+    const { fixture, template } = await createFixture();
+    await mkdir(join(fixture, 'cloudflare'));
+    await writeFile(
+      join(fixture, 'cloudflare/package.json'),
+      JSON.stringify({ devDependencies: { wrangler: '^4.150.0' } }),
+    );
+    const destination = join(fixture, options.destination);
+    await mkdir(destination);
+    const sentinel = join(fixture, 'sentinel');
+    await writeFile(sentinel, 'preserve');
+    const lock = join(destination, 'package-lock.json');
+    if (kind === 'symlink') await symlink(sentinel, lock);
+    else await mkdir(lock);
+    let resolved = false;
+    await expect(
+      materializeProject(
+        {
+          ...options,
+          deployments: [
+            {
+              name: 'production',
+              sourceBranch: 'main',
+              target: 'cloudflare-pages',
+              project: 'example',
+              url: 'https://example.com',
+            },
+          ],
+        },
+        {
+          cwd: fixture,
+          templateDirectory: template,
+          confirmOverwrite: async () => true,
+          generateCi,
+          execute: async () => {
+            resolved = true;
+          },
+        },
+      ),
+    ).rejects.toThrow(unsafeDestinationMessagePattern);
+    expect(resolved).toBe(false);
+    expect(await readFile(sentinel, 'utf8')).toBe('preserve');
+    await expect(access(lock)).resolves.toBeUndefined();
+  },
+);
+
+test.each([
+  ['symlink', false],
+  ['directory', false],
+  ['symlink', true],
+  ['directory', true],
+] as const)('rejects unsafe ordinary lock destination (%s, install=%s) before resolution', async (kind, install) => {
+  const { fixture, template } = await createFixture();
+  const destination = join(fixture, options.destination);
+  await mkdir(destination);
+  const sentinel = join(fixture, 'sentinel');
+  await writeFile(sentinel, 'preserve');
+  const lock = join(destination, 'package-lock.json');
+  if (kind === 'symlink') await symlink(sentinel, lock);
+  else await mkdir(lock);
+  let resolved = false;
+  await expect(
+    materializeProject(
+      { ...options, install },
+      {
+        cwd: fixture,
+        templateDirectory: template,
+        confirmOverwrite: async () => true,
+        generateCi,
+        execute: async () => {
+          resolved = true;
+        },
+      },
+    ),
+  ).rejects.toThrow(unsafeDestinationMessagePattern);
+  expect(resolved).toBe(false);
+  expect(await readFile(sentinel, 'utf8')).toBe('preserve');
+  await expect(access(lock)).resolves.toBeUndefined();
+});
+
+test.each([false, true])('preserves an ordinary existing regular lock (install=%s)', async (install) => {
+  const { fixture, template } = await createFixture();
+  const destination = join(fixture, options.destination);
+  await mkdir(destination);
+  const lock = join(destination, 'package-lock.json');
+  await writeFile(lock, 'existing lock');
+  await materializeProject(
+    { ...options, install },
+    { cwd: fixture, templateDirectory: template, confirmOverwrite: async () => true, generateCi },
+  );
+  expect(await readFile(lock, 'utf8')).toBe('existing lock');
 });

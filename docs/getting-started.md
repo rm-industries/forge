@@ -11,7 +11,7 @@ and its matching package reference rather than assuming the new contract exists.
 
 ## Prepare your tools
 
-Use Node.js 22.22.2 or newer on the supported 22, 24, or 26 lines, and npm
+Use Node.js 22.23.4 or newer on the supported 22, 24, or 26 lines, and npm
 10.9 or 11. These are generated-site requirements. Building the Forge project
 website itself requires Node 26; visitors need only a supported browser.
 
@@ -27,14 +27,18 @@ npm run dev
 
 The initializer asks for project and site identity, the production URL and
 repository details. It installs dependencies with `npm install` and initializes
-Git unless you disable those steps. Keep the resulting consumer-owned
-`package-lock.json` with the generated source. The published generator can include a reviewed bootstrap lock; your
-installation and later dependency changes remain your project's responsibility.
+Git unless you disable those steps. The 2.0 generator delivers template source
+and dependency ranges without a lockfile. Installation resolves published packages
+inside those ranges and their peers, then validates the new consumer-owned lock
+before Git initialization. Commit the resulting `package-lock.json` with your
+source; later dependency updates remain your project's responsibility.
 
 Astro prints the development address, normally `http://localhost:4321`. Stop it
 with `Control+C`.
 
-If you choose `--no-install`, run `npm install` before starting development.
+Ordinary `--no-install` creation leaves no lockfile. Run `npm install` before
+starting development, or retry it in the generated directory after an installation
+failure; generated source is preserved.
 Use `npm ci` for later clean installs once your project has a committed lock.
 Cloudflare Pages selection resolves Wrangler lock metadata even with
 `--no-install` and therefore needs registry access. See the

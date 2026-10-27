@@ -24,12 +24,17 @@ requesting review. The complete pipeline stops at the first failure.
 
 ### Installation fails
 
-Confirm the Node.js and npm versions satisfy `package.json`, then retry the
-committed graph (use `npm install` for a fresh `--no-install` project without a lock):
+Confirm the Node.js and npm versions satisfy `package.json`. For a new 2.0
+project or an interrupted first installation without a lock, retry `npm install`
+in the preserved generated directory. Once a reviewed lock is committed, replay it:
 
 ```sh
 npm ci
 ```
+
+Fresh resolution can report a peer conflict instead of trying every older
+compatible package. Inspect the reported model/CMS and browser/Oxfmt versions;
+do not use force or legacy-peer options to install an invalid graph.
 
 Do not delete or regenerate `package-lock.json` merely to bypass an error. If a
 dependency intentionally changes, use npm to update the manifest and lockfile
@@ -110,8 +115,10 @@ exception must be narrow, reviewed and time-bounded.
 
 Do not widen `@rm-industries/content-model` peer compatibility inside a
 generated project. Forge publishes tested content-model compatibility first,
-then template dependency automation can adopt it. Existing generated projects
-remain owner-maintained source and do not receive template files automatically.
+then fresh installations can resolve it within the template's reviewed ranges.
+Source, range or corrective pin changes require separate review and release
+assessment. Existing generated projects remain owner-maintained source and do not
+receive template files automatically.
 
 High-severity audit exceptions are documented narrowly in `audit-ci.jsonc` and
 `docs/performance-budget.md`. Review their expiry and exposure; do not copy an

@@ -2,6 +2,21 @@
 
 All notable changes to `@rm-industries/create-forge` are documented here.
 
+## 2.0.0
+
+- Bundle versioned template source with bounded model/CMS and browser/CLI formatter
+  ranges, resolving fresh dependencies through npm during normal creation. Successful
+  creation includes the consumer's own validated lockfile; later CI uses `npm ci`.
+- Breaking: ordinary `--no-install` output no longer contains a lockfile. Run
+  `npm install` before `npm ci`. Cloudflare still performs networked lockfile-only
+  preflight even with `--no-install`; installation still precedes Git initialization.
+- Breaking: require Node 22.23.4 or newer on Node 22, or supported Node 24/26,
+  with npm 10.9 or 11. Update Node before using this generator.
+- Compatible authoring refreshes within unchanged ranges do not release the generator.
+  Candidate checks and published-stable daily/weekly monitoring cover fresh installs.
+- Existing projects are not migrated or overwritten. Owners retain their source and
+  lockfiles; a corrective generator cannot remotely repair old generators or sites.
+
 ## 1.3.0
 
 - Format CMS saves after Sveltia's native serialization using published browser-oxfmt

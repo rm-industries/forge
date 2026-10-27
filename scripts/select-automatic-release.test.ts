@@ -23,7 +23,6 @@ const input = {
     'content-model': { previous: '1.1.5', current: '1.1.6' },
     'create-forge': { previous: '1.0.3', current: '1.0.3' },
   },
-  templateVersions: ['1.1.5', '0.228.0'],
 };
 
 test('selects only a stable patch from the configured App compatibility PR', () => {
@@ -52,7 +51,7 @@ test('rejects unmerged, foreign, untrusted or source-changing PRs', () => {
   ).toBeUndefined();
   expect(() => selectAutomaticRelease({ ...input, sha: 'main' })).toThrow('full SHA');
 });
-test('selects a checked template synchronization patch independently', () => {
+test('does not publish a generator from the obsolete synchronization release intent', () => {
   expect(
     selectAutomaticRelease({
       ...input,
@@ -69,7 +68,7 @@ test('selects a checked template synchronization patch independently', () => {
       ],
       versions: { ...input.versions, 'create-forge': { previous: '1.0.3', current: '1.0.4' } },
     }),
-  ).toBe('create-forge');
+  ).toBeUndefined();
 });
 test('keeps prerelease template dependencies out of automatic generator publication', () => {
   expect(
@@ -85,7 +84,6 @@ test('keeps prerelease template dependencies out of automatic generator publicat
         'templates/default/package.json',
       ],
       versions: { ...input.versions, 'create-forge': { previous: '1.0.3', current: '1.0.4' } },
-      templateVersions: ['1.1.6-rc.1', '0.229.0'],
     }),
   ).toBeUndefined();
 });

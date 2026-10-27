@@ -37,7 +37,7 @@ export const formatCompletion = (options: GeneratorOptions, context: CompletionC
   const destination = displayDestination(context.destination, cwd);
   const commands = [
     ...(destination === '.' ? [] : [`cd ${commandPath(destination)}`]),
-    ...(options.install ? [] : ['npm install']),
+    ...(options.install ? [] : ['npm install # creates your lockfile; use npm ci for later installs']),
     'npm run dev',
   ];
 

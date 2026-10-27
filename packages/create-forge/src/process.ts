@@ -1,4 +1,7 @@
+import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 import type { GeneratorOptions } from './options';
 
@@ -41,8 +44,8 @@ export const executeCommand: CommandExecutor = ({ executable, arguments: args, c
       reject(
         new ProcessStepError(
           interrupted
-            ? `${executable} was interrupted. The generated project remains at ${cwd}.`
-            : `Could not start ${executable}: ${error.message}. The generated project remains at ${cwd}.`,
+            ? `${executable} was interrupted. The generated project remains at ${cwd}; retry ${executable} ${args[0] ?? ''} there.`
+            : `Could not start ${executable}: ${error.message}. The generated project remains at ${cwd}; retry the command there.`,
           interrupted ? 130 : 1,
           { cause: error },
         ),
@@ -82,7 +85,49 @@ export const runProjectSetup = async (options: GeneratorOptions, context: Projec
       ...(context.environment ? { environment: context.environment } : {}),
     });
 
-  if (options.install) await command('npm', ['install']);
+  if (options.install) {
+    await command('npm', [
+      'install',
+      '--package-lock=true',
+      '--package-lock-only=false',
+      '--dry-run=false',
+      '--workspaces=false',
+      '--strict-peer-deps',
+      '--legacy-peer-deps=false',
+      '--force=false',
+    ]);
+    try {
+      const manifest = JSON.parse(await readFile(join(context.projectRoot, 'package.json'), 'utf8'));
+      const lock = JSON.parse(await readFile(join(context.projectRoot, 'package-lock.json'), 'utf8'));
+      assert.ok(lock.lockfileVersion >= 2);
+      assert.equal(lock.name, manifest.name);
+      assert.equal(lock.packages?.['']?.version, manifest.version);
+      assert.equal(lock.packages?.['']?.name, manifest.name);
+      for (const section of ['dependencies', 'devDependencies', 'optionalDependencies']) {
+        assert.deepEqual(lock.packages[''][section], manifest[section]);
+        for (const name of Object.keys(manifest[section] ?? {})) {
+          const entry = lock.packages[`node_modules/${name}`];
+          assert.ok(
+            entry?.version && /^https?:\/\//.test(entry.resolved) && !entry.link,
+            `Expected registry package ${name}`,
+          );
+        }
+      }
+      for (const [name, entry] of Object.entries(lock.packages) as [string, { link?: boolean; resolved?: string }][]) {
+        if (name)
+          assert.ok(
+            !entry.link && (!entry.resolved || /^https?:\/\//.test(entry.resolved)),
+            `Unexpected local package ${name}`,
+          );
+      }
+    } catch (cause) {
+      throw new ProcessStepError(
+        `Installation did not produce a valid project lockfile. The generated project remains at ${context.projectRoot}; review npm configuration and retry npm install there.`,
+        1,
+        { cause },
+      );
+    }
+  }
   if (options.git) {
     await execute({
       executable: 'git',

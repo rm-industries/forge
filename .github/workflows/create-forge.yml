@@ -69,7 +69,8 @@ jobs:
           npm pack --ignore-scripts --workspace @rm-industries/create-forge --pack-destination "$RUNNER_TEMP/forge-packages"
           mv "$RUNNER_TEMP/forge-packages/"*.tgz "$RUNNER_TEMP/forge-packages/create-forge.tgz"
           tar -tzf "$RUNNER_TEMP/forge-packages/create-forge.tgz" > "$RUNNER_TEMP/forge-package-files"
-          for entry in package/dist/index.mjs package/dist/template/.editorconfig package/dist/template/package-lock.json; do grep -Fx "$entry" "$RUNNER_TEMP/forge-package-files"; done
+          for entry in package/dist/index.mjs package/dist/template/.editorconfig package/dist/template/package.json; do grep -Fx "$entry" "$RUNNER_TEMP/forge-package-files"; done
+          if grep -Fx package/dist/template/package-lock.json "$RUNNER_TEMP/forge-package-files"; then echo "Template lock must not be shipped" >&2; exit 1; fi
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: generator-package
@@ -89,7 +90,7 @@ jobs:
         include:
           - runtime: minimum Node 22 on Ubuntu
             os: ubuntu-latest
-            node: 22.22.2
+            node: 22.23.4
             major: '22'
           - runtime: latest Node 22 on Ubuntu
             os: ubuntu-latest

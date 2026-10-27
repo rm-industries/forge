@@ -46,7 +46,7 @@ an independent project before requesting review:
 
 ```sh
 cd templates/default
-npm ci
+npm install
 npm run lint:css
 npm test
 npm run typecheck
@@ -71,7 +71,9 @@ model integration, and `npm run test:root` for both. Template customization uses
 same ownership through change rules; the old impact selector is removed.
 
 Workflow syntax/security and source security keep their existing responsibilities.
-Checks use committed lockfiles and require no globally installed project tools.
+Repository and package checks use committed lockfiles. Template checks resolve a
+fresh graph and replay that generated lock across downstream jobs. No globally
+installed project tools are required.
 Consumer YAML belongs to the generated project after bootstrap. Scope, coverage,
 evidence limits and safe rollback are documented in
 [repository development and CI](README.md#development-and-ci).

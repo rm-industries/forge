@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -11,6 +11,7 @@ it('prepares an isolated canonical starter through its public command, including
   try {
     execFileSync(process.execPath, ['scripts/test-template.ts', 'prepare', destination], { stdio: 'pipe' });
     expect(await readFile(join(destination, '.gitignore'), 'utf8')).toContain('node_modules');
+    await expect(access(join(destination, 'package-lock.json'))).rejects.toMatchObject({ code: 'ENOENT' });
     expect(() =>
       execFileSync(process.execPath, ['scripts/test-template.ts', 'prepare', destination], { stdio: 'pipe' }),
     ).toThrow('Template destination already exists');

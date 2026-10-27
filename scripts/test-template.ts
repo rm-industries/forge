@@ -10,6 +10,7 @@ const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const fixtureRoot = join(repositoryRoot, 'packages/create-forge/fixtures');
 const excluded = new Set([
   'node_modules',
+  'package-lock.json',
   'dist',
   '.astro',
   'coverage',
@@ -82,7 +83,7 @@ const testCustomization = async () => {
       join(defaultDirectory, 'src/content/articles/designing-a-calm-starting-point.md'),
       join(defaultDirectory, 'src/content/articles/our-first-story.md'),
     );
-    await run(defaultDirectory, ['ci']);
+    await run(defaultDirectory, ['install']);
     for (const command of ['test', 'build', 'validate:build']) await run(defaultDirectory, ['run', command]);
     await run(defaultDirectory, ['exec', '--', 'playwright', 'install', '--with-deps', 'chromium']);
     await run(defaultDirectory, ['run', 'test:e2e', '--', '--project=chromium', '--workers=2']);
