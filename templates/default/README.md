@@ -429,3 +429,19 @@ coverage, create a pipeline schedule for your default branch in GitLab; schedule
 and manually started pipelines run every check and browser. Neither provider
 publishes from scheduled/manual validation. Existing push-only primary-provider
 deployment and post-deployment smoke tests remain the publishing path.
+
+## Isolated browser previews
+
+Build the site before running browser checks. Playwright asks Astro for the
+production deployment settings and owns a foreground preview server at
+`http://127.0.0.1:4321`, including the configured mount path. It does not reuse,
+stop, or replace a developer preview session. Choose another free local port
+when needed:
+
+```sh
+PLAYWRIGHT_PORT=5432 npm run test:e2e
+```
+
+The port must be an integer from 1 through 65535. Remote deployment smoke checks
+continue to use `DEPLOYMENT_URL` with HTTPS; they neither start a local preview
+nor rebuild the deployed artifact.

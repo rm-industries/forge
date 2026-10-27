@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-import { resolvePreviewPath } from './preview';
+import { resolvePreviewPath } from './support/site';
 
 const publicRoutes = [
   { name: 'home', path: '/' },

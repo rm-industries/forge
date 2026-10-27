@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { resolvePreviewPath, resolvePreviewUrl } from './preview';
+import { resolvePreviewPath, resolvePreviewUrl } from './support/site';
 
 const primaryRoutes = [
   { path: '/', current: 'Home' },
