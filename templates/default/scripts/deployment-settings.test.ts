@@ -31,7 +31,7 @@ describe('Astro public deployment settings', () => {
 
   it('resolves the selected public override with its normalized mount', () => {
     const result = resolve('https://deployment.example/articles');
-    expect(result.status, result.stderr).toBe(0);
+    expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout.trim().split('\n').at(-1) ?? 'null')).toEqual({
       site: 'https://deployment.example/articles/',
       base: '/articles/',

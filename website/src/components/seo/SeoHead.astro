@@ -11,13 +11,16 @@ interface Props {
 const { title, description = site.description, canonicalPath } = Astro.props;
 if (!Astro.site) throw new Error('Canonical metadata requires Astro site to identify the public deployment.');
 
-const canonicalUrl = canonicalPath === undefined && !import.meta.env.DEV
-  ? new URL(Astro.url.pathname, Astro.site).href
-  : (() => {
-      // Local routes start at / while their public identity remains under /forge/.
-      const path = `/${canonicalPath ?? Astro.url.pathname}`.replace(/\/{2,}/g, '/');
-      return new URL(path === '/' ? '' : `${path.replace(/\/$/, '').slice(1)}/`, Astro.site).href;
-    })();
+// Local routes start at / while their public identity remains under /forge/.
+const canonicalUrl = new URL(
+  canonicalPath === undefined && !import.meta.env.DEV
+    ? Astro.url.pathname
+    : `./${(canonicalPath ?? Astro.url.pathname).replace(/^\/+/, '')}`,
+  Astro.site,
+);
+if (canonicalPath !== undefined || import.meta.env.DEV) {
+  canonicalUrl.pathname = `${canonicalUrl.pathname.replace(/\/{2,}/g, '/').replace(/\/$/, '')}/`;
+}
 const pageTitle = title ? `${title} | ${site.name}` : site.name;
 const socialImageUrl = new URL(
   typeof site.socialImage === 'string' ? site.socialImage.replace(/^\/(?!\/)/, '') : site.socialImage.src,
