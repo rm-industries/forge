@@ -76,7 +76,7 @@ fresh graph and replay that generated lock across downstream jobs. No globally
 installed project tools are required.
 Consumer YAML belongs to the generated project after bootstrap. Scope, coverage,
 evidence limits and safe rollback are documented in
-[Continuous integration](docs/continuous-integration.md).
+[repository development and CI](README.md#development-and-ci).
 
 Actions are pinned to immutable commits, workflow permissions are denied by
 default, and superseded runs are cancelled. Keep these properties intact when
@@ -98,5 +98,5 @@ By contributing, you agree that your contributions are licensed under the
 
 Frontmatter ordering belongs to the [independent lint
 package](packages/markdownlint-frontmatter/README.md). Test its public rule and packed consumer,
-then the [CLI2 adoption and CMS gates](docs/frontmatter-release-readiness.md). Keep Oxfmt formatting
+then the [CLI2 adoption and CMS gates](README.md#release-prerequisites). Keep Oxfmt formatting
 and Astro schema validation separate. Do not add unpublished dependencies to the standalone starter.

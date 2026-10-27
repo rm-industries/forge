@@ -55,12 +55,6 @@ its line validation is limited to body lines and adds the frontmatter offset.
 Do not use this rule with that version or disable frontmatter parsing globally to
 work around it; upgrade Markdownlint instead.
 
-Run `npm test --workspace @rm-industries/markdownlint-frontmatter` for public API
-coverage, and `npm run test:packed --workspace @rm-industries/markdownlint-frontmatter`
-for an isolated consumer test of the built npm artifact. Both run without a
-content-model checkout. Cross-package model/Sveltia compatibility is owned by
-`npm run test:root` in the repository integration suite.
-
 ## Shared content models and CLI2
 
 `frontmatterOrderFromModel(model)` returns `{ orderedKeys: Object.keys(model.fields) }`.
@@ -109,9 +103,9 @@ consumer, not this generic package.
 
 Content-model needs no release or compatibility change: this helper consumes its
 existing `fields` property without importing or depending on content-model.
-The packages remain independently versioned. The packed test installs both npm
-artifacts in an isolated consumer; publication of the new plugin remains a
-maintainer-controlled handoff before registry-based adoption.
+The packages remain independently versioned. Install the rule from npm with
+`npm install --save-dev @rm-industries/markdownlint-frontmatter markdownlint@^0.42.0`.
+Adopting its CLI2 configuration remains an explicit consumer change.
 
 ## Runtime and release contract
 
@@ -126,8 +120,7 @@ The opening delimiter must be `---` on the first line; closing `---` and `...`
 are supported. Non-YAML frontmatter is ignored. Keep the default Markdownlint
 frontmatter handling and review diagnostics before applying fixes.
 
-Version `0.1.0` is a release candidate awaiting maintainer publication. See the
-[release readiness report](../../docs/frontmatter-release-readiness.md) and
+Version `0.1.0` is published on npm. See the
 [existing-site migration and rollback](../../fixtures/frontmatter-adoption/README.md).
 Existing sites adopt the configuration selectively; never regenerate over owned source.
 

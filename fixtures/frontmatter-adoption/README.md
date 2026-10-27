@@ -7,30 +7,32 @@ Existing Markdown rules, 120-character line length, code/table exceptions, root
 `.gitignore` handling, and `lint:markdown` / `lint:markdown:fix` script names remain.
 Each script performs one Markdown scan; CI quality commands retain those names.
 
-**Ordering is not yet enabled in normal generated projects.** The plugin is
-unpublished. The active starter deliberately has no dependency on an unavailable
-registry package. This directory is a candidate adoption overlay, outside the
-starter; it is not copied into generated sites. There is no optional import or
-silent fallback.
+**Ordering is not enabled in normal generated projects.** The independent plugin
+`@rm-industries/markdownlint-frontmatter@0.1.0` is published. The active starter
+keeps activation as a separate reviewed change. This directory is a candidate
+adoption overlay outside the starter; it is not copied into generated sites.
+There is no optional import or silent fallback.
 
-After the maintainer publishes and verifies `@rm-industries/markdownlint-frontmatter@0.1.0`:
+To adopt the reviewed published version using a registry-only lockfile:
 
-1. In the starter, run `npm install --save-dev --save-exact @rm-industries/markdownlint-frontmatter@0.1.0`.
+1. In the target site or a disposable starter copy, run `npm install --save-dev --save-exact @rm-industries/markdownlint-frontmatter@0.1.0`.
 2. Replace `.markdownlint-cli2.jsonc` with this directory's `markdownlint-cli2.mjs`,
    named `.markdownlint-cli2.mjs`. CLI2 requires this configuration extension;
    the imported models and maintained implementation remain TypeScript.
    Rename `.markdownlint.json` to `.markdownlint-rules.json`; the overlay imports
    these ordinary rules. CLI2 gives a recognized `.markdownlint.json` precedence
    over its `config` option, so leaving it in place loses the collection settings.
-3. Run `npm ci` in an isolated starter copy, then `npm run lint:markdown`,
-   `npm run lint:markdown:fix`, and the normal template/generator verification.
-   Review content diffs before committing the manifest, registry lock, and config.
+3. Replay the registry-only lock created by that installation with `npm ci` in
+   an isolated copy, then run `npm run lint:markdown`, `npm run lint:markdown:fix`,
+   and the normal template/generator verification. Review content diffs before
+   committing the manifest and config, plus the lock in generated projects.
+   The authoring template does not commit its disposable resolved lock.
 4. Activate in a separate reviewed change. Existing sites should selectively copy
    the runner/configuration changes and install the published dependency; never
    regenerate an existing site to migrate it.
 
 The configuration imports the starter's existing TypeScript model registry using
-Node's native type stripping (the supported Node 22.22.2+ / 24 / 26 versions),
+Node's native type stripping (the template supports Node 22.23.4+ / 24 / 26),
 and derives each collection's order from that same model used by Sveltia.
 The existing `**/*.md` scan remains unchanged (MDX is outside this gate).
 Only matching `model.folder/**/*.md` content receives the ordering rule; ordinary
@@ -38,14 +40,22 @@ documentation keeps its normal checks. Missing optional keys remain absent,
 unknown keys remain after known keys, and unsafe YAML fails without changes.
 The generic plugin also supports explicit `orderedKeys` for projects without models.
 
-Before publication, build the plugin and run the isolated candidate proof:
+The current adoption verifier still begins by replaying a copied lock. Before
+running it from a clean lockless-template checkout, resolve a disposable local
+authoring lock. That lock is ignored in Forge and must not be committed:
+
+```sh
+npm install --prefix templates/default --package-lock-only --ignore-scripts --no-audit --no-fund
+```
+
+Then build the plugin and run the isolated candidate proof:
 
 ```sh
 npm run build --workspace @rm-industries/markdownlint-frontmatter
 node scripts/verify-frontmatter-adoption.ts
 ```
 
-The proof first installs the unchanged registry-only starter lock with `npm ci`,
+The proof first replays that locally resolved registry-only starter lock with `npm ci`,
 then explicitly installs the packed candidate in the temporary copy. It runs the
 real starter check/fix scripts against two model-derived orders, safe and unsafe
 YAML, ordinary documentation, non-mutating check, and repeated fixes. Temporary

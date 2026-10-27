@@ -85,11 +85,9 @@ export const site = defineSiteConfig({
   socialImage: '/social-card.svg',
   navigation: [
     { label: 'Home', href: '/' },
-    { label: 'Get started', href: '/get-started/' },
-    { label: 'Features', href: '/features/' },
-    { label: 'Packages', href: '/packages/' },
+    { label: 'Get started', href: '/docs/getting-started/' },
     { label: 'Docs', href: '/docs/' },
-    { label: 'Project', href: '/project/' },
+    { label: 'Packages', href: '/packages/' },
   ],
   socialLinks: [
     { label: 'RM Industries', href: 'https://www.rm-industries.com/' },

@@ -383,10 +383,10 @@ provider disabled through native CI conditions. Configure Pages and the canonica
 site URL before enabling deployment on another provider.
 
 Markdown commands use Markdownlint CLI2 `0.24.0` with Markdownlint `0.42.0`.
-The normal starter does not yet enable the unpublished independent front matter
-ordering plugin. After its release, follow the
+The independent front matter ordering plugin is published, but the normal starter
+does not enable it. To activate it in a separate reviewed change, follow the
 [selective adoption and rollback guide](https://github.com/rm-industries/forge/blob/main/fixtures/frontmatter-adoption/README.md)
-with the reviewed plugin version and a regenerated registry-only lockfile.
+with a reviewed published plugin version and a regenerated registry-only lockfile.
 
 ## Adapting tests
 

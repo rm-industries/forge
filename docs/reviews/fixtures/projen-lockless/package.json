@@ -1,8 +1,0 @@
-{
-  "name": "forge-projen-lockless-experiment",
-  "version": "0.0.0",
-  "private": true,
-  "dependencies": {
-    "projen": "0.104.14"
-  }
-}

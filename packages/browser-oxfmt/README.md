@@ -58,101 +58,31 @@ serve the worker with matching `Cross-Origin-Embedder-Policy: require-corp`
 headers as well as the document. A bundler must preserve or emit the worker and
 relative WASM/bindings assets; copying only the entry module is insufficient.
 
-## Maintainer checks
+## Installation and compatibility
 
 ```sh
-npm run build --workspace @rm-industries/browser-oxfmt
-npx playwright install --with-deps chromium firefox webkit
-npm run test:browser --workspace @rm-industries/browser-oxfmt
+npm install @rm-industries/browser-oxfmt
 ```
-
-The browser check uses root Playwright tooling and package-owned consumer policy
-fixtures; it does not install or read the template. `PLAYWRIGHT_MODULE` can override
-the browser module when needed. It installs the actual tarball in an isolated temporary consumer,
-then runs all 215 supported-version comparisons and idempotence checks in Chromium,
-Firefox, and WebKit. Five Tailwind differences per browser are required and
-reported. It also checks project paths, ordinary and isolated deployment
-headers, UI responsiveness, worker reuse, missing assets, and recovery after
-worker failures. `CHROMIUM_CHANNEL=chrome` can select installed Chrome locally.
-
-Each browser-oxfmt release targets one exact Oxfmt version and source revision.
-The build helper rejects a consumer Oxfmt version that differs from that engine,
-preventing the browser and repository formatter from silently following different
-policies. The pin is updated as part of a new browser-oxfmt release.
-
-An Oxfmt upgrade requires a coordinated PR:
-
-1. Update the root npm Oxfmt dependency and the Rust Git revision together.
-2. Update the engine identity, version checks, option mapping and tests for that release.
-3. Regenerate native artifacts and run parity against the newly supported npm
-   version, plus idempotence, browser loading, recovery and CMS save tests.
-4. Review output changes, increment browser-oxfmt's package version, update its
-   changelog and use the protected package release workflow.
-
-During an upgrade, compare the old and proposed engines using the maintained
-`test/markdown-cases.ts` matrix. CI verifies the selected supported version;
-unsupported neighboring releases do not have permanent fixtures or snapshots.
-The weekly **Browser Oxfmt Engine Updates** workflow (also available manually)
-resolves the registry release to its upstream Git tag, updates coordinated pins,
-regenerates both lockfiles, and prepares a browser package patch and changelog.
-It opens a PR only after repository quality, packed browser parity and CMS
-serialization checks pass. Existing update branches are preserved for review.
-It reuses `PEER_UPGRADE_APP_CLIENT_ID` and `PEER_UPGRADE_APP_PRIVATE_KEY`.
-Review supported options and formatting changes before merging; publication
-continues through the protected release process. Dependabot handles other npm
-and Cargo dependencies. Failed engine checks require maintainer intervention.
-
-`test/sveltia-serialization.ts` verifies the native CMS serialization contract.
-The temporary template overlay and its integration harness have been removed.
-Default-template adoption follows package publication in a separate reviewed
-change; end-to-end CMS save and recovery coverage must be restored with that wiring.
-
-`native/build-wasm.ts` compiles the Rust adapter, generates browser bindings and
-license notices, and verifies cached output. It derives the engine version from
-Cargo's release tag and the exact source commit from Cargo metadata. The Node
-configuration helper is implemented in `src/resolve-options.ts` and remains
-available to consumers at `@rm-industries/browser-oxfmt/build`.
 
 The optional `oxfmt` peer dependency declares the exact supported version for
 users of the Node `/build` configuration helper. Install that version alongside
 this package when resolving project configuration. Browser-only consumers use
 the bundled engine and do not need to install Oxfmt.
 
-## Build from source
+Each browser-oxfmt release supports one exact Oxfmt engine version. Keep the
+consumer's repository formatter and browser package aligned; a version mismatch
+fails rather than silently changing formatting policy.
 
-Published npm packages include the generated worker bindings, WASM and license
-notices. Consumers need Node and npm; they do not need Rust. Git tracks only the
-native source, Cargo lockfile and TypeScript tooling. Generated files under
-`src/generated/`, `NOTICE.md` are ignored.
+Node helpers support Node `^22.22.2 || ^24.0.0 || ^26.0.0` and npm
+`^10.9.0 || ^11.0.0`. Browser-only callers use the bundled worker and WASM.
+The default Forge template now integrates this formatter for CMS saves; existing
+sites adopt it deliberately, with build-time settings resolved from their own
+configuration. See the [existing-site adoption guide](../../docs/browser-formatter-adoption.md).
 
-Building a fresh Git checkout requires Rust 1.97.0 with the
-`wasm32-unknown-unknown` target and wasm-bindgen-cli 0.2.114:
-
-```sh
-rustup toolchain install 1.97.0 --profile minimal --component rustfmt --component clippy --target wasm32-unknown-unknown
-cargo +1.97.0 install wasm-bindgen-cli --version "$(node packages/browser-oxfmt/native/build-wasm.ts --bindings-version)" --locked
-RUSTUP_TOOLCHAIN=1.97.0 npm run build --workspace @rm-industries/browser-oxfmt
-```
-
-`build` and `typecheck` generate missing or stale native output automatically.
-An unchanged verified artifact is reused without invoking Rust. Native generation
-uses Cargo to fetch the pinned upstream Git revision and registry dependencies,
-uses the committed lockfile, remaps build paths, records source/toolchain/asset hashes,
-and generates dependency notices. Packaging verifies those hashes before copying
-artifacts to `dist/generated/`. Missing tools produce setup instructions.
-
-```sh
-npm run build:native --workspace @rm-industries/browser-oxfmt -- --force
-npm run quality:native --workspace @rm-industries/browser-oxfmt
-```
-
-The first command forces regeneration. The second checks Rust formatting and
-runs Clippy for the actual WASM target with warnings denied. CI generates twice
-in one canonical checkout and compares identities and notices before testing the
-packed artifact. Cross-host byte identity between macOS and Linux is not claimed;
-Cargo's local package identity can affect code layout even with remapped paths.
-The generated identity records its build host. Release artifacts are built in CI,
-then passed unchanged to protected publication and registry verification.
+Automated Chromium, Firefox and WebKit checks cover formatting parity, loading,
+responsiveness and recovery. They do not establish an actual Safari or iPhone
+minimum: real-device timing, background/resume and browser-floor evidence remain
+tracked in [#407](https://github.com/rm-industries/forge/issues/407).
 
 ## Derive browser settings during a build
 
@@ -237,15 +167,3 @@ hidden path segments; identical pattern exclusions remain safe. Other include/ex
 rejected when Markdown cannot be ruled out. Patterns and options in every rule
 are validated even when the rule is irrelevant to Markdown. Filename-specific
 resolution retains its existing ordered matching and exclusion behavior.
-
-## Dependency and adapter ownership
-
-`native/src/markdown_adapter.rs` maps browser options and embedded-language
-requests to upstream Oxfmt crates. It contains no independent formatting
-algorithm. `native/src/lib.rs` exposes that adapter through WASM bindings.
-
-Dependabot checks Cargo registry dependencies, including transitive dependencies,
-weekly. The wasm-bindgen CLI version is read from Cargo.toml so binding updates
-keep the generator and library aligned. Oxfmt's Git dependencies remain pinned:
-changing them requires the matching npm engine, supported policy and parity
-fixtures to be reviewed together.

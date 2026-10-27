@@ -1,303 +1,87 @@
-# Forge site
+# Forge project website
 
-This directory contains the public project website for Forge by RM Industries.
-It is published at <https://www.rm-industries.com/forge/> and is a standalone
-Astro project intentionally excluded from the parent npm workspace. Install and
-run all commands from this directory.
+This standalone Astro project serves Forge's product pages and consumer
+documentation at <https://www.rm-industries.com/forge/>. It is owned source,
+excluded from the root npm workspace. Adopt template improvements selectively;
+do not regenerate over this directory. It was originally bootstrapped from
+published create-forge `1.0.0`; subsequent changes are reviewed source migrations.
 
-The site was created with the public Forge generator and is now maintained as
-owned source. See the [bootstrap record](docs/forge-bootstrap.md) for the exact
-package version, registry integrity, generated-file decisions, and future
-upgrade policy.
+## Local development
 
-Install dependencies with `npm ci`, then use the local scripts below. Every
-command resolves tools from this project's dependencies; no global installation
-is required.
+Use **Node.js 26** and an npm version accepted by `package.json`. This requirement
+applies to website tooling; generated Forge sites and independently released
+packages retain their own supported runtimes. Browser compatibility targets are
+unchanged.
 
-The template's `.editorconfig` shares UTF-8, LF, final-newline, two-space, and
-120-column settings with supported editors and Oxfmt. `oxfmt.config.ts` contains
-only formatter-specific behavior such as quote and import ordering.
-`oxlint.config.ts` keeps code-quality rules local so a clean website checkout
-never discovers or imports the parent repository's tooling configuration.
-
-## Start here
-
-The generated documentation is organized by task:
-
-- [Getting started and site configuration](docs/guides/getting-started.md)
-  covers installation, local development, branding, identity assets, pages, and
-  the first verification pass.
-- [Content and CMS editing](docs/guides/content-and-cms.md) covers Markdown
-  articles, drafts, Sveltia local mode, deployed editing, shared model changes,
-  media, and recovery.
-- [Themes and accessibility](docs/guides/themes-and-accessibility.md) covers
-  themes, fonts, layout semantics, automated checks, and manual review.
-- [Quality checks, dependency updates, and troubleshooting](docs/guides/quality-and-troubleshooting.md)
-  explains the validation layers, common failures, Dependabot review, and safe
-  support requests.
-- [GitHub Pages deployment](docs/github-pages.md) covers project sites, custom
-  domains, environment protection, and deployment diagnosis.
-- [Accessibility review](docs/accessibility-checklist.md) and the
-  [Lighthouse performance budget](docs/performance-budget.md) record the
-  generated baseline and the manual checks projects must maintain.
-
-The remainder of this README is the complete command and implementation
-reference.
-
-| Command                  | Purpose                                                          |
-| ------------------------ | ---------------------------------------------------------------- |
-| `npm run dev`            | Start Astro's local development server.                          |
-| `npm run build`          | Create the production site in `dist/`.                           |
-| `npm run validate:build` | Validate required output and scan generated text.                |
-| `npm run preview`        | Serve the production build locally. Run `build` first.           |
-| `npm run typecheck`      | Validate TypeScript, Astro components, content, and diagnostics. |
-| `npm run astro:check`    | Run the same Astro diagnostics directly.                         |
-| `npm run format`         | Check formatting with Oxfmt.                                     |
-| `npm run format:fix`     | Apply Oxfmt formatting.                                          |
-| `npm run lint`           | Run code, CSS, Markdown, and spelling checks.                    |
-| `npm run lint:code`      | Check JavaScript and TypeScript with Oxlint.                     |
-| `npm run lint:css`       | Check CSS with Stylelint.                                        |
-| `npm run lint:markdown`  | Check Markdown with Markdownlint.                                |
-| `npm run spellcheck`     | Check repository text with cspell.                               |
-| `npm run audit:unused`   | Detect unused files, exports, and dependencies with Knip.        |
-| `npm run lighthouse:ci`  | Enforce Lighthouse scores against an existing build.             |
-| `npm test`               | Run the `test:unit` command.                                     |
-| `npm run test:unit`      | Run deterministic TypeScript unit tests with Vitest.             |
-| `npm run test:a11y`      | Run focused Playwright and axe accessibility checks.             |
-| `npm run test:coverage`  | Run unit tests and enforce V8 coverage thresholds.               |
-| `npm run test:e2e`       | Run browser and accessibility tests with Playwright.             |
-| `npm run audit`          | Reject unapproved high-severity dependency vulnerabilities.      |
-| `npm run quality:static` | Run every static-quality and dependency audit.                   |
-| `npm run quality:core`   | Run static checks, coverage tests, build, and output validation. |
-| `npm run quality`        | Run the complete generated-project quality pipeline.             |
-
-During development, run `npm run dev`. Before committing, run
-`npm run quality`. It runs static validation and dependency auditing, unit tests
-with coverage thresholds, a production build and generated-output validation,
-the complete Playwright and axe suite, and Lighthouse budgets in that order.
-Each stage is joined with `&&`, so the command stops immediately and returns a
-non-zero status when any stage fails. Browser tests and Lighthouse start from
-their own production build so they remain independently runnable and cannot
-accidentally inspect stale output. Both use Astro's preview server and derive
-any deployment base path from the configured canonical site URL.
-
-The complete command is intentionally high cost. Use `npm run quality:static`
-for the quickest source-only feedback or `npm run quality:core` for every check
-that does not launch a browser. Dependency auditing remains the explicit
-`npm run audit` command. CI executes independent source stages in parallel,
-builds once, and gives that output to validation, browser tests, Lighthouse, and
-deployment.
-
-## Continuous integration
-
-The root `.github/workflows/website.yml` workflow validates this project on
-pull requests and pushes to `main` when website source or its automation changes.
-It intentionally mirrors the workflow Forge ships to generated projects.
-Website formatting, spelling, code/style/Markdown linting, unused-code analysis,
-Astro diagnostics, and unit coverage report independently. One
-production build follows those checks; build validation, browser tests, and
-Lighthouse download and test that same artifact. Deployment depends directly on
-every website check and publishes the Pages artifact packaged by the build job.
-A live Chromium smoke test then verifies the deployed URL, assets, and mobile
-layout.
-
-The workflow installs dependencies with `npm ci`, caches npm downloads using the
-lockfile, cancels superseded pull-request runs, serializes deployment runs, and
-grants only read access outside deployment. Pull requests receive no secrets or
-write permissions. Coverage, production builds, Lighthouse reports, and browser
-failure evidence are retained for seven days. All third-party actions use
-immutable commit pins.
-
-Security automation is included alongside project CI. Root CodeQL automation
-analyzes the project's TypeScript and GitHub Actions on pull requests, pushes to
-`main`, and a weekly schedule. Dependency review reports introduced dependency
-risk without blocking remediation pull requests. A separate scheduled
-automation workflow validates workflow syntax with Actionlint and scans GitHub
-Actions with Zizmor. Zizmor uploads its findings to GitHub code scanning and
-fails `Workflow security` when it finds an issue. The job receives
-`security-events: write` only for that upload; all other access remains
-read-only. `Workflow syntax` and `Workflow security` run when `.github/**`
-changes. Because they are path-filtered, do not configure them as globally
-required status checks; require both whenever an automation change causes them
-to appear.
-
-Root Dependabot automation treats `/website` as an independent npm ecosystem.
-Minor and patch npm updates are grouped by production or development scope,
-while major updates remain separate for deliberate review. Updates use cooldown
-periods to avoid adopting newly released versions immediately. No version is
-ignored, security updates remain enabled, and every update must pass the
-complete project and security workflows before merging.
-
-Dependabot pull requests use `dependencies` plus the readable ecosystem label
-`npm` or `github-actions`. GitHub ignores configured custom labels that do not
-exist, so initialize them once after creating the repository:
+Run commands from this directory, using the committed standalone lockfile:
 
 ```sh
-gh label create dependencies --color 0366d6 --description "Pull requests that update a dependency file" --force
-gh label create npm --color cb3837 --description "Pull requests that update npm dependencies" --force
-gh label create github-actions --color 2088ff --description "Pull requests that update GitHub Actions dependencies" --force
+npm ci
+npm run dev
 ```
 
-Run these commands from the generated repository while authenticated with the
-GitHub CLI. They are idempotent because `--force` updates an existing label. If
-they are not run, Dependabot still opens update pull requests but omits any
-configured label that is missing.
+| Command                  | Purpose                                                       |
+| ------------------------ | ------------------------------------------------------------- |
+| `npm run quality:static` | Formatting, linting, spelling, unused code, and Astro checks. |
+| `npm run quality:core`   | Static checks, unit coverage, build, and output validation.   |
+| `npm run quality`        | Core checks, browser/accessibility tests, and Lighthouse.     |
+| `npm run audit`          | Separate registry-backed dependency vulnerability policy.     |
+| `npm run format:fix`     | Apply Oxfmt formatting.                                       |
+| `npm run build`          | Produce the static website in `dist/`.                        |
+| `npm run preview`        | Serve an existing production build.                           |
+| `npm run validate:build` | Check the built artifact.                                     |
+| `npm run test:coverage`  | Run unit tests with the maintained 100% coverage thresholds.  |
+| `npm run test:e2e`       | Browser navigation, metadata, link, and accessibility checks. |
+| `npm run test:a11y`      | Focused Playwright and axe accessibility checks.              |
+| `npm run lighthouse:ci`  | Measure production routes against the performance budget.     |
 
-GitHub chooses the Dependabot run times, distributing update checks across its
-available schedule. Forge derives distinct weekly CodeQL and workflow-validation
-minutes from the generated package name. This keeps generation reproducible
-while preventing every Forge project from starting scheduled work simultaneously.
+Run `npm run quality` before review. Run `npm run audit` when manifests or locks
+change; it is deliberately separate from deterministic quality checks. Browser
+and Lighthouse commands inspect the existing production build through Astro
+preview; run `npm run build` first when invoking them separately. CI supplies its
+already validated build artifact. Do not lower coverage,
+accessibility, or performance thresholds to hide a regression.
 
-Playwright builds the site and runs Chromium against Astro's production preview,
-not the development server. Its browser coverage exercises desktop and mobile
-navigation, article listing/detail flows, article pagination, light and dark
-themes, keyboard use, missing-page recovery, metadata, supporting site files,
-and content-manager startup. Each test receives a fresh browser context, and
-tests use accessible roles and names where the rendered interface provides
-them. On failure, Playwright retains screenshots and traces in `test-results/`;
-the HTML report is written to `playwright-report/`. CI retains both directories
-for seven days, including failed runs.
+## Website architecture
 
-Accessibility verification combines automation with the dated manual review in
-`docs/accessibility-checklist.md`. Repeat that checklist after changing content,
-navigation, themes, components, or interactive behavior; automated axe checks
-cannot judge every aspect of reading order, language, focus order, contrast, or
-alternative-text quality.
+This is a static product and documentation website. It has no CMS application,
+admin route, article collection, or feed. Generated-site content and CMS guides
+explain the product's output and do not describe this website's runtime.
 
-Lighthouse CI runs three times each against the production home, article
-listing, and article detail pages, then enforces median category scores and
-transfer budgets. Its typed runner prefixes those routes with a configured
-project path, so local checks exercise GitHub Pages project sites with the same
-asset URLs used in production. The measured baseline, headroom, exclusions, and
-update rules are documented in `docs/performance-budget.md`. Reports are written
-to the generated `.lighthouseci/` directory; CI retains them for seven days even
-when an assertion fails.
+`src/config/site.ts` owns identity, canonical URL, navigation, and repository
+links. The canonical URL's `/forge/` pathname supplies the production base;
+local development uses `/`. Shared URL helpers apply the base to navigation,
+assets, metadata, and supporting files. Keep the existing origin and base when
+editing content.
 
-The configured exclusions cover only generated output, dependency directories,
-and tool artifacts. Stylelint's exceptions recognize Tailwind and DaisyUI
-directives used by `src/styles/global.css`; they do not suppress ordinary CSS
-rules. Knip uses its Astro integration without an ignore list, and Oxlint uses
-its recommended defaults without project-specific rule suppression.
+Use `src/layouts/BaseLayout.astro` for the single main landmark, skip link,
+header, footer, and canonical/social metadata. Reuse the existing Astro and
+DaisyUI components. Styles live in `src/styles/`; Catppuccin theme definitions
+live in `src/themes/`. Fira Sans and Fira Code are bundled locally through
+Fontsource. The default theme follows the operating-system color preference
+without client JavaScript.
 
-Vitest coverage includes configuration, documentation utilities, URL helpers,
-theme configuration, and build validation. Statements, branches, functions,
-and lines must remain at 100%. Add direct positive and negative tests when this
-source grows; do not lower thresholds or exclude source merely to make a change
-pass. HTML details are written to `coverage/`, which is generated and ignored.
-CI enforces the same thresholds and retains the HTML report for seven days,
-including when the coverage job fails.
+Consumer documentation is rendered through `src/content.config.ts`. Maintain
+one canonical source per topic rather than copying guides into this directory.
+The root README contains repository operating guidance and is not website
+consumer documentation.
 
-Edit `src/config/site.ts` to change the site name, description, author,
-canonical URL, repository, language, navigation, and social links. The Astro
-configuration, shared layout, and reusable SEO head consume this single
-validated source. New pages should use `src/layouts/BaseLayout.astro` to inherit
-the document shell and canonical metadata.
+## Validation and deployment
 
-The canonical URL may include a pathname for a GitHub Pages project site, such
-as `https://owner.github.io/repository`. Production builds and previews derive
-their deployment base from that pathname, and shared URL helpers apply it to
-navigation, metadata, supporting files, and assets. The development server uses
-`/` for convenient local browsing. Root-hosted and custom-domain sites use an
-origin-only URL and therefore have no deployment prefix.
+The root `.github/workflows/website.yml` and `.gitlab/ci/website.yml` use Node 26
+and the website's own lockfile. Source checks and unit coverage precede one
+production build; output validation, browser tests, Lighthouse, and deployment
+consume that same artifact. Review affected results before merging.
 
-The standalone source template uses `https://example.com` as a valid,
-non-production site origin. Projects created by Forge receive the values
-selected through the generator input contract.
+GitHub Pages deployment is limited to eligible pushes to `main` and depends on
+the website checks. Pull requests receive no deployment credentials. Preserve
+immutable action pins, least-privilege permissions, cancellation of superseded
+PR runs, retained failure evidence, and the standalone dependency boundary.
+See [website deployment](docs/github-pages.md) for current hosting details.
 
-## Styling and themes
-
-The template uses Tailwind CSS v4 through its Vite plugin, DaisyUI, and the
-Tailwind typography plugin. Catppuccin Latte is the default light theme and
-Mocha is selected automatically for dark color-scheme preferences. All four
-Catppuccin flavors are available by setting `data-theme` on the document:
-
-- `data-theme="latte"`
-- `data-theme="frappe"`
-- `data-theme="macchiato"`
-- `data-theme="mocha"`
-
-Global styles live in `src/styles/global.css`; print-safe rules live in
-`src/styles/print.css`; and theme configuration lives in `src/themes/`. The
-default automatic theme behavior requires no client-side JavaScript.
-
-### Fonts
-
-The template pairs Fira Sans for interface and article text with Fira Code for
-code. Both families remain legible at small sizes, have complementary forms,
-and are bundled through Fontsource so rendering does not depend on a remote font
-service. Only the weights imported by `src/styles/global.css` are included in
-the build.
-
-To replace them with other Fontsource families, uninstall both defaults and
-install the packages for the new sans-serif and monospace families. For example:
-
-```sh
-npm uninstall @fontsource/fira-sans @fontsource/fira-code
-npm install @fontsource/inter @fontsource/source-code-pro
-```
-
-Then replace the Fontsource imports near the top of `src/styles/global.css` with
-the families and weights the site uses:
-
-```css
-@import '@fontsource/inter/400.css';
-@import '@fontsource/inter/600.css';
-@import '@fontsource/source-code-pro/400.css';
-```
-
-Finally, update the Tailwind font tokens in the same file:
-
-```css
-@theme {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'Source Code Pro', ui-monospace, monospace;
-}
-```
-
-For a system-font-only site, uninstall the two default Fontsource packages,
-remove their CSS imports, and remove the custom family name at the start of each
-font token. After either change, run `npm run build` to confirm every imported
-weight is installed and bundled.
-
-## Layout primitives
-
-`src/layouts/BaseLayout.astro` supplies the document shell, a keyboard-accessible
-skip link, semantic header, main, and footer landmarks, and the shared metadata
-components. Page content belongs inside `BaseLayout`; pages must not add another
-`main` landmark.
-
-Reusable components are organized by responsibility:
-
-- `navigation/Header.astro` owns the semantic header and outer content boundary;
-- `navigation/Navbar.astro` composes branding, responsive menus, configured links, and current-page state;
-- `navigation/Footer.astro` renders site identity and optional social links;
-- `navigation/Pagination.astro` provides typed previous and next navigation;
-- `ui/Container.astro` provides consistent responsive content widths; and
-- `ui/Card.astro` provides linked and non-linked DaisyUI card surfaces with typed sizing.
-
-The template follows the operating-system light or dark preference and does not
-include a theme control. This keeps the default experience functional without
-client-side JavaScript; a future control can select any documented `data-theme`
-value if a project chooses to persist a visitor preference.
-
-## Routes and metadata
-
-The project website includes home, get-started, features, packages,
-documentation, project, about, and custom 404 pages. The documentation routes
-render the repository's Markdown files through the native Astro collection in
-`src/content.config.ts`. The project website intentionally has no CMS, article
-collection, or feed; those belong to generated Forge sites rather than this
-focused product and documentation site.
-
-Site configuration drives page titles, descriptions, canonical URLs, Open
-Graph and Twitter metadata, the web manifest, and the sitemap
-reference in `robots.txt`. Replace `public/favicon.svg` and
-`public/social-card.svg` when establishing a project identity, and update
-`socialImage` in `src/config/site.ts` if the sharing image path changes.
-
-Every HTML page also includes the nonvisual, standard
-`generator` metadata value `Forge by RM Industries`. It makes Forge-generated
-sites identifiable in page source without adding telemetry, network requests,
-client-side JavaScript, accessibility-tree content, or visible branding. This
-generated project is owned source: remove or change the element in
-`src/components/seo/SeoHead.astro` if you do not want to retain the attribution.
+Repeat the [manual accessibility checklist](docs/accessibility-checklist.md)
+after interface or content changes; axe cannot replace manual judgment. Keep the
+[Lighthouse budget](docs/performance-budget.md) and its measured limits intact.
+Coverage, Playwright traces/screenshots, and Lighthouse reports are generated
+artifacts and remain ignored. Dependency exceptions require exact advisory
+scope and expiry; they are not permission to ignore unrelated audit failures.

@@ -3,7 +3,23 @@ import { expect, test } from '@playwright/test';
 import { site } from '../src/config/site';
 import { resolvePreviewPath, resolvePreviewUrl } from './preview';
 
-const routes = ['/', '/get-started/', '/features/', '/packages/', '/docs/', '/project/', '/about/', '/404/'];
+const documentIds = [
+  'getting-started',
+  'configuration',
+  'content-and-cms',
+  'themes-and-accessibility',
+  'deployment',
+  'ci-providers',
+  'quality-and-troubleshooting',
+  'upgrades',
+  'support-policy',
+  'browser-formatter-adoption',
+  'create-forge',
+  'content-model',
+  'browser-oxfmt',
+  'markdownlint-frontmatter',
+];
+const routes = ['/', '/packages/', '/docs/', '/project/', '/404/', ...documentIds.map((id) => `/docs/${id}/`)];
 
 test('serves every baseline page with configured canonical and social metadata', async ({ page }) => {
   for (const route of routes) {
@@ -13,6 +29,8 @@ test('serves every baseline page with configured canonical and social metadata',
 
     await expect(page.locator('meta[name="generator"]')).toHaveAttribute('content', 'Forge by RM Industries');
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', canonicalUrl);
+    await expect(page.locator('meta[property="og:type"]')).toHaveAttribute('content', 'website');
+    await expect(page.locator('meta[property^="article:"]')).toHaveCount(0);
     await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute('content', site.name);
     await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', canonicalUrl);
     await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image');
@@ -72,4 +90,137 @@ test('helps visitors recover from a missing page', async ({ page }) => {
   await page.getByRole('link', { name: 'Return home' }).click();
   await expect(page).toHaveURL(resolvePreviewUrl('/'));
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+});
+
+test('publishes only selected documentation and retires the competing tutorial', async ({ page, request }) => {
+  await page.goto(resolvePreviewPath('/docs/'));
+  await expect(page.getByRole('link', { name: 'Create a Forge site', exact: true })).toHaveAttribute(
+    'href',
+    resolvePreviewPath('/docs/getting-started/'),
+  );
+  await expect(page.getByRole('link', { name: 'Maintainer release guide', exact: true })).toHaveCount(0);
+  for (const route of [
+    '/get-started/',
+    '/about/',
+    '/features/',
+    '/docs/releasing/',
+    '/docs/reviews/1.0-release/',
+    '/docs/decisions/0001-repository-layout/',
+    '/docs/readme/',
+    '/admin/',
+    '/articles/',
+    '/rss.xml',
+  ]) {
+    const response = await request.get(resolvePreviewPath(route));
+    expect(response.status()).toBe(404);
+    expect(await response.text()).toContain('That page is not here.');
+  }
+  const sitemap = await request.get(resolvePreviewPath('/sitemap-0.xml'));
+  const xml = await sitemap.text();
+  const publishedUrls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/gu)].map((match) => match[1]);
+  expect(publishedUrls.toSorted()).toEqual(
+    ['/', '/docs/', '/packages/', '/project/', ...documentIds.map((id) => `/docs/${id}/`)]
+      .map((path) => new URL(path.slice(1), site.url).href)
+      .toSorted(),
+  );
+  const documentationLinks = await page
+    .locator('main a[href]')
+    .evaluateAll((links) =>
+      links
+        .map((link) => link.getAttribute('href'))
+        .filter((href) => href?.includes('/docs/') && !href.endsWith('/docs/')),
+    );
+  expect(documentationLinks).toEqual(documentIds.map((id) => resolvePreviewPath(`/docs/${id}/`)));
+});
+
+test('follows the complete generated-site guide journey in reading order', async ({ page }) => {
+  const journey = [
+    ['getting-started', 'Create a Forge site'],
+    ['configuration', 'Configure and customize your site'],
+    ['content-and-cms', 'Content and CMS editing'],
+    ['themes-and-accessibility', 'Themes and accessibility'],
+    ['deployment', 'Deploy your site'],
+    ['ci-providers', 'Generated CI'],
+    ['quality-and-troubleshooting', 'Quality checks and troubleshooting'],
+    ['upgrades', 'Maintain and upgrade your site'],
+    ['support-policy', 'Compatibility and support'],
+    ['browser-formatter-adoption', 'Existing-site browser formatter adoption'],
+  ];
+  await page.goto(resolvePreviewPath('/docs/getting-started/'));
+  for (let index = 0; index < journey.length; index += 1) {
+    const [id, title] = journey[index]!;
+    await expect(page).toHaveURL(resolvePreviewUrl(`/docs/${id}/`));
+    await expect(page.getByRole('heading', { level: 1, name: title, exact: true })).toBeVisible();
+    if (index > 0) {
+      await expect(
+        page.getByRole('link', { name: `Previous: ${journey[index - 1]![1]}`, exact: true }),
+      ).toHaveAttribute('href', resolvePreviewPath(`/docs/${journey[index - 1]![0]}/`));
+    }
+    if (index + 1 < journey.length) {
+      await page.getByRole('link', { name: `Next: ${journey[index + 1]![1]}`, exact: true }).click();
+    }
+  }
+});
+
+test('connects all four packages to their canonical references', async ({ page }) => {
+  await page.goto(resolvePreviewPath('/packages/'));
+  const references = page.getByRole('link', { name: 'Reference', exact: true });
+  await expect(references).toHaveCount(4);
+  for (const [index, slug] of [
+    'create-forge',
+    'content-model',
+    'browser-oxfmt',
+    'markdownlint-frontmatter',
+  ].entries()) {
+    await expect(references.nth(index)).toHaveAttribute('href', resolvePreviewPath(`/docs/${slug}/`));
+    await page.goto(resolvePreviewPath(`/docs/${slug}/`));
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'View source on GitHub' })).toHaveAttribute(
+      'href',
+      `https://github.com/rm-industries/forge/blob/main/packages/${slug}/README.md`,
+    );
+    await page.goto(resolvePreviewPath('/packages/'));
+  }
+});
+
+test('keeps every documentation neighbor and source link usable', async ({ page, request }) => {
+  for (let index = 0; index < documentIds.length; index += 1) {
+    await page.goto(resolvePreviewPath(`/docs/${documentIds[index]}/`));
+    const navigation = page.getByRole('navigation', { name: 'Documentation navigation' });
+    await expect(navigation.locator('a[rel="prev"]')).toHaveCount(index === 0 ? 0 : 1);
+    await expect(navigation.locator('a[rel="next"]')).toHaveCount(index + 1 === documentIds.length ? 0 : 1);
+    if (index > 0)
+      await expect(navigation.locator('a[rel="prev"]')).toHaveAttribute(
+        'href',
+        resolvePreviewPath(`/docs/${documentIds[index - 1]}/`),
+      );
+    if (index + 1 < documentIds.length)
+      await expect(navigation.locator('a[rel="next"]')).toHaveAttribute(
+        'href',
+        resolvePreviewPath(`/docs/${documentIds[index + 1]}/`),
+      );
+    await expect(page.getByRole('link', { name: 'View source on GitHub' })).toHaveAttribute(
+      'href',
+      /^https:\/\/github\.com\/rm-industries\/forge\/blob\/main\//u,
+    );
+    expect((await request.get(resolvePreviewPath(`/docs/${documentIds[index]}/`))).ok()).toBe(true);
+  }
+});
+
+test('keeps product and documentation content readable at 320 pixels', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  for (const route of routes) {
+    await page.goto(resolvePreviewPath(route));
+    const overflow = await page.locator('main').evaluate((main) => {
+      const viewport = document.documentElement.clientWidth;
+      return [...main.querySelectorAll('h1,h2,h3,p,table,pre')]
+        .filter((element) => {
+          const bounds = element.getBoundingClientRect();
+          // Code and tables may scroll inside their own bounded containers.
+          return bounds.right > viewport + 1 || bounds.left < -1;
+        })
+        .map((element) => element.tagName + ': ' + element.textContent?.slice(0, 60));
+    });
+    expect(overflow, route).toEqual([]);
+  }
 });

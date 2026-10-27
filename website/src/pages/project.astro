@@ -10,7 +10,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <PageIntro eyebrow="Open source" title="Build and improve Forge with RM Industries.">
       <p>Development, planning, support, and releases are public on GitHub. Security reports use a separate private channel.</p>
     </PageIntro>
+    <section class="prose max-w-3xl">
+      <h2>A dependable beginning, owned by you</h2>
+      <p>RM Industries created Forge to connect content modeling, accessible presentation, CMS editing, quality checks, and deployment without taking ownership away from the people building the site. Forge produces ordinary Astro source; teams review, change, and deploy it in their own repository.</p>
+      <p>This project website began with the published Forge generator and is now independently maintained source. It installs outside the monorepo workspaces with its own lockfile and has no CMS, article collection, or feed.</p>
+    </section>
     <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <Card href="https://github.com/rm-industries/forge"><h2 class="card-title text-2xl">Repository</h2><p>Inspect the source, package contracts, and current development guidance.</p></Card>
       <Card href="https://github.com/rm-industries/forge/releases"><h2 class="card-title text-2xl">Releases</h2><p>Review package and project checkpoint history.</p></Card>
       <Card href="https://github.com/orgs/rm-industries/projects/3"><h2 class="card-title text-2xl">Roadmap</h2><p>Follow planned milestones and current work.</p></Card>
       <Card href="https://github.com/rm-industries/forge/issues"><h2 class="card-title text-2xl">Issues and support</h2><p>Report reproducible defects or propose focused improvements.</p></Card>

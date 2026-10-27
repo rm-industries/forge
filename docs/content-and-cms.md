@@ -1,6 +1,6 @@
 # Content and CMS editing
 
-Forge stores article content as Markdown in `src/content/articles/`. Astro and
+Generated Forge sites store article content as Markdown in `src/content/articles/`. Astro and
 Sveltia use the same model from
 `src/config/content-models/articles.ts`, so field rules are not duplicated.
 
@@ -81,6 +81,17 @@ personal tokens. Treat `/admin/` as an editing application: it is excluded from
 search indexing and public Lighthouse budgets, but it is still publicly
 reachable on a deployed static site.
 
+## Formatting and save failures
+
+The generated editor uses Sveltia's native serialization callback with browser
+Oxfmt formatting. A formatter or worker failure blocks saving and reports a
+recoverable error; retain the edit and retry after fixing the cause. It does
+not silently save unformatted output. Use the
+[browser formatter reference](../packages/browser-oxfmt/README.md) for supported
+options and loading requirements, and the
+[existing-site adoption guide](browser-formatter-adoption.md) when migrating an
+older site rather than copying over its content model.
+
 ## Change article fields
 
 Edit only `src/config/content-models/articles.ts`. The registry passes the model
@@ -101,7 +112,7 @@ validation applied during builds.
 
 The default CMS stores uploaded media under `public/assets/` and publishes it
 from `/assets`. Add only purposeful assets, keep file sizes appropriate for the
-[performance budget](../performance-budget.md), and provide useful alternative
+[performance budget](../templates/default/docs/performance-budget.md), and provide useful alternative
 text where media conveys meaning. Decorative imagery should use empty
 alternative text at its rendering site.
 
@@ -116,8 +127,8 @@ alternative text at its rendering site.
   directory permission and select the project root again.
 - If deployed authentication fails, verify the repository identifier, branch,
   token permissions, and organization access before changing content fields.
-- If a save produced an unwanted change, use Git to inspect and restore the
-  affected content file before committing it.
+- If a save produced an unwanted change, inspect its Git diff and preserve any
+  wanted edits before restoring selected changes. Do not discard editor drafts.
 
 For broader command failures, use
 [quality checks and troubleshooting](quality-and-troubleshooting.md).

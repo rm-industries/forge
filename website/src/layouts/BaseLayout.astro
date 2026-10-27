@@ -10,11 +10,9 @@ interface Props {
   title?: string;
   description?: string;
   canonicalPath?: string;
-  type?: 'article' | 'website';
-  publishedTime?: string;
 }
 
-const { title, description, canonicalPath, type, publishedTime } = Astro.props;
+const { title, description, canonicalPath } = Astro.props;
 ---
 
 <!doctype html>
@@ -22,7 +20,7 @@ const { title, description, canonicalPath, type, publishedTime } = Astro.props;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <SeoHead {title} {description} {canonicalPath} {type} {publishedTime} />
+    <SeoHead {title} {description} {canonicalPath} />
     <ThemeHead />
   </head>
   <body>

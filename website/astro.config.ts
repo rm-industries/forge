@@ -16,13 +16,13 @@ export default defineConfig({
   base: isLocalDevelopment ? undefined : deployment.base,
   integrations: [sitemap()],
   markdown: {
+    shikiConfig: { theme: 'catppuccin-mocha' },
     processor: unified({
       rehypePlugins: [
         [
           rewriteDocumentationLinks,
           {
             base: isLocalDevelopment ? '/' : (deployment.base ?? '/'),
-            docsDirectory: fileURLToPath(new URL('../docs/', import.meta.url)),
             repositoryDirectory: fileURLToPath(new URL('../', import.meta.url)),
           },
         ],

@@ -17,22 +17,22 @@ export const criticalCommands: CriticalCommand[] = [
   },
   {
     command: 'npm run quality',
-    documentation: 'docs/releasing.md',
+    documentation: 'README.md',
     manifest: 'package.json',
   },
   {
     command: 'npm run audit',
-    documentation: 'docs/releasing.md',
+    documentation: 'README.md',
     manifest: 'package.json',
   },
   {
     command: 'npm run verify:package --workspace @rm-industries/create-forge',
-    documentation: 'docs/releasing.md',
+    documentation: 'README.md',
     manifest: 'packages/create-forge/package.json',
   },
   {
     command: 'npm run test:generator:e2e',
-    documentation: 'docs/releasing.md',
+    documentation: 'README.md',
     manifest: 'package.json',
   },
 ];

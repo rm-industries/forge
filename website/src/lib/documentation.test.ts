@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { documentationGroup, documentationHref, documentationId, documentationTitle } from './documentation.ts';
+import { documentationHref, documentationId, documentationPublication, documentationTitle } from './documentation.ts';
 
 describe('documentation helpers', () => {
   it('derives a clean title from the first level-one heading', () => {
@@ -17,15 +17,15 @@ describe('documentation helpers', () => {
     expect(documentationHref('guides/setup')).toBe('/docs/guides/setup/');
   });
 
-  it('normalizes Markdown paths into collection IDs', () => {
-    expect(documentationId({ entry: 'README.md' })).toBe('');
-    expect(documentationId({ entry: 'guides/README.md' })).toBe('guides');
-    expect(documentationId({ entry: 'guides/setup.md' })).toBe('guides/setup');
+  it('uses the registered identity rather than the source filename', () => {
+    expect(documentationId({ entry: 'docs/getting-started.md' })).toBe('getting-started');
   });
 
-  it('groups architecture, review, and general documentation', () => {
-    expect(documentationGroup('decisions/0001-example')).toBe('Architecture decisions');
-    expect(documentationGroup('reviews/1.0.0')).toBe('Release reviews');
-    expect(documentationGroup('guides/setup')).toBe('Guides and policies');
+  it('identifies the canonical tutorial source and section', () => {
+    expect(documentationPublication('getting-started')).toEqual({
+      id: 'getting-started',
+      source: 'docs/getting-started.md',
+      section: 'Start here',
+    });
   });
 });
