@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { resolvePreviewPath, resolvePreviewUrl } from './preview';
+import { resolvePreviewPath, resolvePreviewUrl } from './support/site';
 
 test('uses primary navigation to move between pages and identify the current page', async ({ page }) => {
   await page.goto(resolvePreviewPath('/'));

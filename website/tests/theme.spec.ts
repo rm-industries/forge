@@ -2,7 +2,7 @@ import { flavors } from '@catppuccin/palette';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-import { previewOrigin, resolvePreviewPath } from './preview';
+import { previewOrigin, resolvePreviewPath } from './support/site';
 
 const toRgb = (hex: string) => {
   const value = Number.parseInt(hex.slice(1), 16);

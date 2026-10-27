@@ -17,7 +17,7 @@ export default getViteConfig({
       : process.env.GITHUB_ACTIONS === 'true'
         ? ['default', 'github-actions']
         : ['default'],
-    include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'scripts/**/*.test.ts', 'tests/support/**/*.test.ts'],
     coverage: {
       include: [
         'src/config/**/*.ts',

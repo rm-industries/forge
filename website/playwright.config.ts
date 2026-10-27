@@ -1,9 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
-import { previewOrigin, resolvePreviewUrl } from './tests/preview';
+import { previewOrigin, previewPort, resolvePreviewUrl } from './tests/support/site';
 
 export default defineConfig({
   testDir: './tests',
+  testMatch: '**/*.spec.ts',
   testIgnore: '**/smoke/**',
   outputDir: 'test-results',
   fullyParallel: true,
@@ -40,12 +41,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run preview -- --host 127.0.0.1',
-    env: {
-      ...process.env,
-      ASTRO_PREVIEW_BACKGROUND: '0',
-    },
+    command: `npm run preview -- --ignore-lock --host 127.0.0.1 --port ${previewPort}`,
     url: resolvePreviewUrl('/'),
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
   },
 });

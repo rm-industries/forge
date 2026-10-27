@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { site } from '../src/config/site';
-import { resolvePreviewPath, resolvePreviewUrl } from './preview';
+import { configuredSite, resolvePreviewPath, resolvePreviewUrl } from './support/site';
 
 const documentIds = [
   'getting-started',
@@ -25,7 +25,7 @@ test('serves every baseline page with configured canonical and social metadata',
   for (const route of routes) {
     await page.goto(resolvePreviewPath(route));
 
-    const canonicalUrl = new URL(resolvePreviewPath(route), site.url).href;
+    const canonicalUrl = new URL(resolvePreviewPath(route), configuredSite).href;
 
     await expect(page.locator('meta[name="generator"]')).toHaveAttribute('content', 'Forge by RM Industries');
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', canonicalUrl);
@@ -70,7 +70,7 @@ test('resolves every internal page link', async ({ page, request }) => {
 test('serves crawler, manifest, and not-found metadata', async ({ request }) => {
   const robots = await request.get(resolvePreviewPath('/robots.txt'));
   expect(robots.ok()).toBe(true);
-  expect(await robots.text()).toContain(`Sitemap: ${new URL('sitemap-index.xml', site.url).href}`);
+  expect(await robots.text()).toContain(`Sitemap: ${new URL('sitemap-index.xml', configuredSite).href}`);
 
   const manifest = await request.get(resolvePreviewPath('/site.webmanifest'));
   expect(manifest.ok()).toBe(true);
@@ -120,7 +120,7 @@ test('publishes only selected documentation and retires the competing tutorial',
   const publishedUrls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/gu)].map((match) => match[1]);
   expect(publishedUrls.toSorted()).toEqual(
     ['/', '/docs/', '/packages/', '/project/', ...documentIds.map((id) => `/docs/${id}/`)]
-      .map((path) => new URL(path.slice(1), site.url).href)
+      .map((path) => new URL(path.slice(1), configuredSite).href)
       .toSorted(),
   );
   const documentationLinks = await page

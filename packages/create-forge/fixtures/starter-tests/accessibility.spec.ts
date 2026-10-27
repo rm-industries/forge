@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { resolvePreviewPath } from './preview';
+import { resolvePreviewPath } from './support/site';
 
 test('identifies the current primary navigation item', async ({ page }) => {
   await page.goto(resolvePreviewPath('/'));

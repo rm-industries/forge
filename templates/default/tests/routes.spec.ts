@@ -2,13 +2,13 @@ import { expect, test } from '@playwright/test';
 
 import { site } from '../src/config/site';
 import { publicRoutes } from './pages';
-import { resolvePreviewPath, resolvePreviewUrl } from './preview';
+import { configuredSite, resolvePreviewPath, resolvePreviewUrl } from './support/site';
 
 test('serves every baseline page with configured canonical and social metadata', async ({ page }) => {
   for (const route of [...publicRoutes.filter((path) => path !== '/does-not-exist/'), '/admin/']) {
     await page.goto(resolvePreviewPath(route));
 
-    const canonicalUrl = new URL(resolvePreviewPath(route), site.url).href;
+    const canonicalUrl = new URL(resolvePreviewPath(route), configuredSite).href;
 
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', canonicalUrl);
     await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute('content', site.name);
@@ -61,7 +61,7 @@ test('serves feed, crawler, manifest, and not-found metadata', async ({ request 
 
   const robots = await request.get(resolvePreviewPath('/robots.txt'));
   expect(robots.ok()).toBe(true);
-  expect(await robots.text()).toContain(`Sitemap: ${new URL('sitemap-index.xml', site.url).href}`);
+  expect(await robots.text()).toContain(`Sitemap: ${new URL('sitemap-index.xml', configuredSite).href}`);
 
   const manifest = await request.get(resolvePreviewPath('/site.webmanifest'));
   expect(manifest.ok()).toBe(true);

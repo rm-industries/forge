@@ -85,3 +85,20 @@ after interface or content changes; axe cannot replace manual judgment. Keep the
 Coverage, Playwright traces/screenshots, and Lighthouse reports are generated
 artifacts and remain ignored. Dependency exceptions require exact advisory
 scope and expiry; they are not permission to ignore unrelated audit failures.
+
+## Isolated browser previews
+
+Build the site before running browser checks. Playwright asks Astro for the
+production deployment settings and owns a foreground preview server at
+`http://127.0.0.1:4321`, including the configured mount path. It does not reuse,
+stop, or replace a developer preview session. Choose another free local port
+when needed:
+
+```sh
+PLAYWRIGHT_PORT=5432 npm run test:e2e
+```
+
+Use `PLAYWRIGHT_PORT` in place of the former website-only
+`FORGE_PREVIEW_ORIGIN` override. The port must be an integer from 1 through 65535. Remote deployment smoke checks
+continue to use `DEPLOYMENT_URL` with HTTPS; they neither start a local preview
+nor rebuild the deployed artifact.
