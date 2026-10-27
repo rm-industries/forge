@@ -13,6 +13,8 @@ test('matches the home route only at the site root', () => {
   expect(isCurrentPath('/', '/')).toBe(true);
   expect(isCurrentPath('', '/')).toBe(true);
   expect(isCurrentPath('/articles/', '/')).toBe(false);
+  expect(isCurrentPath('/preview/articles/', '/preview/', true)).toBe(false);
+  expect(isCurrentPath('/preview/', '/preview/', true)).toBe(true);
 });
 
 test('does not treat external URLs as current paths', () => {

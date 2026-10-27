@@ -40,18 +40,24 @@ const tokenizedSiteConfig = (await readFile(siteConfigPath, 'utf8'))
     `description: '${templateTokens.description}',`,
   )
   .replace("author: 'Site Author',", `author: '${templateTokens.author}',`)
-  .replace("'https://example.com'", `'${templateTokens.url}'`)
   .replace("repository: '',", `repository: '${templateTokens.repository}',`);
 for (const token of [
   templateTokens.siteName,
   templateTokens.description,
   templateTokens.author,
-  templateTokens.url,
   templateTokens.repository,
 ]) {
   if (!tokenizedSiteConfig.includes(token)) throw new Error(`Could not inject template token ${token}.`);
 }
 await writeFile(siteConfigPath, tokenizedSiteConfig);
+const astroConfigPath = join(destinationDirectory, 'astro.config.ts');
+const astroConfig = (await readFile(astroConfigPath, 'utf8')).replace(
+  "'https://example.com'",
+  `'${templateTokens.url}'`,
+);
+if (!astroConfig.includes(templateTokens.url))
+  throw new Error(`Could not inject template token ${templateTokens.url}.`);
+await writeFile(astroConfigPath, astroConfig);
 
 const dependabotPath = join(destinationDirectory, '.github', 'dependabot.yml');
 const dependabot = (await readFile(dependabotPath, 'utf8')).replace(

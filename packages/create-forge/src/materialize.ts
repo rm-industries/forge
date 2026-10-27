@@ -181,10 +181,19 @@ const customizeTemplate = async (
   siteConfig = replaceToken(siteConfig, templateTokens.siteName, options.siteName, 'site name');
   siteConfig = replaceToken(siteConfig, templateTokens.description, options.description, 'description');
   siteConfig = replaceToken(siteConfig, templateTokens.author, options.author, 'author');
-  siteConfig = replaceToken(siteConfig, templateTokens.url, options.deployments?.[0]?.url ?? options.url, 'URL');
   siteConfig = replaceToken(siteConfig, templateTokens.repository, options.repository, 'repository');
   if (siteConfig.includes(templateTokenPrefix)) throw new Error('Packaged template contains unresolved tokens.');
   await writeFile(siteConfigPath, siteConfig);
+
+  const astroConfigPath = join(projectRoot, 'astro.config.ts');
+  const astroConfig = replaceToken(
+    await readFile(astroConfigPath, 'utf8'),
+    templateTokens.url,
+    options.deployments?.[0]?.url ?? options.url,
+    'URL',
+  );
+  if (astroConfig.includes(templateTokenPrefix)) throw new Error('Packaged template contains unresolved tokens.');
+  await writeFile(astroConfigPath, astroConfig);
 
   const scheduleMinutes = deriveScheduleMinutes(options.packageName);
   const providers = options.ciProviders ?? ['github'];

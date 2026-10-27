@@ -13,18 +13,22 @@ interface Props {
 const {
   title,
   description = site.description,
-  canonicalPath = Astro.url.pathname,
+  canonicalPath,
   type = 'website',
   publishedTime,
 } = Astro.props;
 
-const normalizedPath = (() => {
-  const path = `/${canonicalPath}`.replace(/\/{2,}/g, '/');
-  return path === '/' ? path : `${path.replace(/\/$/, '')}/`;
-})();
-const canonicalUrl = new URL(resolveSiteHref(normalizedPath), new URL(site.url).origin);
+const publicSite = Astro.site;
+if (!publicSite) throw new Error('Canonical metadata requires Astro site configuration.');
+// Request paths are mounted; explicit canonical overrides are logical site routes.
+const canonicalUrl = new URL(
+  canonicalPath === undefined
+    ? Astro.url.pathname
+    : resolveSiteHref(`/${canonicalPath}`.replace(/\/{2,}/g, '/').replace(/\/?$/u, '/')),
+  publicSite,
+);
 const pageTitle = title ? `${title} | ${site.name}` : site.name;
-const socialImageUrl = new URL(resolveSiteHref(site.socialImage), new URL(site.url).origin);
+const socialImageUrl = new URL(typeof site.socialImage === 'string' ? resolveSiteHref(site.socialImage) : site.socialImage.src, publicSite);
 ---
 
 <title>{pageTitle}</title>
