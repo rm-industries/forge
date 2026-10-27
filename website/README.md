@@ -48,11 +48,14 @@ This is a static product and documentation website. It has no CMS application,
 admin route, article collection, or feed. Generated-site content and CMS guides
 explain the product's output and do not describe this website's runtime.
 
-`src/config/site.ts` owns identity, canonical URL, navigation, and repository
-links. The canonical URL's `/forge/` pathname supplies the production base;
-local development uses `/`. Shared URL helpers apply the base to navigation,
-assets, metadata, and supporting files. Keep the existing origin and base when
-editing content.
+`astro.config.ts` owns the complete public site URL and runtime base. Production
+uses `/forge/`; local development uses `/` while canonical metadata retains the
+public `/forge/` identity. `src/config/site.ts` owns editorial identity,
+navigation, and repository links. Logical route helpers apply Astro's resolved
+base once; request paths and compiled assets already include their mount.
+Keep the existing public origin and base when editing content. `socialImage`
+accepts an authored logical public path or an Astro imported image. Imported
+image `.src` values are compiled URLs and receive no additional base prefix.
 
 Use `src/layouts/BaseLayout.astro` for the single main landmark, skip link,
 header, footer, and canonical/social metadata. Reuse the existing Astro and

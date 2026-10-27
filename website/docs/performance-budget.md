@@ -4,9 +4,10 @@ Lighthouse CI protects the Forge project website's public-page baseline. Run
 `npm run lighthouse:ci` after changes that can affect rendering, assets,
 metadata, or client behavior. Build first with `npm run build`. The command collects
 three reports per route from Astro's preview server, and evaluates the median
-result. The typed runner derives Astro's optional deployment base from
-`src/config/site.ts`, ensuring project-path assets and routes are measured at
-their production-relative locations.
+result. The typed runner reads Astro's resolved production settings through its public
+configuration API, ensuring project-path assets and routes are measured at their
+production-relative locations. Browser test port overrides do not change the
+Lighthouse preview port.
 
 ## Enforced routes
 
