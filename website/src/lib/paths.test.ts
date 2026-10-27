@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveCanonicalHref, resolveSiteHref } from './paths';
+import { resolveSiteHref } from './paths';
 
 describe('resolveSiteHref', () => {
   it('keeps root-relative URLs unchanged for root deployments', () => {
@@ -12,9 +12,11 @@ describe('resolveSiteHref', () => {
     expect(resolveSiteHref('/articles/', 'forge')).toBe('/forge/articles/');
   });
 
-  it('does not prefix an existing deployment base', () => {
-    expect(resolveSiteHref('/forge/articles/', '/forge/')).toBe('/forge/articles/');
-    expect(resolveSiteHref('/forge', '/forge/')).toBe('/forge');
+  it('mounts logical paths even when they start with the deployment base', () => {
+    expect(resolveSiteHref('/docs/getting-started/?view=full#tools', '/docs/')).toBe(
+      '/docs/docs/getting-started/?view=full#tools',
+    );
+    expect(resolveSiteHref('/forge', '/forge/')).toBe('/forge/forge');
   });
 
   it.each(['https://example.com', '//cdn.example.com/file.svg', '#content', 'mailto:hello@example.com'])(
@@ -23,21 +25,4 @@ describe('resolveSiteHref', () => {
       expect(resolveSiteHref(href, '/forge/')).toBe(href);
     },
   );
-});
-
-describe('resolveCanonicalHref', () => {
-  it('retains the production project base during local development', () => {
-    expect(resolveCanonicalHref('/articles/', 'https://owner.github.io/forge/', '/')).toBe(
-      'https://owner.github.io/forge/articles/',
-    );
-  });
-
-  it('does not duplicate the project base in a production route', () => {
-    expect(resolveCanonicalHref('/forge/articles/', 'https://owner.github.io/forge/', '/forge/')).toBe(
-      'https://owner.github.io/forge/articles/',
-    );
-    expect(resolveCanonicalHref('/forge', 'https://owner.github.io/forge/', '/forge/')).toBe(
-      'https://owner.github.io/forge/',
-    );
-  });
 });
