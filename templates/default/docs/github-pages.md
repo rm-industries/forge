@@ -20,20 +20,21 @@ mobile layout.
 
 ## Choose the public URL
 
-Set `url` in `src/config/site.ts` to the complete public address. Forge derives
-Astro's deployment base from this value, so canonical metadata, navigation,
+Set the canonical default in `astro.config.ts` to the complete public address.
+Keep the existing `PUBLIC_SITE_URL` override and URL validation. Astro derives
+the deployment base from this value, so canonical metadata, navigation,
 assets, the RSS feed, the web manifest, and CMS branding use the same path.
 
 For a project site, include the repository name:
 
 ```ts
-url: 'https://owner.github.io/repository',
+const publicSite = new URL(process.env.PUBLIC_SITE_URL ?? 'https://owner.github.io/repository/');
 ```
 
 For an organization or user site, use the root address:
 
 ```ts
-url: 'https://owner.github.io',
+const publicSite = new URL(process.env.PUBLIC_SITE_URL ?? 'https://owner.github.io/');
 ```
 
 Run `npm run build && npm run validate:build` after changing the URL. Once the
@@ -44,7 +45,7 @@ workflow succeeds on `main`, its deployment summary links to the published site.
 Set the site URL to the custom origin without a repository pathname:
 
 ```ts
-url: 'https://www.example.com',
+const publicSite = new URL(process.env.PUBLIC_SITE_URL ?? 'https://www.example.com/');
 ```
 
 Add `public/CNAME` containing only the domain name, configure the same domain in
@@ -56,3 +57,6 @@ configuration.
 Do not configure both a repository pathname and a custom domain. A custom domain
 is served from its root, while a project site uses the repository name as its
 base path.
+
+A project-path `robots.txt` is not the origin-root policy. Shared hosting must
+serve applicable crawler directives at the origin root.

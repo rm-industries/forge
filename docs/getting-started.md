@@ -47,8 +47,9 @@ provider-specific requirements.
 
 ## Make the site yours
 
-Edit `src/config/site.ts` for the name, description, author, full production URL,
-repository, navigation, and sharing image. Replace the assets under `public/`
+Edit `src/config/site.ts` for the name, description, author, repository, navigation,
+and sharing image. Set the canonical default in `astro.config.ts`; the existing
+`PUBLIC_SITE_URL` override selects environment-specific deployment settings. Replace the assets under `public/`
 and customize `src/pages/index.astro` and `src/pages/about.astro`.
 
 Use the complete production URL, including any project path such as

@@ -4,6 +4,11 @@ All notable changes to `@rm-industries/create-forge` are documented here.
 
 ## 2.0.0
 
+- Breaking source contract: configure public deployment settings in Astro configuration,
+  keeping `PUBLIC_SITE_URL` and CLI URL inputs. Editorial site configuration no longer
+  exposes `url`; existing sites migrate their owned source deliberately. Logical
+  route prefixing no longer accepts already-mounted paths.
+
 - Bundle versioned template source with bounded model/CMS and browser/CLI formatter
   ranges, resolving fresh dependencies through npm during normal creation. Successful
   creation includes the consumer's own validated lockfile; later CI uses `npm ci`.

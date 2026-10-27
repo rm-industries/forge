@@ -12,9 +12,10 @@ describe('resolveSiteHref', () => {
     expect(resolveSiteHref('/articles/', 'forge')).toBe('/forge/articles/');
   });
 
-  it('does not prefix an existing deployment base', () => {
-    expect(resolveSiteHref('/forge/articles/', '/forge/')).toBe('/forge/articles/');
-    expect(resolveSiteHref('/forge', '/forge/')).toBe('/forge');
+  it('mounts logical routes even when their name matches the deployment base', () => {
+    expect(resolveSiteHref('/articles/post/', '/articles/')).toBe('/articles/articles/post/');
+    expect(resolveSiteHref('/articles/?q=x#details', '/articles/')).toBe('/articles/articles/?q=x#details');
+    expect(resolveSiteHref('/', '/preview/')).toBe('/preview/');
   });
 
   it.each(['https://example.com', '//cdn.example.com/file.svg', '#content', 'mailto:hello@example.com'])(

@@ -55,8 +55,9 @@ const createTemplate = async (fixture: string) => {
   );
   await writeFile(
     join(template, 'src', 'config', 'site.ts'),
-    `export const site = {\n  name: '${templateTokens.siteName}',\n  description: '${templateTokens.description}',\n  author: '${templateTokens.author}',\n  url: '${templateTokens.url}',\n  repository: '${templateTokens.repository}',\n};\n`,
+    `export const site = {\n  name: '${templateTokens.siteName}',\n  description: '${templateTokens.description}',\n  author: '${templateTokens.author}',\n  repository: '${templateTokens.repository}',\n};\n`,
   );
+  await writeFile(join(template, 'astro.config.ts'), `export default { site: '${templateTokens.url}' };\n`);
   await writeFile(join(template, '.github', 'actions', 'setup-project', 'action.yml'), 'existing shared fixture\n');
   await writeFile(join(template, '.github', 'dependabot.yml'), `directory: ${templateTokens.dependabotDirectory}\n`);
   return template;
@@ -368,7 +369,7 @@ test.each(['github', 'gitlab'] as const)('bootstraps nested %s deployments as co
   const gitlab = parse(await readFile(join(root, '.gitlab/ci/site.yml'), 'utf8'));
   expect((primary === 'github' ? github.jobs : gitlab).deploy.environment.name).toBe('staging');
   expect(primary === 'github' ? gitlab : github.jobs).not.toHaveProperty('deploy');
-  expect(await readFile(join(root, 'site/src/config/site.ts'), 'utf8')).toContain('https://staging.example.com');
+  expect(await readFile(join(root, 'site/astro.config.ts'), 'utf8')).toContain('https://staging.example.com');
   await expect(access(join(root, 'site/.forge/config.json'))).rejects.toHaveProperty('code', 'ENOENT');
 });
 

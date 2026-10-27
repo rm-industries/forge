@@ -50,7 +50,7 @@ export function createDeploymentGuide(input: CiGenerationOptions): string {
     'path for the branch (or pull/merge-request target branch). Local development defaults',
     'to the first environment; set `PUBLIC_SITE_URL` locally to exercise another URL.',
     '',
-    'Check the canonical URL in [site configuration](src/config/site.ts) before publishing.',
+    'Check the canonical URL in [Astro configuration](astro.config.ts) before publishing.',
     "If no explicit URL is listed above, use the hosting provider's Pages URL or your custom domain.",
     '',
     'Explicit public URLs must already point to their deployment destinations. Configure',

@@ -1,8 +1,8 @@
 # Deploy your site
 
 Build your owned project with `npm run build`; publish its `dist/` directory.
-Configure the complete production URL in `src/config/site.ts`, including the
-project path. Existing URL helpers derive the deployment base for assets,
+Configure the complete production URL in `astro.config.ts`, including the
+project path. Astro resolves the deployment base for assets,
 navigation, canonical metadata and sitemap output. Test with `npm run preview`
 and `npm run validate:build` before enabling deployment.
 
@@ -43,3 +43,6 @@ provider permissions and generated YAML. Fix source failures through review;
 retry transient provider failures only after identifying the cause. To roll
 back source, review a revert and let the normal pipeline build and deploy it.
 Keep content edits separate from deployment or formatter rollback.
+
+A subpath site’s `robots.txt` does not govern the origin’s root crawler policy.
+Shared hosting must expose applicable robots directives at the origin root.
