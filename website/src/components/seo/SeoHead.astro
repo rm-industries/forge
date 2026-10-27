@@ -20,7 +20,7 @@ const canonicalUrl = canonicalPath === undefined && !import.meta.env.DEV
     })();
 const pageTitle = title ? `${title} | ${site.name}` : site.name;
 const socialImageUrl = new URL(
-  typeof site.socialImage === 'string' ? site.socialImage.replace(/^\//, '') : site.socialImage.src,
+  typeof site.socialImage === 'string' ? site.socialImage.replace(/^\/(?!\/)/, '') : site.socialImage.src,
   Astro.site,
 ).href;
 ---
