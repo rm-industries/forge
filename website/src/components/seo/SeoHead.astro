@@ -1,6 +1,6 @@
 ---
 import { site } from '../../config/site';
-import { resolveCanonicalHref, resolveSiteHref } from '../../lib/paths';
+import { resolveSiteHref } from '../../lib/paths';
 
 interface Props {
   title?: string;
@@ -8,19 +8,21 @@ interface Props {
   canonicalPath?: string;
 }
 
-const {
-  title,
-  description = site.description,
-  canonicalPath = Astro.url.pathname,
-} = Astro.props;
+const { title, description = site.description, canonicalPath } = Astro.props;
+if (!Astro.site) throw new Error('Canonical metadata requires Astro site to identify the public deployment.');
 
-const normalizedPath = (() => {
-  const path = `/${canonicalPath}`.replace(/\/{2,}/g, '/');
-  return path === '/' ? path : `${path.replace(/\/$/, '')}/`;
-})();
-const canonicalUrl = resolveCanonicalHref(normalizedPath, site.url);
+const canonicalUrl = canonicalPath === undefined && !import.meta.env.DEV
+  ? new URL(Astro.url.pathname, Astro.site).href
+  : (() => {
+      // Local routes start at / while their public identity remains under /forge/.
+      const path = `/${canonicalPath ?? Astro.url.pathname}`.replace(/\/{2,}/g, '/');
+      return new URL(path === '/' ? '' : `${path.replace(/\/$/, '').slice(1)}/`, Astro.site).href;
+    })();
 const pageTitle = title ? `${title} | ${site.name}` : site.name;
-const socialImageUrl = resolveCanonicalHref(site.socialImage, site.url);
+const socialImageUrl = new URL(
+  typeof site.socialImage === 'string' ? site.socialImage.replace(/^\/(?!\/)/, '') : site.socialImage.src,
+  Astro.site,
+).href;
 ---
 
 <title>{pageTitle}</title>

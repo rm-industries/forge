@@ -29,20 +29,20 @@ newer push from interrupting a partially completed publication.
 
 ## Choose the public URL
 
-Set `url` in `src/config/site.ts` to the complete public address. Forge derives
-Astro's deployment base from this value, so canonical metadata, navigation,
-assets and the web manifest use the same path.
+Set `publicSite` in `astro.config.ts` to the complete public address. Astro owns
+the public identity and derives the production base from its pathname. Local
+development keeps root-mounted links and public production canonicals.
 
 For a project site, include the repository name:
 
 ```ts
-url: 'https://owner.github.io/repository',
+const publicSite = new URL('https://owner.github.io/repository/');
 ```
 
 For an organization or user site, use the root address:
 
 ```ts
-url: 'https://owner.github.io',
+const publicSite = new URL('https://owner.github.io/');
 ```
 
 Run `npm run build && npm run validate:build` after changing the URL. Once the
@@ -73,7 +73,7 @@ commit recorded by the workflow.
 Set the site URL to the custom origin without a repository pathname:
 
 ```ts
-url: 'https://www.example.com',
+const publicSite = new URL('https://www.example.com/');
 ```
 
 Add `public/CNAME` containing only the domain name, configure the same domain in
@@ -85,3 +85,6 @@ configuration.
 Do not configure both a repository pathname and a custom domain. A custom domain
 is served from its root, while a project site uses the repository name as its
 base path.
+
+A project-mounted `robots.txt` cannot set crawl policy for the origin root. The
+origin owner must publish that policy when multiple projects share a host.

@@ -15,13 +15,13 @@ const renderLinks = async (base: string, source: string, markdown: string) => {
 };
 
 describe('published documentation links', () => {
-  it.each(['/', '/forge/'])('links a registered source to its actual route under %s', async (base) => {
+  it.each(['/', '/forge/', '/docs/'])('links a registered source to its actual route under %s', async (base) => {
     expect(
       await renderLinks(base, 'docs/getting-started.md', '[Start](getting-started.md?view=full#prepare-your-tools)'),
     ).toContain(`href="${base}docs/getting-started/?view=full#prepare-your-tools"`);
   });
 
-  it.each(['/', '/forge/'])(
+  it.each(['/', '/forge/', '/docs/'])(
     'links canonical package sources through their registered routes under %s',
     async (base) => {
       const html = await renderLinks(
