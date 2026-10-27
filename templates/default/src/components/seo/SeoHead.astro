@@ -24,9 +24,12 @@ if (!publicSite) throw new Error('Canonical metadata requires Astro site configu
 const canonicalUrl = new URL(
   canonicalPath === undefined
     ? Astro.url.pathname
-    : resolveSiteHref(`/${canonicalPath}`.replace(/\/{2,}/g, '/').replace(/\/?$/u, '/')),
+    : resolveSiteHref(`/${canonicalPath.replace(/^\/+/, '')}`),
   publicSite,
 );
+if (canonicalPath !== undefined) {
+  canonicalUrl.pathname = `${canonicalUrl.pathname.replace(/\/{2,}/g, '/').replace(/\/$/, '')}/`;
+}
 const pageTitle = title ? `${title} | ${site.name}` : site.name;
 const socialImageUrl = new URL(typeof site.socialImage === 'string' ? resolveSiteHref(site.socialImage) : site.socialImage.src, publicSite);
 ---
