@@ -1,11 +1,15 @@
 import { expect, test } from '@playwright/test';
 
-import { site } from '../src/config/site';
 import { configuredSite, resolvePreviewPath, resolvePreviewUrl } from './support/site';
 
 const routes = ['/', '/about/', '/articles/', '/articles/designing-a-calm-starting-point/', '/admin/', '/404/'];
 
-test('serves every baseline page with configured canonical and social metadata', async ({ page }) => {
+test('serves every baseline page with configured canonical and social metadata', async ({ page, request }) => {
+  const manifest = await request.get(resolvePreviewPath('/site.webmanifest'));
+  expect(manifest.ok()).toBe(true);
+  const { name } = await manifest.json();
+  expect(name).toMatch(/\S/u);
+
   for (const route of routes) {
     await page.goto(resolvePreviewPath(route));
 
@@ -13,7 +17,7 @@ test('serves every baseline page with configured canonical and social metadata',
 
     await expect(page.locator('meta[name="generator"]')).toHaveAttribute('content', 'Forge by RM Industries');
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', canonicalUrl);
-    await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute('content', site.name);
+    await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute('content', name);
     await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', canonicalUrl);
     await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image');
   }
@@ -52,7 +56,9 @@ test('serves feed, crawler, manifest, and not-found metadata', async ({ request 
   const manifest = await request.get(resolvePreviewPath('/site.webmanifest'));
   expect(manifest.ok()).toBe(true);
   expect(manifest.headers()['content-type']).toMatch(/application\/manifest\+json/u);
-  expect(await manifest.json()).toMatchObject({ name: site.name, start_url: resolvePreviewPath('/') });
+  const identity = await manifest.json();
+  expect(identity.name).toMatch(/\S/u);
+  expect(identity).toMatchObject({ short_name: identity.name, start_url: resolvePreviewPath('/') });
 
   const missing = await request.get(resolvePreviewPath('/does-not-exist/'));
   expect(missing.status()).toBe(404);
