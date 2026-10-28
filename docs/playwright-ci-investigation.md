@@ -3,7 +3,8 @@
 <!-- cspell:ignore rustup -->
 
 This investigation supports [#398](https://github.com/rm-industries/forge/issues/398)
-and [#444](https://github.com/rm-industries/forge/issues/444). It evaluates setup
+and its tickets [#444](https://github.com/rm-industries/forge/issues/444) and
+[#445](https://github.com/rm-industries/forge/issues/445). It evaluates setup
 reliability and complete job duration while preserving Node 26 and browser
 coverage. It does not change the repository's CI environments.
 
@@ -94,7 +95,7 @@ Both browser image repetitions failed because Firefox refused to launch as root
 when GitHub supplied `/github/home` owned by the image's regular user. The observed
 error was "Running Nightly as root in a regular user's session is not supported."
 This is a container identity/home compatibility issue, not evidence that the
-website's Firefox assertions regressed. Changing the test process home was
+template's Firefox assertions regressed. Changing the test process home was
 considered but not executed; no corrected full-suite result is claimed. Retain
 the host setup for full-browser jobs pending a separately validated identity and
 home configuration that keeps all three engines passing.
@@ -107,9 +108,16 @@ replacement for the hosted runner's Chrome discovery.
 An [adapted Lighthouse run](https://github.com/rm-industries/forge/actions/runs/40716231773)
 replays the original run's canonical source/build artifacts. It uses the existing
 GitLab template settings: explicit Playwright Chromium `CHROME_PATH` and
-`--no-sandbox --disable-dev-shm-usage --disable-gpu`. Both adapted repetitions passed the existing
-audit budgets and retained the
-Lighthouse reports. The rerun adds only `actions: read` for cross-run artifact
+`--no-sandbox --disable-dev-shm-usage --disable-gpu`. Both adapted repetitions passed the existing audit budgets and retained the
+Lighthouse reports.
+
+| Adapted image repetition | Total job | Container initialization | Dependency setup | Audit |
+| ------------------------ | --------: | -----------------------: | ---------------: | ----: |
+| 1                        |     3m11s |                      28s |              47s | 1m46s |
+| 2                        |     2m57s |                      29s |              21s | 1m48s |
+
+These totals include setup and artifact handling; the step columns are not an
+exhaustive breakdown of every second. The rerun adds only `actions: read` for cross-run artifact
 access. Root execution and disabled
 Chromium sandboxing follow upstream's trusted-test-container guidance; this is
 not a general recommendation for browsing untrusted sites.
@@ -158,10 +166,101 @@ logs to attribute its package downloads. The benchmark commits and run links
 preserve the exact experimental commands and artifacts without changing the
 normal workflows on the integration branch.
 
+## GitLab assessment
+
+GitLab compatibility is assessed from official documentation and the current
+configuration, not a GitLab benchmark. GitHub results do not establish GitLab
+job duration or stall frequency. The [GitLab image documentation](https://docs.gitlab.com/ci/docker/using_docker_images/)
+supports a digest-pinned job image on a Docker executor. The destination runner
+must support that executor, the selected architecture, registry access, and an
+appropriate image pull policy. Its shell and entrypoint must accept the runner's
+scripts; working directories and build-artifact paths must remain unchanged.
+
+The upstream image defaults to Node 24. GitLab's current `node:26` job image
+cannot simply be replaced: explicitly install and verify Node 26 before `npm ci`,
+using a verified runtime distribution and accounting for that download and setup
+cost. GitHub's setup action cannot be copied into a GitLab script. Retain the
+image's `PLAYWRIGHT_BROWSERS_PATH=/ms-playwright` and align its immutable digest
+with the project's resolved Playwright version. Avoid an unnoticed fallback to
+browser or Linux dependency installation, which would restore the stalled path.
+
+Existing GitLab Lighthouse jobs already derive `CHROME_PATH` through Playwright
+and scope `--no-sandbox --disable-dev-shm-usage --disable-gpu` to their root-run
+audits. These settings made the GitHub image audits pass, providing useful
+compatibility evidence for those commands rather than proof of GitLab runtime.
+Preserve those scoped settings, browser executable discovery, preview-server
+readiness and shutdown, report paths, and existing audit budgets. Full-browser
+jobs still need validation of user/home ownership and all three engine launches;
+GitHub's Firefox failure must not be assumed to occur identically on GitLab.
+
+Retain GitLab build-artifact dependencies, browser HTML reports and test results,
+JUnit report locations, always-upload behavior, and seven-day retention. The
+combined browser-oxfmt job also needs its existing checksum-verified Rust
+bootstrap, pinned toolchain, repeated native-build identity checks, package
+contents checks, and runtime-matrix artifacts. Its Node image has different
+prerequisites from a GitHub-hosted runner; neither GitHub's missing-tool failure
+nor its timings can be transferred directly to that job.
+
+**Recommendation: retain the current GitLab setup and defer an image switch.**
+Documentation supports a later implementation based on the GitHub findings, but
+Node 26 setup, runner behavior, browser identity, native/package checks, preview
+lifecycle, and reports remain destination-specific verification gates. Server-side
+CI Lint and an eventual runner check are useful follow-on validation, not required
+measurements for this investigation. Any avoided package-mirror requests or
+reduced stalls on GitLab remain inferred benefits.
+
+## Generated consumer CI
+
+Generated YAML belongs to the consumer after bootstrap; there is no regeneration
+command or automatic update of existing projects. Consumers select Node 22, 24,
+or 26 (default 26), so a later change must preserve that selected major rather
+than apply the website's Node 26 rule to every consumer.
+
+Fresh consumers resolve their own dependency graph. A fixed image matching
+Forge's root Playwright version can therefore fail to locate their browsers.
+The job image is selected before its script runs: reading the installed version
+inside that script is too late to change the current job's image. A viable later
+design must select a matching version and digest before execution, coordinate
+consumer dependency and image upgrades, and reject mismatches explicitly. A
+browser-install fallback would reintroduce the network dependence and cannot be
+counted as successful image adoption.
+
+Preserve scheduled/manual full-browser coverage and ordinary Chromium-only
+coverage, deployment/smoke primary-provider gates, scoped Lighthouse launch flags,
+preview lifecycle, and artifacts/reports. Keep immutable action/image pins and
+default-denied workflow permissions. The consumer's independently maintained YAML
+and supported Node choices add maintenance cost beyond Forge's own workflows.
+
+**Recommendation: defer generated-CI image adoption.** The demonstrated Ubuntu
+package stalls justify a focused follow-on if full-browser compatibility is
+resolved, even without a median speedup. That follow-on must first establish
+version/digest coordination and selected-Node setup, then verify the generated
+jobs' existing contracts. Do not automatically emit a repository-version image
+or change consumer-owned YAML as part of this investigation.
+
+## Consolidated decision
+
+| Provider and category                                 | Decision                          | Basis and next gate                                                                                                                                                 |
+| ----------------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GitHub full-browser suites                            | Retain; defer image adoption      | Large historical installation stalls justify further work, but image Firefox coverage failed. Validate identity/home settings and repeat complete-suite timings.    |
+| GitHub Chromium-only Lighthouse                       | Retain                            | Adapted image audits pass; two samples show no established total-duration or reliability advantage. Keep explicit discovery and scoped root flags in any follow-on. |
+| GitHub native/package, smoke, and website integration | Retain or defer as detailed above | Native setup failed; distinct smoke/integration contracts were not exercised. Validate their existing checks before adoption.                                       |
+| GitLab categories                                     | Retain; defer image adoption      | Documentation-based equivalence only. Node setup, runner configuration, and preserved checks remain unverified; performance benefits are inferred.                  |
+| Generated consumer CI                                 | Defer                             | Independent versions, image selection timing, supported Node choices, and consumer ownership need a coordinated upgrade approach.                                   |
+
+This decision does not reject the image because typical jobs are already fast.
+Removing a repeated package-mirror stall remains a valuable outcome. The current
+evidence instead identifies compatibility gates that prevent claiming equivalent
+coverage today. A separate reviewed change can resolve those gates and remeasure
+complete jobs without reducing coverage; it should report remaining uncertainty
+rather than invent a numerical adoption threshold. No rollout, custom image,
+shared permission change, or broad caching project is included here.
+
 ## Sources
 
 - [Playwright Docker guidance](https://playwright.dev/docs/docker)
 - [Playwright CI guidance](https://playwright.dev/docs/ci)
+- [GitLab job images](https://docs.gitlab.com/ci/docker/using_docker_images/)
 - [GitHub job containers](https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/run-jobs-in-a-container)
 
 The image moves browser and Linux dependency acquisition into registry layers;

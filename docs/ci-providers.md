@@ -4,6 +4,9 @@ Forge maintains its own pipelines directly in YAML. The create-forge package
 uses internal TypeScript builders and Zod schemas only to generate consumer CI
 at bootstrap. These definitions are not shipped into generated projects.
 
+The [Playwright environment investigation](playwright-ci-investigation.md) records
+measured GitHub results and the separate GitLab and generated-CI adoption assessment.
+
 ## Consumer ownership
 
 Bootstrap produces GitHub Actions, GitLab CI, or both. Consumers own the YAML and
