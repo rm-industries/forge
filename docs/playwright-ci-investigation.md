@@ -130,10 +130,30 @@ browser tests did not run. Retain the existing combined native/package job until
 Rust bootstrap overhead and package tests are evaluated separately; moving only
 the image would break its current prerequisites.
 
-Deployment smoke tests require a deployment URL. This isolated experiment does
-not deploy, so that contract and website-specific integration checks remain
-unverified. Defer adopting the image for those jobs pending their own existing
-checks; template success alone cannot establish their compatibility.
+A [second package probe](https://github.com/rm-industries/forge/actions/runs/40718757466/job/122923566775)
+reused the current GitLab checksum-verified Rust bootstrap. Its SHA-256 check
+passed, but invoking the installer as `/tmp/forge-rustup-init` failed with
+`unknown proxy name: 'forge-rustup-init'`. This exposes a basename-sensitive
+invocation in the reused GitLab setup; it is not a browser-image compatibility
+result. Production GitLab configuration was not changed. The final bounded
+package probe uses the same verified bytes under the standard `rustup-init`
+basename to separate that prerequisite issue from image compatibility.
+
+A separate [website Chromium integration and public-smoke probe](https://github.com/rm-industries/forge/actions/runs/40718852488/job/122923911310)
+passed with Node 26.12.1 and Playwright 1.64.1. It built and validated the current
+website, then passed all 88 existing Chromium integration/accessibility tests
+(46.1s reported by Playwright). The existing smoke test passed against the public
+`https://www.rm-industries.com/forge/` deployment (one test, 1.3s), checking the
+page, generator metadata, assets, and mobile overflow without deploying or
+mutating the site. Both integration and smoke report artifacts were retained.
+
+This single probe took 113s in total, including container initialization (25s),
+Node/dependency setup (22s), build (4s), integration step (48s), and smoke step
+(2s). It establishes Chromium compatibility for these existing checks, not a
+performance comparison with an equivalent host job. Website Firefox/WebKit were
+not included in this Chromium-specific probe; full-browser adoption still requires
+preserving all three engines. The public smoke result validates the currently
+published site, not a newly deployed candidate build.
 
 ## GitHub recommendations
 
@@ -142,7 +162,7 @@ checks; template success alone cannot establish their compatibility.
 | Full three-browser suites                              | Retain host setup; defer image adoption | Both image repetitions failed Firefox launch while both host repetitions passed 159 tests. Validate container identity/home configuration before claiming equivalent coverage.                                                              |
 | Chromium-only Lighthouse                               | Retain current setup for now            | Explicit executable discovery and launch flags made both image audits pass. Successful image totals were 177s and 191s against host 145s and 199s. There is no demonstrated large ordinary-run gain; only two observations per environment. |
 | Combined native browser-oxfmt package job              | Retain current setup                    | Candidate failed at missing Rust bootstrap tooling before packaged browser checks. Include its replacement setup cost and run the package checks before reconsidering.                                                                      |
-| Deployment smoke and website-specific integration jobs | Defer                                   | Their distinct deployment and integration contracts were not exercised by the isolated template experiment.                                                                                                                                 |
+| Deployment smoke and website-specific integration jobs | Retain pending performance evidence     | The existing website Chromium integration and public smoke checks passed in one image probe; no matched host timing or new deployment was tested.                                                                                           |
 
 For Lighthouse, the descriptive two-run median was 184s in the image versus 172s
 on the host. This small selected sample cannot establish a material regression,
@@ -197,7 +217,9 @@ Retain GitLab build-artifact dependencies, browser HTML reports and test results
 JUnit report locations, always-upload behavior, and seven-day retention. The
 combined browser-oxfmt job also needs its existing checksum-verified Rust
 bootstrap, pinned toolchain, repeated native-build identity checks, package
-contents checks, and runtime-matrix artifacts. Its Node image has different
+contents checks, and runtime-matrix artifacts. The reused bootstrap's installer
+basename failed in the GitHub probe above; do not assume checksum verification
+alone establishes a working bootstrap invocation. Its Node image has different
 prerequisites from a GitHub-hosted runner; neither GitHub's missing-tool failure
 nor its timings can be transferred directly to that job.
 
@@ -244,7 +266,7 @@ or change consumer-owned YAML as part of this investigation.
 | ----------------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | GitHub full-browser suites                            | Retain; defer image adoption      | Large historical installation stalls justify further work, but image Firefox coverage failed. Validate identity/home settings and repeat complete-suite timings.    |
 | GitHub Chromium-only Lighthouse                       | Retain                            | Adapted image audits pass; two samples show no established total-duration or reliability advantage. Keep explicit discovery and scoped root flags in any follow-on. |
-| GitHub native/package, smoke, and website integration | Retain or defer as detailed above | Native setup failed; distinct smoke/integration contracts were not exercised. Validate their existing checks before adoption.                                       |
+| GitHub native/package, smoke, and website integration | Retain or defer as detailed above | Native setup failed; website Chromium integration and public smoke passed. Retain until the remaining package and performance gates are verified.                   |
 | GitLab categories                                     | Retain; defer image adoption      | Documentation-based equivalence only. Node setup, runner configuration, and preserved checks remain unverified; performance benefits are inferred.                  |
 | Generated consumer CI                                 | Defer                             | Independent versions, image selection timing, supported Node choices, and consumer ownership need a coordinated upgrade approach.                                   |
 
@@ -261,8 +283,9 @@ shared permission change, or broad caching project is included here.
 This report provides investigation evidence and recommendations; it does not
 complete every acceptance check. [#444](https://github.com/rm-industries/forge/issues/444)
 and [#398](https://github.com/rm-industries/forge/issues/398) remain open: packaged
-browser-oxfmt browser checks were not reached, and deployment smoke and
-website-specific integration checks were not run in the candidate environment.
+browser-oxfmt browser checks were not reached. Website Chromium integration and
+public deployment smoke checks passed in the candidate environment, with no
+matched host timing for that probe and no newly deployed candidate.
 Runner cache state was unknown, so controlled cold/warm behavior also remains
 unverified. These are explicit limits on the evidence, not successful checks.
 The documentation-based GitLab and generated-CI consolidation in
