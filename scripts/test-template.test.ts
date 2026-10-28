@@ -16,7 +16,7 @@ it('prepares an isolated canonical starter through its public command, including
       execFileSync(process.execPath, ['scripts/test-template.ts', 'prepare', destination], { stdio: 'pipe' }),
     ).toThrow('Template destination already exists');
     expect(await readFile(join(destination, 'tests/starter-routes.spec.ts'), 'utf8')).toBeTruthy();
-    expect(await readFile(join(destination, 'src/config/site.ts'), 'utf8')).toContain('https://example.com');
+    expect(await readFile(join(destination, 'astro.config.ts'), 'utf8')).toContain('https://example.com');
   } finally {
     await rm(root, { recursive: true, force: true });
   }

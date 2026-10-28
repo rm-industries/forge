@@ -6,7 +6,7 @@ import { join } from 'node:path';
 
 import { type BrowserContext, expect, test as base } from '@playwright/test';
 
-import { resolvePreviewPath as sitePath } from './preview';
+import { resolvePreviewPath as sitePath } from './support/site';
 
 const test = base.extend({
   page: async ({ playwright, browserName, baseURL }, use) => {

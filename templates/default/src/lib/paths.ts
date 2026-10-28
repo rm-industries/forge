@@ -11,7 +11,7 @@ export const resolveSiteHref = (href: string, base = import.meta.env.BASE_URL): 
   if (!href.startsWith('/') || href.startsWith('//')) return href;
 
   const normalizedBase = normalizeBase(base);
-  if (normalizedBase === '/' || href === normalizedBase || href.startsWith(`${normalizedBase}/`)) return href;
+  if (normalizedBase === '/') return href;
 
   return `${normalizedBase}${href}`;
 };

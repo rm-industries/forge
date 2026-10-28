@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { resolvePreviewPath } from './preview';
+import { resolvePreviewPath } from './support/site';
 
 for (const colorScheme of ['light', 'dark'] as const) {
   test(`renders Forge marks without distortion or overflow in ${colorScheme} mode`, async ({ page }) => {

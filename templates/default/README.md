@@ -228,12 +228,13 @@ CI enforces the same thresholds and retains the HTML report for seven days,
 including when the coverage job fails.
 
 Edit `src/config/site.ts` to change the site name, description, author,
-canonical URL, repository, language, navigation, social links, and derived CMS branding. The Astro
-configuration, shared layout, and reusable SEO head consume this single
-validated source. New pages should use `src/layouts/BaseLayout.astro` to inherit
+repository, language, navigation, social links, and derived CMS branding.
+The shared layout consumes this validated editorial source. Set the canonical
+default in `astro.config.ts`; `PUBLIC_SITE_URL` overrides it for an environment.
+Application metadata consumes Astro’s resolved site and base. New pages should use `src/layouts/BaseLayout.astro` to inherit
 the document shell and canonical metadata.
 
-The canonical URL may include a pathname for a GitHub Pages project site, such
+The canonical URL in Astro configuration may include a pathname for a GitHub Pages project site, such
 as `https://owner.github.io/repository`. The Astro configuration derives its
 deployment base from that pathname, and shared URL helpers apply it to local
 navigation, metadata, supporting files, and assets. Root-hosted and custom-domain
@@ -340,11 +341,15 @@ shipping decorative assets that most projects would immediately replace. Add
 purposeful media only when the site needs it, and pair each meaningful image
 with context-appropriate alternative text where it is rendered.
 
-Site configuration drives page titles, descriptions, canonical URLs, Open
-Graph and Twitter metadata, the RSS feed, the web manifest, and the sitemap
-reference in `robots.txt`. Replace `public/favicon.svg` and
+Editorial configuration supplies titles and descriptions; Astro configuration
+supplies public deployment identity for canonicals, social metadata, feeds,
+the manifest, and sitemap references. Replace `public/favicon.svg` and
 `public/social-card.svg` when establishing a project identity, and update
 `socialImage` in `src/config/site.ts` if the sharing image path changes.
+An authored string is a logical public path; an Astro-imported asset uses its
+native value so its already-mounted `src` is not prefixed again.
+A subpath robots file does not control the origin’s root robots policy; shared
+hosting must expose applicable crawler directives at the origin root.
 
 Every HTML page, including `/admin/`, also includes the nonvisual, standard
 `generator` metadata value `Forge by RM Industries`. It makes Forge-generated
@@ -429,3 +434,19 @@ coverage, create a pipeline schedule for your default branch in GitLab; schedule
 and manually started pipelines run every check and browser. Neither provider
 publishes from scheduled/manual validation. Existing push-only primary-provider
 deployment and post-deployment smoke tests remain the publishing path.
+
+## Isolated browser previews
+
+Build the site before running browser checks. Playwright asks Astro for the
+production deployment settings and owns a foreground preview server at
+`http://127.0.0.1:4321`, including the configured mount path. It does not reuse,
+stop, or replace a developer preview session. Choose another free local port
+when needed:
+
+```sh
+PLAYWRIGHT_PORT=5432 npm run test:e2e
+```
+
+The port must be an integer from 1 through 65535. Remote deployment smoke checks
+continue to use `DEPLOYMENT_URL` with HTTPS; they neither start a local preview
+nor rebuild the deployed artifact.

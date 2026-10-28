@@ -44,7 +44,7 @@ const allowedRuntimeTokens = new Map<string, ReadonlySet<string>>([
 ]);
 const personalIdentifierPattern = /rahul(?:0705|mohandas)|rahul\s+mohandas/iu;
 const expectedDefaults = [
-  { path: 'src/config/site.ts', value: "url: 'https://example.com'" },
+  { path: 'astro.config.ts', value: "'https://example.com'" },
   { path: 'src/integrations/sveltia/config.ts', value: "repo: 'your-github-user/your-repository'" },
 ] as const;
 

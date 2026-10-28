@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
 import { publicRoutes } from './pages';
-import { resolvePreviewPath } from './preview';
+import { resolvePreviewPath } from './support/site';
 
 const analyzePage = async (page: Page) => {
   const results = await new AxeBuilder({ page })

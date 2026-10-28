@@ -3,7 +3,7 @@ import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:f
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 import { parse } from 'yaml';
@@ -297,11 +297,17 @@ try {
     'Explicit Site',
     'A fully specified fixture',
     'Forge Maintainers',
-    'https://explicit.example.com',
     'rm-industries/explicit-site',
   ]) {
     if (!explicitConfig.includes(value)) throw new Error(`Explicit fixture is missing ${JSON.stringify(value)}.`);
   }
+
+  const explicitAstroConfig = await readFile(join(explicitDirectory, 'astro.config.ts'), 'utf8');
+  if (
+    /publicSite = new URL\(process\.env\.PUBLIC_SITE_URL \?\? '([^']+)'\);/u.exec(explicitAstroConfig)?.[1] !==
+    'https://explicit.example.com/'
+  )
+    throw new Error('Explicit fixture must configure its public URL at the Astro boundary.');
 
   const scopedDirectory = join(projectsDirectory, 'scoped-site');
   await runGenerator(executable, projectsDirectory, [
@@ -440,14 +446,13 @@ try {
   >;
   if (!prefixedValidation.build?.rules?.some((rule) => !rule.when || rule.when === 'on_success'))
     throw new Error('Single-environment GitLab consumer jobs must admit workflow-approved merge requests.');
-  const { site: prefixedSiteConfig } = (await import(
-    pathToFileURL(join(prefixedPagesDirectory, 'src', 'config', 'site.ts')).href
-  )) as { site: { url: string } };
+  const prefixedAstroConfig = await readFile(join(prefixedPagesDirectory, 'astro.config.ts'), 'utf8');
   if (
     prefixedPipeline.deploy.pages.path_prefix !== 'staging' ||
     prefixedPipeline.deploy.pages.expire_in !== 'never' ||
     prefixedPipeline.deploy.environment.url !== prefixedPagesUrl ||
-    prefixedSiteConfig.url !== prefixedPagesUrl
+    /publicSite = new URL\(process\.env\.PUBLIC_SITE_URL \?\? '([^']+)'\);/u.exec(prefixedAstroConfig)?.[1] !==
+      prefixedPagesUrl
   ) {
     throw new Error('Prefixed Pages must preserve the persistent prefix and matching site/deployment URL.');
   }
@@ -518,13 +523,21 @@ try {
     throw new Error('The staging artifact must use its selected canonical URL and base path.');
   const { stdout: selectedNodeUrl } = await execute(
     process.execPath,
-    ['--input-type=module', '-e', "import { site } from './src/config/site.ts'; console.log(site.url);"],
+    [
+      '--input-type=module',
+      '-e',
+      "process.env.NODE_ENV = 'production'; const { getViteConfig } = await import('astro/config'); const { define } = await getViteConfig({})({ command: 'serve', mode: 'production' }); console.log(JSON.stringify({ site: JSON.parse(define['import.meta.env.SITE']), base: JSON.parse(define['import.meta.env.BASE_URL']) }));",
+    ],
     {
       cwd: cloudflareDirectory,
       env: { ...process.env, PUBLIC_SITE_URL: stagingUrl },
     },
   );
-  if (selectedNodeUrl.trim() !== stagingUrl)
+  const selectedSettings = JSON.parse(selectedNodeUrl.trim().split('\n').at(-1) ?? 'null') as {
+    site?: string;
+    base?: string;
+  };
+  if (selectedSettings.site !== stagingUrl || selectedSettings.base !== '/preview/')
     throw new Error('Node-based browser and Lighthouse tooling must use the same selected canonical URL.');
   const { stdout: wranglerVersion } = await execute(
     process.execPath,

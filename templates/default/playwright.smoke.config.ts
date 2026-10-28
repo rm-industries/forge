@@ -4,6 +4,7 @@ const deploymentUrl = process.env.DEPLOYMENT_URL ?? 'https://deployment.invalid/
 
 export default defineConfig({
   testDir: './tests/smoke',
+  testMatch: '**/*.spec.ts',
   outputDir: 'test-results/smoke',
   forbidOnly: true,
   retries: 2,

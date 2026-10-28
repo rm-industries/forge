@@ -1,8 +1,10 @@
 import type { APIRoute } from 'astro';
 
-import { site } from '../config/site';
+import { resolveSiteHref } from '../lib/paths';
 
-export const GET: APIRoute = () =>
-  new Response(`User-agent: *\nAllow: /\nSitemap: ${new URL('sitemap-index.xml', site.url)}\n`, {
+export const GET: APIRoute = ({ site }) => {
+  if (!site) throw new Error('Robots metadata requires Astro site configuration.');
+  return new Response(`User-agent: *\nAllow: /\nSitemap: ${new URL(resolveSiteHref('/sitemap-index.xml'), site)}\n`, {
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
   });
+};

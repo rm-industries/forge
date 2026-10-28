@@ -1,8 +1,8 @@
 import type { APIRoute } from 'astro';
 
-import { site } from '../config/site';
-
-export const GET: APIRoute = () =>
-  new Response(`User-agent: *\nAllow: /\nSitemap: ${new URL('sitemap-index.xml', site.url)}\n`, {
+export const GET: APIRoute = ({ site }) => {
+  if (!site) throw new Error('Robots requires Astro site to identify the public deployment.');
+  return new Response(`User-agent: *\nAllow: /\nSitemap: ${new URL('sitemap-index.xml', site)}\n`, {
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
   });
+};

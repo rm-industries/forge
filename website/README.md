@@ -48,11 +48,14 @@ This is a static product and documentation website. It has no CMS application,
 admin route, article collection, or feed. Generated-site content and CMS guides
 explain the product's output and do not describe this website's runtime.
 
-`src/config/site.ts` owns identity, canonical URL, navigation, and repository
-links. The canonical URL's `/forge/` pathname supplies the production base;
-local development uses `/`. Shared URL helpers apply the base to navigation,
-assets, metadata, and supporting files. Keep the existing origin and base when
-editing content.
+`astro.config.ts` owns the complete public site URL and runtime base. Production
+uses `/forge/`; local development uses `/` while canonical metadata retains the
+public `/forge/` identity. `src/config/site.ts` owns editorial identity,
+navigation, and repository links. Logical route helpers apply Astro's resolved
+base once; request paths and compiled assets already include their mount.
+Keep the existing public origin and base when editing content. `socialImage`
+accepts an authored logical public path or an Astro imported image. Imported
+image `.src` values are compiled URLs and receive no additional base prefix.
 
 Use `src/layouts/BaseLayout.astro` for the single main landmark, skip link,
 header, footer, and canonical/social metadata. Reuse the existing Astro and
@@ -85,3 +88,20 @@ after interface or content changes; axe cannot replace manual judgment. Keep the
 Coverage, Playwright traces/screenshots, and Lighthouse reports are generated
 artifacts and remain ignored. Dependency exceptions require exact advisory
 scope and expiry; they are not permission to ignore unrelated audit failures.
+
+## Isolated browser previews
+
+Build the site before running browser checks. Playwright asks Astro for the
+production deployment settings and owns a foreground preview server at
+`http://127.0.0.1:4321`, including the configured mount path. It does not reuse,
+stop, or replace a developer preview session. Choose another free local port
+when needed:
+
+```sh
+PLAYWRIGHT_PORT=5432 npm run test:e2e
+```
+
+Use `PLAYWRIGHT_PORT` in place of the former website-only
+`FORGE_PREVIEW_ORIGIN` override. The port must be an integer from 1 through 65535. Remote deployment smoke checks
+continue to use `DEPLOYMENT_URL` with HTTPS; they neither start a local preview
+nor rebuild the deployed artifact.

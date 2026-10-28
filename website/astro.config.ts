@@ -6,14 +6,22 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'astro/config';
 
 import { rewriteDocumentationLinks } from './scripts/rewrite-documentation-links';
-import { getDeploymentConfig } from './src/config/deployment';
-import { site } from './src/config/site';
 
-const deployment = getDeploymentConfig(site.url);
-const isLocalDevelopment = process.env.NODE_ENV === 'development';
+const publicSite = new URL('https://www.rm-industries.com/forge/');
+if (
+  !['http:', 'https:'].includes(publicSite.protocol) ||
+  publicSite.username ||
+  publicSite.password ||
+  publicSite.search ||
+  publicSite.hash
+) {
+  throw new TypeError('Astro site must be an HTTP(S) URL without credentials, a query, or a fragment.');
+}
+publicSite.pathname = `${publicSite.pathname.replace(/\/+$/, '')}/`;
+const base = process.env.NODE_ENV === 'development' ? '/' : publicSite.pathname;
 
 export default defineConfig({
-  base: isLocalDevelopment ? undefined : deployment.base,
+  base,
   integrations: [sitemap()],
   markdown: {
     shikiConfig: { theme: 'catppuccin-mocha' },
@@ -22,7 +30,7 @@ export default defineConfig({
         [
           rewriteDocumentationLinks,
           {
-            base: isLocalDevelopment ? '/' : (deployment.base ?? '/'),
+            base,
             repositoryDirectory: fileURLToPath(new URL('../', import.meta.url)),
           },
         ],
@@ -30,7 +38,7 @@ export default defineConfig({
     }),
   },
   output: 'static',
-  site: deployment.site,
+  site: publicSite.href,
   trailingSlash: 'always',
   vite: {
     plugins: [tailwindcss()],

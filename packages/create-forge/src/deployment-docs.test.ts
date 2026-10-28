@@ -19,6 +19,7 @@ test('documents native defaults and nested workflow ownership', () => {
   expect(guide).toContain('target: github-pages');
   expect(guide).toContain('../.github/workflows/website-project.yml');
   expect(guide).toContain('GitHub Actions');
+  expect(guide).toContain('[Astro configuration](astro.config.ts)');
   expect(guide).not.toContain('CLOUDFLARE_API_TOKEN');
   expect(guide).toContain('name: github-pages');
   const gitlabGuide = createDeploymentGuide({ ...config, primary: 'gitlab' });

@@ -5,7 +5,7 @@ Lighthouse CI protects the generated site's public-page baseline. Run
 metadata, or client behavior. The command builds the production site, collects
 three reports per route from Astro's preview server, and evaluates the median
 result. The typed runner derives Astro's optional deployment base from
-`src/config/site.ts`, ensuring project-path assets and routes are measured at
+`astro.config.ts`, ensuring project-path assets and routes are measured at
 their production-relative locations.
 
 ## Enforced routes

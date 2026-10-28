@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { resolvePreviewPath } from './preview';
+import { resolvePreviewPath } from './support/site';
 
 test('uses the documented action hierarchy and semantic badges', async ({ page }) => {
   await page.goto(resolvePreviewPath('/'));
