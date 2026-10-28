@@ -108,8 +108,8 @@ replacement for the hosted runner's Chrome discovery.
 An [adapted Lighthouse run](https://github.com/rm-industries/forge/actions/runs/40716231773)
 replays the original run's canonical source/build artifacts. It uses the existing
 GitLab template settings: explicit Playwright Chromium `CHROME_PATH` and
-`--no-sandbox --disable-dev-shm-usage --disable-gpu`. Both adapted repetitions passed the existing audit budgets and retained the
-Lighthouse reports.
+`--no-sandbox --disable-dev-shm-usage --disable-gpu`. Both adapted repetitions
+passed the existing audit budgets and retained the Lighthouse reports.
 
 | Adapted image repetition | Total job | Container initialization | Dependency setup | Audit |
 | ------------------------ | --------: | -----------------------: | ---------------: | ----: |
@@ -255,6 +255,19 @@ coverage today. A separate reviewed change can resolve those gates and remeasure
 complete jobs without reducing coverage; it should report remaining uncertainty
 rather than invent a numerical adoption threshold. No rollout, custom image,
 shared permission change, or broad caching project is included here.
+
+## Remaining acceptance
+
+This report provides investigation evidence and recommendations; it does not
+complete every acceptance check. [#444](https://github.com/rm-industries/forge/issues/444)
+and [#398](https://github.com/rm-industries/forge/issues/398) remain open: packaged
+browser-oxfmt browser checks were not reached, and deployment smoke and
+website-specific integration checks were not run in the candidate environment.
+Runner cache state was unknown, so controlled cold/warm behavior also remains
+unverified. These are explicit limits on the evidence, not successful checks.
+The documentation-based GitLab and generated-CI consolidation in
+[#445](https://github.com/rm-industries/forge/issues/445) is complete. No environment
+rollout is included or implied by completing that assessment.
 
 ## Sources
 
