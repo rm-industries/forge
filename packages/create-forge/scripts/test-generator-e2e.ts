@@ -303,7 +303,10 @@ try {
   }
 
   const explicitAstroConfig = await readFile(join(explicitDirectory, 'astro.config.ts'), 'utf8');
-  if (!explicitAstroConfig.includes('https://explicit.example.com'))
+  if (
+    /publicSite = new URL\(process\.env\.PUBLIC_SITE_URL \?\? '([^']+)'\);/u.exec(explicitAstroConfig)?.[1] !==
+    'https://explicit.example.com/'
+  )
     throw new Error('Explicit fixture must configure its public URL at the Astro boundary.');
 
   const scopedDirectory = join(projectsDirectory, 'scoped-site');
@@ -448,7 +451,8 @@ try {
     prefixedPipeline.deploy.pages.path_prefix !== 'staging' ||
     prefixedPipeline.deploy.pages.expire_in !== 'never' ||
     prefixedPipeline.deploy.environment.url !== prefixedPagesUrl ||
-    !prefixedAstroConfig.includes(prefixedPagesUrl)
+    /publicSite = new URL\(process\.env\.PUBLIC_SITE_URL \?\? '([^']+)'\);/u.exec(prefixedAstroConfig)?.[1] !==
+      prefixedPagesUrl
   ) {
     throw new Error('Prefixed Pages must preserve the persistent prefix and matching site/deployment URL.');
   }
