@@ -1,6 +1,6 @@
 # Playwright CI environment investigation
 
-<!-- cspell:ignore rustup -->
+<!-- cspell:ignore rustup bindgen -->
 
 This investigation supports [#398](https://github.com/rm-industries/forge/issues/398)
 and its tickets [#444](https://github.com/rm-industries/forge/issues/444) and
@@ -136,8 +136,15 @@ passed, but invoking the installer as `/tmp/forge-rustup-init` failed with
 `unknown proxy name: 'forge-rustup-init'`. This exposes a basename-sensitive
 invocation in the reused GitLab setup; it is not a browser-image compatibility
 result. Production GitLab configuration was not changed. The final bounded
-package probe uses the same verified bytes under the standard `rustup-init`
-basename to separate that prerequisite issue from image compatibility.
+[package probe](https://github.com/rm-industries/forge/actions/runs/40719037937/job/122924573614)
+used the same verified bytes under the standard `rustup-init` basename. It
+successfully installed Rust 1.97.0, then failed compiling the pinned
+`wasm-bindgen-cli` 0.2.129 because the image lacked the native linker `cc`
+(exit 101). This isolates another native-build prerequisite absent from the
+browser-focused image. The job took 208s: container initialization 27s, Node/npm
+setup 161s, and failed Rust/bootstrap step 13s. Native builds and packaged browser
+checks were still not reached; these failed timings cannot establish a complete
+package-job comparison. No compiler installation or custom image was added.
 
 A separate [website Chromium integration and public-smoke probe](https://github.com/rm-industries/forge/actions/runs/40718852488/job/122923911310)
 passed with Node 26.12.1 and Playwright 1.64.1. It built and validated the current
@@ -161,7 +168,7 @@ published site, not a newly deployed candidate build.
 | ------------------------------------------------------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Full three-browser suites                              | Retain host setup; defer image adoption | Both image repetitions failed Firefox launch while both host repetitions passed 159 tests. Validate container identity/home configuration before claiming equivalent coverage.                                                              |
 | Chromium-only Lighthouse                               | Retain current setup for now            | Explicit executable discovery and launch flags made both image audits pass. Successful image totals were 177s and 191s against host 145s and 199s. There is no demonstrated large ordinary-run gain; only two observations per environment. |
-| Combined native browser-oxfmt package job              | Retain current setup                    | Candidate failed at missing Rust bootstrap tooling before packaged browser checks. Include its replacement setup cost and run the package checks before reconsidering.                                                                      |
+| Combined native browser-oxfmt package job              | Retain current setup                    | Initial setup lacked Rust; checksum-verified bootstrap then failed at missing native linker. Packaged browser checks have not run. Include all native prerequisites before reconsidering.                                                   |
 | Deployment smoke and website-specific integration jobs | Retain pending performance evidence     | The existing website Chromium integration and public smoke checks passed in one image probe; no matched host timing or new deployment was tested.                                                                                           |
 
 For Lighthouse, the descriptive two-run median was 184s in the image versus 172s
@@ -262,13 +269,13 @@ or change consumer-owned YAML as part of this investigation.
 
 ## Consolidated decision
 
-| Provider and category                                 | Decision                          | Basis and next gate                                                                                                                                                 |
-| ----------------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GitHub full-browser suites                            | Retain; defer image adoption      | Large historical installation stalls justify further work, but image Firefox coverage failed. Validate identity/home settings and repeat complete-suite timings.    |
-| GitHub Chromium-only Lighthouse                       | Retain                            | Adapted image audits pass; two samples show no established total-duration or reliability advantage. Keep explicit discovery and scoped root flags in any follow-on. |
-| GitHub native/package, smoke, and website integration | Retain or defer as detailed above | Native setup failed; website Chromium integration and public smoke passed. Retain until the remaining package and performance gates are verified.                   |
-| GitLab categories                                     | Retain; defer image adoption      | Documentation-based equivalence only. Node setup, runner configuration, and preserved checks remain unverified; performance benefits are inferred.                  |
-| Generated consumer CI                                 | Defer                             | Independent versions, image selection timing, supported Node choices, and consumer ownership need a coordinated upgrade approach.                                   |
+| Provider and category                                 | Decision                          | Basis and next gate                                                                                                                                                                      |
+| ----------------------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GitHub full-browser suites                            | Retain; defer image adoption      | Large historical installation stalls justify further work, but image Firefox coverage failed. Validate identity/home settings and repeat complete-suite timings.                         |
+| GitHub Chromium-only Lighthouse                       | Retain                            | Adapted image audits pass; two samples show no established total-duration or reliability advantage. Keep explicit discovery and scoped root flags in any follow-on.                      |
+| GitHub native/package, smoke, and website integration | Retain or defer as detailed above | Native setup failed at missing linker after Rust bootstrap; website Chromium integration and public smoke passed. Retain until the remaining package and performance gates are verified. |
+| GitLab categories                                     | Retain; defer image adoption      | Documentation-based equivalence only. Node setup, runner configuration, and preserved checks remain unverified; performance benefits are inferred.                                       |
+| Generated consumer CI                                 | Defer                             | Independent versions, image selection timing, supported Node choices, and consumer ownership need a coordinated upgrade approach.                                                        |
 
 This decision does not reject the image because typical jobs are already fast.
 Removing a repeated package-mirror stall remains a valuable outcome. The current
