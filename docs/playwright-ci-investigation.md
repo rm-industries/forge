@@ -107,7 +107,8 @@ replacement for the hosted runner's Chrome discovery.
 An [adapted Lighthouse run](https://github.com/rm-industries/forge/actions/runs/40716231773)
 replays the original run's canonical source/build artifacts. It uses the existing
 GitLab template settings: explicit Playwright Chromium `CHROME_PATH` and
-`--no-sandbox --disable-dev-shm-usage --disable-gpu`. Both adapted repetitions passed the existing audit budgets and retained the
+`--no-sandbox --disable-dev-shm-usage --disable-gpu`. Both adapted repetitions passed the existing
+audit budgets and retained the
 Lighthouse reports. The rerun adds only `actions: read` for cross-run artifact
 access. Root execution and disabled
 Chromium sandboxing follow upstream's trusted-test-container guidance; this is
