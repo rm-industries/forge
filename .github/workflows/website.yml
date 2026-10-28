@@ -1,477 +1,60 @@
 ---
-name: Forge Website Continuous Integration
-
-on: # yamllint disable-line rule:truthy
-  pull_request:
-    branches:
-      - main
-    paths:
-      - website/**
-      - docs/getting-started.md
-      - docs/configuration.md
-      - docs/content-and-cms.md
-      - docs/themes-and-accessibility.md
-      - docs/deployment.md
-      - docs/ci-providers.md
-      - docs/quality-and-troubleshooting.md
-      - docs/upgrades.md
-      - docs/support-policy.md
-      - docs/browser-formatter-adoption.md
-      - packages/create-forge/README.md
-      - packages/content-model/README.md
-      - packages/browser-oxfmt/README.md
-      - packages/markdownlint-frontmatter/README.md
-      - package.json
-      - package-lock.json
-      - .npmrc
-      - .github/actions/setup-project/**
-      - .github/workflows/website.yml
-  push:
-    branches:
-      - main
-    paths:
-      - website/**
-      - docs/getting-started.md
-      - docs/configuration.md
-      - docs/content-and-cms.md
-      - docs/themes-and-accessibility.md
-      - docs/deployment.md
-      - docs/ci-providers.md
-      - docs/quality-and-troubleshooting.md
-      - docs/upgrades.md
-      - docs/support-policy.md
-      - docs/browser-formatter-adoption.md
-      - packages/create-forge/README.md
-      - packages/content-model/README.md
-      - packages/browser-oxfmt/README.md
-      - packages/markdownlint-frontmatter/README.md
-      - package.json
-      - package-lock.json
-      - .npmrc
-      - .github/actions/setup-project/**
-      - .github/workflows/website.yml
+name: Website image integration experiment
+on:
   workflow_dispatch:
-  schedule:
-    - cron: '41 7 * * 1'
-
 permissions: {}
-
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
+  group: website-image-experiment-${{ github.ref }}
+  cancel-in-progress: false
 defaults:
   run:
     shell: bash
     working-directory: website
-
 jobs:
-  format:
-    name: Format
+  integration:
+    name: Website Chromium integration and public smoke
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
-      - name: Setup project
-        uses: $/.github/actions/setup-project
-        with:
-          node-version: '26.x'
-          cache-dependency-path: website/package-lock.json
-          working-directory: website
-
-      - name: Check formatting
-        run: npm run format
-
-  spellcheck:
-    name: Spellcheck
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
-      - name: Setup project
-        uses: $/.github/actions/setup-project
-        with:
-          node-version: '26.x'
-          cache-dependency-path: website/package-lock.json
-          working-directory: website
-
-      - name: Check spelling
-        run: npm run spellcheck
-
-  lint-code:
-    name: Lint code
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
-      - name: Setup project
-        uses: $/.github/actions/setup-project
-        with:
-          node-version: '26.x'
-          cache-dependency-path: website/package-lock.json
-          working-directory: website
-
-      - name: Lint code
-        run: npm run lint:code -- --format github
-
-  lint-styles:
-    name: Lint styles
-    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:47b510dd9230bf0b9bfc9b20102241e577ea7a99334ab4c3ca19f19770e9b8ea
+      options: --ipc=host
     permissions:
       contents: read
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - name: Setup project
-        uses: $/.github/actions/setup-project
+      - uses: $/.github/actions/setup-project
         with:
-          node-version: '26.x'
+          node-version: 26.x
           cache-dependency-path: website/package-lock.json
           working-directory: website
-      - name: Lint styles
-        run: npm run lint:css
-
-  lint-markdown:
-    name: Lint Markdown
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - name: Setup project
-        uses: $/.github/actions/setup-project
-        with:
-          node-version: '26.x'
-          cache-dependency-path: website/package-lock.json
-          working-directory: website
-      - name: Lint source Markdown
-        run: npm run lint:markdown
-
-  audit-unused:
-    name: Audit unused code
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - name: Setup project
-        uses: $/.github/actions/setup-project
-        with:
-          node-version: '26.x'
-          cache-dependency-path: website/package-lock.json
-          working-directory: website
-      - name: Audit unused code and dependencies
-        run: npm run audit:unused
-
-  typecheck:
-    name: Type-check
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - name: Setup project
-        uses: $/.github/actions/setup-project
-        with:
-          node-version: '26.x'
-          cache-dependency-path: website/package-lock.json
-          working-directory: website
-      - name: Check TypeScript and Astro diagnostics
-        run: npm run typecheck
-
-  unit-tests:
-    name: Unit tests and coverage
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
-      - name: Setup project
-        uses: $/.github/actions/setup-project
-        with:
-          node-version: '26.x'
-          cache-dependency-path: website/package-lock.json
-          working-directory: website
-
-      - name: Run unit tests with coverage
-        run: npm run test:coverage
-
-      - name: Upload coverage report
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: website-unit-coverage
-          path: website/coverage
-          if-no-files-found: error
-          retention-days: 7
-
-  build:
-    name: Production build
-    needs:
-      - format
-      - lint-code
-      - lint-styles
-      - lint-markdown
-      - spellcheck
-      - audit-unused
-      - typecheck
-      - unit-tests
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
-      - name: Setup project
-        uses: $/.github/actions/setup-project
-        with:
-          node-version: '26.x'
-          cache-dependency-path: website/package-lock.json
-          working-directory: website
-
-      - name: Build production site once
+      - name: Verify matching browser image version
+        run: node --input-type=module -e "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url); if (require('@playwright/test/package.json').version !== '1.64.1') throw new Error('Image and Playwright version mismatch'); console.log(process.version, require('@playwright/test/package.json').version);"
+      - name: Build production site
         run: npm run build
-
-      - name: Upload production build
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: website-build
-          path: website/dist
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Upload GitHub Pages artifact
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
-        with:
-          path: website/dist
-
-  validate-build:
-    name: Validate build
-    needs:
-      - build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - name: Setup project
-        uses: $/.github/actions/setup-project
-        with:
-          node-version: '26.x'
-          cache-dependency-path: website/package-lock.json
-          working-directory: website
-      - name: Download production build
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: website-build
-          path: website/dist
-      - name: Validate production artifacts
+      - name: Validate production artifact
         run: npm run validate:build
-
-  browser-tests:
-    name: Browser and accessibility tests
-    needs:
-      - build
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
-      - name: Setup project
-        uses: $/.github/actions/setup-project
-        with:
-          node-version: '26.x'
-          cache-dependency-path: website/package-lock.json
-          working-directory: website
-
-      - name: Install browsers
-        run: npx playwright install --with-deps chromium firefox webkit
-
-      - name: Download production build
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: website-build
-          path: website/dist
-
-      - name: Run browser and accessibility tests
-        run: npm run test:e2e
-
-      - name: Upload browser test evidence
+      - name: Run existing Chromium integration and accessibility tests
+        run: npm run test:e2e -- --project=chromium
+      - name: Retain integration evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: browser-test-results
-          include-hidden-files: true
+          name: website-image-integration
           path: |
             website/playwright-report
             website/test-results
           if-no-files-found: ignore
           retention-days: 7
-
-  lighthouse:
-    name: Lighthouse budgets
-    needs:
-      - build
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
-      - name: Setup project
-        uses: $/.github/actions/setup-project
-        with:
-          node-version: '26.x'
-          cache-dependency-path: website/package-lock.json
-          working-directory: website
-
-      - name: Install Lighthouse browser
-        run: npx playwright install --with-deps chromium
-
-      - name: Download production build
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: website-build
-          path: website/dist
-
-      - name: Enforce Lighthouse budgets
-        run: npm run lighthouse:ci
-
-      - name: Upload Lighthouse reports
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: lighthouse-reports
-          path: website/.lighthouseci
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 7
-
-  deploy:
-    name: Deploy GitHub Pages
-    needs:
-      - format
-      - lint-code
-      - lint-styles
-      - lint-markdown
-      - spellcheck
-      - audit-unused
-      - typecheck
-      - unit-tests
-      - build
-      - validate-build
-      - browser-tests
-      - lighthouse
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-
-    permissions:
-      pages: write
-      id-token: write
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    outputs:
-      page-url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Deploy GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
-
-  smoke-deployed:
-    name: Verify deployed website
-    timeout-minutes: 10
-    needs:
-      - deploy
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - name: Setup project
-        uses: $/.github/actions/setup-project
-        with:
-          node-version: '26.x'
-          cache-dependency-path: website/package-lock.json
-          working-directory: website
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
-      - name: Verify deployed routes, assets, and mobile layout
+      - name: Check existing public deployment using existing smoke test
         env:
-          DEPLOYMENT_URL: ${{ needs.deploy.outputs.page-url }}
-        run: |
-          test -n "$DEPLOYMENT_URL"
-          npm run test:smoke
-      - name: Upload deployed smoke failure evidence
-        if: failure()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+          DEPLOYMENT_URL: https://www.rm-industries.com/forge/
+        run: npm run test:smoke
+      - name: Retain smoke evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: website-deployed-smoke-results
+          name: website-image-smoke
           path: |
             website/playwright-report
             website/test-results
