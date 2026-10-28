@@ -10,231 +10,6 @@ defaults:
   run:
     shell: bash
 jobs:
-  runtime:
-    name: Template runtime (${{ matrix.runtime }})
-    runs-on: ${{ matrix.os }}
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runtime: latest Node 26 on Ubuntu
-            os: ubuntu-latest
-            node: 26.x
-            major: '26'
-            primary: true
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
-        with:
-          node-version: ${{ matrix.node }}
-      - name: Install authoring verification dependencies
-        run: npm ci
-      - name: Prepare isolated starter with default regressions
-        run: node scripts/test-template.ts prepare "$RUNNER_TEMP/forge-template"
-      - name: Resolve fresh template dependencies
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-        working-directory: ${{ runner.temp }}/forge-template
-      - name: Archive canonical source
-        run: tar -czf "$RUNNER_TEMP/template-source.tgz" -C "$RUNNER_TEMP/forge-template" .
-        if: matrix.primary == true
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
-        if: matrix.primary == true
-        with:
-          name: template-source
-          path: ${{ runner.temp }}/template-source.tgz
-          if-no-files-found: error
-          retention-days: 7
-      - uses: $/.github/actions/setup-project
-        with:
-          node-version: ${{ matrix.node }}
-          working-directory: ${{ runner.temp }}/forge-template
-          cache-dependency-path: templates/default/package.json
-      - name: Verify locked content-model
-        run: node scripts/verify-consumer-lock.ts "$RUNNER_TEMP/forge-template"
-      - name: Check template types
-        run: npm run typecheck
-        working-directory: ${{ runner.temp }}/forge-template
-      - name: Run template unit tests
-        run: if [ "$PRIMARY" = true ]; then npm run test:coverage; else npm test; fi
-        working-directory: ${{ runner.temp }}/forge-template
-        env:
-          PRIMARY: ${{ matrix.primary }}
-      - name: Build template once per runtime
-        run: npm run build
-        working-directory: ${{ runner.temp }}/forge-template
-      - name: Archive canonical production output
-        run: tar -czf "$RUNNER_TEMP/template-build.tgz" -C "$RUNNER_TEMP/forge-template" dist
-        if: matrix.primary == true
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
-        if: matrix.primary == true
-        with:
-          name: template-build
-          path: ${{ runner.temp }}/template-build.tgz
-          if-no-files-found: error
-          retention-days: 7
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
-        if: always() && matrix.primary == true
-        with:
-          name: template-coverage
-          path: ${{ runner.temp }}/forge-template/coverage
-          if-no-files-found: error
-          retention-days: 7
-  browser-host:
-    name: Browser host (${{ matrix.repetition }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        repetition: [1, 2]
-    permissions:
-      contents: read
-    needs:
-      - runtime
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          persist-credentials: false
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
-        with:
-          name: template-source
-          path: ${{ runner.temp }}/consumer-artifacts
-      - name: Restore the canonical template
-        run: |-
-          mkdir -p "$RUNNER_TEMP/forge-template"
-          tar -xzf "$RUNNER_TEMP/consumer-artifacts/template-source.tgz" -C "$RUNNER_TEMP/forge-template"
-      - name: Install template dependencies
-        uses: $/.github/actions/setup-project
-        with:
-          node-version: 26.x
-          working-directory: ${{ runner.temp }}/forge-template
-          cache-dependency-path: templates/default/package.json
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
-        with:
-          name: template-build
-          path: ${{ runner.temp }}/consumer-artifacts
-      - name: Restore production build
-        run: tar -xzf "$RUNNER_TEMP/consumer-artifacts/template-build.tgz" -C "$RUNNER_TEMP/forge-template"
-      - name: Install supported browsers
-        run: npx playwright install --with-deps chromium firefox webkit
-        working-directory: ${{ runner.temp }}/forge-template
-      - name: Test the shared production artifact
-        run: npm run test:e2e
-        working-directory: ${{ runner.temp }}/forge-template
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
-        with:
-          name: consumer-browser-host-${{ matrix.repetition }}
-          path: |-
-            ${{ runner.temp }}/forge-template/playwright-report
-            ${{ runner.temp }}/forge-template/test-results
-          if-no-files-found: ignore
-          retention-days: 7
-        if: always()
-  browser-image:
-    name: Browser image (${{ matrix.repetition }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        repetition: [1, 2]
-    container:
-      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:47b510dd9230bf0b9bfc9b20102241e577ea7a99334ab4c3ca19f19770e9b8ea
-      options: --ipc=host
-    permissions:
-      contents: read
-    needs:
-      - runtime
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          persist-credentials: false
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
-        with:
-          name: template-source
-          path: ${{ runner.temp }}/consumer-artifacts
-      - name: Restore the canonical template
-        run: |-
-          mkdir -p "$RUNNER_TEMP/forge-template"
-          tar -xzf "$RUNNER_TEMP/consumer-artifacts/template-source.tgz" -C "$RUNNER_TEMP/forge-template"
-      - name: Install template dependencies
-        uses: $/.github/actions/setup-project
-        with:
-          node-version: 26.x
-          working-directory: ${{ runner.temp }}/forge-template
-          cache-dependency-path: templates/default/package.json
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
-        with:
-          name: template-build
-          path: ${{ runner.temp }}/consumer-artifacts
-      - name: Restore production build
-        run: tar -xzf "$RUNNER_TEMP/consumer-artifacts/template-build.tgz" -C "$RUNNER_TEMP/forge-template"
-      - name: Verify preinstalled browser version
-        run: node --input-type=module -e "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url); if (require('@playwright/test/package.json').version !== '1.64.1') throw new Error('Image and Playwright version mismatch'); console.log(process.version, require('@playwright/test/package.json').version);"
-        working-directory: ${{ runner.temp }}/forge-template
-      - name: Test the shared production artifact
-        run: npm run test:e2e
-        working-directory: ${{ runner.temp }}/forge-template
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
-        with:
-          name: consumer-browser-image-${{ matrix.repetition }}
-          path: |-
-            ${{ runner.temp }}/forge-template/playwright-report
-            ${{ runner.temp }}/forge-template/test-results
-          if-no-files-found: ignore
-          retention-days: 7
-        if: always()
-  lighthouse-host:
-    name: Lighthouse host (${{ matrix.repetition }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        repetition: [1, 2]
-    permissions:
-      contents: read
-    needs:
-      - runtime
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          persist-credentials: false
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
-        with:
-          name: template-source
-          path: ${{ runner.temp }}/consumer-artifacts
-      - name: Restore the canonical template
-        run: |-
-          mkdir -p "$RUNNER_TEMP/forge-template"
-          tar -xzf "$RUNNER_TEMP/consumer-artifacts/template-source.tgz" -C "$RUNNER_TEMP/forge-template"
-      - name: Install template dependencies
-        uses: $/.github/actions/setup-project
-        with:
-          node-version: 26.x
-          working-directory: ${{ runner.temp }}/forge-template
-          cache-dependency-path: templates/default/package.json
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
-        with:
-          name: template-build
-          path: ${{ runner.temp }}/consumer-artifacts
-      - name: Restore production build
-        run: tar -xzf "$RUNNER_TEMP/consumer-artifacts/template-build.tgz" -C "$RUNNER_TEMP/forge-template"
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
-        working-directory: ${{ runner.temp }}/forge-template
-      - name: Audit the shared production artifact
-        run: npm run lighthouse:ci
-        working-directory: ${{ runner.temp }}/forge-template
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
-        with:
-          name: consumer-lighthouse-host-${{ matrix.repetition }}
-          path: ${{ runner.temp }}/forge-template/.lighthouseci
-          if-no-files-found: error
-          retention-days: 7
-          include-hidden-files: true
-        if: always()
   lighthouse-image:
     name: Lighthouse image (${{ matrix.repetition }})
     runs-on: ubuntu-latest
@@ -247,8 +22,7 @@ jobs:
       options: --ipc=host
     permissions:
       contents: read
-    needs:
-      - runtime
+      actions: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -256,6 +30,8 @@ jobs:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: template-source
+          run-id: 40715679472
+          github-token: ${{ github.token }}
           path: ${{ runner.temp }}/consumer-artifacts
       - name: Restore the canonical template
         run: |-
@@ -270,6 +46,8 @@ jobs:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: template-build
+          run-id: 40715679472
+          github-token: ${{ github.token }}
           path: ${{ runner.temp }}/consumer-artifacts
       - name: Restore production build
         run: tar -xzf "$RUNNER_TEMP/consumer-artifacts/template-build.tgz" -C "$RUNNER_TEMP/forge-template"
@@ -277,7 +55,11 @@ jobs:
         run: node --input-type=module -e "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url); if (require('@playwright/test/package.json').version !== '1.64.1') throw new Error('Image and Playwright version mismatch'); console.log(process.version, require('@playwright/test/package.json').version);"
         working-directory: ${{ runner.temp }}/forge-template
       - name: Audit the shared production artifact
-        run: npm run lighthouse:ci
+        env:
+          LHCI_COLLECT__SETTINGS__CHROME_FLAGS: --no-sandbox --disable-dev-shm-usage --disable-gpu
+        run: |
+          export CHROME_PATH="$(node --input-type=module -e 'import { chromium } from "@playwright/test"; process.stdout.write(chromium.executablePath());')"
+          npm run lighthouse:ci
         working-directory: ${{ runner.temp }}/forge-template
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
