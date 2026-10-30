@@ -2,6 +2,11 @@
 
 All notable changes to `@rm-industries/content-model` are documented here.
 
+## 1.1.11
+
+- Validate @sveltia/cms 0.255.1 and update its supported peer range from
+  `>=0.193.2 <0.252.0` to `>=0.193.2 <0.256.0`.
+
 ## 1.1.10
 
 - Validate @sveltia/cms 0.251.0 and update its supported peer range from
