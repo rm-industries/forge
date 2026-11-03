@@ -53,7 +53,7 @@ const initial =
 const root = resolve(dirname(require.resolve('@sveltia/cms')), '../dist');
 const cmsVersion = JSON.parse(await readFile(resolve(root, '../package.json'), 'utf8')).version as string;
 const [major, minor] = cmsVersion.split('.').map(Number);
-assert(major === 0 && minor >= 251, 'Test Sveltia CMS 0.251.x or greater');
+assert(major === 0 && minor !== undefined && minor >= 251, 'Test Sveltia CMS 0.251.x or greater');
 console.log({ cmsVersion });
 const browser = await chromium.launch({ headless: true, ...(process.argv[3] ? { channel: process.argv[3] } : {}) });
 const server = createServer(async (req, res) => {
