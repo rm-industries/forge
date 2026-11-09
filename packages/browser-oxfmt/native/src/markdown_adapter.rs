@@ -102,7 +102,7 @@ pub fn format_markdown(source: &[u8], options: &[u8]) -> Result<String, String> 
                             sort_tailwindcss: input.sort_tailwindcss,
                             ..Default::default()
                         },
-                        false,
+                        None,
                     )
                     .map_err(|e| e.to_string()),
                     "md" | "markdown" => {
@@ -134,7 +134,11 @@ pub fn format_markdown(source: &[u8], options: &[u8]) -> Result<String, String> 
                                 },
                                 ..Default::default()
                             },
-                            Some(oxc_formatter::JsEmbeddedIn::MarkdownCodeBlock),
+                            oxc_formatter::JsRoot::Program {
+                                semicolons: oxc_formatter::ProgramSemicolons::LoneJsxOmitted,
+                                layout: oxc_formatter::ProgramLayout::Bare,
+                            },
+                            oxc_formatter::JsEmbeddedIn::default(),
                         )
                         .map_err(|e| e.to_string())
                     }
@@ -142,7 +146,7 @@ pub fn format_markdown(source: &[u8], options: &[u8]) -> Result<String, String> 
                 };
                 // Match upstream preservation when an embedded snippet cannot be formatted.
                 Ok(match result {
-                    Ok(ir) => DispatchResponse::Formatted(ir.into()),
+                    Ok(ir) => DispatchResponse::Formatted(ir),
                     Err(_) => DispatchResponse::PreserveOriginal,
                 })
             })),
