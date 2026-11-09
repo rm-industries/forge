@@ -18,9 +18,12 @@ and follow the reference matching the version you install.
 npm create @rm-industries/forge
 ```
 
-The create-forge 2.0 generator, repository tooling and new generated projects
-support Node.js `^22.23.4 || ^24.0.0 || ^26.0.0` and npm
-`^10.9.0 || ^11.0.0`. Git is optional with `--no-git`. The standalone Forge
+The create-forge 2.0 generator and repository tooling support Node.js `^22.23.4 || ^24.0.0 || ^26.0.0` and npm
+`^10.9.0 || ^11.0.0`.
+
+Generated projects require Node 24.15.0 or newer on Node 24 for Stylelint.
+
+Git is optional with `--no-git`. The standalone Forge
 website requires Node 26 for its tooling. Unchanged independently released
 libraries retain their published Node 22.22.2 minimum; inspect each package's engines. See [compatibility and support](docs/support-policy.md)
 for platform, browser and peer requirements, and [quality and troubleshooting](docs/quality-and-troubleshooting.md)

@@ -5,8 +5,12 @@ Forge supports declared and tested combinations. Check each installed package's
 
 ## Node.js and npm
 
-The create-forge 2.0 generator, repository tooling and newly generated sites support Node.js `^22.23.4 || ^24.0.0 || ^26.0.0`
-and npm `^10.9.0 || ^11.0.0`. Use a patched supported release. Other package
+The create-forge 2.0 generator and repository tooling support Node.js `^22.23.4 || ^24.0.0 || ^26.0.0`
+and npm `^10.9.0 || ^11.0.0`.
+
+Generated sites require Node 24.15.0 or newer on Node 24 for Stylelint.
+
+Use a patched supported release. Other package
 managers, older Node versions and experimental builds are unsupported.
 Independently released content-model, browser-oxfmt and frontmatter lint packages
 retain their published `^22.22.2 || ^24.0.0 || ^26.0.0` contracts; inspect each

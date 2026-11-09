@@ -32,7 +32,7 @@ To adopt the reviewed published version using a registry-only lockfile:
    regenerate an existing site to migrate it.
 
 The configuration imports the starter's existing TypeScript model registry using
-Node's native type stripping (the template supports Node 22.23.4+ / 24 / 26),
+Node's native type stripping (the template supports Node 22.23.4+ / 24.15.0+ / 26),
 and derives each collection's order from that same model used by Sveltia.
 The existing `**/*.md` scan remains unchanged (MDX is outside this gate).
 Only matching `model.folder/**/*.md` content receives the ordering rule; ordinary

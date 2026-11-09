@@ -11,7 +11,7 @@ and its matching package reference rather than assuming the new contract exists.
 
 ## Prepare your tools
 
-Use Node.js 22.23.4 or newer on the supported 22, 24, or 26 lines, and npm
+Use Node.js 22.23.4+, 24.15.0+, or 26.x, and npm
 10.9 or 11. These are generated-site requirements. Building the Forge project
 website itself requires Node 26; visitors need only a supported browser.
 
