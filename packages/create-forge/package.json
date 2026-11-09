@@ -58,7 +58,7 @@
   "devDependencies": {
     "@types/validate-npm-package-name": "^4.0.2",
     "typescript": "^7.0.2",
-    "wrangler": "^4.153.0"
+    "wrangler": "^4.156.1"
   },
   "engines": {
     "node": "^22.23.4 || ^24.0.0 || ^26.0.0",
