@@ -94,9 +94,8 @@ resolution can still require network access as described below. Install with
 project's lockfile. Use `npm ci` to reproduce that graph afterward. Keep generated
 files as owned source; regeneration is not an upgrade strategy.
 
-The CLI and generated projects support Node `^22.23.4 || ^24.0.0 || ^26.0.0` and
-npm `^10.9.0 || ^11.0.0`. The Forge website's Node 26-only tooling does not narrow
-these runtime contracts.
+The CLI supports Node `^22.23.4 || ^24.0.0 || ^26.0.0` and
+npm `^10.9.0 || ^11.0.0`. Generated projects require Node 24.15.0 or newer on Node 24 for Stylelint.
 
 ## CI generation
 
