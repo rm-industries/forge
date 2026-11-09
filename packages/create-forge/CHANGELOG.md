@@ -21,6 +21,7 @@ All notable changes to `@rm-industries/create-forge` are documented here.
   generated projects require 24.15.0 or newer.
 - Check the served CMS formatter policy against the installed browser engine so
   compatible engine upgrades work with fresh installs.
+- Refresh CLI dependencies and use Oxfmt 0.78 to format generated CI files.
 - Compatible authoring refreshes within unchanged ranges do not release the generator.
   Candidate checks and published-stable daily/weekly monitoring cover fresh installs.
 - Existing projects are not migrated or overwritten. Owners retain their source and
