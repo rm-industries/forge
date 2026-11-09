@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
+import { engine } from '@rm-industries/browser-oxfmt';
 import { expect, test } from 'vitest';
 
 // Bypass Astro's Vite alias for component runtime imports.
@@ -20,7 +21,7 @@ test('serves the project policy and packaged worker graph during development', a
     expect(policy.status).toBe(200);
     expect(policy.headers.get('content-type')).toContain('application/json');
     expect(await policy.json()).toMatchObject({
-      upstreamVersion: '0.74.0',
+      upstreamVersion: engine.upstreamVersion,
       options: { printWidth: 120, tabWidth: 2, singleQuote: true, endOfLine: 'lf' },
     });
     for (const name of ['index.js', 'worker.js', 'generated/engine.js']) {
