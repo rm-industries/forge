@@ -17,6 +17,10 @@ All notable changes to `@rm-industries/create-forge` are documented here.
   preflight even with `--no-install`; installation still precedes Git initialization.
 - Breaking: require Node 22.23.4 or newer on Node 22, or supported Node 24/26,
   with npm 10.9 or 11. Update Node before using this generator.
+- Upgrade generated projects to Stylelint 18 and standard config 41. On Node 24,
+  generated projects require 24.15.0 or newer.
+- Check the served CMS formatter policy against the installed browser engine so
+  compatible engine upgrades work with fresh installs.
 - Compatible authoring refreshes within unchanged ranges do not release the generator.
   Candidate checks and published-stable daily/weekly monitoring cover fresh installs.
 - Existing projects are not migrated or overwritten. Owners retain their source and
