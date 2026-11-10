@@ -48,7 +48,7 @@
     "quality:native": "node native/build-wasm.ts --check"
   },
   "dependencies": {
-    "editorconfig": "3.0.2"
+    "editorconfig": "4.0.0"
   },
   "peerDependencies": {
     "oxfmt": "0.78.0"
