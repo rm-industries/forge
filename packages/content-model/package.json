@@ -5,8 +5,10 @@
   "keywords": [
     "astro",
     "cms",
+    "content-collections",
     "content-model",
     "content-schema",
+    "schema-validation",
     "static-site-generator",
     "sveltia",
     "sveltia-cms",
