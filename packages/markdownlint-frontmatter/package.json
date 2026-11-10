@@ -2,6 +2,15 @@
   "name": "@rm-industries/markdownlint-frontmatter",
   "version": "0.1.0",
   "description": "Source-preserving YAML frontmatter ordering rule for Markdownlint",
+  "keywords": [
+    "autofix",
+    "frontmatter",
+    "frontmatter-order",
+    "markdown",
+    "markdownlint",
+    "markdownlint-rule",
+    "yaml"
+  ],
   "homepage": "https://github.com/rm-industries/forge/tree/main/packages/markdownlint-frontmatter#readme",
   "bugs": {
     "url": "https://github.com/rm-industries/forge/issues"

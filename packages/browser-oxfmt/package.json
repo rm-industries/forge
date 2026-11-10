@@ -2,6 +2,16 @@
   "name": "@rm-industries/browser-oxfmt",
   "version": "0.1.3",
   "description": "Native Oxfmt Markdown formatting in a browser worker",
+  "keywords": [
+    "browser",
+    "code-formatter",
+    "markdown",
+    "markdown-formatter",
+    "oxfmt",
+    "wasm",
+    "web-worker",
+    "webassembly"
+  ],
   "homepage": "https://github.com/rm-industries/forge/tree/main/packages/browser-oxfmt",
   "license": "MIT",
   "repository": {
