@@ -66,7 +66,9 @@ test('opts in to ordered security.txt contacts and validates fixed expiration an
     '--security-expires',
     expiration,
   ];
-  const result = await runCli(['--yes', ...flags], '2.0.0', { interactive: false });
+  const result = await runCli(['--yes', ...flags, '--url', 'https://example.test///'], '2.0.0', {
+    interactive: false,
+  });
   expect(result.options?.security).toEqual({ contacts, expiration: { fixed: expiration } });
   for (const invalid of [
     ['--security-txt'],
@@ -77,6 +79,23 @@ test('opts in to ordered security.txt contacts and validates fixed expiration an
     const failure = await runCli(['--yes', ...invalid], '2.0.0', { interactive: false });
     expect(failure).toMatchObject({ exitCode: 1, output: expect.stringContaining('security.txt') });
   }
+});
+
+test.each(['?preview=1', '#fragment', '?', '#'])('rejects a security.txt site URL with %s', async (suffix) => {
+  const result = await runCli(
+    [
+      '--yes',
+      '--security-contact',
+      'mailto:security@example.test',
+      '--security-rolling',
+      '6',
+      '--url',
+      `https://example.test/${suffix}`,
+    ],
+    '2.0.0',
+    { interactive: false },
+  );
+  expect(result).toMatchObject({ exitCode: 1, output: expect.stringContaining('a query, or a fragment') });
 });
 
 test('uses the same security.txt configuration for interactive and non-interactive setup', async () => {
@@ -152,7 +171,7 @@ test('resolves the same rolling duration from scripted and interactive setup', a
     confirm: async () => true,
     text: async ({ initialValue, validate }) => {
       expect(initialValue).toBe('6');
-      expect(validate?.('0')).toContain('calendar months');
+      expect(validate?.('1')).toContain('calendar months');
       return '6';
     },
     isCancel: () => false,
@@ -161,7 +180,7 @@ test('resolves the same rolling duration from scripted and interactive setup', a
   const scripted = await runCli([...args, '--security-rolling', '6'], '2.0.0', { interactive: false });
   expect(interactive).toEqual(scripted);
   expect(scripted.options?.security).toEqual({ contacts, expiration: { months: 6 } });
-  for (const options of [['0'], ['13'], ['1.5'], ['6', '--security-expires', '2028-02-01T00:00:00Z']]) {
+  for (const options of [['0'], ['1'], ['13'], ['2.5'], ['6', '--security-expires', '2028-02-01T00:00:00Z']]) {
     const invalid = await runCli([...args, '--security-rolling', ...options], '2.0.0', { interactive: false });
     expect(invalid.exitCode).toBe(1);
     expect(invalid.output).toContain('security.txt');

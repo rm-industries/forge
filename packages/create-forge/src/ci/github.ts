@@ -236,7 +236,10 @@ NODE`,
     jobs.build!.steps.push({
       uses: pins('actions/upload-pages-artifact').ref,
       if: config.primary === 'github' && deployment ? deployCondition : false,
-      with: { path: path('dist'), ...(config.includeSecurityTxt ? { 'include-hidden-files': true } : {}) },
+      with: {
+        path: path('dist'),
+        ...(config.includeSecurityTxt || config.renewSecurityTxt ? { 'include-hidden-files': true } : {}),
+      },
     });
   for (const [id, extra] of Object.entries(nativePages ? githubExtras.pages : {})) {
     const job = structuredClone(extra);

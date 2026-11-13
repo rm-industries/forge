@@ -54,7 +54,7 @@ describe('CLI argument parsing', () => {
         --security-expires <timestamp>   fixed security.txt expiration in RFC 3339
                                          format
         --security-rolling <months>      rolling security.txt expiration in calendar
-                                         months (1–12, suggested: 6)
+                                         months (2–12, suggested: 6)
         --install                        install dependencies
         --no-install                     do not install dependencies
         --git                            initialize a Git repository

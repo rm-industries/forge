@@ -19,6 +19,7 @@ import { format } from 'oxfmt';
 
 import templateFormatting from '../../../templates/default/oxfmt.config.ts';
 import { renderSecurityTxt } from '../../../templates/default/src/integrations/security-txt/render.ts';
+import { normalizePublicSite } from '../../../templates/default/src/lib/public-site.ts';
 import { resolveDeployments } from './ci/deployment.ts';
 import { generationOptionsSchema } from './ci/generation-options.ts';
 import { deriveCiPrefix, validateCiPrefix, workflowPath } from './ci/paths';
@@ -284,8 +285,7 @@ export const materializeProject = async (options: GeneratorOptions, context: Mat
   if (options.security !== undefined) {
     const urls = deployments.length ? deployments.map((deployment) => deployment.url ?? options.url) : [options.url];
     for (const url of urls) {
-      const site = new URL(url);
-      site.pathname = `${site.pathname.replace(/\/+$/, '')}/`;
+      const site = normalizePublicSite(url);
       renderSecurityTxt(options.security, site.href, site.pathname);
     }
   }

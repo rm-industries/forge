@@ -5,6 +5,7 @@ import {
   validateSecurityContacts,
   type SecurityConfig,
 } from '../../../templates/default/src/integrations/security-txt/render.ts';
+import { normalizePublicSite } from '../../../templates/default/src/lib/public-site.ts';
 import { resolveDeployments } from './ci/deployment.ts';
 import { generationOptionsSchema } from './ci/generation-options.ts';
 import { validateCiPrefix } from './ci/paths';
@@ -114,7 +115,10 @@ const resolveSecurity = async (
             : ''),
       };
   const security = { contacts, expiration };
-  for (const site of siteUrls) renderSecurityTxt(security, site, new URL(site).pathname);
+  for (const value of siteUrls) {
+    const site = normalizePublicSite(value);
+    renderSecurityTxt(security, site.href, site.pathname);
+  }
   return security;
 };
 

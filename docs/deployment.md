@@ -60,7 +60,8 @@ Choose one expiration mode:
 - `--security-rolling 6` sets `expiration: { months: 6 }` in
   `src/config/security.ts`. Each static build computes a fresh expiration in
   UTC, using the last day of the destination month when needed. Forge suggests
-  six months and accepts 1 to 12 whole calendar months.
+  six months and accepts 2 to 12 whole calendar months. The two-month minimum
+  leaves time for the next monthly renewal.
 - `--security-expires 2028-02-29T18:00:00Z` publishes a fixed future RFC 3339
   timestamp. Update it, rebuild, and deploy before it lapses.
 

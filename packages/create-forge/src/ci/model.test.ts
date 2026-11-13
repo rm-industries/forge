@@ -585,6 +585,14 @@ test.each([
   });
 });
 
+test('preserves hidden files in rolling Pages artifacts', () => {
+  const { project } = createGithubWorkflows({ ...config, renewSecurityTxt: true }, pins);
+  const upload = project.jobs.build!.steps.find(
+    (step) => 'uses' in step && step.uses.startsWith('actions/upload-pages-artifact@'),
+  );
+  expect(upload).toMatchObject({ with: { 'include-hidden-files': true } });
+});
+
 test('omits renewal from fixed, secondary and staging-only deployment workflows', () => {
   for (const options of [
     { ...config, includeSecurityTxt: true },

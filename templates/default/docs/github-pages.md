@@ -28,13 +28,13 @@ assets, the RSS feed, the web manifest, and CMS branding use the same path.
 For a project site, include the repository name:
 
 ```ts
-const publicSite = new URL(process.env.PUBLIC_SITE_URL ?? 'https://owner.github.io/repository/');
+const publicSite = normalizePublicSite(process.env.PUBLIC_SITE_URL ?? 'https://owner.github.io/repository/');
 ```
 
 For an organization or user site, use the root address:
 
 ```ts
-const publicSite = new URL(process.env.PUBLIC_SITE_URL ?? 'https://owner.github.io/');
+const publicSite = normalizePublicSite(process.env.PUBLIC_SITE_URL ?? 'https://owner.github.io/');
 ```
 
 Run `npm run build && npm run validate:build` after changing the URL. Once the
@@ -45,7 +45,7 @@ workflow succeeds on `main`, its deployment summary links to the published site.
 Set the site URL to the custom origin without a repository pathname:
 
 ```ts
-const publicSite = new URL(process.env.PUBLIC_SITE_URL ?? 'https://www.example.com/');
+const publicSite = normalizePublicSite(process.env.PUBLIC_SITE_URL ?? 'https://www.example.com/');
 ```
 
 Add `public/CNAME` containing only the domain name, configure the same domain in

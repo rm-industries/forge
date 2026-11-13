@@ -1,3 +1,5 @@
+// cspell:words isub
+
 import { expect, test } from 'vitest';
 
 import {
@@ -33,8 +35,12 @@ test.each([
   expect(renderSecurityTxt(rolling, site, '/', new Date(buildTime))).toContain(`Expires: ${expiration}\n`);
 });
 
-test.each([0, 13, 1.5])('rejects an invalid rolling duration (%s)', (months) => {
+test.each([0, 1, 13, 2.5])('rejects an invalid rolling duration (%s)', (months) => {
   expect(() => validateRollingMonths(months)).toThrow('calendar months');
+});
+
+test.each([2, 12])('accepts a rolling duration of %s months', (months) => {
+  expect(validateRollingMonths(months)).toBe(months);
 });
 
 test('renders the canonical override and all optional fields', () => {
@@ -42,7 +48,7 @@ test('renders the canonical override and all optional fields', () => {
     {
       ...config,
       canonical: 'https://example.net/.well-known/security.txt',
-      preferredLanguages: ['en', 'fr-CA'],
+      preferredLanguages: ['en', 'fr-CA', 'i-klingon', 'en-GB-oed', 'x-acme', 'zh-cmn-Hans-CN', 'en-a-foo'],
       acknowledgments: ['https://example.net/thanks'],
       encryption: ['https://example.net/key', 'dns:key.example.net'],
       hiring: ['https://example.net/jobs'],
@@ -54,7 +60,7 @@ test('renders the canonical override and all optional fields', () => {
   );
   expect(body.split('\n').slice(3)).toEqual([
     'Canonical: https://example.net/.well-known/security.txt',
-    'Preferred-Languages: en, fr-CA',
+    'Preferred-Languages: en, fr-CA, i-klingon, en-GB-oed, x-acme, zh-cmn-Hans-CN, en-a-foo',
     'Acknowledgments: https://example.net/thanks',
     'Encryption: https://example.net/key',
     'Encryption: dns:key.example.net',
@@ -81,6 +87,20 @@ test.each([
   [{ ...config, canonical: 'https://example.com/security.txt#fragment' }, 'requires an HTTPS canonical URL'],
   [{ ...config, contacts: ['mailto:a@example.com\nExpires: x'] }, 'contacts must be absolute'],
   [{ ...config, contacts: ['dns:example.com'] }, 'contacts must be absolute'],
+  [{ ...config, contacts: ['mailto:?'] }, 'contacts must be absolute'],
+  [{ ...config, contacts: ['mailto:?subject=Report'] }, 'contacts must be absolute'],
+  [{ ...config, contacts: ['mailto:?to=invalid'] }, 'contacts must be absolute'],
+  [{ ...config, contacts: ['tel:abc'] }, 'contacts must be absolute'],
+  [{ ...config, contacts: ['tel:+1-212-555-0100;ext=1;ext=2'] }, 'contacts must be absolute'],
+  [{ ...config, contacts: ['tel:+1-212-555-0100;ext=abc'] }, 'contacts must be absolute'],
+  [{ ...config, contacts: ['tel:+1-212-555-0100;isub'] }, 'contacts must be absolute'],
+  [{ ...config, contacts: ['tel:+1-212-555-0100;phone-context=example.com'] }, 'contacts must be absolute'],
+  [{ ...config, contacts: ['tel:123;phone-context=invalid_context'] }, 'contacts must be absolute'],
+  [{ ...config, contacts: ['tel:123;phone-context'] }, 'contacts must be absolute'],
+  [{ ...config, contacts: ['tel:123;phone-context=+1;bad='] }, 'contacts must be absolute'],
+  [{ ...config, contacts: ['https://example.com/[invalid]'] }, 'contacts must be absolute'],
+  [{ ...config, contacts: ['https://example.com/report#a#b'] }, 'contacts must be absolute'],
+  [{ ...config, contacts: ['mailto:invalid'] }, 'contacts must be absolute'],
   [
     { ...config, expiration: { months: 6, fixed: '2028-07-01T00:00:00Z' } } as unknown as SecurityConfig,
     'requires either a fixed or a rolling expiration',
@@ -94,6 +114,8 @@ test.each([
   [{ ...config, expiration: { fixed: '2028-01-01T00:00:00Z' } }, 'must be in the future'],
   [{ ...config, preferredLanguages: [] }, 'Preferred-Languages'],
   [{ ...config, preferredLanguages: ['en_US'] }, 'Preferred-Languages'],
+  [{ ...config, preferredLanguages: ['en-a'] }, 'Preferred-Languages'],
+  [{ ...config, preferredLanguages: ['i-unknown'] }, 'Preferred-Languages'],
   [{ ...config, policy: [] }, 'Policy requires a non-empty list'],
   [{ ...config, policy: ['http://example.com/'] }, 'Policy requires a non-empty list'],
 ])('rejects invalid fields with a diagnostic (%j)', (invalid, message) => {
@@ -103,4 +125,16 @@ test.each([
 test('the CLI validators reject a missing contact or impossible calendar date before rendering', () => {
   expect(() => validateSecurityContacts([])).toThrow('requires at least one monitored contact');
   expect(() => validateFixedExpiration('2029-02-29T00:00:00Z', now)).toThrow('valid RFC 3339 calendar date');
+});
+
+test.each([
+  'https://[2001:db8::1]:443/%5Breport%5D?source=security#contact',
+  'mailto:security@example.com,ops@example.com?subject=Security&body=Details%20here',
+  'mailto:?to=security@example.com',
+  'tel:+1-212-555-0100;ext=123',
+  'tel:*12#;phone-context=example.com',
+  'tel:123;phone-context=+1;optional',
+  'tel:+1-212-555-0100;isub=123',
+])('accepts contact URI %s', (contact) => {
+  expect(renderSecurityTxt({ ...config, contacts: [contact] }, site, '/', now)).toContain(`Contact: ${contact}\n`);
 });

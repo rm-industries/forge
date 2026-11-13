@@ -1,3 +1,5 @@
+// cspell:words enochian mingo isdn isub subaddress
+
 export interface SecurityConfig {
   contacts: readonly string[];
   expiration: { fixed: string; months?: never } | { months: number; fixed?: never };
@@ -11,17 +13,75 @@ export interface SecurityConfig {
 
 export const securityTxtPath = '/.well-known/security.txt';
 
-const uriPattern = /^[a-z][a-z0-9+.-]*:(?:[a-z0-9._~:/?#[\]@!$&'()*+,;=-]|%[a-f0-9]{2})+$/iu;
-const httpsPattern = /^https:\/\/[^/]/iu;
-const contactSchemePattern = /^(?:https:\/\/|mailto:|tel:)/iu;
+const uriPattern = /^[a-z][a-z0-9+.-]*:(?:[a-z0-9._~:/?#[\]@!$&'()*+,;=-]|%[a-f0-9]{2})+$/i;
+const ipLiteralAuthority = /^[a-z][a-z0-9+.-]*:\/\/(?:[^@/?#]*@)?\[[^\]]+\](?=[:/?#]|$)/i;
+const httpsPattern = /^https:\/\/[^/]/i;
+const contactSchemePattern = /^(?:https:\/\/|mailto:|tel:)/i;
 const fixedTimestampPattern =
-  /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])t(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/iu;
-const languageTagPattern = /^(?:[a-z]{2,8}(?:-[a-z0-9]{1,8})*|x(?:-[a-z0-9]{1,8})+|i-[a-z]{1,8})$/iu;
+  /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])t(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/i;
+const languageTagPattern =
+  /^(?:(?:[a-z]{2,3}(?:-[a-z]{3}){0,3}|[a-z]{4,8})(?:-[a-z]{4})?(?:-(?:[a-z]{2}|\d{3}))?(?:-(?:[a-z0-9]{5,8}|\d[a-z0-9]{3}))*(?:-[0-9a-wyz](?:-[a-z0-9]{2,8})+)*(?:-x(?:-[a-z0-9]{1,8})+)?|x(?:-[a-z0-9]{1,8})+)$/i;
+const grandfatheredTagPattern =
+  /^(?:en-gb-oed|i-(?:ami|bnn|default|enochian|hak|klingon|lux|mingo|navajo|pwn|tao|tay|tsu)|sgn-(?:be-fr|be-nl|ch-de))$/i;
+
+const mailAddressPattern = /^[a-z0-9.!$%'*+_~:@-]+@[a-z0-9.!$%'*+_~:-]+$/i;
+const mailHeaderPattern = /^[a-z0-9._~%!$'()*+,;:@-]*=[a-z0-9._~%!$'()*+,;:@-]*$/i;
+
+const validMailRecipients = (value: string) => value.split(',').every((address) => mailAddressPattern.test(address));
+
+const validMailto = (value: string) => {
+  const [recipients = '', ...query] = value.split('?');
+  if (recipients && !validMailRecipients(recipients)) return false;
+  if (!query.length) return Boolean(recipients);
+  const headers = query.join('?').split('&');
+  return (
+    headers.every((header) => mailHeaderPattern.test(header)) &&
+    (Boolean(recipients) ||
+      headers.some((header) => header.toLowerCase().startsWith('to=') && validMailRecipients(header.slice(3))))
+  );
+};
+
+const globalNumberPattern = /^\+[().\d-]*\d[().\d-]*$/;
+const localNumberPattern = /^[().\da-f*#-]*[\da-f*#][().\da-f*#-]*$/i;
+const phoneContextPattern = /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)*[a-z](?:[a-z0-9-]*[a-z0-9])?\.?$/i;
+const phoneParameterPattern = /^[a-z0-9-]+(?:=[a-z0-9._~%!$&'()*+/:[\]-]+)?$/i;
+const extensionPattern = /^[().\d-]+$/;
+const isdnSubaddressPattern = /^[a-z0-9._~%!$&'()*+,/:;=?@-]+$/i;
+
+const validTel = (value: string) => {
+  const [number = '', ...parameters] = value.split(';');
+  const global = globalNumberPattern.test(number);
+  const local = localNumberPattern.test(number);
+  const names = new Set<string>();
+  let hasContext = false;
+  for (const parameter of parameters) {
+    const [name = '', argument] = parameter.split('=', 2);
+    const key = name.toLowerCase();
+    if (names.has(key)) return false;
+    names.add(key);
+    if (key === 'phone-context') {
+      if (!argument || !(globalNumberPattern.test(argument) || phoneContextPattern.test(argument))) return false;
+      hasContext = true;
+    } else if (key === 'ext') {
+      if (!argument || !extensionPattern.test(argument)) return false;
+    } else if (key === 'isub') {
+      if (!isdnSubaddressPattern.test(parameter.slice(name.length + 1))) return false;
+    } else if (!phoneParameterPattern.test(parameter)) {
+      return false;
+    }
+  }
+  return global ? !hasContext : local && hasContext;
+};
 
 const validUri = (value: string) => {
   if (typeof value !== 'string' || !uriPattern.test(value) || !URL.canParse(value)) return false;
   const url = new URL(value);
   if (url.protocol === 'http:') return false;
+  if (url.protocol === 'tel:') return validTel(value.slice('tel:'.length));
+  const withoutIpLiteral = value.replace(ipLiteralAuthority, '');
+  if (/[[\]]/.test(withoutIpLiteral) || withoutIpLiteral.indexOf('#') !== withoutIpLiteral.lastIndexOf('#'))
+    return false;
+  if (url.protocol === 'mailto:') return validMailto(value.slice('mailto:'.length));
   return url.protocol !== 'https:' || (httpsPattern.test(value) && !url.username && !url.password);
 };
 
@@ -50,8 +110,8 @@ export function validateFixedExpiration(fixed: string, now = new Date()): string
 }
 
 export function validateRollingMonths(months: number): number {
-  if (!Number.isInteger(months) || months < 1 || months > 12) {
-    throw new TypeError('security.txt rolling expiration requires 1 to 12 whole calendar months.');
+  if (!Number.isInteger(months) || months < 2 || months > 12) {
+    throw new TypeError('security.txt rolling expiration requires 2 to 12 whole calendar months.');
   }
   return months;
 }
@@ -85,7 +145,7 @@ export function renderSecurityTxt(
   }
 
   const canonical = config.canonical ?? new URL(securityTxtPath, site).href;
-  if (!validUri(canonical) || !httpsPattern.test(canonical) || new URL(canonical).hash) {
+  if (!validUri(canonical) || !httpsPattern.test(canonical) || canonical.includes('#')) {
     throw new TypeError('security.txt requires an HTTPS canonical URL without a fragment.');
   }
 
@@ -107,7 +167,10 @@ export function renderSecurityTxt(
     if (
       !Array.isArray(config.preferredLanguages) ||
       !config.preferredLanguages.length ||
-      !config.preferredLanguages.every((language) => typeof language === 'string' && languageTagPattern.test(language))
+      !config.preferredLanguages.every(
+        (language) =>
+          typeof language === 'string' && (languageTagPattern.test(language) || grandfatheredTagPattern.test(language)),
+      )
     ) {
       throw new TypeError('security.txt Preferred-Languages requires a non-empty list of language tags.');
     }
