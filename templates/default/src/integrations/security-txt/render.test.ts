@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 
-import { renderSecurityTxt, type SecurityConfig } from './render';
+import { renderSecurityTxt, validateFixedExpiration, validateSecurityContacts, type SecurityConfig } from './render';
 
 const site = 'https://www.example.com/';
 const now = new Date('2028-01-01T00:00:00Z');
@@ -60,11 +60,9 @@ test.each([
   [{ ...config, canonical: 'http://example.com/security.txt' }, 'requires an HTTPS canonical URL'],
   [{ ...config, canonical: 'https://?query' }, 'requires an HTTPS canonical URL'],
   [{ ...config, canonical: 'https://example.com/security.txt#fragment' }, 'requires an HTTPS canonical URL'],
-  [{ ...config, contacts: [] }, 'requires at least one monitored contact'],
   [{ ...config, contacts: ['mailto:a@example.com\nExpires: x'] }, 'contacts must be absolute'],
   [{ ...config, contacts: ['dns:example.com'] }, 'contacts must be absolute'],
   [{ ...config, expiration: { fixed: '' } }, 'requires a fixed RFC 3339 expiration'],
-  [{ ...config, expiration: { fixed: '2029-02-29T00:00:00Z' } }, 'valid RFC 3339 calendar date'],
   [{ ...config, expiration: { fixed: '2028-01-01T00:00:00Z' } }, 'must be in the future'],
   [{ ...config, preferredLanguages: [] }, 'Preferred-Languages'],
   [{ ...config, preferredLanguages: ['en_US'] }, 'Preferred-Languages'],
@@ -72,4 +70,9 @@ test.each([
   [{ ...config, policy: ['http://example.com/'] }, 'Policy requires a non-empty list'],
 ])('rejects invalid fields with a diagnostic (%j)', (invalid, message) => {
   expect(() => renderSecurityTxt(invalid, site, '/', now)).toThrow(message);
+});
+
+test('the CLI validators reject a missing contact or impossible calendar date before rendering', () => {
+  expect(() => validateSecurityContacts([])).toThrow('requires at least one monitored contact');
+  expect(() => validateFixedExpiration('2029-02-29T00:00:00Z', now)).toThrow('valid RFC 3339 calendar date');
 });
