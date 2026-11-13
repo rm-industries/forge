@@ -21,6 +21,7 @@ export const generationOptionsSchema = z
       .refine((providers) => new Set(providers).size === providers.length),
     deployments: deploymentPlanSchema.optional(),
     primary: z.enum(['github', 'gitlab']).optional(),
+    includeSecurityTxt: z.boolean().optional(),
     securityMinute: z.number().int().min(1).max(59),
     automationMinute: z.number().int().min(1).max(59),
   })

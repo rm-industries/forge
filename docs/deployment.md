@@ -46,3 +46,25 @@ Keep content edits separate from deployment or formatter rollback.
 
 A subpath site’s `robots.txt` does not govern the origin’s root crawler policy.
 Shared hosting must expose applicable robots directives at the origin root.
+
+## Publish security.txt
+
+Forge can publish an [RFC 9116](https://www.rfc-editor.org/rfc/rfc9116.html)
+vulnerability reporting file at `/.well-known/security.txt` on root-hosted HTTPS
+sites. The interactive setup offers an optional prompt. For scripted setup, pass
+`--security-txt`, repeat `--security-contact` in preference order, and set
+`--security-expires` to a future RFC 3339 timestamp such as
+`2028-02-29T18:00:00Z`. Use monitored `mailto:`, `tel:`, or HTTPS contact
+URIs. A default scaffold leaves publication disabled.
+
+The generated `src/config/security.ts` stores the contacts and fixed expiration
+and supports `canonical`, `preferredLanguages`, `acknowledgments`, `encryption`,
+`hiring`, and `policy`. The canonical URL defaults to the configured site URL
+plus `/.well-known/security.txt`. The language and optional URI fields accept
+lists. The build rejects invalid or expired settings and subpath deployments.
+
+GitHub Pages workflows generated with this option include hidden output in the
+Pages archive. For your own deployment pipeline, preserve `dist/.well-known/`.
+Verify the file on the public site over HTTPS and serve it as UTF-8 plain text.
+Keep the contacts monitored, and update the fixed expiration, rebuild, and
+redeploy before it lapses. The fixed timestamp is published as configured.

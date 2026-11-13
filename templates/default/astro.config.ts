@@ -3,6 +3,8 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'astro/config';
 
 import { sveltiaFormatter } from './scripts/sveltia-formatter';
+import { security } from './src/config/security';
+import securityTxt from './src/integrations/security-txt';
 
 let publicSite: URL;
 try {
@@ -24,7 +26,7 @@ publicSite.pathname = `${publicSite.pathname.replace(/\/+$/, '')}/`;
 
 export default defineConfig({
   base: publicSite.pathname,
-  integrations: [sitemap(), sveltiaFormatter()],
+  integrations: [sitemap(), sveltiaFormatter(), ...(security === undefined ? [] : [securityTxt(security)])],
   output: 'static',
   site: publicSite.href,
   trailingSlash: 'always',

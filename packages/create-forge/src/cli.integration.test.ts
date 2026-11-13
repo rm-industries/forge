@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { afterEach, expect, test } from 'vitest';
 
 import { runCli } from './cli';
+import type { PromptAdapter } from './prompts';
 
 const fixtures: string[] = [];
 afterEach(async () => {
@@ -52,4 +53,76 @@ test('accepts a structured deployment and rejects malformed or unsupported input
   );
   expect(repeated.exitCode).toBe(1);
   expect(repeated.output).toMatch(invalidDeploymentInputMessagePattern);
+});
+
+test('opts in to ordered security.txt contacts and validates fixed expiration and root hosting', async () => {
+  const contacts = ['mailto:security@example.test', 'https://example.test/report'];
+  const expiration = new Date(Date.now() + 86_400_000).toISOString();
+  const flags = [
+    '--security-contact',
+    contacts[0]!,
+    '--security-contact',
+    contacts[1]!,
+    '--security-expires',
+    expiration,
+  ];
+  const result = await runCli(['--yes', ...flags], '2.0.0', { interactive: false });
+  expect(result.options?.security).toEqual({ contacts, expiration: { fixed: expiration } });
+  for (const invalid of [
+    ['--security-txt'],
+    [...flags.slice(0, -1), '2020-02-01T00:00:00Z'],
+    [...flags, '--url', 'https://example.test/project/'],
+    ['--security-contact', 'http://example.test/report', '--security-expires', expiration],
+  ]) {
+    const failure = await runCli(['--yes', ...invalid], '2.0.0', { interactive: false });
+    expect(failure).toMatchObject({ exitCode: 1, output: expect.stringContaining('security.txt') });
+  }
+});
+
+test('uses the same security.txt configuration for interactive and non-interactive setup', async () => {
+  const contacts = ['mailto:security@example.test', 'https://example.test/report'];
+  const expiration = new Date(Date.now() + 86_400_000).toISOString();
+  const prompts: PromptAdapter = {
+    confirm: async () => true,
+    text: async ({ message, validate }) => {
+      const value = message.includes('contact URIs') ? contacts.join(' ') : expiration;
+      expect(validate?.(value)).toBeUndefined();
+      return value;
+    },
+    isCancel: () => false,
+  };
+  const args = [
+    'site',
+    '--name',
+    'site',
+    '--site-name',
+    'Site',
+    '--description',
+    '',
+    '--author',
+    '',
+    '--url',
+    'https://example.test/',
+    '--repository',
+    '',
+    '--no-install',
+    '--no-git',
+  ];
+  const interactive = await runCli(args, '2.0.0', { interactive: true, prompts });
+  const scripted = await runCli(
+    [
+      ...args,
+      '--security-txt',
+      '--security-contact',
+      contacts[0]!,
+      '--security-contact',
+      contacts[1]!,
+      '--security-expires',
+      expiration,
+    ],
+    '2.0.0',
+    { interactive: false },
+  );
+  expect(interactive).toEqual(scripted);
+  expect(interactive.options?.security).toEqual({ contacts, expiration: { fixed: expiration } });
 });

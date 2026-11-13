@@ -1,3 +1,4 @@
+import type { SecurityConfig } from '../../../templates/default/src/integrations/security-txt/render.ts';
 import type { DeploymentEnvironment } from './ci/deployment.ts';
 export type GeneratorOptions = {
   destination: string;
@@ -13,13 +14,20 @@ export type GeneratorOptions = {
   author: string;
   url: string;
   repository: string;
+  security?: SecurityConfig;
   install: boolean;
   git: boolean;
 };
 
 export type ProvidedOptions = {
-  [Key in keyof Omit<GeneratorOptions, 'deployments'>]?: GeneratorOptions[Key] | undefined;
-} & { yes: boolean; deployments?: unknown[] };
+  [Key in keyof Omit<GeneratorOptions, 'deployments' | 'security'>]?: GeneratorOptions[Key] | undefined;
+} & {
+  yes: boolean;
+  deployments?: unknown[];
+  securityTxt?: boolean;
+  securityContacts?: string[];
+  securityExpires?: string;
+};
 
 export const defaultDescription = 'A content-driven website built with Forge';
 export const defaultUrl = 'https://example.com';

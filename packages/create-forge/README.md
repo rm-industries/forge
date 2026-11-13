@@ -97,6 +97,15 @@ files as owned source; regeneration is not an upgrade strategy.
 The CLI supports Node `^22.23.4 || ^24.0.0 || ^26.0.0` and
 npm `^10.9.0 || ^11.0.0`. Generated projects require Node 24.15.0 or newer on Node 24 for Stylelint.
 
+## Security contact file
+
+Opt in during interactive setup or pass `--security-txt` with one or more
+`--security-contact <uri>` flags and a future RFC 3339
+`--security-expires <timestamp>`. Contacts are published in the order supplied.
+Publication requires an HTTPS site at the host root. Review the generated
+`src/config/security.ts` and renew the timestamp, rebuild, and redeploy before
+the fixed expiration.
+
 ## CI generation
 
 Select providers during bootstrap with `--ci-providers github,gitlab` or
