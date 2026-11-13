@@ -40,6 +40,14 @@ const parseArguments = (args: readonly string[], version: string) => {
     .option('--author <name>', 'site author')
     .option('--url <url>', 'absolute canonical HTTP(S) URL')
     .option('--repository <owner/repository>', 'GitHub repository or an empty value')
+    .option('--security-txt', 'configure security.txt for a root HTTPS deployment')
+    .option(
+      '--security-contact <uri>',
+      'monitored security.txt contact URI (repeatable in preference order)',
+      (value: string, previous: string[] = []) => [...previous, value],
+    )
+    .option('--security-expires <timestamp>', 'fixed security.txt expiration in RFC 3339 format')
+    .option('--security-rolling <months>', 'rolling security.txt expiration in calendar months (2–12, suggested: 6)')
     .addOption(new Option('--install', 'install dependencies'))
     .addOption(new Option('--no-install', 'do not install dependencies'))
     .addOption(new Option('--git', 'initialize a Git repository'))
@@ -89,6 +97,10 @@ const parseArguments = (args: readonly string[], version: string) => {
     author: raw.author,
     url: raw.url,
     repository: raw.repository,
+    securityTxt: raw.securityTxt,
+    securityContacts: raw.securityContact,
+    securityExpires: raw.securityExpires,
+    securityRolling: raw.securityRolling,
     install: raw.install,
     git: raw.git,
     yes: raw.yes,

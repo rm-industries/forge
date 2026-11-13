@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { deploymentPlanSchema, resolveDeployments } from './deployment.ts';
+import { deploymentPlanSchema, resolveDeployments, type DeploymentEnvironment } from './deployment.ts';
 
 const lineBreakPattern = /[\r\n]/;
 const workflowPrefixPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -21,6 +21,8 @@ export const generationOptionsSchema = z
       .refine((providers) => new Set(providers).size === providers.length),
     deployments: deploymentPlanSchema.optional(),
     primary: z.enum(['github', 'gitlab']).optional(),
+    includeSecurityTxt: z.boolean().optional(),
+    renewSecurityTxt: z.boolean().optional(),
     securityMinute: z.number().int().min(1).max(59),
     automationMinute: z.number().int().min(1).max(59),
   })
@@ -36,6 +38,15 @@ export const generationOptionsSchema = z
     }
   });
 export type CiGenerationOptions = z.infer<typeof generationOptionsSchema>;
+export function githubRenewal(
+  config: CiGenerationOptions,
+  deployments: DeploymentEnvironment[],
+): { cron: string; deployment: DeploymentEnvironment } | undefined {
+  if (!config.renewSecurityTxt || config.primary !== 'github') return undefined;
+  const deployment = deployments.find(({ name }) => name === 'production');
+  if (deployment) return { cron: `${config.automationMinute} 9 1 * *`, deployment };
+}
+
 export const workflowPath = (name: string, config: CiGenerationOptions) =>
   `.github/workflows/${config.prefix ? `${config.prefix}-` : ''}${name}.yml`;
 export const shellQuote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;

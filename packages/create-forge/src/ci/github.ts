@@ -5,7 +5,7 @@ import {
   verifyCloudflareArtifact,
 } from './cloudflare.ts';
 import { resolveDeployments } from './deployment.ts';
-import type { CiGenerationOptions } from './generation-options.ts';
+import { githubRenewal, type CiGenerationOptions } from './generation-options.ts';
 import { createGithubExtras } from './github-extra.ts';
 import { planSchema, siteWork, type WorkPlan } from './model.ts';
 import {
@@ -27,9 +27,12 @@ export function createGithubWorkflows(
 ): { project: GithubWorkflow; automation: GithubWorkflow; security: GithubWorkflow } {
   plan = planSchema.parse(plan);
   const deployments = resolveDeployments(config.deployments, config.primary);
+  const renewal = githubRenewal(config, deployments);
+  const schedule = [{ cron: `${config.automationMinute} 6 * * 2` }, ...(renewal ? [{ cron: renewal.cron }] : [])];
   if (deployments.length > 1) {
     const result = createGithubWorkflows({ ...config, deployments: [deployments[0]!] }, pins, plan);
-    const project = result.project!;
+    const project = result.project;
+    project.on.schedule = schedule;
     delete project.jobs.deploy;
     delete project.jobs['smoke-deployed'];
     const branchFilter = [...new Set(['main', ...deployments.map((item) => item.sourceBranch)])].map((branch) =>
@@ -80,11 +83,16 @@ export function createGithubWorkflows(
     result.project = githubWorkflowSchema.parse(project);
     return result;
   }
-  const deployment = resolveDeployments(config.deployments, config.primary)[0];
+  const [deployment] = deployments;
   const nativePages = config.deployments === undefined || deployment?.target === 'github-pages';
-  const deployCondition = deployment
-    ? `github.event_name == 'push' && github.ref == 'refs/heads/${deployment.sourceBranch.replaceAll("'", "''")}'`
-    : onMain;
+  const branchCondition = deployment
+    ? `github.ref == 'refs/heads/${deployment.sourceBranch.replaceAll("'", "''")}'`
+    : '';
+  const deployCondition = renewal
+    ? `${branchCondition} && (github.event_name == 'push' || (github.event_name == 'schedule' && github.event.schedule == '${renewal.cron}'))`
+    : deployment
+      ? `github.event_name == 'push' && ${branchCondition}`
+      : onMain;
   const githubExtras = createGithubExtras(pins);
   const validationBranches = [...new Set(['main', ...(deployment ? [deployment.sourceBranch] : [])])].map((branch) =>
     branch.replace(githubBranchFilterSpecialCharacterPattern, '\\$&'),
@@ -228,7 +236,10 @@ NODE`,
     jobs.build!.steps.push({
       uses: pins('actions/upload-pages-artifact').ref,
       if: config.primary === 'github' && deployment ? deployCondition : false,
-      with: { path: path('dist') },
+      with: {
+        path: path('dist'),
+        ...(config.includeSecurityTxt || config.renewSecurityTxt ? { 'include-hidden-files': true } : {}),
+      },
     });
   for (const [id, extra] of Object.entries(nativePages ? githubExtras.pages : {})) {
     const job = structuredClone(extra);
@@ -308,7 +319,7 @@ NODE`,
     ...base('Project Continuous Integration'),
     on: {
       ...base('Project Continuous Integration').on,
-      schedule: [{ cron: `${config.automationMinute} 6 * * 2` }],
+      schedule,
       workflow_dispatch: null,
     },
     defaults: { run: { shell: 'bash', 'working-directory': config.directory } },

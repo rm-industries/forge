@@ -1,3 +1,11 @@
+import {
+  renderSecurityTxt,
+  validateFixedExpiration,
+  validateRollingMonths,
+  validateSecurityContacts,
+  type SecurityConfig,
+} from '../../../templates/default/src/integrations/security-txt/render.ts';
+import { normalizePublicSite } from '../../../templates/default/src/lib/public-site.ts';
 import { resolveDeployments } from './ci/deployment.ts';
 import { generationOptionsSchema } from './ci/generation-options.ts';
 import { validateCiPrefix } from './ci/paths';
@@ -38,10 +46,80 @@ const promptText = async (prompts: PromptAdapter, options: TextPrompt) => {
   return String(value);
 };
 
-const promptConfirm = async (prompts: PromptAdapter, message: string) => {
-  const value = await prompts.confirm({ message, initialValue: true });
+const promptConfirm = async (prompts: PromptAdapter, message: string, initialValue = true) => {
+  const value = await prompts.confirm({ message, initialValue });
   if (prompts.isCancel(value)) throw new CancellationError('Project creation cancelled.');
   return Boolean(value);
+};
+
+const readContacts = (value: string) => value.trim().split(/\s+/u);
+const readRollingMonths = (value: string) => validateRollingMonths(/^\d+$/u.test(value) ? Number(value) : NaN);
+
+const resolveSecurity = async (
+  provided: ProvidedOptions,
+  { interactive, prompts }: ResolutionContext,
+  siteUrls: string[],
+): Promise<SecurityConfig | undefined> => {
+  const canPrompt = interactive && !provided.yes;
+  if (provided.securityExpires !== undefined && provided.securityRolling !== undefined) {
+    throw new InputError('security.txt accepts either --security-expires or --security-rolling.');
+  }
+  const enabled =
+    provided.securityTxt ||
+    provided.securityContacts !== undefined ||
+    provided.securityExpires !== undefined ||
+    provided.securityRolling !== undefined ||
+    (canPrompt && (await promptConfirm(prompts, 'Publish a security.txt for vulnerability reports?', false)));
+  if (!enabled) return undefined;
+
+  const contacts =
+    provided.securityContacts ??
+    (canPrompt
+      ? readContacts(
+          await promptText(prompts, {
+            message:
+              'Which monitored contact URIs should receive reports? Enter them in preference order, separated by spaces.',
+            placeholder: 'mailto:security@example.com https://example.com/report',
+            validate: textValidation((value) => {
+              validateSecurityContacts(readContacts(value));
+              return value;
+            }),
+          }),
+        )
+      : []);
+  const rolling =
+    provided.securityRolling !== undefined ||
+    (provided.securityExpires === undefined &&
+      canPrompt &&
+      (await promptConfirm(prompts, 'Use a rolling security.txt expiration?', true)));
+  const expiration: SecurityConfig['expiration'] = rolling
+    ? {
+        months: readRollingMonths(
+          provided.securityRolling ??
+            (await promptText(prompts, {
+              message: 'How many calendar months should security.txt stay valid after each build?',
+              initialValue: '6',
+              validate: textValidation((value) => String(readRollingMonths(value))),
+            })),
+        ),
+      }
+    : {
+        fixed:
+          provided.securityExpires ??
+          (canPrompt
+            ? await promptText(prompts, {
+                message: 'When should security.txt expire? Enter a future RFC 3339 timestamp.',
+                placeholder: 'YYYY-MM-DDTHH:MM:SSZ',
+                validate: textValidation(validateFixedExpiration),
+              })
+            : ''),
+      };
+  const security = { contacts, expiration };
+  for (const value of siteUrls) {
+    const site = normalizePublicSite(value);
+    renderSecurityTxt(security, site.href, site.pathname);
+  }
+  return security;
 };
 
 const hasEveryExplicitValue = (options: ProvidedOptions) =>
@@ -155,6 +233,11 @@ export const resolveOptions = async (
   );
   const install = provided.install ?? (useDefaults ? true : await promptConfirm(prompts, 'Install dependencies?'));
   const git = provided.git ?? (useDefaults ? true : await promptConfirm(prompts, 'Initialize a Git repository?'));
+  const security = await resolveSecurity(
+    provided,
+    { interactive, prompts },
+    deployments.length ? deployments.map((deployment) => deployment.url ?? url) : [url],
+  );
 
   return {
     destination,
@@ -168,6 +251,7 @@ export const resolveOptions = async (
     repository,
     install,
     git,
+    ...(security === undefined ? {} : { security }),
     ...(provided.nodeVersion === undefined ? {} : { nodeVersion: nodeVersion.data }),
     ...(provided.ciProviders === undefined ? {} : { ciProviders: providers.data }),
     ...(provided.primaryCi === undefined ? {} : { primaryCi: provided.primaryCi }),

@@ -3,7 +3,12 @@ import { posix } from 'node:path';
 import { stringify } from 'yaml';
 
 import { resolveDeployments } from './ci/deployment.ts';
-import { generationOptionsSchema, workflowPath, type CiGenerationOptions } from './ci/generation-options.ts';
+import {
+  generationOptionsSchema,
+  githubRenewal,
+  workflowPath,
+  type CiGenerationOptions,
+} from './ci/generation-options.ts';
 
 export const deploymentGuidePlaceholder = '<!-- Forge inserts the selected deployment plan here during bootstrap. -->';
 
@@ -18,8 +23,41 @@ export function createDeploymentGuide(input: CiGenerationOptions): string {
   if (config.providers.includes('gitlab'))
     sections.push(`[GitLab pipeline](${link(config.prefix ? `.gitlab/ci/${config.prefix}.yml` : '.gitlab-ci.yml')})`);
   sections.push('');
-  if (!deployments.length)
-    return [...sections, 'No deployment jobs are enabled. These pipelines validate the project only.'].join('\n');
+  const renewal = githubRenewal(config, deployments);
+  const addRenewalInstructions = () => {
+    if (!config.renewSecurityTxt) return;
+    sections.push('', '### Rolling security.txt renewal', '');
+    if (renewal) {
+      sections.push(
+        `The project workflow rebuilds, deploys, and runs smoke checks monthly (\`${renewal.cron}\` UTC).`,
+        `GitHub runs scheduled workflows on the repository default branch. Keep it set to \`${renewal.deployment.sourceBranch}\`,`,
+        'the configured production source branch, and retain your deployment protections.',
+        'Check that monthly runs deploy successfully and the public file has a fresh expiration.',
+      );
+    } else if (config.primary === 'gitlab' && deployments.length) {
+      sections.push(
+        'Create a [monthly GitLab pipeline schedule](https://docs.gitlab.com/ci/pipelines/schedules/)',
+        'on your protected production source branch with a dedicated variable such as',
+        '`RENEW_SECURITY_TXT=true`. Add a rule to both the production deploy and smoke jobs',
+        'matching that branch, the `schedule` pipeline source, and the variable. Omit',
+        '`changes` from that rule so a run with no new commits still publishes.',
+        'For a child pipeline, configure its parent trigger to run on that schedule and',
+        'forward the marker. Match `parent_pipeline` in the child renewal rules.',
+        'Verify that the scheduled run rebuilds, deploys, and refreshes the public file.',
+      );
+    } else {
+      sections.push(
+        'Schedule a monthly production build and deployment in your publishing workflow.',
+        'Build from the protected production branch, publish the fresh output including',
+        '`dist/.well-known/`, and verify the public HTTPS file has a fresh expiration.',
+      );
+    }
+  };
+  if (!deployments.length) {
+    sections.push('No deployment jobs are enabled. These pipelines validate the project only.');
+    addRenewalInstructions();
+    return sections.join('\n');
+  }
   sections.push(
     '### Your environments',
     '',
@@ -107,6 +145,7 @@ export function createDeploymentGuide(input: CiGenerationOptions): string {
       'validated artifact without rebuilding. Retained source Functions/config are not uploaded.',
       'See [Cloudflare Direct Upload](https://developers.cloudflare.com/pages/get-started/direct-upload/).',
     );
+  addRenewalInstructions();
   sections.push(
     '',
     '### Switching primary CI',

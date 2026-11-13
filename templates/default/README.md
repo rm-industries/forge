@@ -75,6 +75,17 @@ The setup below records your environments and hosting prerequisites.
 
 <!-- Forge inserts the selected deployment plan here during bootstrap. -->
 
+## Vulnerability reporting
+
+When enabled at bootstrap, the build uses `src/config/security.ts` to write
+`dist/.well-known/security.txt`. The canonical URL follows Astro's configured
+site URL unless you set `canonical`. Keep the listed contacts monitored.
+For fixed expiration, update the timestamp, rebuild, and deploy before it
+passes. For rolling expiration, each build advances the timestamp by the
+configured calendar months. Follow the deployment setup above to renew it
+in production. Preserve `dist/.well-known/` in custom deployment pipelines
+and verify the public file over HTTPS.
+
 ## Command reference
 
 The remainder of this README is the complete command and implementation

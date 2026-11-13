@@ -384,6 +384,23 @@ test('rejects an invalid programmatic deployment before creating a destination',
   await expect(access(join(fixture, options.destination))).rejects.toHaveProperty('code', 'ENOENT');
 });
 
+test.each(['?preview=1', '#fragment'])('rejects a programmatic security.txt deployment URL with %s', async (suffix) => {
+  const { fixture, template } = await createFixture();
+  await expect(
+    materializeProject(
+      {
+        ...options,
+        deployments: [
+          { name: 'production', sourceBranch: 'main', target: 'github-pages', url: `https://example.test/${suffix}` },
+        ],
+        security: { contacts: ['mailto:security@example.test'], expiration: { months: 6 } },
+      },
+      { cwd: fixture, templateDirectory: template, generateCi },
+    ),
+  ).rejects.toThrow('a query, or a fragment');
+  await expect(access(join(fixture, options.destination))).rejects.toHaveProperty('code', 'ENOENT');
+});
+
 test('resolves Cloudflare in the site lockfile without copying a tools package', async () => {
   const { fixture, template } = await createFixture();
   const defaults = join(fixture, 'cloudflare');

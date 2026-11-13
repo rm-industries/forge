@@ -46,3 +46,53 @@ Keep content edits separate from deployment or formatter rollback.
 
 A subpath site’s `robots.txt` does not govern the origin’s root crawler policy.
 Shared hosting must expose applicable robots directives at the origin root.
+
+## Publish security.txt
+
+Forge can publish an [RFC 9116](https://www.rfc-editor.org/rfc/rfc9116.html)
+vulnerability reporting file at `/.well-known/security.txt` on root-hosted HTTPS
+sites. Enable it in the interactive setup or pass `--security-txt` and repeat
+`--security-contact` in preference order. Use monitored `mailto:`, `tel:`, or
+HTTPS contact URIs. A default scaffold leaves publication disabled.
+
+Choose one expiration mode:
+
+- `--security-rolling 6` sets `expiration: { months: 6 }` in
+  `src/config/security.ts`. Each static build computes a fresh expiration in
+  UTC, using the last day of the destination month when needed. Forge suggests
+  six months and accepts 2 to 12 whole calendar months. The two-month minimum
+  leaves time for the next monthly renewal.
+- `--security-expires 2028-02-29T18:00:00Z` publishes a fixed future RFC 3339
+  timestamp. Update it, rebuild, and deploy before it lapses.
+
+The canonical URL defaults to the configured site URL plus
+`/.well-known/security.txt`. The generated configuration supports `canonical`,
+`preferredLanguages`, `acknowledgments`, `encryption`, `hiring`, and `policy`.
+The language and optional URI fields accept lists. Builds reject invalid or
+expired settings and subpath deployments.
+
+### Scheduled renewal
+
+When GitHub Actions owns deployment, rolling mode adds a monthly production
+build and deployment for GitHub Pages or Cloudflare Pages. An explicit
+deployment plan needs an environment named `production`. The implicit GitHub
+Pages deployment uses `main`. The production source branch must match the
+repository default branch, where GitHub runs scheduled workflows. The weekly
+schedule continues to validate the build. See
+[GitHub's schedule behavior](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
+
+For GitLab CI, create a monthly project schedule on the protected production
+branch. Configure the production deploy and smoke rules to accept that
+specific schedule, using a dedicated schedule variable and a rule without
+`changes`. If deployment runs in a child pipeline, configure the parent
+trigger and forward the schedule variable. See
+[GitLab's pipeline schedule setup](https://docs.gitlab.com/ci/pipelines/schedules/).
+
+For external deployment, schedule a monthly rebuild from the protected
+production branch and publish the newly built output. Preserve
+`dist/.well-known/` in custom deployment pipelines. Forge enables hidden
+output in its generated GitHub Pages archive when the file is enabled.
+
+You own the generated workflow and hosting configuration. Keep the contacts
+monitored, check that renewal runs publish successfully, and verify that the
+public HTTPS endpoint returns the current file as UTF-8 plain text.

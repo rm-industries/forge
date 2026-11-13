@@ -271,9 +271,17 @@ try {
   await execute('npm', ['run', 'build'], { cwd: defaultDirectory, maxBuffer: 20 * 1024 * 1024 });
   await execute('npm', ['run', 'validate:build'], { cwd: defaultDirectory, maxBuffer: 20 * 1024 * 1024 });
 
-  await rm(join(defaultDirectory, 'node_modules'), { recursive: true, force: true });
+  const securityPath = '.well-known/security.txt';
+  if (await exists(join(defaultDirectory, 'dist', securityPath))) throw new Error('security.txt must be opt-in.');
+  const defaultWorkflow = parse(await readFile(join(defaultDirectory, workflowPath('project', undefined)), 'utf8'));
+  const defaultPagesUpload = defaultWorkflow.jobs.build.steps.find((step: { uses?: string }) =>
+    step.uses?.startsWith('actions/upload-pages-artifact@'),
+  );
+  if (defaultPagesUpload.with['include-hidden-files'])
+    throw new Error('Disabled scaffolds must retain the default Pages hidden-file behavior.');
 
   const explicitDirectory = join(projectsDirectory, 'explicit-site');
+  const expires = new Date(Date.now() + 7 * 86_400_000).toISOString();
   await runGenerator(executable, projectsDirectory, [
     'explicit-site',
     '--name',
@@ -288,6 +296,12 @@ try {
     'https://explicit.example.com',
     '--repository',
     'rm-industries/explicit-site',
+    '--security-contact',
+    'mailto:security@example.com',
+    '--security-contact',
+    'https://explicit.example.com/report',
+    '--security-expires',
+    expires,
     '--no-install',
     '--no-git',
   ]);
@@ -304,10 +318,134 @@ try {
 
   const explicitAstroConfig = await readFile(join(explicitDirectory, 'astro.config.ts'), 'utf8');
   if (
-    /publicSite = new URL\(process\.env\.PUBLIC_SITE_URL \?\? '([^']+)'\);/u.exec(explicitAstroConfig)?.[1] !==
-    'https://explicit.example.com/'
+    /publicSite = normalizePublicSite\(process\.env\.PUBLIC_SITE_URL \?\? '([^']+)'\);/u.exec(
+      explicitAstroConfig,
+    )?.[1] !== 'https://explicit.example.com/'
   )
     throw new Error('Explicit fixture must configure its public URL at the Astro boundary.');
+
+  const projectWorkflow = parse(await readFile(join(explicitDirectory, workflowPath('project', undefined)), 'utf8'));
+  const pagesUpload = projectWorkflow.jobs.build.steps.find((step: { uses?: string }) =>
+    step.uses?.startsWith('actions/upload-pages-artifact@'),
+  );
+  const deploy = projectWorkflow.jobs.deploy;
+  if (
+    pagesUpload.with.path !== './dist' ||
+    pagesUpload.with['include-hidden-files'] !== true ||
+    !deploy.needs.includes('build') ||
+    !deploy.steps.some((step: { uses?: string }) => step.uses?.startsWith('actions/deploy-pages@'))
+  )
+    throw new Error('The native Pages deploy must consume the hidden-file-enabled build artifact.');
+
+  // Reuse the installed consumer to build the configuration emitted by the packed initializer.
+  const securityConfigPath = 'src/config/security.ts';
+  const generatedSecurity = await readFile(join(explicitDirectory, securityConfigPath), 'utf8');
+  const localSecurity = join(defaultDirectory, securityConfigPath);
+  const build = (url = 'https://explicit.example.com/', environment = process.env) =>
+    execute('npm', ['run', 'build'], {
+      cwd: defaultDirectory,
+      env: { ...environment, PUBLIC_SITE_URL: url },
+      maxBuffer: 20 * 1024 * 1024,
+    });
+  await writeFile(localSecurity, generatedSecurity);
+  await build();
+  const deployedBody = await readFile(join(defaultDirectory, pagesUpload.with.path, securityPath), 'utf8');
+  if (
+    deployedBody !==
+    'Contact: mailto:security@example.com\n' +
+      'Contact: https://explicit.example.com/report\n' +
+      `Expires: ${expires}\n` +
+      'Canonical: https://explicit.example.com/.well-known/security.txt\n'
+  )
+    throw new Error('Generated security.txt differs from the requested contact order, expiration or site URL.');
+
+  // Exercise the Linux action's hidden-file inclusion branch against the real output.
+  const pagesArchive = join(fixtureDirectory, 'pages-artifact.tar');
+  await execute('tar', [
+    '--exclude=.git',
+    '--exclude=.github',
+    '-cf',
+    pagesArchive,
+    '-C',
+    join(defaultDirectory, pagesUpload.with.path),
+    '.',
+  ]);
+  const { stdout: archiveContents } = await execute('tar', ['-tf', pagesArchive]);
+  const hiddenPaths = archiveContents.split(lineEndingPattern).filter((path) => /(?:^|\/)\.[^/]+/u.test(path));
+  if (
+    !hiddenPaths.includes(`./${securityPath}`) ||
+    hiddenPaths.some((path) => ![`./${securityPath}`, './.well-known/'].includes(path))
+  )
+    throw new Error(`Unexpected hidden paths in Pages archive: ${hiddenPaths.join(', ')}`);
+
+  const expectRejectedBuild = async (url: string, reason: string) => {
+    try {
+      await build(url);
+    } catch (error) {
+      const { stdout, stderr } = error as { stdout?: string; stderr?: string };
+      if (`${stdout}\n${stderr}`.includes(reason)) return;
+      throw error;
+    }
+    throw new Error(`The generated Astro build should fail with: ${reason}`);
+  };
+  await expectRejectedBuild('https://explicit.example.com/project/', 'security.txt requires a root deployment');
+  await writeFile(localSecurity, generatedSecurity.replace(expires, '2020-01-01T00:00:00Z'));
+  await expectRejectedBuild('https://explicit.example.com/', 'security.txt expiration must be in the future');
+  const rollingDirectory = join(projectsDirectory, 'rolling-site');
+  await runGenerator(executable, projectsDirectory, [
+    'rolling-site',
+    '--yes',
+    '--security-contact',
+    'mailto:security@example.com',
+    '--security-rolling',
+    '6',
+    '--no-install',
+    '--no-git',
+  ]);
+  await assertGeneratedProject(rollingDirectory, 'rolling-site');
+  const rollingWorkflow = parse(await readFile(join(rollingDirectory, workflowPath('project', undefined)), 'utf8'));
+  const minute = deriveScheduleMinutes('rolling-site').automation;
+  const weekly = `${minute} 6 * * 2`;
+  const monthly = `${minute} 9 1 * *`;
+  const renewalCondition =
+    "github.ref == 'refs/heads/main' && (github.event_name == 'push' || " +
+    `(github.event_name == 'schedule' && github.event.schedule == '${monthly}'))`;
+  const rollingUpload = rollingWorkflow.jobs.build.steps.find((step: { uses?: string }) =>
+    step.uses?.startsWith('actions/upload-pages-artifact@'),
+  );
+  if (
+    rollingWorkflow.on.schedule.map(({ cron }: { cron: string }) => cron).join(',') !== `${weekly},${monthly}` ||
+    rollingUpload.if !== renewalCondition ||
+    rollingUpload.with['include-hidden-files'] !== true ||
+    rollingWorkflow.jobs.deploy.if !== renewalCondition ||
+    !rollingWorkflow.jobs.deploy.needs.includes('validate-build') ||
+    !rollingWorkflow.jobs.deploy.needs.includes('lighthouse') ||
+    rollingWorkflow.jobs['smoke-deployed'].if !== renewalCondition ||
+    !rollingWorkflow.jobs['smoke-deployed'].needs.includes('deploy') ||
+    projectWorkflow.on.schedule.length !== 1
+  )
+    throw new Error('Only the monthly renewal should join production pushes in the publishing graph.');
+
+  await writeFile(localSecurity, await readFile(join(rollingDirectory, securityConfigPath), 'utf8'));
+  const clock = join(fixtureDirectory, 'build-clock.mjs');
+  await writeFile(
+    clock,
+    "import { mock } from 'node:test';\nmock.timers.enable({ apis: ['Date'], now: Date.parse(process.env.FORGE_BUILD_TIME) });\n",
+  );
+  for (const [time, expiration] of [
+    ['2027-08-31T12:30:00.000Z', '2028-02-29T12:30:00.000Z'],
+    ['2027-09-01T12:30:00.000Z', '2028-03-01T12:30:00.000Z'],
+  ]) {
+    await build('https://explicit.example.com/', {
+      ...process.env,
+      NODE_OPTIONS: [process.env.NODE_OPTIONS, `--import=${clock}`].filter(Boolean).join(' '),
+      FORGE_BUILD_TIME: time,
+    });
+    const body = await readFile(join(defaultDirectory, 'dist', securityPath), 'utf8');
+    if (!body.includes(`Expires: ${expiration}\n`))
+      throw new Error(`Rolling security.txt did not advance to ${expiration} at build time ${time}.`);
+  }
+  await rm(join(defaultDirectory, 'node_modules'), { recursive: true, force: true });
 
   const scopedDirectory = join(projectsDirectory, 'scoped-site');
   await runGenerator(executable, projectsDirectory, [
@@ -451,8 +589,9 @@ try {
     prefixedPipeline.deploy.pages.path_prefix !== 'staging' ||
     prefixedPipeline.deploy.pages.expire_in !== 'never' ||
     prefixedPipeline.deploy.environment.url !== prefixedPagesUrl ||
-    /publicSite = new URL\(process\.env\.PUBLIC_SITE_URL \?\? '([^']+)'\);/u.exec(prefixedAstroConfig)?.[1] !==
-      prefixedPagesUrl
+    /publicSite = normalizePublicSite\(process\.env\.PUBLIC_SITE_URL \?\? '([^']+)'\);/u.exec(
+      prefixedAstroConfig,
+    )?.[1] !== prefixedPagesUrl
   ) {
     throw new Error('Prefixed Pages must preserve the persistent prefix and matching site/deployment URL.');
   }

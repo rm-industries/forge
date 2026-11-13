@@ -15,6 +15,11 @@ import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, parse, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { format } from 'oxfmt';
+
+import templateFormatting from '../../../templates/default/oxfmt.config.ts';
+import { renderSecurityTxt } from '../../../templates/default/src/integrations/security-txt/render.ts';
+import { normalizePublicSite } from '../../../templates/default/src/lib/public-site.ts';
 import { resolveDeployments } from './ci/deployment.ts';
 import { generationOptionsSchema } from './ci/generation-options.ts';
 import { deriveCiPrefix, validateCiPrefix, workflowPath } from './ci/paths';
@@ -195,6 +200,19 @@ const customizeTemplate = async (
   if (astroConfig.includes(templateTokenPrefix)) throw new Error('Packaged template contains unresolved tokens.');
   await writeFile(astroConfigPath, astroConfig);
 
+  if (options.security !== undefined) {
+    const securityConfigPath = join(projectRoot, 'src', 'config', 'security.ts');
+    const securityConfig = replaceRawToken(
+      await readFile(securityConfigPath, 'utf8'),
+      'SecurityConfig | undefined = undefined',
+      `SecurityConfig = ${JSON.stringify(options.security, undefined, 2)}`,
+      'security.txt configuration',
+    );
+    const formatted = await format(securityConfigPath, securityConfig, { ...templateFormatting, printWidth: 120 });
+    if (formatted.errors.length) throw new Error('Cannot format generated security.txt configuration.');
+    await writeFile(securityConfigPath, formatted.code);
+  }
+
   const scheduleMinutes = deriveScheduleMinutes(options.packageName);
   const providers = options.ciProviders ?? ['github'];
   const ciConfig = {
@@ -205,6 +223,8 @@ const customizeTemplate = async (
     deployments: options.deployments,
     primary: options.primaryCi ?? (providers.includes('github') ? 'github' : 'gitlab'),
     securityMinute: scheduleMinutes.security,
+    ...(options.security === undefined ? {} : { includeSecurityTxt: true }),
+    ...(options.security?.expiration.months === undefined ? {} : { renewSecurityTxt: true }),
     automationMinute: scheduleMinutes.automation,
     ...(ciPrefix === undefined ? {} : { prefix: ciPrefix }),
   };
@@ -262,6 +282,13 @@ export const materializeProject = async (options: GeneratorOptions, context: Mat
     options.primaryCi ?? (providers.includes('github') ? 'github' : 'gitlab'),
   );
   if (options.deployments !== undefined) options = { ...options, deployments };
+  if (options.security !== undefined) {
+    const urls = deployments.length ? deployments.map((deployment) => deployment.url ?? options.url) : [options.url];
+    for (const url of urls) {
+      const site = normalizePublicSite(url);
+      renderSecurityTxt(options.security, site.href, site.pathname);
+    }
+  }
   const cwd = context.cwd ?? process.cwd();
   const projectRoot = resolveDestination(options.destination, cwd);
   const repositoryRoot = resolveDestination(options.repositoryRoot, cwd);

@@ -47,6 +47,14 @@ describe('CLI argument parsing', () => {
         --author <name>                  site author
         --url <url>                      absolute canonical HTTP(S) URL
         --repository <owner/repository>  GitHub repository or an empty value
+        --security-txt                   configure security.txt for a root HTTPS
+                                         deployment
+        --security-contact <uri>         monitored security.txt contact URI
+                                         (repeatable in preference order)
+        --security-expires <timestamp>   fixed security.txt expiration in RFC 3339
+                                         format
+        --security-rolling <months>      rolling security.txt expiration in calendar
+                                         months (2–12, suggested: 6)
         --install                        install dependencies
         --no-install                     do not install dependencies
         --git                            initialize a Git repository
@@ -229,7 +237,9 @@ describe('interactive prompts', () => {
       options: { destination: 'sample-site', siteName: 'Sample Site', install: false, git: true },
     });
     expect(prompts.text).toHaveBeenCalledTimes(7);
-    expect(prompts.confirm).toHaveBeenCalledTimes(2);
+    expect(prompts.confirm).toHaveBeenCalledTimes(3);
+    expect(prompts.confirm).toHaveBeenLastCalledWith(expect.objectContaining({ initialValue: false }));
+    expect(result.options?.security).toBeUndefined();
   });
 
   test('stops cleanly when a prompt is cancelled', async () => {
