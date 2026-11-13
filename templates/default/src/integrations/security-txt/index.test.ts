@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { afterEach, beforeEach, expect, it } from 'vitest';
 
+import { security as configuredSecurity } from '../../config/security';
 import securityTxt from './index';
 import { securityTxtPath } from './render';
 
@@ -26,6 +27,19 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await rm(root, { recursive: true, force: true });
+});
+
+it('matches the project configuration when building', async () => {
+  await build({
+    root,
+    configFile: false,
+    logLevel: 'silent',
+    site,
+    integrations: configuredSecurity === undefined ? [] : [securityTxt(configuredSecurity)],
+  });
+  const body = readFile(join(root, 'dist', securityTxtPath), 'utf8');
+  if (configuredSecurity === undefined) await expect(body).rejects.toMatchObject({ code: 'ENOENT' });
+  else await expect(body).resolves.toContain(`Contact: ${configuredSecurity.contacts[0]}\n`);
 });
 
 it('emits security.txt in a static build when configured', async () => {

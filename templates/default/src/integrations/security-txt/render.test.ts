@@ -63,6 +63,8 @@ test.each([
   [{ ...config, contacts: ['mailto:a@example.com\nExpires: x'] }, 'contacts must be absolute'],
   [{ ...config, contacts: ['dns:example.com'] }, 'contacts must be absolute'],
   [{ ...config, expiration: { fixed: '' } }, 'requires a fixed RFC 3339 expiration'],
+  [{ ...config, expiration: {} as SecurityConfig['expiration'] }, 'requires a fixed RFC 3339 expiration'],
+  [{ ...config, expiration: { fixed: '2100-02-29T00:00:00Z' } }, 'valid RFC 3339 calendar date'],
   [{ ...config, expiration: { fixed: '2028-01-01T00:00:00Z' } }, 'must be in the future'],
   [{ ...config, preferredLanguages: [] }, 'Preferred-Languages'],
   [{ ...config, preferredLanguages: ['en_US'] }, 'Preferred-Languages'],
