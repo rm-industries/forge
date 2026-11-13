@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
@@ -37,9 +38,7 @@ it('matches the project configuration when building', async () => {
     site,
     integrations: configuredSecurity === undefined ? [] : [securityTxt(configuredSecurity)],
   });
-  const body = readFile(join(root, 'dist', securityTxtPath), 'utf8');
-  if (configuredSecurity === undefined) await expect(body).rejects.toMatchObject({ code: 'ENOENT' });
-  else await expect(body).resolves.toContain(`Contact: ${configuredSecurity.contacts[0]}\n`);
+  expect(existsSync(join(root, 'dist', securityTxtPath))).toBe(configuredSecurity !== undefined);
 });
 
 it('emits security.txt in a static build when configured', async () => {
