@@ -27,6 +27,7 @@ export type ProvidedOptions = {
   securityTxt?: boolean;
   securityContacts?: string[];
   securityExpires?: string;
+  securityRolling?: string;
 };
 
 export const defaultDescription = 'A content-driven website built with Forge';

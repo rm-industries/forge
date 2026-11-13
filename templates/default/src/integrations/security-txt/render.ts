@@ -1,6 +1,6 @@
 export interface SecurityConfig {
   contacts: readonly string[];
-  expiration: { fixed: string };
+  expiration: { fixed: string; months?: never } | { months: number; fixed?: never };
   canonical?: string;
   preferredLanguages?: readonly string[];
   acknowledgments?: readonly string[];
@@ -49,6 +49,21 @@ export function validateFixedExpiration(fixed: string, now = new Date()): string
   return fixed;
 }
 
+export function validateRollingMonths(months: number): number {
+  if (!Number.isInteger(months) || months < 1 || months > 12) {
+    throw new TypeError('security.txt rolling expiration requires 1 to 12 whole calendar months.');
+  }
+  return months;
+}
+
+function rollingExpiration(months: number, now: Date): string {
+  validateRollingMonths(months);
+  const expires = new Date(now);
+  expires.setUTCMonth(expires.getUTCMonth() + months + 1, 0);
+  expires.setUTCDate(Math.min(now.getUTCDate(), expires.getUTCDate()));
+  return expires.toISOString();
+}
+
 const uriFields = [
   ['acknowledgments', 'Acknowledgments'],
   ['encryption', 'Encryption'],
@@ -75,7 +90,14 @@ export function renderSecurityTxt(
   }
 
   validateSecurityContacts(config.contacts);
-  const expires = validateFixedExpiration(config.expiration?.fixed, now);
+  const { expiration } = config;
+  if (expiration?.months !== undefined && expiration.fixed !== undefined) {
+    throw new TypeError('security.txt requires either a fixed or a rolling expiration.');
+  }
+  const expires =
+    expiration?.months === undefined
+      ? validateFixedExpiration(expiration?.fixed, now)
+      : rollingExpiration(expiration.months, now);
   const lines = [
     ...config.contacts.map((contact) => `Contact: ${contact}`),
     `Expires: ${expires}`,

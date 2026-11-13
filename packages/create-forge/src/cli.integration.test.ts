@@ -83,7 +83,7 @@ test('uses the same security.txt configuration for interactive and non-interacti
   const contacts = ['mailto:security@example.test', 'https://example.test/report'];
   const expiration = new Date(Date.now() + 86_400_000).toISOString();
   const prompts: PromptAdapter = {
-    confirm: async () => true,
+    confirm: async ({ message }) => !message.includes('rolling'),
     text: async ({ message, validate }) => {
       const value = message.includes('contact URIs') ? contacts.join(' ') : expiration;
       expect(validate?.(value)).toBeUndefined();
@@ -125,4 +125,45 @@ test('uses the same security.txt configuration for interactive and non-interacti
   );
   expect(interactive).toEqual(scripted);
   expect(interactive.options?.security).toEqual({ contacts, expiration: { fixed: expiration } });
+});
+
+test('resolves the same rolling duration from scripted and interactive setup', async () => {
+  const contacts = ['mailto:security@example.test'];
+  const args = [
+    'site',
+    '--name',
+    'site',
+    '--site-name',
+    'Site',
+    '--description',
+    '',
+    '--author',
+    '',
+    '--url',
+    'https://example.test/',
+    '--repository',
+    '',
+    '--no-install',
+    '--no-git',
+    '--security-contact',
+    contacts[0]!,
+  ];
+  const prompts: PromptAdapter = {
+    confirm: async () => true,
+    text: async ({ initialValue, validate }) => {
+      expect(initialValue).toBe('6');
+      expect(validate?.('0')).toContain('calendar months');
+      return '6';
+    },
+    isCancel: () => false,
+  };
+  const interactive = await runCli(args, '2.0.0', { interactive: true, prompts });
+  const scripted = await runCli([...args, '--security-rolling', '6'], '2.0.0', { interactive: false });
+  expect(interactive).toEqual(scripted);
+  expect(scripted.options?.security).toEqual({ contacts, expiration: { months: 6 } });
+  for (const options of [['0'], ['13'], ['1.5'], ['6', '--security-expires', '2028-02-01T00:00:00Z']]) {
+    const invalid = await runCli([...args, '--security-rolling', ...options], '2.0.0', { interactive: false });
+    expect(invalid.exitCode).toBe(1);
+    expect(invalid.output).toContain('security.txt');
+  }
 });

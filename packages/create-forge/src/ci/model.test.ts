@@ -534,3 +534,65 @@ test.each(['.', 'website'])('keeps native and Cloudflare smoke uploads scoped to
     expect(uploads[0]).toHaveProperty('with.path', `${directory}/playwright-report\n${directory}/test-results`);
   }
 });
+
+const productionPages = {
+  name: 'production',
+  sourceBranch: 'release',
+  target: 'github-pages',
+  url: 'https://example.com/',
+} as const;
+const stagingCloudflare = {
+  name: 'staging',
+  sourceBranch: 'dev',
+  target: 'cloudflare-pages',
+  project: 'example-preview',
+  url: 'https://preview.example.com/',
+} as const;
+const productionCloudflare = {
+  ...stagingCloudflare,
+  name: 'production',
+  sourceBranch: 'release',
+  project: 'example-site',
+};
+
+test.each([
+  [productionPages, stagingCloudflare],
+  [stagingCloudflare, productionPages],
+  [productionCloudflare, { ...productionPages, name: 'staging', sourceBranch: 'dev' }],
+])('schedules only the production deployment for %j and %j', (first, second) => {
+  const project = createGithubWorkflows(
+    {
+      ...config,
+      renewSecurityTxt: true,
+      includeSecurityTxt: true,
+      deployments: [first, second],
+    },
+    pins,
+  ).project;
+  expect(project.on.schedule).toEqual([{ cron: '43 6 * * 2' }, { cron: '43 9 1 * *' }]);
+  const condition =
+    "github.ref == 'refs/heads/release' && (github.event_name == 'push' || (github.event_name == 'schedule' && github.event.schedule == '43 9 1 * *'))";
+  expect(project.jobs['deploy-production']).toMatchObject({ if: condition, needs: Object.keys(siteWork) });
+  expect(project.jobs['smoke-production']).toMatchObject({ if: condition, needs: ['deploy-production'] });
+  const stagingCondition = "github.event_name == 'push' && github.ref == 'refs/heads/dev'";
+  expect(project.jobs['deploy-staging']?.if).toBe(stagingCondition);
+  const upload = project.jobs.build!.steps.find(
+    (step) => 'uses' in step && step.uses.startsWith('actions/upload-pages-artifact@'),
+  );
+  expect(upload).toMatchObject({
+    if: first.target === 'github-pages' || second.name === 'production' ? condition : stagingCondition,
+    with: { 'include-hidden-files': true },
+  });
+});
+
+test('omits renewal from fixed, secondary and staging-only deployment workflows', () => {
+  for (const options of [
+    { ...config, includeSecurityTxt: true },
+    { ...config, renewSecurityTxt: true, primary: 'gitlab' as const },
+    { ...config, renewSecurityTxt: true, deployments: [] },
+    { ...config, renewSecurityTxt: true, deployments: [stagingCloudflare] },
+  ]) {
+    const { project } = createGithubWorkflows(options, pins);
+    expect(project.on.schedule).toEqual([{ cron: '43 6 * * 2' }]);
+  }
+});

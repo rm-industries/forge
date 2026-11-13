@@ -1,6 +1,7 @@
 import {
   renderSecurityTxt,
   validateFixedExpiration,
+  validateRollingMonths,
   validateSecurityContacts,
   type SecurityConfig,
 } from '../../../templates/default/src/integrations/security-txt/render.ts';
@@ -51,6 +52,7 @@ const promptConfirm = async (prompts: PromptAdapter, message: string, initialVal
 };
 
 const readContacts = (value: string) => value.trim().split(/\s+/u);
+const readRollingMonths = (value: string) => validateRollingMonths(/^\d+$/u.test(value) ? Number(value) : NaN);
 
 const resolveSecurity = async (
   provided: ProvidedOptions,
@@ -58,10 +60,14 @@ const resolveSecurity = async (
   siteUrls: string[],
 ): Promise<SecurityConfig | undefined> => {
   const canPrompt = interactive && !provided.yes;
+  if (provided.securityExpires !== undefined && provided.securityRolling !== undefined) {
+    throw new InputError('security.txt accepts either --security-expires or --security-rolling.');
+  }
   const enabled =
     provided.securityTxt ||
     provided.securityContacts !== undefined ||
     provided.securityExpires !== undefined ||
+    provided.securityRolling !== undefined ||
     (canPrompt && (await promptConfirm(prompts, 'Publish a security.txt for vulnerability reports?', false)));
   if (!enabled) return undefined;
 
@@ -80,16 +86,34 @@ const resolveSecurity = async (
           }),
         )
       : []);
-  const fixed =
-    provided.securityExpires ??
-    (canPrompt
-      ? await promptText(prompts, {
-          message: 'When should security.txt expire? Enter a future RFC 3339 timestamp.',
-          placeholder: 'YYYY-MM-DDTHH:MM:SSZ',
-          validate: textValidation(validateFixedExpiration),
-        })
-      : '');
-  const security = { contacts, expiration: { fixed } };
+  const rolling =
+    provided.securityRolling !== undefined ||
+    (provided.securityExpires === undefined &&
+      canPrompt &&
+      (await promptConfirm(prompts, 'Use a rolling security.txt expiration?', true)));
+  const expiration: SecurityConfig['expiration'] = rolling
+    ? {
+        months: readRollingMonths(
+          provided.securityRolling ??
+            (await promptText(prompts, {
+              message: 'How many calendar months should security.txt stay valid after each build?',
+              initialValue: '6',
+              validate: textValidation((value) => String(readRollingMonths(value))),
+            })),
+        ),
+      }
+    : {
+        fixed:
+          provided.securityExpires ??
+          (canPrompt
+            ? await promptText(prompts, {
+                message: 'When should security.txt expire? Enter a future RFC 3339 timestamp.',
+                placeholder: 'YYYY-MM-DDTHH:MM:SSZ',
+                validate: textValidation(validateFixedExpiration),
+              })
+            : ''),
+      };
+  const security = { contacts, expiration };
   for (const site of siteUrls) renderSecurityTxt(security, site, new URL(site).pathname);
   return security;
 };

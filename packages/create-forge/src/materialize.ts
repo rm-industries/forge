@@ -223,6 +223,7 @@ const customizeTemplate = async (
     primary: options.primaryCi ?? (providers.includes('github') ? 'github' : 'gitlab'),
     securityMinute: scheduleMinutes.security,
     ...(options.security === undefined ? {} : { includeSecurityTxt: true }),
+    ...(options.security?.expiration.months === undefined ? {} : { renewSecurityTxt: true }),
     automationMinute: scheduleMinutes.automation,
     ...(ciPrefix === undefined ? {} : { prefix: ciPrefix }),
   };

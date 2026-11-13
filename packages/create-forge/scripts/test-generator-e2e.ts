@@ -340,10 +340,10 @@ try {
   const securityConfigPath = 'src/config/security.ts';
   const generatedSecurity = await readFile(join(explicitDirectory, securityConfigPath), 'utf8');
   const localSecurity = join(defaultDirectory, securityConfigPath);
-  const build = (url = 'https://explicit.example.com/') =>
+  const build = (url = 'https://explicit.example.com/', environment = process.env) =>
     execute('npm', ['run', 'build'], {
       cwd: defaultDirectory,
-      env: { ...process.env, PUBLIC_SITE_URL: url },
+      env: { ...environment, PUBLIC_SITE_URL: url },
       maxBuffer: 20 * 1024 * 1024,
     });
   await writeFile(localSecurity, generatedSecurity);
@@ -390,6 +390,60 @@ try {
   await expectRejectedBuild('https://explicit.example.com/project/', 'security.txt requires a root deployment');
   await writeFile(localSecurity, generatedSecurity.replace(expires, '2020-01-01T00:00:00Z'));
   await expectRejectedBuild('https://explicit.example.com/', 'security.txt expiration must be in the future');
+  const rollingDirectory = join(projectsDirectory, 'rolling-site');
+  await runGenerator(executable, projectsDirectory, [
+    'rolling-site',
+    '--yes',
+    '--security-contact',
+    'mailto:security@example.com',
+    '--security-rolling',
+    '6',
+    '--no-install',
+    '--no-git',
+  ]);
+  await assertGeneratedProject(rollingDirectory, 'rolling-site');
+  const rollingWorkflow = parse(await readFile(join(rollingDirectory, workflowPath('project', undefined)), 'utf8'));
+  const minute = deriveScheduleMinutes('rolling-site').automation;
+  const weekly = `${minute} 6 * * 2`;
+  const monthly = `${minute} 9 1 * *`;
+  const renewalCondition =
+    "github.ref == 'refs/heads/main' && (github.event_name == 'push' || " +
+    `(github.event_name == 'schedule' && github.event.schedule == '${monthly}'))`;
+  const rollingUpload = rollingWorkflow.jobs.build.steps.find((step: { uses?: string }) =>
+    step.uses?.startsWith('actions/upload-pages-artifact@'),
+  );
+  if (
+    rollingWorkflow.on.schedule.map(({ cron }: { cron: string }) => cron).join(',') !== `${weekly},${monthly}` ||
+    rollingUpload.if !== renewalCondition ||
+    rollingUpload.with['include-hidden-files'] !== true ||
+    rollingWorkflow.jobs.deploy.if !== renewalCondition ||
+    !rollingWorkflow.jobs.deploy.needs.includes('validate-build') ||
+    !rollingWorkflow.jobs.deploy.needs.includes('lighthouse') ||
+    rollingWorkflow.jobs['smoke-deployed'].if !== renewalCondition ||
+    !rollingWorkflow.jobs['smoke-deployed'].needs.includes('deploy') ||
+    projectWorkflow.on.schedule.length !== 1
+  )
+    throw new Error('Only the monthly renewal should join production pushes in the publishing graph.');
+
+  await writeFile(localSecurity, await readFile(join(rollingDirectory, securityConfigPath), 'utf8'));
+  const clock = join(fixtureDirectory, 'build-clock.mjs');
+  await writeFile(
+    clock,
+    "import { mock } from 'node:test';\nmock.timers.enable({ apis: ['Date'], now: Date.parse(process.env.FORGE_BUILD_TIME) });\n",
+  );
+  for (const [time, expiration] of [
+    ['2027-08-31T12:30:00.000Z', '2028-02-29T12:30:00.000Z'],
+    ['2027-09-01T12:30:00.000Z', '2028-03-01T12:30:00.000Z'],
+  ]) {
+    await build('https://explicit.example.com/', {
+      ...process.env,
+      NODE_OPTIONS: [process.env.NODE_OPTIONS, `--import=${clock}`].filter(Boolean).join(' '),
+      FORGE_BUILD_TIME: time,
+    });
+    const body = await readFile(join(defaultDirectory, 'dist', securityPath), 'utf8');
+    if (!body.includes(`Expires: ${expiration}\n`))
+      throw new Error(`Rolling security.txt did not advance to ${expiration} at build time ${time}.`);
+  }
   await rm(join(defaultDirectory, 'node_modules'), { recursive: true, force: true });
 
   const scopedDirectory = join(projectsDirectory, 'scoped-site');

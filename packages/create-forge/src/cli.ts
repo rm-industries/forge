@@ -47,6 +47,7 @@ const parseArguments = (args: readonly string[], version: string) => {
       (value: string, previous: string[] = []) => [...previous, value],
     )
     .option('--security-expires <timestamp>', 'fixed security.txt expiration in RFC 3339 format')
+    .option('--security-rolling <months>', 'rolling security.txt expiration in calendar months (1–12, suggested: 6)')
     .addOption(new Option('--install', 'install dependencies'))
     .addOption(new Option('--no-install', 'do not install dependencies'))
     .addOption(new Option('--git', 'initialize a Git repository'))
@@ -99,6 +100,7 @@ const parseArguments = (args: readonly string[], version: string) => {
     securityTxt: raw.securityTxt,
     securityContacts: raw.securityContact,
     securityExpires: raw.securityExpires,
+    securityRolling: raw.securityRolling,
     install: raw.install,
     git: raw.git,
     yes: raw.yes,

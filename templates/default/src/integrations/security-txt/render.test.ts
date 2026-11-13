@@ -1,6 +1,12 @@
 import { expect, test } from 'vitest';
 
-import { renderSecurityTxt, validateFixedExpiration, validateSecurityContacts, type SecurityConfig } from './render';
+import {
+  renderSecurityTxt,
+  validateFixedExpiration,
+  validateRollingMonths,
+  validateSecurityContacts,
+  type SecurityConfig,
+} from './render';
 
 const site = 'https://www.example.com/';
 const now = new Date('2028-01-01T00:00:00Z');
@@ -16,6 +22,19 @@ test('renders ordered contacts, a fixed RFC 3339 date and the canonical site URL
       'Expires: 2028-02-29T14:30:00+02:00\n' +
       'Canonical: https://www.example.com/.well-known/security.txt\n',
   );
+});
+
+test.each([
+  ['2027-08-31T18:30:00.123Z', '2028-02-29T18:30:00.123Z'],
+  ['2028-08-31T18:30:00.123Z', '2029-02-28T18:30:00.123Z'],
+  ['2028-09-01T18:30:00.123Z', '2029-03-01T18:30:00.123Z'],
+])('rolls forward six UTC calendar months from %s', (buildTime, expiration) => {
+  const rolling = { ...config, expiration: { months: 6 } };
+  expect(renderSecurityTxt(rolling, site, '/', new Date(buildTime))).toContain(`Expires: ${expiration}\n`);
+});
+
+test.each([0, 13, 1.5])('rejects an invalid rolling duration (%s)', (months) => {
+  expect(() => validateRollingMonths(months)).toThrow('calendar months');
 });
 
 test('renders the canonical override and all optional fields', () => {
@@ -62,8 +81,15 @@ test.each([
   [{ ...config, canonical: 'https://example.com/security.txt#fragment' }, 'requires an HTTPS canonical URL'],
   [{ ...config, contacts: ['mailto:a@example.com\nExpires: x'] }, 'contacts must be absolute'],
   [{ ...config, contacts: ['dns:example.com'] }, 'contacts must be absolute'],
+  [
+    { ...config, expiration: { months: 6, fixed: '2028-07-01T00:00:00Z' } } as unknown as SecurityConfig,
+    'requires either a fixed or a rolling expiration',
+  ],
   [{ ...config, expiration: { fixed: '' } }, 'requires a fixed RFC 3339 expiration'],
-  [{ ...config, expiration: {} as SecurityConfig['expiration'] }, 'requires a fixed RFC 3339 expiration'],
+  [
+    { ...config, expiration: undefined as unknown as SecurityConfig['expiration'] },
+    'requires a fixed RFC 3339 expiration',
+  ],
   [{ ...config, expiration: { fixed: '2100-02-29T00:00:00Z' } }, 'valid RFC 3339 calendar date'],
   [{ ...config, expiration: { fixed: '2028-01-01T00:00:00Z' } }, 'must be in the future'],
   [{ ...config, preferredLanguages: [] }, 'Preferred-Languages'],
