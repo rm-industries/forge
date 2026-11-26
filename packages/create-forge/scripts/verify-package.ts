@@ -5,6 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
+import { validateInternalLinks } from '../../../scripts/validate-documentation.ts';
 import { templateTokenPrefix } from '../src/template-tokens.ts';
 
 type PackResult = {
@@ -72,6 +73,7 @@ try {
   const generatedDirectory = join(invocationDirectory, 'generated-site');
   const generatedMetadata = JSON.parse(await readFile(join(generatedDirectory, 'package.json'), 'utf8')) as {
     name?: string;
+    scripts: Record<string, string>;
     engines: { node: string };
     dependencies: Record<string, string>;
   };
@@ -86,6 +88,18 @@ try {
   if (generatedMetadata.name !== 'generated-site' || generatedSiteConfig.includes(templateTokenPrefix)) {
     throw new Error('Installed executable did not produce normalized, fully resolved project metadata.');
   }
+  const guidePath = join(generatedDirectory, 'AGENTS.md');
+  const guide = await readFile(guidePath, 'utf8');
+  const invalidLinks = await validateInternalLinks(generatedDirectory, [guidePath]);
+  if (invalidLinks.length > 0) {
+    throw new Error(invalidLinks.map(({ file, line, message }) => `${file}:${line}: ${message}`).join('\n'));
+  }
+  for (const [, script] of guide.matchAll(/`npm run ([\w:.-]+)`/gu)) {
+    if (!Object.hasOwn(generatedMetadata.scripts, script ?? '')) {
+      throw new Error(`AGENTS.md refers to a missing npm script: ${script}.`);
+    }
+  }
+
   await access(join(generatedDirectory, '.editorconfig'));
   await access(join(generatedDirectory, '.git', 'HEAD'));
   try {

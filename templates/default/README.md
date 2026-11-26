@@ -398,7 +398,8 @@ Both providers include Pages deployment and smoke tests, with the inactive
 provider disabled through native CI conditions. Configure Pages and the canonical
 site URL before enabling deployment on another provider.
 
-Markdown commands use Markdownlint CLI2 `0.24.0` with Markdownlint `0.42.0`.
+Markdown commands use Markdownlint CLI2 `^0.24.2`. Check your lockfile for the
+resolved CLI2 and Markdownlint versions.
 The independent front matter ordering plugin is published, but the normal starter
 does not enable it. To activate it in a separate reviewed change, follow the
 [selective adoption and rollback guide](https://github.com/rm-industries/forge/blob/main/fixtures/frontmatter-adoption/README.md)
