@@ -1,11 +1,19 @@
 # Working on this Forge site
 
 Use Astro and TypeScript for routes and components. Compose public pages with
-[BaseLayout.astro](src/layouts/BaseLayout.astro) and reuse components from
-`src/components/`. Add client-side JavaScript where an interaction needs it.
+[BaseLayout.astro](src/layouts/BaseLayout.astro) and add client-side JavaScript
+where an interaction needs it.
 Use Tailwind CSS utilities, daisyUI components, and semantic colors such as
 `bg-base-100` and `text-base-content`. Follow the Catppuccin themes and check
 UI changes in both light (Latte) and dark (Mocha) modes.
+
+## Reusable components
+
+The starter components are examples you can reuse, adapt, or replace. To add
+a reusable component, create a PascalCase `.astro` file under `src/components/`
+and group it by responsibility. For example, put a `Callout.astro` in
+`src/components/ui/`. Define typed props for inputs and use slots for content
+the caller supplies. Import the component into the pages or layouts that use it.
 
 ## Where to edit
 
