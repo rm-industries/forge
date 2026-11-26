@@ -1,6 +1,6 @@
 {
   "name": "@rm-industries/markdownlint-frontmatter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Source-preserving YAML frontmatter ordering rule for Markdownlint",
   "keywords": [
     "autofix",
@@ -51,7 +51,7 @@
     "markdownlint": "^0.42.2"
   },
   "peerDependencies": {
-    "markdownlint": "^0.42.2"
+    "markdownlint": "^0.42.0"
   },
   "engines": {
     "node": "^22.22.2 || ^24.0.0 || ^26.0.0",

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- Update npm discovery keywords and installation documentation. Keep the
+  Markdownlint peer range at `^0.42.0`. Existing consumers require no migration.
+
 ## 0.1.0
 
 - Add the independently versioned `forge/frontmatter-order` Markdownlint rule

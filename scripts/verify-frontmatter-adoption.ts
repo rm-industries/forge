@@ -83,7 +83,7 @@ try {
   // Ordinary documentation may contain arbitrary YAML without enabling this rule.
   await writeFile(join(consumer, 'ordering-doc.md'), '---\ndraft: true\ntitle: Documentation\n---\n\nBody.\n');
   const output = run(['run', 'lint:markdown'], consumer, 1);
-  assert.match(output, /markdownlint v0\.42\.0/u);
+  assert.match(output, /markdownlint v0\.42\.\d+\)/u);
   assert.deepEqual(
     [...new Set([...output.matchAll(/^(.+?):\d+ error forge\/frontmatter-order/gmu)].map((match) => match[1]))].sort(),
     ['src/content/articles/order-probe.md', 'src/content/pages/order-probe.md'],
