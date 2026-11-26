@@ -56,7 +56,7 @@
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.3",
     "@vitest/coverage-v8": "^5.0.5",
-    "audit-ci": "7.1.0",
+    "audit-ci": "^7.1.0",
     "cspell": "^10.4.0",
     "daisyui": "^5.7.50",
     "knip": "^6.41.0",
