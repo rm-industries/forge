@@ -2,6 +2,12 @@
 
 All notable changes to `@rm-industries/create-forge` are documented here.
 
+## 2.1.0
+
+- Include an editable `AGENTS.md` in new sites with stack conventions, source
+  entry points, and focused verification commands. Existing sites require no
+  migration.
+
 ## 2.0.0
 
 - Breaking source contract: configure public deployment settings in Astro configuration,
