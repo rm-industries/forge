@@ -56,16 +56,8 @@ benefit and cost, and review the change in its pull request.
 
 ## Dependency note
 
-`@lhci/cli` 0.15.1 pins Lighthouse 12.6.1. Forge keeps that upstream-tested
+`@lhci/cli` 0.16.1 pins Lighthouse 13.6.0. Forge keeps that upstream-tested
 dependency graph instead of overriding Lighthouse or its transitive
 dependencies independently. Upgrade the top-level Lighthouse CI package when a
 release supports a newer Lighthouse runtime, then repeat the three-run
 collection and assertion compatibility checks.
-
-The pinned graph currently includes high-severity `extract-zip` and `tmp`
-advisories. Both are confined to development-only Lighthouse tooling:
-Lighthouse uses the installed browser rather than extracting an
-attacker-provided browser archive, and its temporary paths are tool-controlled.
-`audit-ci.jsonc` records narrow, expiring exceptions for those advisory IDs.
-All other high or critical advisories still fail `npm run audit`. Review or
-remove the exceptions by 2026-11-30 rather than extending them automatically.
