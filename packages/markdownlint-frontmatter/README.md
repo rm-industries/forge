@@ -120,8 +120,7 @@ The opening delimiter must be `---` on the first line; closing `---` and `...`
 are supported. Non-YAML frontmatter is ignored. Keep the default Markdownlint
 frontmatter handling and review diagnostics before applying fixes.
 
-Version `0.1.0` is published on npm. See the
-[existing-site migration and rollback](../../fixtures/frontmatter-adoption/README.md).
+See the [existing-site migration and rollback](../../fixtures/frontmatter-adoption/README.md).
 Existing sites adopt the configuration selectively; never regenerate over owned source.
 
 Strict TypeScript consumers may need `markdown-it@15.0.3` because Markdownlint
