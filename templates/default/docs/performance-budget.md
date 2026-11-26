@@ -56,7 +56,7 @@ benefit and cost, and review the change in its pull request.
 
 ## Dependency note
 
-`@lhci/cli` 0.16.1 pins Lighthouse 13.6.0. Forge keeps that upstream-tested
+The template uses `@lhci/cli` `^0.16.1`. Version 0.16.1 pins Lighthouse 13.6.0. Forge keeps that upstream-tested
 dependency graph instead of overriding Lighthouse or its transitive
 dependencies independently. Upgrade the top-level Lighthouse CI package when a
 release supports a newer Lighthouse runtime, then repeat the three-run
