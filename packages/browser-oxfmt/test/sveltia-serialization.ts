@@ -4,6 +4,8 @@ import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+
+import { satisfies } from 'semver';
 declare global {
   interface Window {
     CMS_MANUAL_INIT: boolean;
@@ -52,8 +54,7 @@ const initial =
   '---\ntitle: Compatibility probe\ndescription: Before\ntags:\n  - preserved\ndraft: true\n---\n\n## Body retained\n\nOriginal **body**.\n';
 const root = resolve(dirname(require.resolve('@sveltia/cms')), '../dist');
 const cmsVersion = JSON.parse(await readFile(resolve(root, '../package.json'), 'utf8')).version as string;
-const [major, minor] = cmsVersion.split('.').map(Number);
-assert(major === 0 && minor !== undefined && minor >= 251, 'Test Sveltia CMS 0.251.x or greater');
+assert(satisfies(cmsVersion, '>=0.251.0'), 'Test Sveltia CMS 0.251.0 or greater');
 console.log({ cmsVersion });
 const browser = await chromium.launch({ headless: true, ...(process.argv[3] ? { channel: process.argv[3] } : {}) });
 const server = createServer(async (req, res) => {
