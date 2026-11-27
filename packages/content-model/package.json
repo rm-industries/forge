@@ -54,7 +54,7 @@
     "typecheck": "tsc --project tsconfig.json --noEmit"
   },
   "peerDependencies": {
-    "@sveltia/cms": ">=0.193.2 <0.271.0 || ^5.0.2",
+    "@sveltia/cms": ">=0.193.2 <0.274.0 || ^5.0.2",
     "astro": "^7.2.3"
   },
   "peerDependenciesMeta": {
