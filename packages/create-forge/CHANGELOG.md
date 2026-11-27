@@ -2,6 +2,10 @@
 
 All notable changes to `@rm-industries/create-forge` are documented here.
 
+## 2.2.0
+
+- Generate new sites with Sveltia CMS `^5.0.2` and content-model `^1.1.15`.
+
 ## 2.1.0
 
 - Include an editable `AGENTS.md` in new sites with stack conventions, source

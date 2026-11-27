@@ -11,10 +11,10 @@ const prepareConsumer = async (directory: string) => {
   await copyFile(new URL('../templates/default/package.json', import.meta.url), join(directory, 'package.json'));
   const packages = {
     'node_modules/@rm-industries/content-model': {
-      version: '1.1.10',
-      peerDependencies: { astro: '^7.4.0', '@sveltia/cms': '>=0.251.0 <1.0.0' },
+      version: '1.1.15',
+      peerDependencies: { astro: '^7.4.0', '@sveltia/cms': '^5.0.2' },
     },
-    'node_modules/@sveltia/cms': { version: '0.251.0' },
+    'node_modules/@sveltia/cms': { version: '5.0.2' },
     'node_modules/astro': { version: '7.4.2' },
     'node_modules/@rm-industries/browser-oxfmt': { version: '0.1.2', peerDependencies: { oxfmt: '0.74.0' } },
     'node_modules/oxfmt': { version: '0.74.0' },

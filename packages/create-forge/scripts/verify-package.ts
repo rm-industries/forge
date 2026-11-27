@@ -80,8 +80,8 @@ try {
   if (generatedMetadata.engines.node !== '^22.23.4 || ^24.15.0 || ^26.0.0')
     throw new Error('Installed generator must deliver the supported Node.js versions.');
   if (
-    generatedMetadata.dependencies['@rm-industries/content-model'] !== '^1.1.10' ||
-    generatedMetadata.dependencies['@sveltia/cms'] !== '>=0.251.0 <1.0.0'
+    generatedMetadata.dependencies['@rm-industries/content-model'] !== '^1.1.15' ||
+    generatedMetadata.dependencies['@sveltia/cms'] !== '^5.0.2'
   )
     throw new Error('Installed generator must deliver the approved model/CMS ranges.');
   const generatedSiteConfig = await readFile(join(generatedDirectory, 'src', 'config', 'site.ts'), 'utf8');
