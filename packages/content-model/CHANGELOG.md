@@ -2,7 +2,7 @@
 
 All notable changes to `@rm-industries/content-model` are documented here.
 
-## 1.1.16
+## Unreleased
 
 - Extend Sveltia CMS peer compatibility through the 0.273 release line.
 
